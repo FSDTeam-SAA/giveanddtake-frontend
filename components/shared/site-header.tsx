@@ -1,18 +1,24 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Bell, MessageCircle, Menu, ChevronDown, ArrowRight } from "lucide-react"
-import { ScrollingInfoBar } from "./scrolling-info-bar" // Import the new component
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Bell,
+  MessageCircle,
+  Menu,
+  ChevronDown,
+  ArrowRight,
+} from "lucide-react";
+import { ScrollingInfoBar } from "./scrolling-info-bar";
 
 export function SiteHeader() {
   return (
@@ -29,7 +35,10 @@ export function SiteHeader() {
 
         {/* Middle Section: Navigation Links (hidden on small screens) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-          <Link href="#" className="text-v0-blue-500 hover:text-v0-blue-600 transition-colors">
+          <Link
+            href="#"
+            className="text-v0-blue-500 hover:text-v0-blue-600 transition-colors"
+          >
             Home
           </Link>
           <Link href="#" className="hover:text-v0-blue-500 transition-colors">
@@ -77,16 +86,25 @@ export function SiteHeader() {
 
         {/* Right Section: Action Buttons & Avatar */}
         <div className="flex items-center gap-2 md:gap-4">
-          <Button size="icon" className="rounded-full bg-v0-blue-500 text-white hover:bg-v0-blue-600">
+          <Button
+            size="icon"
+            className="rounded-full bg-v0-blue-500 text-white hover:bg-v0-blue-600"
+          >
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
           </Button>
-          <Button size="icon" className="rounded-full bg-v0-blue-500 text-white hover:bg-v0-blue-600">
+          <Button
+            size="icon"
+            className="rounded-full bg-v0-blue-500 text-white hover:bg-v0-blue-600"
+          >
             <MessageCircle className="h-5 w-5" />
             <span className="sr-only">Messages</span>
           </Button>
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User Avatar" />
+            <AvatarImage
+              src="/placeholder.svg?height=32&width=32"
+              alt="User Avatar"
+            />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
           <Sheet>
@@ -97,27 +115,48 @@ export function SiteHeader() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[250px] sm:w-[300px]">
-              <Link href="#" className="flex items-center gap-2 font-bold text-lg mb-6">
+              <Link
+                href="#"
+                className="flex items-center gap-2 font-bold text-lg mb-6"
+              >
                 <div className="w-8 h-8 bg-v0-blue-500 rounded-md" />
                 YOUR LOGO
               </Link>
               <nav className="grid gap-4 text-sm font-medium">
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   Home
                 </Link>
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   All Jobs
                 </Link>
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   Elevator Pitch & Resume
                 </Link>
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   Blog
                 </Link>
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   Help & Info
                 </Link>
-                <Link href="#" className="hover:text-v0-blue-500 transition-colors">
+                <Link
+                  href="#"
+                  className="hover:text-v0-blue-500 transition-colors"
+                >
                   More
                 </Link>
                 <Button className="w-full bg-v0-blue-500 hover:bg-v0-blue-600 text-white">
@@ -132,5 +171,5 @@ export function SiteHeader() {
       {/* Bottom Blue Scrolling Bar */}
       <ScrollingInfoBar />
     </header>
-  )
+  );
 }
