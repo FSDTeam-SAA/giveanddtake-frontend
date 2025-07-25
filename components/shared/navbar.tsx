@@ -48,7 +48,7 @@ export function SiteHeader() {
           <Link href="#" className="hover:text-blue-500 transition-colors">
             All Jobs
           </Link>
-          <Link href="#" className="hover:text-blue-500 transition-colors">
+          <Link href="/elevator-pitch-resume" className="hover:text-blue-500 transition-colors">
             Elevator Pitch & Resume
           </Link>
           <Link href="#" className="hover:text-blue-500 transition-colors">
@@ -168,7 +168,7 @@ export function SiteHeader() {
                   All Jobs
                 </Link>
                 <Link
-                  href="#"
+                  href="/elevator-pitch-resume"
                   className="hover:text-blue-500 transition-colors"
                 >
                   Elevator Pitch & Resume
