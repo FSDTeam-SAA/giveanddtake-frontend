@@ -36,6 +36,7 @@ export function PricingSection() {
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
           Pricing & Plan (Jobseekers Page)
         </h2>
+           <div className="w-[196px] h-[6px] bg-[#2B7FD0] rounded-[35px] mx-auto mt-4"></div>
         <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl mt-4">
           Lorem ipsum dolor sit amet consectetur. Id eget mi. Malesuada id eget mi. Malesuada
         </p>

@@ -5,11 +5,12 @@ export function HowItWorksSection() {
   return (
     <section className="w-full py-12 md:py-24 lg:py-32 bg-gray-50">
       <div className="container px-4 md:px-6 text-center">
-        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px] text-[#000000]">
           How It Works in three simple steps
         </h2>
-        <div className="max-w-2xl mx-auto mt-4 text-gray-500 md:text-xl">
-          <ol className="list-decimal list-inside text-left space-y-1">
+        <div className="w-[196px] h-[6px] bg-[#2B7FD0] rounded-[35px] mx-auto mt-4"></div>
+        <div className="md:text-xl">
+          <ol className="list-decimal list-inside  space-y-1 text-[#707070] font-medium text-center mt-[32px]">
             <li>Record or upload your video elevator pitch (60 seconds free or upgrade!)</li>
             <li>Add a link to your video elevator pitch in your CV/resume</li>
             <li>Search and apply for jobs on our site</li>
