@@ -19,7 +19,7 @@ import {
   ArrowRight,
   LogOut,
 } from "lucide-react";
-import { ScrollingInfoBar } from "./scrolling-info-bar";
+import { ScrollingInfoBar } from "./scrolling-info-bar"
 import { useSession, signOut } from "next-auth/react";
 
 export function SiteHeader() {
@@ -64,10 +64,18 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>FAQ</DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/faq">
+                FAQ
+                </Link>
+                </DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Contact Us</DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/contact-us">
+                Contact Us
+                </Link>
+                </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
@@ -80,10 +88,18 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>About Us</DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/about-us">
+                About Us
+                </Link>
+                </DropdownMenuItem>
               <DropdownMenuItem>Careers</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Privacy Policy</DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/privacy-policy">
+                Privacy Policy
+                </Link>
+                </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
