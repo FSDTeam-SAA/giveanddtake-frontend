@@ -4,9 +4,8 @@ import { SiteHeader } from "@/components/shared/site-header";
 import { Footer } from "@/components/shared/footer";
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.dev",
+  title: "Elevator Pitch",
+  description: "Shape Your Future with the Right Elevator Pitch"
 };
 
 export default function RootLayout({
