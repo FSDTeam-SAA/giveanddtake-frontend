@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import { SiteHeader } from "@/components/shared/site-header";
+import { SiteHeader } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 
 export const metadata: Metadata = {
@@ -14,12 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <SiteHeader />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <div>
+      <SiteHeader />
+      {children}
+      <Footer />
+    </div>
   );
 }
