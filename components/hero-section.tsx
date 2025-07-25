@@ -29,25 +29,25 @@ export function HeroSection() {
         alt="Abstract blue circle"
         width={200}
         height={200}
-        className="absolute top-1/2 left-2/4 -translate-x-1/2 -translate-y-1/2 border border-[#9EC7DC] rounded-full p-2 w-[50px] h-[50px]"
+        className="absolute top-1/2 hidden lg:block left-2/4 -translate-x-1/2 -translate-y-1/2 border border-[#9EC7DC] rounded-full p-2 w-[50px] h-[50px]"
       />
       <Image
         src="/assets/hero.png"
         alt="Abstract blue circle"
         width={150}
         height={150}
-        className="absolute top-[60%] left-1/3 -translate-x-1/2 -translate-y-1/2 ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[80px] h-[80px]"
+        className="absolute top-[60%] hidden lg:block left-1/3 -translate-x-1/2 -translate-y-1/2 ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[80px] h-[80px]"
       />
       <Image
         src="/assets/hero.png"
         alt="Abstract blue circle"
         width={100}
         height={100}
-        className="absolute bottom-1/4 left-2/4 -translate-x-1/2 translate-y-1/2 border border-[#9EC7DC] rounded-full p-2"
+        className="absolute hidden lg:block bottom-1/4 left-2/4 -translate-x-1/2 translate-y-1/2 border border-[#9EC7DC] rounded-full p-2"
       />
       <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-8 items-center relative z-10">
         <div className="flex flex-col space-y-4 text-center lg:text-left">
-          <h1 className="text-[40px] font-bold tracking-tighter leading-[120%] sm:text-4xl md:text-5xl lg:text-6xl/none text-[#2B7FD0]">
+          <h1 className="text-[30px] font-bold tracking-tighter leading-[120%] sm:text-4xl md:text-[40px]  text-[#2B7FD0]">
             Shape Your Future with the Right Elevator Pitch
           </h1>
           <p className="text-[16px] font-normal leading-[150%] text-[#595959]">
@@ -109,7 +109,7 @@ export function HeroSection() {
         </div>
         {/* Replaced the static image with the VideoCarousel component */}
         <div>
-          <div className="absolute ml-[70px] -mt-[10px]">
+          <div className="absolute ml-[70px] -mt-[10px] hidden lg:block">
             <Image
               src="/assets/hero-video.svg"
               alt="Job search video placeholder"

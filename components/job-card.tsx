@@ -16,35 +16,39 @@ interface JobCardProps {
 
 export function JobCard({ companyLogo, jobTitle, description, companyWebsite, salaryRange, location }: JobCardProps) {
   return (
-    <Card className="flex items-start p-6 shadow-sm hover:shadow-md transition-shadow rounded-xl">
+    <Card className="flex flex-col sm:flex-row items-start sm:items-center p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow rounded-xl !border-none w-full">
       <Image
         src={companyLogo || "/placeholder.svg?height=48&width=48&query=blue swirl logo"}
         alt="Company Logo"
-        width={48}
-        height={48}
-        className="rounded-full mr-4 mt-1"
+        width={100}
+        height={100}
+        className="rounded-full mr-0 sm:mr-4 mb-4 sm:mb-0 w-12 h-12 sm:w-[50px] sm:h-[50px]"
       />
-      <div className="flex-1 grid gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">{jobTitle}</h3>
-          <div className="flex gap-2">
+      <div className="flex-1 grid gap-2 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h3 className="text-base sm:text-lg md:text-[18px] font-semibold text-[#595959]">{jobTitle}</h3>
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="outline"
-              className="border-v0-blue-500 text-v0-blue-500 hover:bg-v0-blue-50 bg-transparent"
+              className="border-v0-blue-500 text-v0-blue-500 hover:bg-v0-blue-50 bg-transparent h-8 sm:h-[35px] text-sm sm:text-base"
             >
               Apply
             </Button>
-            <Badge className="bg-v0-blue-500 text-white hover:bg-v0-blue-600 px-3 py-1 text-xs">Full Time</Badge>
+            <Badge className="bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/80 h-8 sm:h-[35px] text-sm sm:text-base px-3 sm:px-4 rounded-[8px]">
+              Full Time
+            </Badge>
           </div>
         </div>
-        <p className="text-gray-600 text-sm line-clamp-2">{description}</p>
-        <div className="flex flex-wrap items-center gap-3 text-sm mt-2">
-          <Link href="#" className="text-v0-blue-500 hover:underline">
+        <p className="text-[#707070] text-xs sm:text-sm font-normal line-clamp-2 text-left">{description}</p>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm mt-4 sm:mt-6">
+          <Badge className="bg-[#E9ECFC] h-8 sm:h-[35px] text-[#707070] text-xs sm:text-base rounded-[8px] px-3 sm:px-4 hover:bg-[#E9ECFC] cursor-pointer">
             {companyWebsite}
-          </Link>
-          <Badge className="bg-gray-100 text-gray-700 px-3 py-1 text-xs">{salaryRange}</Badge>
-          <div className="flex items-center gap-1 text-gray-600 bg-gray-100 px-3 py-1 rounded-full text-xs">
+          </Badge>
+          <Badge className="bg-[#E9ECFC] h-8 sm:h-[35px] text-[#84A6B7] text-xs sm:text-base rounded-[8px] px-3 sm:px-4 hover:bg-[#E9ECFC] cursor-pointer">
+            {salaryRange}
+          </Badge>
+          <div className="flex items-center gap-1 bg-[#E9ECFC] h-8 sm:h-[35px] text-[#84A6B7] text-xs sm:text-base rounded-[8px] px-3 sm:px-4 cursor-pointer">
             <MapPin className="h-3 w-3" />
             <span>{location}</span>
           </div>

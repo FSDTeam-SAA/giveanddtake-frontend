@@ -26,11 +26,11 @@ export function PricingCard({
     <Card
       className={`relative flex flex-col items-center p-6 shadow-lg rounded-xl ${isPremium ? "bg-v0-blue-500 text-white" : "bg-white text-gray-900"}`}
     >
-      {isPremium && (
+      {/* {isPremium && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-v0-blue-600 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase">
           Premium Plan
         </div>
-      )}
+      )} */}
       {isPremium && (
         <div className="absolute inset-0 rounded-xl overflow-hidden">
           <Image
