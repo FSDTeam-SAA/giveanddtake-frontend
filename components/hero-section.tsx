@@ -1,11 +1,15 @@
+"use client";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { VideoCarousel } from "./hero-video-carousel";
+import { useSession } from "next-auth/react";
 
 export function HeroSection() {
+  const session = useSession();
+  console.log(session);
   const videos = [
     {
       src: "https://www.w3schools.com/html/mov_bbb.mp4",

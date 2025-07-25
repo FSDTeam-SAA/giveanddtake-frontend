@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import "../globals.css";
-import { SiteHeader } from "@/components/shared/site-header";
+import { SiteHeader } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 
 export const metadata: Metadata = {
-  title: "v0 App",
-  description: "Created with v0",
-  generator: "v0.dev",
+  title: "Elevator Pitch",
+  description: "Shape Your Future with the Right Elevator Pitch"
 };
 
 export default function RootLayout({
@@ -15,12 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <SiteHeader />
-        {children}
-        <Footer />
-      </body>
-    </html>
+    <div>
+      <SiteHeader />
+      {children}
+      <Footer />
+    </div>
   );
 }
