@@ -19,7 +19,7 @@ import {
   ArrowRight,
   LogOut,
 } from "lucide-react";
-import { ScrollingInfoBar } from "./scrolling-info-bar";
+import { ScrollingInfoBar } from "./scrolling-info-bar"
 import { useSession, signOut } from "next-auth/react";
 
 export function SiteHeader() {

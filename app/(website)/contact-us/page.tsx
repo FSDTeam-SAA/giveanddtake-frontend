@@ -7,7 +7,7 @@ import { Mail, Phone, MapPin, Clock, Search, Lock } from "lucide-react"
 export default function Component() {
   return (
     <div className=" container mx-auto">
-      <div className="bg-white rounded-lg  p-6 sm:p-8 lg:p-10   grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className=" rounded-lg sm:p-8 lg:p-10   grid grid-cols-1 md:grid-cols-2 gap-10">
         {/* Contact Form Section */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
