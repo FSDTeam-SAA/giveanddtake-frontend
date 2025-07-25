@@ -4,9 +4,8 @@ import { SiteHeader } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 
 export const metadata: Metadata = {
-  title: "GiveAndTake",
-  description: "GiveAndTake",
-  generator: "GiveAndTake",
+  title: "Elevator Pitch",
+  description: "Shape Your Future with the Right Elevator Pitch"
 };
 
 export default function RootLayout({

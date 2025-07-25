@@ -10,9 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "GiveAndTake",
-  description: "GiveAndTake",
-  generator: "GiveAndTake",
+  title: "Elivator Pitch",
+  description: "Shape Your Future with the Right Elevator Pitch"
 };
 
 export default function RootLayout({
