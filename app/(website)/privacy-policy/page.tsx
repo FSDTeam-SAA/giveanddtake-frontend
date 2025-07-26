@@ -1,9 +1,11 @@
+import PageHeaders from '@/components/shared/PageHeaders'
 import React from 'react'
 
 const page = () => {
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12 lg:py-16">
-      <div className="mx-auto max-w-4xl space-y-8">
+      <div className="container  space-y-8">
+        <PageHeaders title="Privacy Policy" description='Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing, and web development.'/>
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Privacy Policy</h1>
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">

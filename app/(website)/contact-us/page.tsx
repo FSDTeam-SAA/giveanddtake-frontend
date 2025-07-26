@@ -3,13 +3,16 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Mail, Phone, MapPin, Clock, Search, Lock } from "lucide-react"
+import Page from "@/app/(auth)/verify/page"
+import PageHeaders from "@/components/shared/PageHeaders"
 
 export default function Component() {
   return (
-    <div className=" container mx-auto">
-      <div className=" rounded-lg sm:p-8 lg:p-10   grid grid-cols-1 md:grid-cols-2 gap-10">
+    <div className=" container ">
+      <PageHeaders title="Contact Us" description="If you have a suggestion, question, concern or comment, please reach out to us using our contact form or via the alternative contact methods on this page."/>
+      <div className=" rounded-lg flex justify-between  ">
         {/* Contact Form Section */}
-        <div className="space-y-6">
+        <div className="space-y-6 w-[70%]">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="first-name">First Name</Label>
@@ -46,7 +49,7 @@ export default function Component() {
         </div>
 
         {/* Contact Information Section */}
-        <div className="space-y-6 md:pl-8">
+        <div className="space-y-6 [20%]">
           <h2 className="text-xl font-semibold text-gray-800">Contract Information</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
