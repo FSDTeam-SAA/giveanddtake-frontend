@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserPlus, Search, Briefcase } from "lucide-react"
+import Image from "next/image"
 
 export function HowItWorksSection() {
   return (
@@ -19,7 +20,8 @@ export function HowItWorksSection() {
         <div className="grid gap-8 md:grid-cols-3 mt-12">
           <Card className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-4">
-              <UserPlus className="h-12 w-12 text-v0-blue-500" />
+             
+              <Image src="/assets/user.png" alt="UserPlus" width={1000} height={1000} className="h-[83px] w-[83px]" />
             </CardHeader>
             <CardContent className="space-y-2">
               <CardTitle className="text-xl font-semibold">Create Account</CardTitle>
@@ -30,7 +32,7 @@ export function HowItWorksSection() {
           </Card>
           <Card className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-4">
-              <Search className="h-12 w-12 text-v0-blue-500" />
+               <Image src="/assets/explor.png" alt="UserPlus" width={1000} height={1000} className="h-[83px] w-[83px]" />
             </CardHeader>
             <CardContent className="space-y-2">
               <CardTitle className="text-xl font-semibold">Explore Our Jobs</CardTitle>
@@ -39,7 +41,7 @@ export function HowItWorksSection() {
           </Card>
           <Card className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="pb-4">
-              <Briefcase className="h-12 w-12 text-v0-blue-500" />
+                <Image src="/assets/chair.png" alt="UserPlus" width={1000} height={1000} className="h-[83px] w-[83px]" />
             </CardHeader>
             <CardContent className="space-y-2">
               <CardTitle className="text-xl font-semibold">Get A Job</CardTitle>
