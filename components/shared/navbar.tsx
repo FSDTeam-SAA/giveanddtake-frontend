@@ -19,7 +19,7 @@ import {
   ArrowRight,
   LogOut,
 } from "lucide-react";
-import { ScrollingInfoBar } from "./scrolling-info-bar"
+import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { useSession, signOut } from "next-auth/react";
 
 export function SiteHeader() {
@@ -31,7 +31,7 @@ export function SiteHeader() {
       <div className=" container flex h-16 items-center justify-between px-4 md:px-6 border-b">
         {/* Left Section: Logo */}
         <div className="flex items-center gap-4">
-          <Link href="#" className="flex items-center gap-2 font-bold text-lg">
+          <Link href="/" className="flex items-center gap-2 font-bold text-lg">
             <div className="w-8 h-8 bg-blue-500 rounded-md" />
             YOUR LOGO
           </Link>
@@ -40,7 +40,7 @@ export function SiteHeader() {
         {/* Middle Section: Navigation Links (hidden on small screens) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
           <Link
-            href="#"
+            href="/"
             className="text-blue-500 hover:text-blue-600 transition-colors"
           >
             Home
@@ -48,10 +48,13 @@ export function SiteHeader() {
           <Link href="#" className="hover:text-blue-500 transition-colors">
             All Jobs
           </Link>
-          <Link href="/elevator-pitch-resume" className="hover:text-blue-500 transition-colors">
+          <Link
+            href="/elevator-pitch-resume"
+            className="hover:text-blue-500 transition-colors"
+          >
             Elevator Pitch & Resume
           </Link>
-          <Link href="#" className="hover:text-blue-500 transition-colors">
+          <Link href="/blog" className="hover:text-blue-500 transition-colors">
             Blog
           </Link>
           <DropdownMenu>
@@ -65,17 +68,13 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem>
-                <Link href="/faq">
-                FAQ
-                </Link>
-                </DropdownMenuItem>
+                <Link href="/faq">FAQ</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <Link href="/contact-us">
-                Contact Us
-                </Link>
-                </DropdownMenuItem>
+                <Link href="/contact-us">Contact Us</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
@@ -89,17 +88,16 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem>
-                <Link href="/about-us">
-                About Us
-                </Link>
-                </DropdownMenuItem>
+                <Link href="/about-us">About Us</Link>
+              </DropdownMenuItem>
               <DropdownMenuItem>Careers</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem>
-                <Link href="/privacy-policy">
-                Privacy Policy
-                </Link>
-                </DropdownMenuItem>
+                <Link href="/privacy-policy">Privacy Policy</Link>
+              </DropdownMenuItem>
+                  <DropdownMenuItem>
+                <Link href="/terms-condition">Terms and Conditions</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
