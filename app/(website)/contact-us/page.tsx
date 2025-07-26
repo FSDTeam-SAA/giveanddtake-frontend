@@ -1,56 +1,195 @@
+'use client'
+import { useState } from "react"
+import { useMutation } from "@tanstack/react-query"
+import  toast  from "sonner"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Mail, Phone, MapPin, Clock, Search, Lock } from "lucide-react"
-import Page from "@/app/(auth)/verify/page"
 import PageHeaders from "@/components/shared/PageHeaders"
 
-export default function Component() {
+// Define interface for form data
+interface ContactFormData {
+  firstName: string
+  lastName: string
+  address: string
+  phoneNumber: string
+  subject: string
+  message: string
+}
+
+// Define interface for API response
+interface ApiResponse {
+  message: string
+}
+
+// API function with typed input and output
+const postContactData = async (formData: ContactFormData): Promise<ApiResponse> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/contact/contact-us`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(formData),
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to submit contact form")
+  }
+
+  return response.json()
+}
+
+export default function ContactForm() {
+  const [formData, setFormData] = useState<ContactFormData>({
+    firstName: "",
+    lastName: "",
+    address: "",
+    phoneNumber: "",
+    subject: "",
+    message: "",
+  })
+
+  const mutation = useMutation<ApiResponse, Error, ContactFormData>({
+    mutationFn: postContactData,
+    onSuccess: () => {
+      
+      setFormData({
+        firstName: "",
+        lastName: "",
+        address: "",
+        phoneNumber: "",
+        subject: "",
+        message: "",
+      })
+    },
+    onError: (error: Error) => {
+      // toast.error("Failed to send message. Please try again.", {
+      //   description: error.message,
+      //   duration: 5000,
+      // })
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    mutation.mutate(formData)
+  }
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { id, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [id]: value,
+    }))
+  }
+
   return (
-    <div className=" container ">
-      <PageHeaders title="Contact Us" description="If you have a suggestion, question, concern or comment, please reach out to us using our contact form or via the alternative contact methods on this page."/>
-      <div className=" rounded-lg flex justify-between  ">
+    <div className="container pb-[100px] mt-6">
+      <PageHeaders
+        title="Contact Us"
+        description="If you have a suggestion, question, concern or comment, please reach out to us using our contact form or via the alternative contact methods on this page."
+      />
+      <div className="rounded-lg flex justify-between">
         {/* Contact Form Section */}
-        <div className="space-y-6 w-[70%]">
+        <form onSubmit={handleSubmit} className="space-y-6 w-[70%]">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first-name">First Name</Label>
-              <Input id="first-name" placeholder="Enter Your First Name" />
+              <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="firstName">
+                First Name
+              </Label>
+              <Input
+                id="firstName"
+                placeholder="Enter Your First Name"
+                value={formData.firstName}
+                onChange={handleInputChange}
+                required
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="last-name">Last Name</Label>
-              <Input id="last-name" placeholder="Enter Your Last Name" />
+              <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="lastName">
+                Last Name
+              </Label>
+              <Input
+                id="lastName"
+                placeholder="Enter Your Last Name"
+                value={formData.lastName}
+                onChange={handleInputChange}
+                required
+              />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
+            <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="address">
+              Address
+            </Label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <Input id="address" placeholder="" className="pl-10" />
+              <Input
+                id="address"
+                placeholder="Enter Your Address"
+                className="pl-10"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+              />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="phone-number">Phone Number</Label>
+            <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="phoneNumber">
+              Phone Number
+            </Label>
             <div className="relative">
-              <Input id="phone-number" placeholder="Optional" className="pr-10" />
+              <Input
+                id="phoneNumber"
+                placeholder="Optional"
+                className="pr-10"
+                value={formData.phoneNumber}
+                onChange={handleInputChange}
+              />
               <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject</Label>
-            <Input id="subject" placeholder="What is this regarding?" />
+            <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="subject">
+              Subject
+            </Label>
+            <Input
+              id="subject"
+              placeholder="What is this regarding?"
+              value={formData.subject}
+              onChange={handleInputChange}
+              required
+            />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="message">You Message</Label>
-            <Textarea id="message" placeholder="Tell us how we can help you" className="min-h-[120px]" />
+            <Label className="text-[#2A2A2A] text-[16px] font-medium" htmlFor="message">
+              Your Message
+            </Label>
+            <Textarea
+              id="message"
+              placeholder="Tell us how we can help you"
+              className="min-h-[120px]"
+              value={formData.message}
+              onChange={handleInputChange}
+              required
+            />
           </div>
-          <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Send Message</Button>
-        </div>
+          <Button
+            type="submit"
+            className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 text-white"
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? "Sending..." : "Send Message"}
+          </Button>
+        </form>
 
         {/* Contact Information Section */}
-        <div className="space-y-6 [20%]">
-          <h2 className="text-xl font-semibold text-gray-800">Contract Information</h2>
+        <div className="space-y-6 w-[20%]">
+          <h2 className="text-xl font-semibold text-gray-800">Contact Information</h2>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600">

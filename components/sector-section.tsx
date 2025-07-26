@@ -1,16 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Settings, Building, Home, TrendingUp, Banknote, Network, Utensils, Shield } from "lucide-react"
+import Image from "next/image"
 
 export function SectorSection() {
   const sectors = [
-    { name: "Technical Support", icon: Settings },
-    { name: "Business Development", icon: Building },
-    { name: "Real Estate Business", icon: Home },
-    { name: "Share Market Analysis", icon: TrendingUp },
-    { name: "Finance & Banking Service", icon: Banknote },
-    { name: "IT & Networking Services", icon: Network },
-    { name: "Restaurant Services", icon: Utensils },
-    { name: "Defence & Fire Service", icon: Shield },
+    { name: "Technical Support", icon: "/assets/1.png"},
+    { name: "Business Development",icon: "/assets/2.png"},
+    { name: "Real Estate Business", icon: "/assets/3.png"},
+    { name: "Share Market Analysis", icon: "/assets/4.png" },
+    { name: "Finance & Banking Service", icon: "/assets/5.png" },
+    { name: "IT & Networking Services",icon: "/assets/6.png"},
+    { name: "Restaurant Services", icon: "/assets/7.png" },
+    { name: "Defence & Fire Service",icon: "/assets/8.png"},
   ]
 
   return (
@@ -27,7 +28,7 @@ export function SectorSection() {
                 className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow"
               >
                 <CardHeader className="pb-4">
-                  <Icon className="h-12 w-12 text-v0-blue-500" />
+                 <Image src={sector.icon} alt={sector.name} width={100} height={100} className="h-[64px] w-[64px]" />
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <CardTitle className="text-lg font-semibold">{sector.name}</CardTitle>
