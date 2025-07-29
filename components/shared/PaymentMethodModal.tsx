@@ -106,7 +106,7 @@ export function PaymentMethodModal({ isOpen, onClose, price }: PaymentMethodModa
           </Button>
         
         </DialogFooter>
-          <p className="text-center text-sm text-gray-500 mt-2">Other Payment Methods Coming Soon!</p>
+          {/* <p className="text-center text-sm text-gray-500 mt-2">Other Payment Methods Coming Soon!</p> */}
       </DialogContent>
     </Dialog>
   );

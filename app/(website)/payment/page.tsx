@@ -122,14 +122,14 @@ const PayPalCheckoutContent = () => {
             </p>
           </div>
           <div className="flex items-center gap-4 mb-4">
-            <div className="relative w-16 h-10">
-              <Image src="/assets/visa.png" alt="Visa card" fill className="object-contain" />
+            <div className="relative ">
+              <Image src="/assets/visa.png" alt="Visa card" width={80} height={40} className="" />
             </div>
-            <div className="relative w-16 h-10">
-              <Image src="/assets/paypal.png" alt="PayPal logo" fill className="object-contain" />
+            <div className="relative ">
+              <Image src="/assets/paypal.png" alt="PayPal logo" width={100} height={100} className="" />
             </div>
-            <div className="relative w-16 h-10">
-              <Image src="/assets/master.png" alt="Mastercard" fill className="object-contain" />
+            <div className="relative ">
+              <Image src="/assets/master.png" alt="Mastercard" width={80} height={40} className="" />
             </div>
           </div>
         </div>
