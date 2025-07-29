@@ -1,10 +1,52 @@
+
+
 "use client"
 
-import { SetStateAction, useState } from "react"
+import { useState } from "react"
 import { Check } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal"
+
+const plans = [
+  {
+    name: "BRONZE PLAN",
+    price: 4.99,
+    period: "Per Month",
+    description:
+      "Plan description: Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing, and web development.",
+    features: ["A 60-sec elevator pitch", "A free CV review and alteration online"],
+    buttonText: "Join with basic",
+    cardBgClass: "bg-white border border-gray-200",
+    nameColorClass: "text-[#2B7FD0]",
+    priceColorClass: "text-gray-900",
+    periodColorClass: "text-[#000000]",
+    descriptionColorClass: "text-[#8593A3]",
+    featureColorClass: "text-gray-700",
+    checkIconColorClass: "text-[#8593A3]",
+    buttonVariant: "outline",
+    buttonClass: "text-[#2B7FD0] border-[#2B7FD0] bg-transparent",
+  },
+  {
+    name: "GOLD PLAN",
+    price: 49.99,
+    period: "Per Year",
+    description:
+      "Plan description: Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing, and web development.",
+    features: ["A 60-sec elevator pitch", "A free CV review and alteration online"],
+    buttonText: "Get the premium",
+    cardBgClass: "bg-[#2B7FD0] border border-gray-200",
+    nameColorClass: "text-white",
+    priceColorClass: "text-white",
+    periodColorClass: "text-white",
+    descriptionColorClass: "text-white",
+    featureColorClass: "text-white",
+    checkIconColorClass: "text-white",
+    buttonVariant: "outline",
+    buttonClass: "text-[#282828] border-[#2B7FD0] bg-white",
+  },
+]
 
 export default function PricingList() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -25,65 +67,39 @@ export default function PricingList() {
         <p className="text-xl text-gray-600">For Elevator Pitch</p>
       </div>
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 w-[756px]">
-        {/* Bronze Plan Card */}
-        <Card className="flex flex-col p-8 rounded-xl shadow-lg w-full md:w-1/2 bg-white border border-gray-200">
-          <h2 className="text-base text-[#2B7FD0] font-medium uppercase tracking-wider text-left mb-4">BRONZE PLAN</h2>
-          <div className="flex items-start mb-4">
-            <span className="text-5xl font-bold text-gray-900">$4.99</span>
-            <span className="text-base text-[#000000] ml-2">Per Month</span>
-          </div>
-          <p className="text-[#8593A3] text-base font-bold text-right mb-6">What the user will get</p>
-          <p className="text-[#8593A3] text-base mb-8 w-[298px]">
-            Plan description: Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing,
-            and web development.
-          </p>
-          <ul className="space-y-4 mb-8 w-full">
-            <li className="flex items-center text-gray-700">
-              <Check className="w-5 h-5 text-[#8593A3] mr-2" />A 60-sec elevator pitch
-            </li>
-            <li className="flex items-center text-gray-700">
-              <Check className="w-5 h-5 text-[#8593A3] mr-2" />A free CV review and alteration online
-            </li>
-          </ul>
-          <Button
-            variant="outline"
-            className="w-full max-w-xs py-6 text-bronzeBlue border-bronzeBlue rounded-[80px] text-[18px] font-semibold bg-transparent"
-            onClick={() => handleOpenModal(4.99)}
-          >
-            Join with basic
-          </Button>
-        </Card>
-        {/* Gold Plan Card */}
-        <Card className="flex flex-col p-8 rounded-xl shadow-lg w-full md:w-1/2 bg-[#2B7FD0] border border-gray-200">
-          <h2 className="text-base text-white font-medium uppercase tracking-wider text-left mb-4">GOLD PLAN</h2>
-          <div className="flex items-start mb-4">
-            <span className="text-5xl font-bold text-white">$49.99</span>
-            <span className="text-base text-white ml-2">Per Year</span>
-          </div>
-          <p className="text-white text-base font-bold text-right mb-6">What the user will get</p>
-          <p className="text-white text-base mb-8 w-[298px]">
-            Plan description: Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing,
-            and web development.
-          </p>
-          <ul className="space-y-4 mb-8 w-full">
-            <li className="flex items-center text-white">
-              <Check className="w-5 h-5 text-white mr-2" />A 60-sec elevator pitch
-            </li>
-            <li className="flex items-center text-white">
-              <Check className="w-5 h-5 text-white mr-2" />A free CV review and alteration online
-            </li>
-          </ul>
-          <Button
-            variant="outline"
-            className="w-full max-w-xs py-6 text-[#282828] border-bronzeBlue rounded-[80px] text-[18px] font-semibold bg-white"
-            onClick={() => handleOpenModal(49.99)}
-          >
-            Get the premium
-          </Button>
-        </Card>
+        {plans.map((plan, index) => (
+          <Card key={index} className={`flex flex-col p-8 rounded-xl shadow-lg w-full md:w-1/2 ${plan.cardBgClass}`}>
+            <h2 className={`text-base font-medium uppercase tracking-wider text-left mb-4 ${plan.nameColorClass}`}>
+              {plan.name}
+            </h2>
+            <div className="flex items-start mb-4">
+              <span className={`text-5xl font-bold ${plan.priceColorClass}`}>${plan.price}</span>
+              <span className={`text-base ml-2 ${plan.periodColorClass}`}>{plan.period}</span>
+            </div>
+            <p className={`text-base font-bold text-right mb-6 ${plan.descriptionColorClass}`}>
+              What the user will get
+            </p>
+            <p className={`text-base mb-8 w-[298px] ${plan.descriptionColorClass}`}>{plan.description}</p>
+            <ul className="space-y-4 mb-8 w-full">
+              {plan.features.map((feature, featureIndex) => (
+                <li key={featureIndex} className={`flex items-center gap-2 ${plan.featureColorClass}`}>
+                  <div className=" bg-[#2B7FD0] rounded-full w-[21px] h-[21px] ">
+                  <Check className={`w-5 h-5 mr-2 text-white `} />
+                  </div>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <Button
+              variant={plan.buttonVariant as "outline"}
+              className={`w-full max-w-xs py-6 rounded-[80px] text-[18px] font-semibold `}
+              onClick={() => handleOpenModal(plan.price)}
+            >
+              {plan.buttonText}
+            </Button>
+          </Card>
+        ))}
       </div>
-
-      {/* Payment Method Modal controlled by PricingList state */}
       <PaymentMethodModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
