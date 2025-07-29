@@ -75,7 +75,7 @@ export default function PricingList() {
           </ul>
           <Button
             variant="outline"
-            className="w-full max-w-xs py-6 text-[#282828] border-bronzeBlue rounded-[80px] text-[18px] font-semibold bg-transparent"
+            className="w-full max-w-xs py-6 text-[#282828] border-bronzeBlue rounded-[80px] text-[18px] font-semibold bg-white"
             onClick={() => handleOpenModal(49.99)}
           >
             Get the premium
