@@ -1,6 +1,9 @@
+
+
+
 "use client";
 
-import { Check, CheckCircle2 } from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,139 +14,92 @@ import {
 } from "@/components/ui/card";
 import { useState } from "react";
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal";
+import { useQuery } from "@tanstack/react-query";
 
 interface Feature {
   text: string;
 }
 
 interface Plan {
+  _id: string;
+  title: string;
+  description: string;
+  price: number;
+  features: string[];
+  for: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: Plan[];
+}
+
+const fetchRecruiterPlans = async (): Promise<Plan[]> => {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/subscription/plans`);
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+  const data: ApiResponse = await response.json();
+  return data.data.filter((plan) => plan.for === "recruiter");
+};
+
+const transformApiPlanToLocalPlan = (apiPlan: Plan): {
   name: string;
+  description?: string;
   monthlyPrice?: string;
   annualPrice?: string;
-  description?: string;
   features: Feature[];
   buttonText: string;
   planId: string;
-}
+} => {
+  // Determine if this is a pay-as-you-go plan (only price, no monthly/annual)
+  const isPayAsYouGo = apiPlan.title.toLowerCase().includes("pay as you go");
+  
+  if (isPayAsYouGo) {
+    return {
+      name: apiPlan.title,
+      description: `$${apiPlan.price} per Job Advert (30 Days Post)`,
+      features: apiPlan.features.map(feature => ({
+        text: feature
+      })),
+      buttonText: "Sign up",
+      planId: apiPlan._id
+    };
+  }
 
-const plans: Plan[] = [
-  {
-    name: "Pay as You Go",
-    description: "$99.99 per Job Advert (30 Days Post)",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Enjoy seamless job posting amendments/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "Update job applicants promptly" },
-    ],
-    buttonText: "Sign up",
-    planId: "pay_as_you_go",
-  },
-  {
-    name: "BASIC PLAN",
-    monthlyPrice: "$190.99 per month",
-    annualPrice: "$2,100.89 per annum",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Up to 24 job posts per annual cycle" },
-      { text: "Enjoy seamless job posting amendments/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "View elevator video pitches of all job applicants" },
-      { text: "Update job applicants promptly" },
-      { text: "12 months for the price of 11 Months!" },
-    ],
-    buttonText: "Sign up to basic",
-    planId: "basic_plan",
-  },
-  {
-    name: "BRONZE PLAN",
-    monthlyPrice: "$270.99 per month",
-    annualPrice: "$2,969.99 per annum",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Up to 36 job posts per annual cycle" },
-      { text: "Enjoy seamless job posting amendment/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "View elevator video pitches of all job applicants" },
-      { text: "Update job applicants promptly" },
-      { text: "12 months for the price of 11 Months!" },
-    ],
-    buttonText: "Sign up to bronze",
-    planId: "bronze_plan",
-  },
-  {
-    name: "SILVER PLAN",
-    monthlyPrice: "$352.99 per month",
-    annualPrice: "$3,882.89 per annum",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Up to 48 job posts per annual cycle" },
-      { text: "Enjoy seamless job posting amendment/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "View elevator video pitches of all job applicants" },
-      { text: "Update job applicants promptly" },
-      { text: "12 months for the price of 11 Months!" },
-    ],
-    buttonText: "Sign up to silver",
-    planId: "silver_plan",
-  },
-  {
-    name: "GOLD PLAN",
-    monthlyPrice: "$425.99 per month",
-    annualPrice: "$4,685.99 per year",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Up to 60 job posts per annual cycle" },
-      { text: "Enjoy seamless job posting amendments/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "View elevator video pitches of all job applicants" },
-      { text: "Update job applicants promptly" },
-      { text: "12 months for the price of 11 Months!" },
-    ],
-    buttonText: "Sign up to gold",
-    planId: "gold_plan",
-  },
-  {
-    name: "PLATINUM PLAN",
-    monthlyPrice: "$999.99 per month",
-    annualPrice: "$10,999.89 per year",
-    features: [
-      { text: "First post free!" },
-      { text: "Recruiter's 180-Second Elevator Video Pitch" },
-      { text: "Unlimited job posts per annual cycle" },
-      { text: "Enjoy seamless job posting amendment/closure/reopening" },
-      { text: "Schedule your job post" },
-      { text: "Initial video screening of job applicants" },
-      { text: "View elevator video pitches of all job applicants" },
-      { text: "Update job applicants promptly" },
-      { text: "12 months for the price of 11 Months!" },
-    ],
-    buttonText: "Sign up to platinum",
-    planId: "platinum_plan",
-  },
-];
+  // For subscription plans with monthly/annual pricing
+  return {
+    name: apiPlan.title,
+    monthlyPrice: `$${apiPlan.price} per month`,
+    // annualPrice: `$${("").toFixed(2)} per annum`,
+    features: apiPlan.features.map(feature => ({
+      text: feature
+    })),
+    buttonText: `Sign up to ${apiPlan.title.toLowerCase().split(' ')[0]}`,
+    planId: apiPlan._id
+  };
+};
 
 export default function PricingPlans() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [showPlanOptions, setShowPlanOptions] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<ReturnType<typeof transformApiPlanToLocalPlan> | null>(null);
 
-  const handlePlanSelect = (plan: Plan) => {
+  const { data: apiPlans, isLoading, error } = useQuery({
+    queryKey: ["recruiterPlans"],
+    queryFn: fetchRecruiterPlans
+  });
+
+  const handlePlanSelect = (plan: ReturnType<typeof transformApiPlanToLocalPlan>) => {
     if (!plan.monthlyPrice) {
       // For Pay as You Go - extract price keeping the decimal point
       const priceMatch = plan.description?.match(/\$(\d+\.\d{2})/);
-      setSelectedPrice(priceMatch ? priceMatch[1] : "99.99");
+      setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
       setSelectedPlan(plan);
       setIsModalOpen(true);
     } else {
@@ -155,16 +111,47 @@ export default function PricingPlans() {
   const handlePaymentOptionSelect = (isMonthly: boolean) => {
     if (selectedPlan) {
       // Extract price keeping the decimal point
-      const priceStr = isMonthly
-        ? selectedPlan.monthlyPrice
-        : selectedPlan.annualPrice;
-      const priceMatch = priceStr?.match(/\$?(\d+,\d{3}\.\d{2}|\d+\.\d{2})/);
-      const priceValue = priceMatch ? priceMatch[1].replace(/,/g, "") : "0.00";
+      const priceStr = isMonthly ? selectedPlan.monthlyPrice : selectedPlan.annualPrice;
+      const priceMatch = priceStr?.match(/\$?(\d+\.\d{2})/);
+      const priceValue = priceMatch ? priceMatch[1] : "0.00";
       setSelectedPrice(priceValue);
       setIsModalOpen(true);
       setShowPlanOptions(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold">Loading plans...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold text-red-500">Error loading plans</h1>
+          <p className="text-gray-600">{(error as Error).message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!apiPlans || apiPlans.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold">No recruiter plans available</h1>
+        </div>
+      </div>
+    );
+  }
+
+  const pricingPlans = apiPlans.map(transformApiPlanToLocalPlan);
 
   return (
     <div>
@@ -209,17 +196,17 @@ export default function PricingPlans() {
 
         {/* Pricing Cards */}
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.map((plan, index) => (
+          {pricingPlans.map((plan, index) => (
             <Card
               key={index}
               className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden"
             >
               <CardHeader className="p-6 pb-0">
                 <CardTitle
-                  className={`font-midium   ${
-                    plan.name === "Pay as You Go"
+                  className={`font-midium ${
+                    plan.name.toLowerCase().includes("pay as you go")
                       ? "text-gray-800"
-                      : " text-base text-[#2B7FD0]"
+                      : "text-base text-[#2B7FD0]"
                   }`}
                 >
                   {plan.name}
@@ -240,12 +227,12 @@ export default function PricingPlans() {
                 </div>
               </CardHeader>
               <CardContent className="p-6 pt-4 flex-grow">
-                <h3 className="font-midium text-base text-[#8593A3]0 mb-3">
+                <h3 className="font-midium text-base text-[#8593A3] mb-3">
                   What you will get
                 </h3>
                 <ul className="space-y-2">
                   {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start gap-2 ">
+                    <li key={featureIndex} className="flex items-start gap-2">
                       <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
                         <Check className="h-5 w-5 flex-shrink-0 text-white" />
                       </div>
@@ -257,12 +244,6 @@ export default function PricingPlans() {
                 </ul>
               </CardContent>
               <CardFooter className="p-6 pt-0">
-                {/* <Button 
-                className="w-full py-2 rounded-md bg-white text-base text-[#8593A3] font-medium"
-                onClick={() => handlePlanSelect(plan)}
-              >
-                {plan.buttonText}
-              </Button> */}
                 <Button
                   className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
                   variant="outline"
@@ -280,7 +261,7 @@ export default function PricingPlans() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           price={selectedPrice || ""}
-          // planId={selectedPlan?.planId || ""}
+          planId={selectedPlan?.planId || ""}
         />
       </div>
     </div>
