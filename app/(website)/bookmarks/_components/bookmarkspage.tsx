@@ -3,10 +3,10 @@
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Briefcase } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 interface Job {
   _id: string;
@@ -51,18 +51,14 @@ export default function BookmarksPage() {
     },
   });
 
-
   const bookmarkMutation = useMutation({
     mutationFn: async (jobId: string) => {
       setSubmittingId(jobId);
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, jobId }),
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, jobId }),
+      });
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       return json;
@@ -141,47 +137,47 @@ export default function BookmarksPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {data.map((bookmark) => (
-            <Card key={bookmark._id} className="relative">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                      49
+            <Link key={bookmark._id} href={`/alljobs/${bookmark.jobId._id}`}>
+              <Card key={bookmark._id} className="relative">
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                        49
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#595959]">
+                        {bookmark.jobId.title}
+                      </h3>
                     </div>
-                    <h3 className="text-lg font-semibold text-[#595959]">
-                      {bookmark.jobId.title}
-                    </h3>
+                    <button
+                      onClick={() => handleToggleBookmark(bookmark.jobId._id)}
+                      disabled={
+                        submittingId === bookmark.jobId._id ||
+                        data?.some((b) => b.jobId._id === bookmark.jobId._id)
+                      }
+                      className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3] "
+                    >
+                      <Heart className="w-6 h-6 text-white fill-white" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleToggleBookmark(bookmark.jobId._id)}
-                    disabled={
-                      submittingId === bookmark.jobId._id ||
-                      data?.some((b) => b.jobId._id === bookmark.jobId._id)
-                    }
-                    className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3] "
-                  >
-                    <Heart className="w-6 h-6 text-white fill-white" />
-                  </button>
-                </div>
 
-                <p className="text-[#707070] text-sm mb-6 leading-relaxed">
-                  {bookmark.jobId.description.length > 120
-                    ? `${bookmark.jobId.description.slice(0, 120)}...`
-                    : bookmark.jobId.description}
-                </p>
+                  <p className="text-[#707070] text-sm mb-6 leading-relaxed">
+                    {bookmark.jobId.description.length > 120
+                      ? `${bookmark.jobId.description.slice(0, 120)}...`
+                      : bookmark.jobId.description}
+                  </p>
 
-                <div className="flex items-center justify-between gap-3 ">
-                  <button
-                    className="text-black text-[16px] font-medium"
-                  >
-                    View Job
-                  </button>
-                  <button className="text-[#039B06] text-[16px] font-medium">
-                    Apply Now
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center justify-between gap-3 ">
+                    <button className="text-black text-[16px] font-medium">
+                      View Job
+                    </button>
+                    <button className="text-[#039B06] text-[16px] font-medium">
+                      Apply Now
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
