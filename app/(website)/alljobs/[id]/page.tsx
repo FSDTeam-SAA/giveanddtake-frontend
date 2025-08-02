@@ -1,0 +1,48 @@
+import JobDetails from "../_components/job-details";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+
+interface PageProps {
+  params: { id: string };
+}
+
+export default function Page({ params }: PageProps) {
+  return (
+    <div>
+      <div
+        style={{ backgroundImage: "url('/assets/jobsDetails.jpg')" }}
+        className="bg-cover bg-center py-16"
+      >
+        <div className="container mx-auto px-4 text-white">
+          <h1 className="text-4xl font-bold mb-4">Browse Jobs</h1>
+          <p className="text-lg mb-6 max-w-3xl">
+            Browse our curated job openings across industries and locations. Use
+            smart filters to find roles that match your skills, experience, and
+            career goals—your next opportunity starts here.
+          </p>
+
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href="/" className="text-white">
+                  Home
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-white" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-white">Job Details</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+      </div>
+      <JobDetails jobId={params.id} />
+    </div>
+  );
+}
