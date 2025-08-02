@@ -148,7 +148,7 @@ export default function BookmarksPage() {
                     <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                       49
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
+                    <h3 className="text-lg font-semibold text-[#595959]">
                       {bookmark.jobId.title}
                     </h3>
                   </div>
@@ -164,7 +164,7 @@ export default function BookmarksPage() {
                   </button>
                 </div>
 
-                <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                <p className="text-[#707070] text-sm mb-6 leading-relaxed">
                   {bookmark.jobId.description.length > 120
                     ? `${bookmark.jobId.description.slice(0, 120)}...`
                     : bookmark.jobId.description}
@@ -172,11 +172,11 @@ export default function BookmarksPage() {
 
                 <div className="flex items-center justify-between gap-3 ">
                   <button
-                    className="text-[#039B06]  text-[16px] font-medium"
+                    className="text-black text-[16px] font-medium"
                   >
                     View Job
                   </button>
-                  <button className="text-black text-[16px] font-medium">
+                  <button className="text-[#039B06] text-[16px] font-medium">
                     Apply Now
                   </button>
                 </div>
