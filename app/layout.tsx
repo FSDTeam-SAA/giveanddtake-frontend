@@ -3,6 +3,7 @@ import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,6 +30,7 @@ export default function RootLayout({
           data-sdk-integration-source="button-factory"
           strategy="afterInteractive"
         />
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );
