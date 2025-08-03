@@ -342,18 +342,35 @@ export default function CreateResumeForm() {
                     </Card>
 
                     {/* About Us */}
-                    <Card>
-                        <CardContent className="pt-6">
+                    <Card className="border-none">
+                        <CardContent className="pt-6 flex items-start gap-8">
+                            {/* Photo Upload */}
+                            <div className="mt-6">
+                                <div className="flex items-start gap-4 mt-2">
+                                    <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                                        {photoPreview ? (
+                                            <img
+                                                src={photoPreview || "/placeholder.svg"}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover rounded-lg"
+                                            />
+                                        ) : (
+                                            <Upload className="h-8 w-8 text-gray-400" />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                             <FormField
                                 control={form.control}
                                 name="aboutUs"
+
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="flex-1">
                                         <FormLabel>About Us*</FormLabel>
                                         <FormControl>
                                             <Textarea
                                                 placeholder="Write your description here and tell us"
-                                                className="min-h-[120px]"
+                                                className="min-h-[200px]"
                                                 {...field}
                                             />
                                         </FormControl>
@@ -367,7 +384,7 @@ export default function CreateResumeForm() {
                     {/* Personal Information */}
                     <Card>
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
                                 <FormField
                                     control={form.control}
                                     name="title"
@@ -422,6 +439,37 @@ export default function CreateResumeForm() {
 
                                 <FormField
                                     control={form.control}
+                                    name="country"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Country*</FormLabel>
+                                            <FormControl>
+                                                <Select
+                                                    onValueChange={(value: string) => {
+                                                        field.onChange(value)
+                                                        setSelectedCountry(value)
+                                                    }}
+                                                    defaultValue={field.value}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select Country" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {countries.map((country) => (
+                                                            <SelectItem key={country.country} value={country.country}>
+                                                                {country.country}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
                                     name="city"
                                     render={({ field }) => (
                                         <FormItem>
@@ -459,36 +507,7 @@ export default function CreateResumeForm() {
                                     )}
                                 />
 
-                                <FormField
-                                    control={form.control}
-                                    name="country"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Country*</FormLabel>
-                                            <FormControl>
-                                                <Select
-                                                    onValueChange={(value : string) => {
-                                                        field.onChange(value)
-                                                        setSelectedCountry(value)
-                                                    }}
-                                                    defaultValue={field.value}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select Country" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {countries.map((country) => (
-                                                            <SelectItem key={country.country} value={country.country}>
-                                                                {country.country}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+
 
                                 <FormField
                                     control={form.control}
@@ -593,30 +612,6 @@ export default function CreateResumeForm() {
                                             </FormItem>
                                         )}
                                     />
-                                </div>
-                            </div>
-
-                            {/* Photo Upload */}
-                            <div className="mt-6">
-                                <Label>Photo</Label>
-                                <div className="flex items-start gap-4 mt-2">
-                                    <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                                        {photoPreview ? (
-                                            <img
-                                                src={photoPreview || "/placeholder.svg"}
-                                                alt="Preview"
-                                                className="w-full h-full object-cover rounded-lg"
-                                            />
-                                        ) : (
-                                            <Upload className="h-8 w-8 text-gray-400" />
-                                        )}
-                                    </div>
-                                    <Label htmlFor="photo" className="cursor-pointer">
-                                        <Button type="button" variant="outline">
-                                            Choose File
-                                        </Button>
-                                        <Input id="photo" type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                                    </Label>
                                 </div>
                             </div>
                         </CardContent>
