@@ -11,8 +11,8 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     const session = await getSession();
-    if (session?.user?.accessToken) {
-      config.headers.Authorization = `Bearer ${session.user.accessToken}`;
+    if (session?.accessToken) {
+      config.headers.Authorization = `Bearer ${session.accessToken}`;
     }
     return config;
   },
@@ -135,9 +135,27 @@ export async function uploadElevatorPitch({
 }
 
 // Create Resume API
-export async function createResume(data: any) {
-  const response = await apiClient.post("/create-resume/create-resume", data);
-  return response.data;
+export async function createResume(data: FormData) {
+  try {
+    const response = await apiClient.post("/create-resume/create-resume", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    })
+    console.log("Resume creation successful: ", response)
+    return response.data
+  } catch (error) {
+    console.error("Error in createResume API call:", error)
+    throw error
+  }
+}
+
+
+
+// Get my resume 
+export async function getMyResume() {
+  const res = await apiClient.get('/create-resume/get-resume')
+  return res.data
 }
 
 export default apiClient;

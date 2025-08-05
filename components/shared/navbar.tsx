@@ -13,10 +13,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Bell, MessageCircle, Menu, ChevronDown, ArrowRight, LogOut } from "lucide-react"
 import { ScrollingInfoBar } from "./scrolling-info-bar"
 import { useSession, signOut } from "next-auth/react"
+import { usePathname } from "next/navigation"
 
 export function SiteHeader() {
   const { data: session, status } = useSession()
-  console.log("Session data:", session)
+  const pathname = usePathname()
+  // console.log("Session data:", session)
 
   const userRole = session?.user?.role // 'candidate', 'recruiter', 'company'
 
@@ -36,6 +38,11 @@ export function SiteHeader() {
     return userRole === "candidate" ? "/account" : "/dashboard"
   }
 
+  // Helper function to check if a link is active
+  const isActive = (href: string) => {
+    return pathname === href
+  }
+
   return (
     <header className="w-full">
       {/* Top Navbar */}
@@ -50,53 +57,69 @@ export function SiteHeader() {
 
         {/* Middle Section: Navigation Links (hidden on small screens) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-          <Link href="/" className="text-blue-500 hover:text-blue-600 transition-colors">
+          <Link 
+            href="/" 
+            className={`transition-colors ${isActive('/') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+          >
             Home
           </Link>
-          <Link href="#" className="hover:text-blue-500 transition-colors">
+          <Link 
+            href="/alljobs" 
+            className={`transition-colors ${isActive('/alljobs') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+          >
             All Jobs
           </Link>
           {userRole === "candidate" && (
-            <Link href="/elevator-pitch-resume" className="hover:text-blue-500 transition-colors">
+            <Link 
+              href="/elevator-pitch-resume" 
+              className={`transition-colors ${isActive('/elevator-pitch-resume') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+            >
               Elevator Pitch & Resume
             </Link>
           )}
-          <Link href="/blog" className="hover:text-blue-500 transition-colors">
+          <Link 
+            href="/blog" 
+            className={`transition-colors ${isActive('/blog') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+          >
             Blog
           </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto p-0 text-sm font-medium hover:text-blue-500 transition-colors">
+              <Button variant="ghost" className={`h-auto p-0 text-sm font-medium transition-colors ${pathname.startsWith('/help') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}>
                 Help & Info <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/faq') ? 'text-[#2B7FD0]' : ''}>
                 <Link href="/faq">FAQ</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/support') ? 'text-[#2B7FD0]' : ''}>
+                <Link href="/support">Support</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/contact-us') ? 'text-[#2B7FD0]' : ''}>
                 <Link href="/contact-us">Contact Us</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-auto p-0 text-sm font-medium hover:text-blue-500 transition-colors">
+              <Button variant="ghost" className={`h-auto p-0 text-sm font-medium transition-colors ${pathname.startsWith('/more') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}>
                 More <ChevronDown className="ml-1 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/about-us') ? 'text-[#2B7FD0]' : ''}>
                 <Link href="/about-us">About Us</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>Careers</DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/careers') ? 'text-[#2B7FD0]' : ''}>
+                <Link href="/careers">Careers</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/privacy-policy') ? 'text-[#2B7FD0]' : ''}>
                 <Link href="/privacy-policy">Privacy Policy</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem className={isActive('/terms-condition') ? 'text-[#2B7FD0]' : ''}>
                 <Link href="/terms-condition">Terms and Conditions</Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -127,12 +150,12 @@ export function SiteHeader() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {(userRole === "recruiter" || userRole === "company") && (
-                    <DropdownMenuItem>
+                    <DropdownMenuItem className={isActive(getDashboardLink()) ? 'text-[#2B7FD0]' : ''}>
                       <Link href={getDashboardLink()}>Dashboard</Link>
                     </DropdownMenuItem>
                   )}
                   {userRole === "candidate" && (
-                    <DropdownMenuItem>
+                    <DropdownMenuItem className={isActive(getProfileLink()) ? 'text-[#2B7FD0]' : ''}>
                       <Link href={getProfileLink()} className="cursor-pointer">Profile</Link>
                     </DropdownMenuItem>
                   )}
@@ -145,7 +168,9 @@ export function SiteHeader() {
             </>
           ) : (
             <Link href="/login">
-              <Button className="bg-blue-500 hover:bg-blue-600 text-white">Login</Button>
+              <Button className={`bg-blue-500 hover:bg-blue-600 text-white ${isActive('/login') ? 'bg-[#2B7FD0]' : ''}`}>
+                Login
+              </Button>
             </Link>
           )}
           <Sheet>
@@ -161,24 +186,42 @@ export function SiteHeader() {
                 YOUR LOGO
               </Link>
               <nav className="grid gap-4 text-sm font-medium">
-                <Link href="#" className="hover:text-blue-500 transition-colors">
+                <Link 
+                  href="/" 
+                  className={`transition-colors ${isActive('/') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                >
                   Home
                 </Link>
-                <Link href="#" className="hover:text-blue-500 transition-colors">
+                <Link 
+                  href="/alljobs" 
+                  className={`transition-colors ${isActive('/alljobs') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                >
                   All Jobs
                 </Link>
                 {userRole === "candidate" && (
-                  <Link href="/elevator-pitch-resume" className="hover:text-blue-500 transition-colors">
+                  <Link 
+                    href="/elevator-pitch-resume" 
+                    className={`transition-colors ${isActive('/elevator-pitch-resume') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                  >
                     Elevator Pitch & Resume
                   </Link>
                 )}
-                <Link href="#" className="hover:text-blue-500 transition-colors">
+                <Link 
+                  href="/blog" 
+                  className={`transition-colors ${isActive('/blog') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                >
                   Blog
                 </Link>
-                <Link href="#" className="hover:text-blue-500 transition-colors">
+                <Link 
+                  href="/faq" 
+                  className={`transition-colors ${isActive('/faq') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                >
                   Help & Info
                 </Link>
-                <Link href="#" className="hover:text-blue-500 transition-colors">
+                <Link 
+                  href="/about-us" 
+                  className={`transition-colors ${isActive('/about-us') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
+                >
                   More
                 </Link>
                 <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">

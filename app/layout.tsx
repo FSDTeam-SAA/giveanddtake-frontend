@@ -30,7 +30,7 @@ export default function RootLayout({
           data-sdk-integration-source="button-factory"
           strategy="afterInteractive"
         />
-        <Toaster position="top-center" richColors />
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
