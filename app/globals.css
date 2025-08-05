@@ -97,6 +97,6 @@ body {
 
 @layer components {
   .container {
-    @apply mx-auto max-w-[1240px] px-2 sm:px-6 lg:px-0;
+    @apply mx-auto max-w-[1440px] px-2 sm:px-6 lg:px-0;
   }
 }
