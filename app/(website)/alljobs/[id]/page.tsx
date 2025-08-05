@@ -36,13 +36,17 @@ export default function Page({ params }: PageProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="text-white" />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-white">Job Details</BreadcrumbPage>
+                <BreadcrumbPage className="text-white">
+                  Job Details
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
         </div>
       </div>
-      <JobDetails jobId={params.id} />
+      <div className="container mx-auto py-8">
+        <JobDetails jobId={params.id} />
+      </div>
     </div>
   );
 }

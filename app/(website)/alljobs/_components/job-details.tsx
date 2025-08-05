@@ -87,7 +87,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="">
         <div className="animate-pulse">
           {/* Header Skeleton */}
           <div className="mb-6">
@@ -168,7 +168,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const job = jobData.data
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="">
       {/* Header */}
       <div className="mb-6">
         <Button variant="ghost" onClick={onBack} className="mb-4">
