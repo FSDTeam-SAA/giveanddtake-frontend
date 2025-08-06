@@ -158,4 +158,29 @@ export async function getMyResume() {
   return res.data
 }
 
+// Get candidate applied jobs
+export async function getAppliedJobs(userId: string) {
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
+  return res.data
+}
+
+
+// Get recruiter jobs
+export async function getRecruiterJobs() {
+  const res = await apiClient.get(`/jobs/ricruiter/company`)
+  return res.data
+}
+
+// Get applications by job id
+export async function getApplicationsByJobId(jobId: string) {
+  const res = await apiClient.get(`/applied-jobs/job/${jobId}`)
+  return res.data
+}
+
+// Delete Job API
+export async function deleteJob(jobId: string) {
+  const res = await apiClient.delete(`/jobs/${jobId}`)
+  return res.data
+}
+
 export default apiClient;
