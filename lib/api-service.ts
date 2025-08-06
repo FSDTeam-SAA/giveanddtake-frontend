@@ -158,6 +158,13 @@ export async function getMyResume() {
   return res.data
 }
 
+
+// Get resume by user id
+export async function getResumeByUserId(userId: string) {
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
+  return res.data
+}
+
 // Get candidate applied jobs
 export async function getAppliedJobs(userId: string) {
   const res = await apiClient.get(`/applied-jobs/user/${userId}`)
