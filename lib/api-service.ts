@@ -97,7 +97,7 @@ export async function fetchCompanyDetails(userId: string) {
 
 // Fetch company jobs
 export async function fetchCompanyJobs() {
-  const response = await apiClient.get("/jobs/ricruiter/company");
+  const response = await apiClient.get("/jobs/recruiter/company");
   return response.data.data as Job[];
 }
 
@@ -174,7 +174,7 @@ export async function getAppliedJobs(userId: string) {
 
 // Get recruiter jobs
 export async function getRecruiterJobs() {
-  const res = await apiClient.get(`/jobs/ricruiter/company`)
+  const res = await apiClient.get(`/jobs/recruiter/company`)
   return res.data
 }
 
