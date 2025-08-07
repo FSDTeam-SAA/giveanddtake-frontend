@@ -40,6 +40,7 @@ const resumeSchema = z.object({
     country: z.string().optional(),
     aboutUs: z.string().min(1, "About section is required"),
     skills: z.array(z.string()).min(1, "At least one skill is required"),
+    website: z.string().url("Invalid URL").optional().or(z.literal("")),
     experiences: z.array(z.object({
         employer: z.string().min(1, "Employer is required"),
         jobTitle: z.string().min(1, "Job title is required"),
@@ -97,6 +98,7 @@ export default function CreateResumeForm() {
             phoneNumber: "",
             aboutUs: "",
             skills: [],
+            website: "",
             experiences: [{
                 employer: "",
                 jobTitle: "",
@@ -267,6 +269,7 @@ export default function CreateResumeForm() {
         // Prepare resume data according to backend model
         const resumeData = {
             firstName: data.firstName,
+            website: data.website,
             lastName: data.lastName,
             email: data.email,
             phoneNumber: data.phoneNumber,

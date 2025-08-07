@@ -97,7 +97,7 @@ export async function fetchCompanyDetails(userId: string) {
 
 // Fetch company jobs
 export async function fetchCompanyJobs() {
-  const response = await apiClient.get("/jobs/ricruiter/company");
+  const response = await apiClient.get("/jobs/recruiter/company");
   return response.data.data as Job[];
 }
 
@@ -155,6 +155,38 @@ export async function createResume(data: FormData) {
 // Get my resume 
 export async function getMyResume() {
   const res = await apiClient.get('/create-resume/get-resume')
+  return res.data
+}
+
+
+// Get resume by user id
+export async function getResumeByUserId(userId: string) {
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
+  return res.data
+}
+
+// Get candidate applied jobs
+export async function getAppliedJobs(userId: string) {
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
+  return res.data
+}
+
+
+// Get recruiter jobs
+export async function getRecruiterJobs() {
+  const res = await apiClient.get(`/jobs/recruiter/company`)
+  return res.data
+}
+
+// Get applications by job id
+export async function getApplicationsByJobId(jobId: string) {
+  const res = await apiClient.get(`/applied-jobs/job/${jobId}`)
+  return res.data
+}
+
+// Delete Job API
+export async function deleteJob(jobId: string) {
+  const res = await apiClient.delete(`/jobs/${jobId}`)
   return res.data
 }
 
