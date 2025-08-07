@@ -29,10 +29,8 @@ interface JobApplicationPageProps {
 
 export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const { data: session, status: sessionStatus } = useSession();
-  console.log("SSSSSSSSSSSSSS", session);
   const userId = session?.user?.id;
   const token = session?.accessToken;
-  console.log(token);
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [visaSponsorship, setVisaSponsorship] = useState<string | undefined>(
@@ -96,7 +94,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     },
   });
 
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: ["user", token],
     queryFn: async () => {
       const response = await fetch(
@@ -112,10 +110,8 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     },
   });
 
-  console.log(data);
   const userData = data?.data || {};
 
-  console.log(userData);
   const handleResumeSelection = (id: string) => {
     setResumes(resumes.map((r) => ({ ...r, selected: r.id === id })));
   };
@@ -199,27 +195,32 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   return (
     <div className="container mx-auto">
       <div className="">
-        <div className="flex items-center text-sm text-gray-500 my-6">
-          <Link href="/jobs" className="flex items-center hover:underline">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Jobs
-          </Link>
-          <span className="mx-2">{">"}</span>
-          <Link href="/alljobs" className="hover:underline">
-            All Jobs
-          </Link>
-          <span className="mx-2">{">"}</span>
-          <Link href={`/alljobs/${jobId}`} className="hover:underline">
-            Job Details
-          </Link>
-          <span className="mx-2">{">"}</span>
-          <span className="font-semibold text-gray-700">Job Application</span>
+        <div className="hidden md:block">
+          <div className="flex items-center text-[18px] text-gray-500 my-6 ">
+            <Link
+              href="/alljobs"
+              className="flex items-center hover:underline text-black"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Back to Jobs
+            </Link>
+            <span className="mx-2">{">"}</span>
+            <Link href="/alljobs" className="hover:underline">
+              All Jobs
+            </Link>
+            <span className="mx-2">{">"}</span>
+            <Link href={`/alljobs/${jobId}`} className="hover:underline">
+              Job Details
+            </Link>
+            <span className="mx-2">{">"}</span>
+            <span className="">Job Application</span>
+          </div>
         </div>
 
-        <h1 className="text-3xl text-center font-bold mb-8">Job Application</h1>
+        <h1 className="text-3xl text-center font-bold mb-8 mt-8 md:mt-0">Job Application</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
-          <div className="col-span-2">
+        <div className="grid grid-cols-8 gap-6">
+          <div className="col-span-8 lg:col-span-2">
             <div className="flex flex-col items-center text-center">
               <Image
                 src={
@@ -227,56 +228,87 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   "/placeholder.svg?height=120&width=120"
                 }
                 alt={userData.name || "User"}
-                width={120}
-                height={120}
-                className="rounded mb-4 object-cover"
+                width={500}
+                height={500}
+                className="rounded mb-4 object-cover w-[170px] h-[170px]"
               />
-              <div>
+              <div className="mb-4">
                 <h2 className="text-[40px] font-semibold">
                   {userData.name || "Unknown User"}
                 </h2>
-                <p className="text[#131313] text-[18px] font-normal">Product Designer</p>
+                <p className="text[#131313] text-[18px] font-normal">
+                  Product Designer
+                </p>
               </div>
-              <div className="flex gap-3 mb-6">
-                <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex gap-2">
+                  <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]">
                     <Link href="#" aria-label="LinkedIn">
-                  <Linkedin className="h-5 w-5 text-gray-500 hover:text-blue-600" />
-                </Link>
+                      <Linkedin className="h-5 w-5 text-gray-500 hover:text-blue-600" />
+                    </Link>
+                  </div>
+                  <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]">
+                    <Link href="#" aria-label="Twitter">
+                      <Twitter className="h-5 w-5 text-gray-500 hover:text-blue-400" />
+                    </Link>
+                  </div>
+                  <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]">
+                    <Link href="#" aria-label="Dribbble">
+                      <Dribbble className="h-5 w-5 text-gray-500 hover:text-pink-500" />
+                    </Link>
+                  </div>
+                  <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]">
+                    <Link href="#" aria-label="Facebook">
+                      <Facebook className="h-5 w-5 text-gray-500 hover:text-blue-700" />
+                    </Link>
+                  </div>
+                  <div className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]">
+                    <Link href="#" aria-label="Instagram">
+                      <Instagram className="h-5 w-5 text-gray-500 hover:text-purple-600" />
+                    </Link>
+                  </div>
                 </div>
-                <Link href="#" aria-label="Twitter">
-                  <Twitter className="h-5 w-5 text-gray-500 hover:text-blue-400" />
-                </Link>
-                <Link href="#" aria-label="Dribbble">
-                  <Dribbble className="h-5 w-5 text-gray-500 hover:text-pink-500" />
-                </Link>
-                <Link href="#" aria-label="Facebook">
-                  <Facebook className="h-5 w-5 text-gray-500 hover:text-blue-700" />
-                </Link>
-                <Link href="#" aria-label="Instagram">
-                  <Instagram className="h-5 w-5 text-gray-500 hover:text-purple-600" />
-                </Link>
               </div>
             </div>
           </div>
-          <div className="col-span-6">
-            <h2 className="text-2xl font-semibold mb-4">Contact Info</h2>
+          <div className="col-span-8 lg:col-span-6">
+            <h2 className="text-[40px] font-semibold mb-4 border-b pb-4">
+              Contact Info
+            </h2>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {/* Location */}
               <div>
-                <p className="text-gray-500 text-sm">Location</p>
-                <p className="font-medium">
+                <p className="text-black text-[22px] font-semibold">Location</p>
+                <p className="font-normal text-[20px] text-[#707070]">
                   {userData.address || "Not provided"}
                 </p>
               </div>
+
+              {/* Email */}
               <div>
-                <p className="text-gray-500 text-sm">Email</p>
-                <p className="font-medium">
+                <p className="text-black text-[22px] font-semibold">Email</p>
+                <p className="font-normal text-[20px] text-[#707070]">
                   {userData.email || "Not provided"}
                 </p>
               </div>
+
+              {/* Phone */}
               <div>
-                <p className="text-gray-500 text-sm">Phone</p>
-                <p className="font-medium">
+                <p className="text-black text-[22px] font-semibold">Phone</p>
+                <p className="font-normal text-[20px] text-[#707070]">
                   {userData.phoneNum || "Not provided"}
+                </p>
+              </div>
+              {/* Phone */}
+              <div>
+                <p className="text-black text-[22px] font-semibold">
+                  Linkedin URL 
+                </p>
+                <p className="font-normal text-[20px] text-[#707070]">
+                  <Link href={userData.linkedinUrl || "#"}>
+                    {userData.linkedinUrl || "Not provided"}
+                  </Link>
                 </p>
               </div>
             </div>
@@ -285,7 +317,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
         <div className="my-12">
           <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
+            {/* <div>
               <Label className="block text-lg font-medium mb-3">
                 Would you require Visa Sponsorship for the role you are applying
                 for, now or in the next 2 years?
@@ -319,7 +351,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                 value={elevatorPitchUrl}
                 onChange={(e) => setElevatorPitchUrl(e.target.value)}
               />
-            </div>
+            </div> */}
 
             <div>
               <Label className="block text-lg font-medium mb-4">Resume *</Label>
@@ -390,16 +422,18 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="agree-cv"
-                checked={agreedToShareCV}
-                onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
-              />
-              <Label htmlFor="agree-cv" className="text-sm text-gray-700">
-                I agree to my CV being shared with the Recruiter for the role I
-                am applying for
-              </Label>
+            <div className="flex items-center justify-end">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="agree-cv"
+                  checked={agreedToShareCV}
+                  onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
+                />
+                <Label htmlFor="agree-cv" className="text-sm text-gray-700">
+                  I agree to my CV being shared with the Recruiter for the role
+                  I am applying for
+                </Label>
+              </div>
             </div>
 
             <Button

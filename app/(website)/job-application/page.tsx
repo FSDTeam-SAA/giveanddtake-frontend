@@ -8,7 +8,7 @@ export default function Page() {
   const jobId = searchParams.get("id");
   return (
     <div>
-      <JobApplicationPage jobId={jobId as string} />
+        <JobApplicationPage jobId={jobId as string} />
     </div>
   );
 }
