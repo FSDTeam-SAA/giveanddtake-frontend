@@ -39,7 +39,7 @@ export function Footer() {
             <Link href="#" className="text-white/80 hover:underline">
               Browse Jobs
             </Link>
-            <Link href="#" className="text-white/80 hover:underline">
+            <Link href="/bookmarks" className="text-white/80 hover:underline">
               Saved Jobs
             </Link>
             <Link href="#" className="text-white/80 hover:underline">

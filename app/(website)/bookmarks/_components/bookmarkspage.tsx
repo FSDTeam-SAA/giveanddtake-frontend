@@ -29,7 +29,15 @@ interface Bookmark {
 interface BookmarksResponse {
   success: boolean;
   message: string;
-  data: Bookmark[];
+  data: {
+    bookmarks: Bookmark[];
+    meta: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+      itemsPerPage: number;
+    };
+  };
 }
 
 export default function BookmarksPage() {
@@ -38,7 +46,7 @@ export default function BookmarksPage() {
   const queryClient = useQueryClient();
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
-  const { data, isLoading, isError } = useQuery<Bookmark[]>({
+  const { data, isLoading, isError } = useQuery<BookmarksResponse>({
     queryKey: ["bookmarks", userId],
     enabled: status === "authenticated" && !!userId,
     queryFn: async () => {
@@ -47,7 +55,7 @@ export default function BookmarksPage() {
       );
       const json: BookmarksResponse = await res.json();
       if (!json.success) throw new Error(json.message);
-      return json.data;
+      return json;
     },
   });
 
@@ -74,7 +82,9 @@ export default function BookmarksPage() {
   });
 
   const handleToggleBookmark = (jobId: string) => {
-    const alreadyBookmarked = data?.some((b) => b.jobId._id === jobId);
+    const alreadyBookmarked = data?.data.bookmarks.some(
+      (b) => b.jobId._id === jobId
+    );
     if (alreadyBookmarked) {
       toast.warning("Job already bookmarked by user");
       return;
@@ -124,7 +134,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {isError || !data || data.length === 0 ? (
+      {isError || !data?.data.bookmarks || data.data.bookmarks.length === 0 ? (
         <div className="text-center py-12">
           <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-600 mb-2">
@@ -136,7 +146,7 @@ export default function BookmarksPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data.map((bookmark) => (
+          {data.data.bookmarks.map((bookmark) => (
             <Link key={bookmark._id} href={`/alljobs/${bookmark.jobId._id}`}>
               <Card key={bookmark._id} className="relative">
                 <CardContent className="p-6">
@@ -153,9 +163,11 @@ export default function BookmarksPage() {
                       onClick={() => handleToggleBookmark(bookmark.jobId._id)}
                       disabled={
                         submittingId === bookmark.jobId._id ||
-                        data?.some((b) => b.jobId._id === bookmark.jobId._id)
+                        data.data.bookmarks.some(
+                          (b) => b.jobId._id === bookmark.jobId._id
+                        )
                       }
-                      className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3] "
+                      className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3]"
                     >
                       <Heart className="w-6 h-6 text-white fill-white" />
                     </button>
@@ -167,7 +179,7 @@ export default function BookmarksPage() {
                       : bookmark.jobId.description}
                   </p>
 
-                  <div className="flex items-center justify-between gap-3 ">
+                  <div className="flex items-center justify-between gap-3">
                     <button className="text-black text-[16px] font-medium">
                       View Job
                     </button>
