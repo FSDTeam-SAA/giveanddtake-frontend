@@ -92,40 +92,6 @@ export default function ApplicantsList() {
 
     type BadgeVariant = "default" | "secondary" | "destructive";
 
-    const getStatusBadges = (status: string) => {
-        const badges: { label: string; variant: BadgeVariant; color: string }[] = [];
-
-        switch (status.toLowerCase()) {
-            case 'under_consideration':
-            case 'under consideration':
-                badges.push({ label: "Under Consideration", variant: "secondary" as const, color: "bg-green-500 hover:bg-green-600 rounded-sm text-white" });
-                break;
-            case 'with_hiring_manager':
-            case 'with hiring manager':
-                badges.push(
-                    { label: "Under Consideration", variant: "secondary" as const, color: "bg-green-500 hover:bg-green-600 rounded-sm text-white" },
-                    { label: "With Hiring Manager", variant: "secondary" as const, color: "bg-green-600 rounded-sm hover:bg-green-700 text-white" }
-                );
-                break;
-            case 'selected':
-                badges.push(
-                    { label: "Under Consideration", variant: "secondary" as const, color: "bg-green-500 hover:bg-green-600 rounded-sm text-white" },
-                    { label: "With Hiring Manager", variant: "secondary" as const, color: "bg-green-600 rounded-sm hover:bg-green-700 text-white" },
-                    { label: "Selected", variant: "secondary" as const, color: "bg-green-700 hover:bg-green-800 text-white" }
-                );
-                break;
-            case 'rejected':
-            case 'not_selected':
-            case 'not selected':
-                badges.push({ label: "Not Selected", variant: "destructive" as const, color: "bg-red-500 hover:bg-red-600 rounded-sm" });
-                break;
-            default:
-                badges.push({ label: "Under Consideration", variant: "secondary" as const, color: "bg-green-500 hover:bg-green-600 rounded-sm text-white" });
-        }
-
-        return badges;
-    };
-
     const goToPage = (page: number) => {
         setCurrentPage(page);
     };
@@ -178,15 +144,11 @@ export default function ApplicantsList() {
                             </div>
 
                             <div className="flex flex-wrap gap-2">
-                                {getStatusBadges(applicant.status).map((badge, index) => (
-                                    <Badge
-                                        key={index}
-                                        variant={badge.variant}
-                                        className={`${badge.color} text-white text-xs px-2 py-1`}
-                                    >
-                                        {badge.label}
-                                    </Badge>
-                                ))}
+                                <Link href={`/applicants/${applicant._id}`}>
+                                    <Button className='bg-[#2B7FD0]/90 hover:bg-[#2B7FD0]'>Applicant Details</Button>
+                                </Link>
+                                <Button className='bg-green-500 hover:bg-green-600'>Shortlisted</Button>
+                                <Button className='bg-red-500 hover:bg-red-600'>Not Selected</Button>
                             </div>
                         </div>
                     ))}
@@ -201,7 +163,7 @@ export default function ApplicantsList() {
                                 <TableHead className="text-left font-semibold text-gray-700 py-4">Name</TableHead>
                                 <TableHead className="text-left font-semibold text-gray-700 py-4">Experience</TableHead>
                                 <TableHead className="text-left font-semibold text-gray-700 py-4">Applied</TableHead>
-                                <TableHead className="text-left font-semibold text-gray-700 py-4">Status</TableHead>
+                                <TableHead className="text-center font-semibold text-gray-700 py-4">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -230,19 +192,11 @@ export default function ApplicantsList() {
                                     <TableCell className="py-4 text-gray-700">5 Years</TableCell>
                                     <TableCell className="py-4 text-gray-700">{formatDate(applicant.createdAt)}</TableCell>
                                     <TableCell className="py-4">
-                                        <div className="flex flex-wrap gap-2">
-                                            <Link href={`/applicants/${applicant._id}`}>
+                                        <div className="flex flex-wrap justify-center gap-2">
+                                            <Link href={`/applicants/${applicant.userId._id}`}>
                                                 <Button className='bg-[#2B7FD0]/90 hover:bg-[#2B7FD0]'>Applicant Details</Button>
                                             </Link>
-                                            {getStatusBadges(applicant.status).map((badge, index) => (
-                                                <Badge
-                                                    key={index}
-                                                    variant={badge.variant}
-                                                    className={`${badge.color} text-white text-xs px-3 py-1 font-medium`}
-                                                >
-                                                    {badge.label}
-                                                </Badge>
-                                            ))}
+                                            <Button className='bg-green-500 hover:bg-green-600'>Shortlisted</Button>
                                             <Button className='bg-red-500 hover:bg-red-600'>Not Selected</Button>
                                         </div>
                                     </TableCell>

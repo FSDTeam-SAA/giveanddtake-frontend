@@ -57,28 +57,28 @@ export function SiteHeader() {
 
         {/* Middle Section: Navigation Links (hidden on small screens) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className={`transition-colors ${isActive('/') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
           >
             Home
           </Link>
-          <Link 
-            href="/alljobs" 
+          <Link
+            href="/alljobs"
             className={`transition-colors ${isActive('/alljobs') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
           >
             All Jobs
           </Link>
           {userRole === "candidate" && (
-            <Link 
-              href="/elevator-pitch-resume" 
+            <Link
+              href="/elevator-pitch-resume"
               className={`transition-colors ${isActive('/elevator-pitch-resume') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
             >
               Elevator Pitch & Resume
             </Link>
           )}
-          <Link 
-            href="/blog" 
+          <Link
+            href="/blog"
             className={`transition-colors ${isActive('/blog') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
           >
             Blog
@@ -134,10 +134,12 @@ export function SiteHeader() {
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
               </Button>
-              <Button size="icon" className="rounded-full bg-blue-500 text-white hover:bg-blue-600">
-                <MessageCircle className="h-5 w-5" />
-                <span className="sr-only">Messages</span>
-              </Button>
+              <Link href="/messages">
+                <Button size="icon" className="rounded-full bg-blue-500 text-white hover:bg-blue-600">
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="sr-only">Messages</span>
+                </Button>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-8 w-8 cursor-pointer">
@@ -186,40 +188,40 @@ export function SiteHeader() {
                 YOUR LOGO
               </Link>
               <nav className="grid gap-4 text-sm font-medium">
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   className={`transition-colors ${isActive('/') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                 >
                   Home
                 </Link>
-                <Link 
-                  href="/alljobs" 
+                <Link
+                  href="/alljobs"
                   className={`transition-colors ${isActive('/alljobs') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                 >
                   All Jobs
                 </Link>
                 {userRole === "candidate" && (
-                  <Link 
-                    href="/elevator-pitch-resume" 
+                  <Link
+                    href="/elevator-pitch-resume"
                     className={`transition-colors ${isActive('/elevator-pitch-resume') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                   >
                     Elevator Pitch & Resume
                   </Link>
                 )}
-                <Link 
-                  href="/blog" 
+                <Link
+                  href="/blog"
                   className={`transition-colors ${isActive('/blog') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                 >
                   Blog
                 </Link>
-                <Link 
-                  href="/faq" 
+                <Link
+                  href="/faq"
                   className={`transition-colors ${isActive('/faq') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                 >
                   Help & Info
                 </Link>
-                <Link 
-                  href="/about-us" 
+                <Link
+                  href="/about-us"
                   className={`transition-colors ${isActive('/about-us') ? 'text-[#2B7FD0]' : 'hover:text-[#2B7FD0]'}`}
                 >
                   More
