@@ -1,11 +1,13 @@
-"use client"
+'use client'
 
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, Clock, DollarSign } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, DollarSign } from 'lucide-react'
 import JobMap from "./job-map"
+import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
 
 interface JobDetailsData {
   _id: string
@@ -45,6 +47,12 @@ interface JobDetailsProps {
 }
 
 export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
+  const { data: session, status: sessionStatus } = useSession();
+  const userId = session?.user?.id;
+  const token = (session?.user as any)?.accessToken; // Assuming accessToken is available on session.user
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const {
     data: jobData,
     isLoading,
@@ -55,27 +63,76 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       if (!jobId || jobId === "undefined") {
         throw new Error("Invalid job ID")
       }
-
       const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`)
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       const data = await response.json()
-
-
       if (!data.success) {
         throw new Error(data.message || "Failed to fetch job details")
       }
-
       return data
     },
     enabled: !!jobId && jobId !== "undefined", // Only run query if jobId is valid
   })
 
+  const applyJobMutation = useMutation({
+    mutationFn: async ({ jobId, userId }: { jobId: string; userId: string }) => {
+      if (!token) {
+        throw new Error('Authentication token not available. Please log in.');
+      }
+      const response = await fetch('https://giveandtake-backend.onrender.com/api/v1/applied-jobs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Use Bearer token for authorization
+        },
+        body: JSON.stringify({ jobId, userId }),
+      });
 
-  console.log(jobData, "jobData")
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to apply for job');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Application Successful',
+        description: 'You have successfully applied for this job!',
+        variant: 'default',
+      });
+      // Optionally invalidate queries to refetch job details or update UI
+      queryClient.invalidateQueries({ queryKey: ['job', jobId] });
+      queryClient.invalidateQueries({ queryKey: ['applied-jobs', userId] }); // If you have a query for applied jobs
+    },
+    onError: (error) => {
+      toast({
+        title: 'Application Failed',
+        description: error.message || 'There was an error applying for the job.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleApplyJob = () => {
+    if (sessionStatus === 'loading') {
+      toast({
+        title: 'Please wait',
+        description: 'Session is loading. Please try again in a moment.',
+      });
+      return;
+    }
+    if (!userId) {
+      toast({
+        title: 'Not logged in',
+        description: 'Please log in to apply for jobs.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    applyJobMutation.mutate({ jobId: jobData?.data._id!, userId });
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -195,11 +252,16 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
           </div>
           <div className="flex gap-3">
             <Button variant="outline">Save Job</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">Apply Now</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={handleApplyJob}
+              disabled={applyJobMutation.isPending || sessionStatus === 'loading' || !userId}
+            >
+              {applyJobMutation.isPending ? 'Applying...' : 'Apply Now'}
+            </Button>
           </div>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
@@ -212,7 +274,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <p className="text-gray-700 leading-relaxed">{job.description}</p>
             </CardContent>
           </Card>
-
           {/* Responsibilities */}
           {job.responsibilities && job.responsibilities.length > 0 && (
             <Card>
@@ -231,7 +292,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </CardContent>
             </Card>
           )}
-
           {/* Education & Experience */}
           {job.educationExperience && job.educationExperience.length > 0 && (
             <Card>
@@ -250,7 +310,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </CardContent>
             </Card>
           )}
-
           {/* Benefits */}
           {job.benefits && job.benefits.length > 0 && (
             <Card>
@@ -270,7 +329,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             </Card>
           )}
         </div>
-
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Job Overview */}
@@ -301,7 +359,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </div>
             </CardContent>
           </Card>
-
           {/* Job Location */}
           <Card>
             <CardHeader>
@@ -317,7 +374,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <JobMap location={job.location} />
             </CardContent>
           </Card>
-
           {/* Application Requirements */}
           {job.applicationRequirement && job.applicationRequirement.length > 0 && (
             <Card>

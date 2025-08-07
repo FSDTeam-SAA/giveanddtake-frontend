@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, DollarSign, Users } from "lucide-react";
+import { MapPin, DollarSign } from "lucide-react";
 import Link from "next/link";
 
 interface Job {
@@ -50,57 +49,67 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
   if (variant === "suggested") {
     return (
       <div>
-        <Link href={`/alljobs/${job._id}`}>
+        <Link href={`/alljobs/${job._id}`} className="block">
           <Card
             className="hover:shadow-md transition-shadow cursor-pointer"
             onClick={onSelect}
           >
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-8">
+                {/* Icon Section */}
+                <div className="col-span-1">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <span className="text-blue-600 font-semibold text-sm">
                       {getCompanyInitials(job.title)}
                     </span>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-lg">{job.title}</h3>
-                      <Badge variant="secondary" className="ml-4">
-                        {job.shift}
-                      </Badge>
-                    </div>
+                </div>
 
-                    <div className="flex items-center text-gray-500 text-sm mb-3">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {job.location}
+                {/* Job Details Section */}
+                <div className="col-span-7">
+                  {/* Title & Apply Button */}
+                  <div className="flex justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-800">
+                        {job.title}
+                      </h3>
                     </div>
-
-                    <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
-                      <div className="flex items-center">
-                        <DollarSign className="h-4 w-4 mr-1" />
-                        {job.salaryRange}
-                      </div>
-                      <div className="flex items-center">
-                        <Users className="h-4 w-4 mr-1" />
-                        {job.vacancy} positions
-                      </div>
-                      <div>{job.experience}+ years exp</div>
+                    <div className="flex gap-2">
+                      <Link href={`/job-application?id=${job._id}`}>
+                        <button className="text-black text-base font-normal border border-[#707070] px-4 py-2 rounded-lg">
+                          Apply
+                        </button>
+                      </Link>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                        Full Time
+                      </Button>
                     </div>
+                  </div>
 
+                  <div className="mb-4">
+                    {/* Description */}
                     <p className="text-gray-600 text-sm line-clamp-2">
                       {job.description}
                     </p>
                   </div>
-                </div>
 
-                <div className="flex flex-col items-end gap-2 ml-4">
-                  <Button className="bg-blue-600 hover:bg-blue-700">
-                    Apply
-                  </Button>
-                  <span className="text-xs text-gray-400">
-                    {formatDate(job.createdAt)}
-                  </span>
+                  {/* Salary, Vacancy, Experience */}
+                  <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                    <div className="bg-[#E9ECFC] p-2 rounded-lg">
+                      <Link href="#" className="text-[#707070] text-[16px] font-normal">
+                        Winbrans.com
+                      </Link>
+                    </div>
+                    <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                      <DollarSign className="h-4 w-4 mr-1" />
+                      {job.salaryRange}
+                    </div>
+                    {/* Location */}
+                    <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {job.location}
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -112,55 +121,67 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
 
   return (
     <div>
-      <Link href={`/alljobs/${job._id}`}>
+      <Link href={`/alljobs/${job._id}`} className="block">
         <Card
           className="hover:shadow-md transition-shadow cursor-pointer"
           onClick={onSelect}
         >
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-start gap-4 flex-1">
+          <CardContent className="p-4">
+            <div className="grid grid-cols-8">
+              {/* Icon Section */}
+              <div className="col-span-1">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <span className="text-blue-600 font-semibold text-sm">
                     {getCompanyInitials(job.title)}
                   </span>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-lg">{job.title}</h3>
-                    <Badge variant="secondary" className="ml-4">
-                      {job.shift}
-                    </Badge>
-                  </div>
+              </div>
 
-                  <div className="flex items-center text-gray-500 text-sm mb-3">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    {job.location}
+              {/* Job Details Section */}
+              <div className="col-span-7">
+                {/* Title & Apply Button */}
+                <div className="flex justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg text-gray-800">
+                      {job.title}
+                    </h3>
                   </div>
-
-                  <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
-                    <div className="flex items-center">
-                      <DollarSign className="h-4 w-4 mr-1" />
-                      {job.salaryRange}
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-1" />
-                      {job.vacancy} positions
-                    </div>
-                    <div>{job.experience}+ years exp</div>
+                  <div className="flex gap-2">
+                    <Link href={`/job-application?id=${job._id}`}>
+                      <button className="text-black text-base font-normal border border-[#707070] px-4 py-2 rounded-lg">
+                        Apply
+                      </button>
+                    </Link>
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                      Full Time
+                    </Button>
                   </div>
+                </div>
 
+                <div className="mb-4">
+                  {/* Description */}
                   <p className="text-gray-600 text-sm line-clamp-2">
                     {job.description}
                   </p>
                 </div>
-              </div>
 
-              <div className="flex flex-col items-end gap-2 ml-4">
-                <Button className="bg-blue-600 hover:bg-blue-700">Apply</Button>
-                <span className="text-xs text-gray-400">
-                  {formatDate(job.createdAt)}
-                </span>
+                {/* Salary, Vacancy, Experience */}
+                <div className="flex flex-wrap gap-6 text-sm text-gray-600">
+                  <div className="bg-[#E9ECFC] p-2 rounded-lg">
+                    <Link href="#" className="text-[#707070] text-[16px] font-normal">
+                      Winbrans.com
+                    </Link>
+                  </div>
+                  <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                    <DollarSign className="h-4 w-4 mr-1" />
+                    {job.salaryRange}
+                  </div>
+                  {/* Location */}
+                  <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {job.location}
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
