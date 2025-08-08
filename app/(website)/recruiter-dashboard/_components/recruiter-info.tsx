@@ -4,9 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { getRecruiterAccount } from '@/lib/api-service';
 import { useQuery } from '@tanstack/react-query';
-import { CheckCheck, CircleCheck } from 'lucide-react';
+import { CircleCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react'
-import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'
 

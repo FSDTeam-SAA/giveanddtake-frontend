@@ -48,7 +48,7 @@ export default function AppliedJobs() {
             </div>
             <p className='lg:text-base text-sm'>{job.jobId.description}</p>
             <div className="flex justify-between items-center">
-              <Link href={`/job/${job.jobId._id}`} className="hover:text-blue-600 hover:underline lg:text-lg text-sm font-medium">View Job</Link>
+              <Link href={`/alljobs/${job.jobId._id}`} className="hover:text-blue-600 hover:underline lg:text-lg text-sm font-medium">View Job</Link>
               <p className='font-medium text-sm lg:text-lg text-[#039B06]'>Applied</p>
             </div>
           </div>

@@ -185,6 +185,12 @@ export async function getRecruiterJobs() {
   return res.data
 }
 
+// Get archived jobs
+export async function getArchivedJobs() {
+  const res = await apiClient.get(`/jobs/archived/user`)
+  return res.data
+}
+
 // Get applications by job id
 export async function getApplicationsByJobId(jobId: string) {
   const res = await apiClient.get(`/applied-jobs/job/${jobId}`)
