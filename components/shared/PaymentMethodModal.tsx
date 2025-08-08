@@ -24,6 +24,7 @@ import Image from "next/image";
 interface PaymentMethodModalProps {
   isOpen: boolean;
   price: string;
+  planId: string;
   onClose: () => void;
 }
 
@@ -49,18 +50,19 @@ async function createPayPalOrder(amount: string): Promise<PayPalOrderResponse> {
   return response.json();
 }
 
-export function PaymentMethodModal({ isOpen, onClose, price }: PaymentMethodModalProps) {
+export function PaymentMethodModal({ isOpen, onClose, price,planId }: PaymentMethodModalProps) {
   const [paymentMethod, setPaymentMethod] = useState("paypal");
   const session = useSession();
   const userId = session?.data?.user?.id || "";
   const router = useRouter();
-  const staticPlanId = "687221b652944a219c699c83"; // Static planId
+  // const staticPlanId = "687221b652944a219c699c83"; // Static planId
+  console.log("Selected Plan ID:", planId);
 
   const { mutate, isPending } = useMutation({
     mutationFn: () => createPayPalOrder(price),
     onSuccess: (data) => {
       // Redirect with static planId and without bookingId
-      router.push(`/payment?orderId=${data.orderId}&userId=${userId}&planId=${staticPlanId}&amount=${price}`);
+      router.push(`/payment?orderId=${data.orderId}&userId=${userId}&planId=${planId}&amount=${price}`);
     },
     onError: (error) => {
       console.error("Error creating PayPal order:", error);
