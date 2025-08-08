@@ -172,6 +172,13 @@ export async function getAppliedJobs(userId: string) {
 }
 
 
+// Get recruiter account
+export async function getRecruiterAccount(userId: string) {
+  const res = await apiClient.get(`/recruiter/recruiter-account/${userId}`)
+  return res.data
+}
+
+
 // Get recruiter jobs
 export async function getRecruiterJobs() {
   const res = await apiClient.get(`/jobs/recruiter/company`)
