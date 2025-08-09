@@ -92,7 +92,6 @@ export default function MyResume({ resume }: MyResumeProps) {
     }
 
 
-
     return (
         <main className="min-h-screen">
             <div className="container">

@@ -1,14 +1,12 @@
-"use client";
-
-import { useSearchParams } from "next/navigation";
-import JobApplicationPage from "./components/job-application-page";
+import { Suspense } from "react";
+import ClientJobApplication from "./components/main-page";
 
 export default function Page() {
-  const searchParams = useSearchParams();
-  const jobId = searchParams.get("id");
   return (
     <div>
-        <JobApplicationPage jobId={jobId as string} />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ClientJobApplication />
+      </Suspense>
     </div>
   );
 }

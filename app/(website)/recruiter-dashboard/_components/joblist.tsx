@@ -69,7 +69,7 @@ export default function JobList() {
     })
 
 
-    if (isLoading) {
+    if (isLoading) { 
         return (
             <div className="flex justify-center items-center">
                 <Loader className="animate-spin" />
@@ -114,7 +114,7 @@ export default function JobList() {
                             >
                                 {deletingJobId === job._id ? "Deleting..." : "Delete Job"}
                             </Button>
-                            <Link href={`/job/${job._id}`}><Button className='mt-4 w-full border-[#9EC7DC]' variant="outline">View Details</Button></Link>
+                            <Link href={`/alljobs/${job._id}`}><Button className='mt-4 w-full border-[#9EC7DC]' variant="outline">View Details</Button></Link>
                             <Link href={`/applicants?jobId=${job._id}`}><Button className='mt-4 w-full border-[#9EC7DC]' variant="outline">View Applicants</Button></Link>
                         </div>
                     </div>

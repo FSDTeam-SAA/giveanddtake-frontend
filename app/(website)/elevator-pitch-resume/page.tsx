@@ -1,5 +1,3 @@
-"use client"
-
 import React from 'react'
 import ElevatorPitchAndResume from './_components/elevator-pitch-page'
 

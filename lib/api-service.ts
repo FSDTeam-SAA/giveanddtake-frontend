@@ -172,9 +172,28 @@ export async function getAppliedJobs(userId: string) {
 }
 
 
+// Get recruiter account
+export async function getRecruiterAccount(userId: string) {
+  const res = await apiClient.get(`/recruiter/recruiter-account/${userId}`)
+  return res.data
+}
+
+
 // Get recruiter jobs
 export async function getRecruiterJobs() {
   const res = await apiClient.get(`/jobs/recruiter/company`)
+  return res.data
+}
+
+// Get archived jobs
+export async function getArchivedJobs() {
+  const res = await apiClient.get(`/jobs/archived/user`)
+  return res.data
+}
+
+// Update Archive Job Api
+export async function updateArchiveJob(jobId: string, arcrivedJob: boolean) {
+  const res = await apiClient.patch(`/jobs/${jobId}`, { arcrivedJob })
   return res.data
 }
 
@@ -189,5 +208,6 @@ export async function deleteJob(jobId: string) {
   const res = await apiClient.delete(`/jobs/${jobId}`)
   return res.data
 }
+
 
 export default apiClient;
