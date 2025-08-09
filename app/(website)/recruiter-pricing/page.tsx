@@ -56,31 +56,35 @@ const transformApiPlanToLocalPlan = (apiPlan: Plan): {
   buttonText: string;
   planId: string;
 } => {
-  // Determine if this is a pay-as-you-go plan (only price, no monthly/annual)
+  // Determine if this is a pay-as-you-go plan
   const isPayAsYouGo = apiPlan.title.toLowerCase().includes("pay as you go");
-  
+
   if (isPayAsYouGo) {
     return {
       name: apiPlan.title,
-      description: `$${apiPlan.price} per Job Advert (30 Days Post)`,
-      features: apiPlan.features.map(feature => ({
-        text: feature
+      description: `$${apiPlan.price.toFixed(2)} per Job Advert (30 Days Post)`,
+      features: apiPlan.features.map((feature) => ({
+        text: feature,
       })),
       buttonText: "Sign up",
-      planId: apiPlan._id
+      planId: apiPlan._id,
     };
   }
 
-  // For subscription plans with monthly/annual pricing
+  // Determine if the plan supports annual pricing (exclude "Basic" plans)
+  const supportsAnnual = !apiPlan.title.toLowerCase().includes("basic");
+
+  // For subscription plans
+  const monthlyPrice = apiPlan.price;
   return {
     name: apiPlan.title,
-    monthlyPrice: `$${apiPlan.price} per month`,
-    // annualPrice: `$${("").toFixed(2)} per annum`,
-    features: apiPlan.features.map(feature => ({
-      text: feature
+    monthlyPrice: `$${monthlyPrice.toFixed(2)} per month`,
+    ...(supportsAnnual && { annualPrice: `$${(monthlyPrice * 12).toFixed(2)} per annum` }),
+    features: apiPlan.features.map((feature) => ({
+      text: feature,
     })),
-    buttonText: `Sign up to ${apiPlan.title.toLowerCase().split(' ')[0]}`,
-    planId: apiPlan._id
+    buttonText: `Sign up to ${apiPlan.title.toLowerCase().split(" ")[0]}`,
+    planId: apiPlan._id,
   };
 };
 
@@ -92,27 +96,34 @@ export default function PricingPlans() {
 
   const { data: apiPlans, isLoading, error } = useQuery({
     queryKey: ["recruiterPlans"],
-    queryFn: fetchRecruiterPlans
+    queryFn: fetchRecruiterPlans,
   });
 
   const handlePlanSelect = (plan: ReturnType<typeof transformApiPlanToLocalPlan>) => {
-    if (!plan.monthlyPrice) {
-      // For Pay as You Go - extract price keeping the decimal point
-      const priceMatch = plan.description?.match(/\$(\d+\.\d{2})/);
+    setSelectedPlan(plan);
+    if (plan.description) {
+      // For Pay as You Go - extract price
+      const priceMatch = plan.description.match(/\$(\d+\.\d{2})/);
       setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
-      setSelectedPlan(plan);
       setIsModalOpen(true);
     } else {
-      setSelectedPlan(plan);
-      setShowPlanOptions(true);
+      // For subscription plans, show payment options modal if annual pricing is supported
+      // If no annual pricing, directly select monthly price
+      if (!plan.annualPrice) {
+        const priceMatch = plan.monthlyPrice?.match(/\$(\d+\.\d{2})/);
+        setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
+        setIsModalOpen(true);
+      } else {
+        setShowPlanOptions(true);
+      }
     }
   };
 
   const handlePaymentOptionSelect = (isMonthly: boolean) => {
     if (selectedPlan) {
-      // Extract price keeping the decimal point
       const priceStr = isMonthly ? selectedPlan.monthlyPrice : selectedPlan.annualPrice;
-      const priceMatch = priceStr?.match(/\$?(\d+\.\d{2})/);
+      // Extract price without the '$' and text (e.g., 'per month')
+      const priceMatch = priceStr?.match(/\$(\d+\.\d{2})/);
       const priceValue = priceMatch ? priceMatch[1] : "0.00";
       setSelectedPrice(priceValue);
       setIsModalOpen(true);
@@ -170,18 +181,22 @@ export default function PricingPlans() {
                 Select Payment Option for {selectedPlan.name}
               </h3>
               <div className="space-y-3">
-                <Button
-                  className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                  onClick={() => handlePaymentOptionSelect(true)}
-                >
-                  Monthly: {selectedPlan.monthlyPrice}
-                </Button>
-                <Button
-                  className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                  onClick={() => handlePaymentOptionSelect(false)}
-                >
-                  Annual: {selectedPlan.annualPrice}
-                </Button>
+                {selectedPlan.monthlyPrice && (
+                  <Button
+                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
+                    onClick={() => handlePaymentOptionSelect(true)}
+                  >
+                    Monthly: {selectedPlan.monthlyPrice}
+                  </Button>
+                )}
+                {selectedPlan.annualPrice && (
+                  <Button
+                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
+                    onClick={() => handlePaymentOptionSelect(false)}
+                  >
+                    Annual: {selectedPlan.annualPrice}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   className="w-full"
@@ -203,7 +218,7 @@ export default function PricingPlans() {
             >
               <CardHeader className="p-6 pb-0">
                 <CardTitle
-                  className={`font-midium ${
+                  className={`font-medium ${
                     plan.name.toLowerCase().includes("pay as you go")
                       ? "text-gray-800"
                       : "text-base text-[#2B7FD0]"
@@ -216,18 +231,22 @@ export default function PricingPlans() {
                     <p className="text-gray-500 text-sm">{plan.description}</p>
                   ) : (
                     <>
-                      <p className="text-[32px] font-bold text-[#282828]">
-                        {plan.monthlyPrice}
-                      </p>
-                      <p className="text-[32px] font-bold text-[#282828]">
-                        {plan.annualPrice}
-                      </p>
+                      {plan.monthlyPrice && (
+                        <p className="text-[32px] font-bold text-[#282828]">
+                          {plan.monthlyPrice}
+                        </p>
+                      )}
+                      {plan.annualPrice && (
+                        <p className="text-[32px] font-bold text-[#282828]">
+                          {plan.annualPrice}
+                        </p>
+                      )}
                     </>
                   )}
                 </div>
               </CardHeader>
               <CardContent className="p-6 pt-4 flex-grow">
-                <h3 className="font-midium text-base text-[#8593A3] mb-3">
+                <h3 className="font-medium text-base text-[#8593A3] mb-3">
                   What you will get
                 </h3>
                 <ul className="space-y-2">
@@ -260,7 +279,7 @@ export default function PricingPlans() {
         <PaymentMethodModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          price={selectedPrice || ""}
+          price={selectedPrice || "0.00"}
           planId={selectedPlan?.planId || ""}
         />
       </div>
