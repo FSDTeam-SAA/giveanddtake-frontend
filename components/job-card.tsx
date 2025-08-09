@@ -40,7 +40,7 @@ export function JobCard({ companyLogo, jobTitle, description, companyWebsite, sa
             </Badge>
           </div>
         </div>
-        <p className="text-[#707070] text-xs sm:text-sm font-normal line-clamp-2 text-left">{description}</p>
+        <p className="text-[#707070] text-xs sm:text-sm font-normal line-clamp-2 text-left ">{description}</p>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm mt-4 sm:mt-6">
           <Badge className="bg-[#E9ECFC] h-8 sm:h-[35px] text-[#707070] text-xs sm:text-base rounded-[8px] px-3 sm:px-4 hover:bg-[#E9ECFC] cursor-pointer">
             {companyWebsite}
