@@ -9,7 +9,8 @@ import JobMap from "./job-map";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
+import Link from "next/link";
 
 interface JobDetailsData {
   _id: string;
@@ -79,7 +80,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     enabled: !!jobId && jobId !== "undefined", // Only run query if jobId is valid
   });
 
-  const applyJobMutation = useMutation({
+  const saveJobMutation = useMutation({
     mutationFn: async ({
       jobId,
       userId,
@@ -87,16 +88,16 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       jobId: string;
       userId: string;
     }) => {
-      if (!token) {
-        throw new Error("Authentication token not available. Please log in.");
-      }
+      // if (!token) {
+      //   throw new Error("Authentication token not available. Please log in.");
+      // }
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // Use Bearer token for authorization
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ jobId, userId }),
         }
@@ -104,31 +105,30 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to apply for job");
+        throw new Error(errorData.message || "Failed to save job");
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Application submitted successfully!");
-      // Optionally invalidate queries to refetch job details or update UI
-      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
-      queryClient.invalidateQueries({ queryKey: ["applied-jobs", userId] }); // If you have a query for applied jobs
+      toast.success("Job saved successfully!");
+      // Invalidate any queries related to saved jobs
+      queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
     },
     onError: (error) => {
       toast.error((error as Error).message);
     },
   });
 
-  const handleApplyJob = () => {
+  const handleSaveJob = () => {
     if (sessionStatus === "loading") {
       toast.loading("Checking authentication...");
       return;
     }
     if (!userId) {
-      toast.error("Please log in to apply for the job.");
+      toast.error("Please log in to save this job.");
       return;
     }
-    applyJobMutation.mutate({ jobId: jobData?.data._id!, userId });
+    saveJobMutation.mutate({ jobId: jobData?.data._id!, userId });
   };
 
   const formatDate = (dateString: string) => {
@@ -227,10 +227,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     <div className="">
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" onClick={onBack} className="mb-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to jobs
-        </Button>
+        <Link href="/alljobs">
+          <Button variant="ghost" onClick={onBack} className="mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to jobs
+          </Button>
+        </Link>
         <div className="md:flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
@@ -250,18 +252,22 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline">Save Job</Button>
             <Button
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={handleApplyJob}
+              variant="outline"
+              onClick={handleSaveJob}
               disabled={
-                applyJobMutation.isPending ||
+                saveJobMutation.isPending ||
                 sessionStatus === "loading" ||
                 !userId
               }
             >
-              {applyJobMutation.isPending ? "Applying..." : "Apply Now"}
+              {saveJobMutation.isPending ? "Saving..." : "Save Job"}
             </Button>
+            <Link href={`/job-application?id=${job._id}`}>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                Apply Now
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
