@@ -1,4 +1,6 @@
-import React from "react";
+
+
+import React, { Suspense } from "react";
 import JobsListing from "./_components/jobs-listing";
 import {
   Breadcrumb,
@@ -13,11 +15,10 @@ function Page() {
   return (
     <div>
       <div
-        style={{ 
+        style={{
           backgroundImage: "url('/assets/alljobs.jpg')",
           backgroundPosition: "bottom center",
-
-         }}
+        }}
         className="bg-cover bg-center py-16"
       >
         <div className="container mx-auto px-4 text-white">
@@ -31,11 +32,15 @@ function Page() {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/" className="text-white">Home</BreadcrumbLink>
+                <BreadcrumbLink href="/" className="text-white">
+                  Home
+                </BreadcrumbLink>
               </BreadcrumbItem>
-              <BreadcrumbSeparator className="text-white"/>
+              <BreadcrumbSeparator className="text-white" />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-white">Browse Jobs</BreadcrumbPage>
+                <BreadcrumbPage className="text-white">
+                  Browse Jobs
+                </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -43,7 +48,10 @@ function Page() {
       </div>
 
       <div className="container mx-auto py-8">
-        <JobsListing />
+        {/* Add fallback so Next.js can skip rendering until client */}
+        <Suspense fallback={<div>Loading jobs...</div>}>
+          <JobsListing />
+        </Suspense>
       </div>
     </div>
   );

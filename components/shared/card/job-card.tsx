@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, DollarSign } from "lucide-react";
 import Link from "next/link";
+import DOMPurify from 'dompurify';
 
 interface Job {
   _id: string;
@@ -86,17 +87,23 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    {/* Description */}
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {job.description}
-                    </p>
+                  <div className="my-2">
+                    {/* Description - safely render HTML with line clamp */}
+                    <div
+                      className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start"
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(job.description),
+                      }}
+                    />
                   </div>
 
                   {/* Salary, Vacancy, Experience */}
                   <div className="flex flex-wrap gap-6 text-sm text-gray-600">
                     <div className="bg-[#E9ECFC] p-2 rounded-lg">
-                      <Link href="#" className="text-[#707070] text-[16px] font-normal">
+                      <Link
+                        href="#"
+                        className="text-[#707070] text-[16px] font-normal"
+                      >
                         Winbrans.com
                       </Link>
                     </div>
@@ -158,7 +165,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                   </div>
                 </div>
 
-                <div className="mb-4">
+                <div className="py-4">
                   {/* Description */}
                   <p className="text-gray-600 text-sm line-clamp-2">
                     {job.description}
@@ -168,7 +175,10 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                 {/* Salary, Vacancy, Experience */}
                 <div className="flex flex-wrap gap-6 text-sm text-gray-600">
                   <div className="bg-[#E9ECFC] p-2 rounded-lg">
-                    <Link href="#" className="text-[#707070] text-[16px] font-normal">
+                    <Link
+                      href="#"
+                      className="text-[#707070] text-[16px] font-normal"
+                    >
                       Winbrans.com
                     </Link>
                   </div>
