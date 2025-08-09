@@ -69,7 +69,7 @@ export default function JobList() {
     })
 
 
-    if (isLoading) {
+    if (isLoading) { 
         return (
             <div className="flex justify-center items-center">
                 <Loader className="animate-spin" />

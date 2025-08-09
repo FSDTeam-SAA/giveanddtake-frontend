@@ -218,136 +218,137 @@ export default function RecruiterAccount({
             </div>
 
             {/* Content */}
-            <div className="container mx-auto max-w-7xl px-4">
-                {/* Avatar row */}
-                <div className="relative -mt-10 sm:-mt-14 md:-mt-16">
-                    <div className="flex items-end gap-4">
-                        <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted">
-                            {/* shadcn/ui Avatar with fallback [^1] */}
-                            <Avatar className="h-full w-full rounded-lg">
-                                <AvatarImage src={photo || "/placeholder.svg"} alt={`${fullName} photo`} />
-                                <AvatarFallback className="rounded-lg">
-                                    {getInitials(firstName, lastName)}
-                                </AvatarFallback>
-                            </Avatar>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Main grid */}
-                <div className="mt-6 grid gap-8 md:grid-cols-[1fr_300px]">
-                    {/* Left: profile summary */}
-                    <div className="space-y-1">
-                        <div className="space-y-1">
-                            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-                                {fullName}
-                            </h1>
-                            {taglineParts.length > 0 && (
-                                <p className="text-sm sm:text-base">
-                                    {taglineParts.map((part, idx) => (
-                                        <span key={idx}>
-                                            {part}
-                                            {idx < taglineParts.length - 1 && (
-                                                <span className="px-2">{'|'}</span>
-                                            )}
-                                        </span>
-                                    ))}
-                                </p>
-                            )}
-                            {(country || city) && (
-                                <p className="text-base text-muted-foreground">
-                                    {country || city}
-                                </p>
-                            )}
-                        </div>
-
-                        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                            {companyId?.aboutUs ||
-                                bio ||
-                                "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."}
-                        </p>
-
-                        {followersText && (
-                            <p className="text-sm text-muted-foreground">{followersText}</p>
-                        )}
-
-                        <TooltipProvider delayDuration={100}>
-                            <div className="flex flex-wrap items-center gap-2">
-                                {socials.map((s) => (
-                                    <SocialIconLink
-                                        key={s.label}
-                                        href={s.href}
-                                        label={s.label}
-                                        icon={s.icon}
-                                    />
-                                ))}
+            <div className="border-b-2">
+                <div className="mx-auto max-w-7xl lg:pb-10 pb-6">
+                    {/* Avatar row */}
+                    <div className="relative -mt-10 sm:-mt-14 md:-mt-16">
+                        <div className="flex items-end gap-4">
+                            <div className="h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted">
+                                {/* shadcn/ui Avatar with fallback [^1] */}
+                                <Avatar className="h-full w-full rounded-lg">
+                                    <AvatarImage src={photo || "/placeholder.svg"} alt={`${fullName} photo`} />
+                                    <AvatarFallback className="rounded-lg">
+                                        {getInitials(firstName, lastName)}
+                                    </AvatarFallback>
+                                </Avatar>
                             </div>
-                        </TooltipProvider>
-
-                        <div className="flex gap-3 items-center">
-                            {Array.isArray(recruiter?.sLink) &&
-                                recruiter.sLink.map((item, index) => {
-                                    if (
-                                        typeof item === "object" &&
-                                        item !== null &&
-                                        "label" in item &&
-                                        "url" in item
-                                    ) {
-                                        return (
-                                            <Link
-                                                key={index}
-                                                href={item.url as string}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-blue-600 hover:underline capitalize"
-                                            >
-                                                {item.label}
-                                            </Link>
-                                        );
-                                    }
-                                    return null;
-                                })}
-                        </div>
-
-
-                        <div className="space-y-3 pt-2">
-                            <p className="text-sm text-muted-foreground">
-                                {"Try It Free — Post Your First Job at No Cost!"}
-                            </p>
-                            <Button size="lg" className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]">
-                                {"Post A Job"}
-                            </Button>
                         </div>
                     </div>
 
-                    {/* Right: meta sidebar */}
-                    <aside className="space-y-8 md:pl-4">
-                        <div className="space-y-3">
-                            {companyId?.cname && (
-                                <div className="flex items-center gap-6">
-                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
-                                        <Avatar>
-                                            <AvatarImage
-                                                src={companyId?.avatar?.url}
-                                                alt={companyId?.cname || ""}
-                                                className="rounded-none object-cover"
-                                            />
-                                            <AvatarFallback className="rounded-none">
-                                                {companyId?.cname
-                                                    ?.split(" ")
-                                                    .map((word: string) => word[0]?.toUpperCase())
-                                                    .join("") || "U"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm font-medium">
-                                            {companyId.cname}
-                                        </p>
-                                    </div>
-                                </div>
+                    {/* Main grid */}
+                    <div className="mt-6 grid gap-8 md:grid-cols-[1fr_300px]">
+                        {/* Left: profile summary */}
+                        <div className="space-y-1">
+                            <div className="space-y-1">
+                                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                                    {fullName}
+                                </h1>
+                                {taglineParts.length > 0 && (
+                                    <p className="text-sm sm:text-base">
+                                        {taglineParts.map((part, idx) => (
+                                            <span key={idx}>
+                                                {part}
+                                                {idx < taglineParts.length - 1 && (
+                                                    <span className="px-2">{'|'}</span>
+                                                )}
+                                            </span>
+                                        ))}
+                                    </p>
+                                )}
+                                {(country || city) && (
+                                    <p className="text-base text-muted-foreground">
+                                        {country || city}
+                                    </p>
+                                )}
+                            </div>
+
+                            <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
+                                {companyId?.aboutUs ||
+                                    bio ||
+                                    "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."}
+                            </p>
+
+                            {followersText && (
+                                <p className="text-sm text-muted-foreground">{followersText}</p>
                             )}
-                            {/* {services.length > 0 && (
+
+                            <TooltipProvider delayDuration={100}>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {socials.map((s) => (
+                                        <SocialIconLink
+                                            key={s.label}
+                                            href={s.href}
+                                            label={s.label}
+                                            icon={s.icon}
+                                        />
+                                    ))}
+                                </div>
+                            </TooltipProvider>
+
+                            <div className="flex gap-3 items-center">
+                                {Array.isArray(recruiter?.sLink) &&
+                                    recruiter.sLink.map((item, index) => {
+                                        if (
+                                            typeof item === "object" &&
+                                            item !== null &&
+                                            "label" in item &&
+                                            "url" in item
+                                        ) {
+                                            return (
+                                                <Link
+                                                    key={index}
+                                                    href={item.url as string}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline capitalize"
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            );
+                                        }
+                                        return null;
+                                    })}
+                            </div>
+
+
+                            <div className="space-y-3 pt-2">
+                                <p className="text-sm text-muted-foreground">
+                                    {"Try It Free — Post Your First Job at No Cost!"}
+                                </p>
+                                <Button size="lg" className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]">
+                                    {"Post A Job"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Right: meta sidebar */}
+                        <aside className="space-y-8 md:pl-4">
+                            <div className="space-y-3">
+                                {companyId?.cname && (
+                                    <div className="flex items-center gap-6">
+                                        <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
+                                            <Avatar>
+                                                <AvatarImage
+                                                    src={companyId?.avatar?.url}
+                                                    alt={companyId?.cname || ""}
+                                                    className="rounded-none object-cover"
+                                                />
+                                                <AvatarFallback className="rounded-none">
+                                                    {companyId?.cname
+                                                        ?.split(" ")
+                                                        .map((word: string) => word[0]?.toUpperCase())
+                                                        .join("") || "U"}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium">
+                                                {companyId.cname}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                                {/* {services.length > 0 && (
                                 <div className="flex items-center gap-3">
                                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
                                         <Circle className="h-3 w-3 text-muted-foreground" />
@@ -359,31 +360,32 @@ export default function RecruiterAccount({
                                     </div>
                                 </div>
                             )} */}
-                        </div>
-                        <div className="space-y-5">
-                            {websiteHref && (
-                                <div className="flex items-center gap-3">
-                                    <Globe className="h-6 w-6 text-muted-foreground" />
-                                    <Link
-                                        href={websiteHref}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-sm underline underline-offset-4"
-                                    >
-                                        {"Website"}
-                                    </Link>
-                                </div>
-                            )}
-                            {primaryLocation && (
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="h-6 w-6 text-muted-foreground" />
-                                    <p className="text-sm">
-                                        {"Location: "}{primaryLocation}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </aside>
+                            </div>
+                            <div className="space-y-5">
+                                {websiteHref && (
+                                    <div className="flex items-center gap-3">
+                                        <Globe className="h-6 w-6 text-muted-foreground" />
+                                        <Link
+                                            href={websiteHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm underline underline-offset-4"
+                                        >
+                                            {"Website"}
+                                        </Link>
+                                    </div>
+                                )}
+                                {primaryLocation && (
+                                    <div className="flex items-center gap-3">
+                                        <MapPin className="h-6 w-6 text-muted-foreground" />
+                                        <p className="text-sm">
+                                            {"Location: "}{primaryLocation}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </aside>
+                    </div>
                 </div>
             </div>
         </div>

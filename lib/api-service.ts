@@ -191,6 +191,12 @@ export async function getArchivedJobs() {
   return res.data
 }
 
+// Update Archive Job Api
+export async function updateArchiveJob(jobId: string, arcrivedJob: boolean) {
+  const res = await apiClient.patch(`/jobs/${jobId}`, { arcrivedJob })
+  return res.data
+}
+
 // Get applications by job id
 export async function getApplicationsByJobId(jobId: string) {
   const res = await apiClient.get(`/applied-jobs/job/${jobId}`)
@@ -202,5 +208,6 @@ export async function deleteJob(jobId: string) {
   const res = await apiClient.delete(`/jobs/${jobId}`)
   return res.data
 }
+
 
 export default apiClient;

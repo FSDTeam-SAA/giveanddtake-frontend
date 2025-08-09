@@ -8,6 +8,8 @@ import { getMyResume, getRecruiterAccount } from '@/lib/api-service'
 import MyResume from './resume'
 import { useSession } from 'next-auth/react'
 import RecruiterAccount from './recruiter-account'
+import CreatedJobs from './jobs'
+import RecruiterElevator from './recruiter-elevator'
 
 export default function ElevatorPitchAndResume() {
 
@@ -24,7 +26,8 @@ export default function ElevatorPitchAndResume() {
     const { data: recruiter } = useQuery({
         queryKey: ['recruiter'],
         queryFn: () => getRecruiterAccount(session?.user?.id || ""),
-        select: (data) => data?.data
+        select: (data) => data?.data,
+        enabled: !!session?.user?.id
     })
 
 
@@ -52,7 +55,7 @@ export default function ElevatorPitchAndResume() {
                                         )
                                         :
                                         (
-                                            <h2>Hello</h2>
+                                            <h2>Create Your Elevator Pitch form for Recruiter</h2>
                                         )
                                 }
                             </div>
@@ -67,8 +70,10 @@ export default function ElevatorPitchAndResume() {
                                 )
                                 :
                                 (
-                                    <div className="">
+                                    <div className="lg:space-y-16 space-y-6">
                                         <RecruiterAccount recruiter={recruiter} />
+                                        <CreatedJobs />
+                                        <RecruiterElevator recruiter={recruiter} />
                                     </div>
                                 )
 
