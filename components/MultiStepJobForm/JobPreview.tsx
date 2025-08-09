@@ -1,7 +1,3 @@
-
-
-
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -39,6 +35,7 @@ interface JobPreviewProps {
   customQuestions: CustomQuestion[];
   selectedDate: Date | undefined;
   publishNow: boolean;
+  companyUrl: string;
   onBackToEdit: () => void;
 }
 
@@ -47,6 +44,7 @@ export default function JobPreview({
   applicationRequirements,
   customQuestions,
   selectedDate,
+  companyUrl,
   publishNow,
   onBackToEdit,
 }: JobPreviewProps) {
@@ -114,6 +112,19 @@ export default function JobPreview({
               </div>
             </div>
             <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Company Website</p>
+              <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
+                {companyUrl ? (
+                  <Link href={companyUrl.startsWith('http') ? companyUrl : `https://${companyUrl}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline">
+                    {companyUrl}
+                  </Link>
+                ) : 'N/A'}
+              </div>
+            </div>
+            <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700">Job Posting Expiration Date</p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {formData.expirationDate || 'N/A'}
@@ -122,8 +133,9 @@ export default function JobPreview({
           </div>
         </div>
 
+        {/* Rest of the component remains the same */}
         {/* Job Description Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 bg-white">
           <Card className="lg:col-span-2 border-none shadow-sm">
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Job Description</h2>
@@ -275,6 +287,3 @@ export default function JobPreview({
     </div>
   );
 }
-
-
-
