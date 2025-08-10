@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
-import { VideoCarousel } from "./hero-video-carousel"
-import { useSession } from "next-auth/react"
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { VideoCarousel } from "./hero-video-carousel";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function HeroSection() {
-  const session = useSession()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const session = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const initialJobTitle = searchParams.get("title") || ""
-  const initialLocation = searchParams.get("location") || ""
+  const initialJobTitle = searchParams.get("title") || "";
+  const initialLocation = searchParams.get("location") || "";
 
-  const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle)
-  const [locationInput, setLocationInput] = useState(initialLocation)
+  const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle);
+  const [locationInput, setLocationInput] = useState(initialLocation);
 
   useEffect(() => {
-    setJobTitleInput(searchParams.get("title") || "")
-    setLocationInput(searchParams.get("location") || "")
-  }, [searchParams])
+    setJobTitleInput(searchParams.get("title") || "");
+    setLocationInput(searchParams.get("location") || "");
+  }, [searchParams]);
 
   const handleSearch = () => {
-    const currentParams = new URLSearchParams() // Start with a fresh URLSearchParams for the redirect
+    const currentParams = new URLSearchParams(); // Start with a fresh URLSearchParams for the redirect
     if (jobTitleInput) {
-      currentParams.set("title", jobTitleInput)
+      currentParams.set("title", jobTitleInput);
     }
     if (locationInput) {
-      currentParams.set("location", locationInput)
+      currentParams.set("location", locationInput);
     }
-    currentParams.set("page", "1") // Always reset to page 1 on new search
-    router.push(`/alljobs?${currentParams.toString()}`) // Redirect to /alljobs with query parameters
-  }
+    currentParams.set("page", "1"); // Always reset to page 1 on new search
+    router.push(`/alljobs?${currentParams.toString()}`); // Redirect to /alljobs with query parameters
+  };
 
   const videos = [
     {
@@ -50,7 +50,7 @@ export function HeroSection() {
       src: "/placeholder.svg?height=500&width=700",
       alt: "Job search video placeholder",
     },
-  ]
+  ];
 
   return (
     <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden">
@@ -67,7 +67,7 @@ export function HeroSection() {
         alt="Abstract blue circle"
         width={150}
         height={150}
-        className="absolute top-[50%] hidden md:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
+        className="absolute top-[50%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
       />
       <Image
         src="/assets/hero.png"
@@ -79,16 +79,17 @@ export function HeroSection() {
       <div className="container px-0 md:px-6 grid lg:grid-cols-2 gap-8 items-center relative z-10">
         <div className="flex flex-col text-center lg:text-left">
           <h1 className="text-2xl font-bold leading-[120%] sm:text-3xl md:text-[40px] text-[#2B7FD0]">
-            Shape Your Future <br className="hidden sm:block" /> with the Right Elevator Pitch
+            Shape Your Future <br className="hidden sm:block" /> with the Right
+            Elevator Pitch
           </h1>
           <p className="text-sm md:text-[16px] font-normal leading-[150%] text-[#595959] max-w-[355px] mx-auto lg:mx-0 mt-6 md:mt-[48px]">
-            Unlock your full potential and begin creating the life you truly deserve — one meaningful opportunity at a
-            time.
+            Unlock your full potential and begin creating the life you truly
+            deserve — one meaningful opportunity at a time.
           </p>
-          <div className="w-full max-w-[396px] mt-8 md:mt-[48px] mx-auto lg:mx-0">
+          <div className="w-full lg:max-w-[396px] mt-8 md:mt-[48px] mx-auto lg:mx-0">
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-                <div className="space-y-1">
+                <div className="space-y-1 text-start">
                   <Label
                     htmlFor="job-title"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -103,7 +104,7 @@ export function HeroSection() {
                     onChange={(e) => setJobTitleInput(e.target.value)}
                   />
                 </div>
-                <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200">
+                <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200  text-start">
                   <Label
                     htmlFor="location"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
@@ -119,15 +120,19 @@ export function HeroSection() {
                   />
                 </div>
               </div>
-              <Button
-                onClick={handleSearch}
-                className="w-full sm:w-[160px] bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 h-[51px] text-white rounded-[8px] mt-2 sm:mt-6"
-              >
-                Search
-              </Button>
+              <div className="flex items-start justify-start">
+                <Button
+                  onClick={handleSearch}
+                  className="w-full sm:w-[160px] bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 h-[51px] text-white rounded-[8px] mt-2 sm:mt-6"
+                >
+                  Search
+                </Button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2 items-center justify-center lg:justify-start text-xs sm:text-sm mt-6 md:mt-[48px]">
-              <span className="font-medium text-[#595959]">Trending Keywords:</span>
+              <span className="font-medium text-[#595959]">
+                Trending Keywords:
+              </span>
               <Badge
                 variant="outline"
                 className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border-[#BAC4F6] text-[#999999] bg-gray-100"
@@ -160,5 +165,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

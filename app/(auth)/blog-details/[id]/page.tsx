@@ -1,13 +1,9 @@
-import { BlogDetailsClient } from "@/components/BlogDetailsClient "
+import { BlogDetailsClient } from "@/app/(website)/blog/[id]/_components/BlogDetailsClient ";
 
- 
-
-
-export default async function BlogDetailsPage({ params }: { params: { id: string } }) {
-
-
-  return (
-   
-    <BlogDetailsClient id={params.id} />
-  )
+export default async function BlogDetailsPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return <BlogDetailsClient id={params.id} />;
 }
