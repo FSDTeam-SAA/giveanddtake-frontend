@@ -32,6 +32,17 @@ interface JobsResponse {
   };
 }
 
+// Skeleton loader component for a single job card
+const JobCardSkeleton = () => (
+  <div className="p-6 bg-white rounded-lg shadow-md">
+    <div className="skeleton skeleton-title mb-4"></div>
+    <div className="skeleton skeleton-text mb-2"></div>
+    <div className="skeleton skeleton-text mb-2"></div>
+    <div className="skeleton skeleton-text mb-2"></div>
+    <div className="skeleton skeleton-button mt-4"></div>
+  </div>
+);
+
 export function RecentJobsSection() {
   // Fetch all jobs
   const {
@@ -52,7 +63,20 @@ export function RecentJobsSection() {
 
   if (isJobsLoading) {
     return (
-      <div className="container px-4 md:px-6 text-center">Loading jobs...</div>
+      <section className="bg-gray-50">
+        <div className="container auto text-center py-12 md:py-24 lg:px-4">
+          <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px]">
+            Recent jobs
+          </h2>
+          <div className="w-[196px] h-[6px] bg-[#2B7FD0] rounded-[35px] mx-auto mt-4"></div>
+          <div className="grid gap-6 lg:grid-cols-2 mt-12">
+            {/* Render 8 skeleton cards to match the number of jobs displayed */}
+            {Array.from({ length: 8 }).map((_, index) => (
+              <JobCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </section>
     );
   }
 
@@ -70,7 +94,7 @@ export function RecentJobsSection() {
   };
 
   return (
-    <section className="  bg-gray-50 ">
+    <section className="bg-gray-50">
       <div className="container auto text-center py-12 md:py-24 lg:px-4">
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px]">
           Recent jobs
