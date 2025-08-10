@@ -12,6 +12,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Skeleton } from "@/components/ui/skeleton"; // Assuming you're using shadcn/ui
 
 interface BlogApiResponse {
   success: boolean;
@@ -42,11 +43,50 @@ export function BlogDetailsClient({ id }: { id: string }) {
     queryFn: () => fetchBlog(id),
   });
 
-  console.log(data);
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 md:px-6 lg:py-12 text-center">
-        <p>Loading blog post...</p>
+      <div className="container mx-auto px-4 py-8 md:px-6 lg:py-12">
+        <div className="pt-4">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <Skeleton className="h-4 w-[100px]" />
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <Skeleton className="h-4 w-[60px]" />
+                <BreadcrumbSeparator />
+                <Skeleton className="h-4 w-[100px]" />
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
+        
+        <div className="py-24 space-y-8">
+          {/* Title Skeleton */}
+          <Skeleton className="h-10 w-3/4 mx-auto" />
+          
+          {/* Image Skeleton */}
+          <Skeleton className="w-full h-64 rounded-lg" />
+          
+          {/* Date Skeleton */}
+          <Skeleton className="h-4 w-32" />
+          
+          {/* Content Skeleton */}
+          <div className="space-y-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          
+          <div className="space-y-4 pt-4">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <Skeleton className="h-4 w-4/6" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -61,8 +101,6 @@ export function BlogDetailsClient({ id }: { id: string }) {
 
   const blogPost = data?.data;
 
-  console.log(blogPost);
-
   if (!blogPost) {
     return (
       <div className="container mx-auto px-4 py-8 md:px-6 lg:py-12 text-center">
@@ -70,10 +108,6 @@ export function BlogDetailsClient({ id }: { id: string }) {
       </div>
     );
   }
-
-  const paragraphs = blogPost.description
-    .split("\n\n")
-    .filter((p) => p.trim() !== "");
 
   const formattedDate = new Date(blogPost.createdAt).toLocaleDateString(
     "en-US",
@@ -107,13 +141,13 @@ export function BlogDetailsClient({ id }: { id: string }) {
       </div>
       <div className="py-24">
         <PageHeaders
-          title={blogPost.title} // Use dynamic title
+          title={blogPost.title}
         />
         <article>
           {blogPost.image && (
             <div className="mb-8">
               <Image
-                src={blogPost.image || "/assets/blog2.png"} // Use API image
+                src={blogPost.image || "/assets/blog2.png"}
                 alt={blogPost.title}
                 width={1200}
                 height={675}
