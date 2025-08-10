@@ -69,7 +69,7 @@ export function RecentJobsSection() {
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px]">Recent jobs</h2>
         <div className="w-[196px] h-[6px] bg-[#2B7FD0] rounded-[35px] mx-auto mt-4"></div>
         <div className="grid gap-6 md:grid-cols-2 mt-12">
-          {jobsData?.data.jobs.map((job) => (
+          {jobsData?.data.jobs.slice(0, 8).map((job) => (
             <JobCard 
               key={job._id}
               job={job}
