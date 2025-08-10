@@ -36,7 +36,7 @@ export function HowItWorksSection() {
         </div>
         <div className="grid gap-8 md:grid-cols-3 mt-12">
           <Card
-            className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[300px]" // Fixed height
+            className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[300px]" // Fixed height
             onClick={handleCreateAccountClick}
           >
             <CardHeader className="pb-4">
@@ -58,7 +58,7 @@ export function HowItWorksSection() {
             </CardContent>
           </Card>
           <Link href="/alljobs">
-            <Card className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]"> {/* Fixed height */}
+            <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]"> {/* Fixed height */}
               <CardHeader className="pb-4">
                 <Image
                   src="/assets/explor.png"
@@ -77,7 +77,7 @@ export function HowItWorksSection() {
             </Card>
           </Link>
           <Link href="/elevator-pitch-resume">
-            <Card className="flex flex-col items-center p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]"> {/* Fixed height */}
+            <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]"> {/* Fixed height */}
               <CardHeader className="pb-4">
                 <Image
                   src="/assets/chair.png"

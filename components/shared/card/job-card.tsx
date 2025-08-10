@@ -58,7 +58,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
             <CardContent className="p-4">
               <div className="grid grid-cols-8">
                 {/* Icon Section */}
-                <div className="col-span-1">
+                <div className="col-span-1 hidden md:block">
                   <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                     <span className="text-blue-600 font-semibold text-sm">
                       {getCompanyInitials(job.title)}
@@ -67,7 +67,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                 </div>
 
                 {/* Job Details Section */}
-                <div className="col-span-7">
+                <div className="col-span-8 md:col-span-7">
                   {/* Title & Apply Button */}
                   <div className="flex justify-between">
                     <div>
@@ -77,13 +77,13 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                     </div>
                     <div className="flex gap-2">
                       <Link href={`/job-application?id=${job._id}`}>
-                        <button className="text-black text-base font-normal border border-[#707070] px-4 py-2 rounded-lg">
+                        <button className="text-black text-sm font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg">
                           Apply
                         </button>
                       </Link>
-                      <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                      <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
                         Full Time
-                      </Button>
+                      </button>
                     </div>
                   </div>
 
