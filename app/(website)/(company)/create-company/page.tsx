@@ -184,7 +184,7 @@ export default function CreateCompanyPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8 bg-white">
+    <div className="container mx-auto py-6 space-y-8 bg-white">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900">
           Create Company/Business Account
