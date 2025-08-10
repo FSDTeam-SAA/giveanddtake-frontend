@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 // Define the type for a single notification
 interface Notification {
@@ -23,6 +23,7 @@ interface ApiResponse {
 export default function NotificationsPage() {
   const { data: session } = useSession()
   const userId = session?.user?.id
+  const queryClient = useQueryClient()
 
   // Mock data for demonstration purposes
   const mockNotifications: Notification[] = [
@@ -77,7 +78,7 @@ export default function NotificationsPage() {
   ]
 
   const {
-    data: notifications = mockNotifications, // Default to mockNotifications
+    data: notifications = mockNotifications,
     isLoading,
     isError,
     error,
@@ -108,7 +109,58 @@ export default function NotificationsPage() {
     enabled: !!userId,
     initialData: mockNotifications,
     staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000, // Updated from cacheTime to gcTime (React Query v5)
+    gcTime: 10 * 60 * 1000,
+  })
+
+  // Mutation to mark all notifications as read
+  const markAsReadMutation = useMutation<void, Error, void>({
+    mutationFn: async () => {
+      if (!userId) {
+        return
+      }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/read/${userId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: ApiResponse = await response.json()
+      if (!result.success) {
+        throw new Error(result.message || "Failed to mark notifications as read.")
+      }
+    },
+    onMutate: async () => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["notifications", userId] })
+
+      // Snapshot the previous notifications
+      const previousNotifications = queryClient.getQueryData<Notification[]>(["notifications", userId])
+
+      // Optimistically update the notifications to mark all as read
+      queryClient.setQueryData<Notification[]>(["notifications", userId], (old) =>
+        old ? old.map((notification) => ({ ...notification, isRead: true })) : mockNotifications
+      )
+
+      // Return context with previous notifications for rollback on error
+      return { previousNotifications }
+    },
+    onError: (err, variables, context) => {
+      // Rollback to previous notifications on error
+      queryClient.setQueryData(["notifications", userId], context?.previousNotifications)
+    },
+    onSettled: () => {
+      // Invalidate the query to refetch notifications
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] })
+    },
   })
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
@@ -153,12 +205,26 @@ export default function NotificationsPage() {
             {unreadCount}
           </span>
         </h1>
-        <button className="text-sm text-gray-500 hover:text-gray-700">Mark As Read</button>
+        <button
+          className={cn(
+            "text-sm text-gray-500 hover:text-gray-700",
+            markAsReadMutation.isPending && "opacity-50 cursor-not-allowed"
+          )}
+          onClick={() => markAsReadMutation.mutate()}
+          disabled={markAsReadMutation.isPending || unreadCount === 0}
+        >
+          {markAsReadMutation.isPending ? "Marking..." : "Mark As Read"}
+        </button>
       </div>
 
       {isLoading && <div className="text-center text-gray-500">Loading notifications...</div>}
       {isError && (
         <div className="text-center text-red-500">Error: {error?.message || "An unknown error occurred."}</div>
+      )}
+      {markAsReadMutation.isError && (
+        <div className="text-center text-red-500">
+          Error marking notifications: {markAsReadMutation.error?.message || "An unknown error occurred."}
+        </div>
       )}
 
       {!isLoading && notifications.length === 0 && !isError && (
@@ -171,7 +237,7 @@ export default function NotificationsPage() {
             key={notification.id}
             className={cn(
               "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-colors duration-200",
-              notification.isRead ? "bg-white" : "bg-blue-50",
+              notification.isRead ? "bg-white" : "bg-blue-50"
             )}
             variants={itemVariants}
           >
