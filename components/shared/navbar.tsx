@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -26,12 +26,44 @@ import {
 import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const [userAvatar, setUserAvatar] = useState("");
+  const [userName, setUserName] = useState("");
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
+
+  // Fetch user data from API
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (status === "authenticated" && session?.accessToken) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
+            {
+              headers: {
+                Authorization: `Bearer ${session.accessToken}`,
+              },
+            }
+          );
+          const result = await response.json();
+          if (result.success) {
+            setUserAvatar(result.data.avatar.url || "");
+            setUserName(result.data.name || "CN");
+          } else {
+            console.error("Failed to fetch user data:", result.message);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [status, session?.accessToken]);
 
   // Return an object with all relevant links for the user role
   const getDashboardLinks = () => {
@@ -53,8 +85,8 @@ export function SiteHeader() {
       case "candidate":
         return {
           dashboard: "/account",
-          myPlan: null, // Candidates may not have a "My Plan" page
-          elevatorPitch: null, // Candidates may not have an "Elevator Pitch" page
+          myPlan: null,
+          elevatorPitch: null,
           settings: "/account",
         };
       default:
@@ -204,13 +236,13 @@ export function SiteHeader() {
           {status === "authenticated" ? (
             <>
               <Link href="/notifications">
-              <Button
-                size="icon"
-                className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
-              </Button>
+                <Button
+                  size="icon"
+                  className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                >
+                  <Bell className="h-5 w-5" />
+                  <span className="sr-only">Notifications</span>
+                </Button>
               </Link>
               <Link href="/messages">
                 <Button
@@ -226,13 +258,12 @@ export function SiteHeader() {
                   <Avatar className="h-10 w-10 cursor-pointer">
                     <AvatarImage
                       src={
-                        session.user?.image ||
-                        "/placeholder.svg?height=32&width=32"
+                        userAvatar || "/placeholder.svg?height=32&width=32"
                       }
                       alt="User Avatar"
                     />
                     <AvatarFallback>
-                      {session.user?.name?.[0] || "CN"}
+                      {userName[0] || "CN"}
                     </AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
