@@ -42,6 +42,9 @@ interface JobApplicationPageProps {
   jobId?: string
 }
 
+
+
+
 export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const { data: session, status: sessionStatus } = useSession()
   const userId = session?.user?.id

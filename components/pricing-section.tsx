@@ -5,7 +5,7 @@ import Image from "next/image"
 
 export default function PricingSection() {
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 bg-gray-50 overflow-hidden">
+    <div id="#candidates-pricing" className="relative min-h-screen flex items-center justify-center p-4 bg-gray-50 overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 z-0 opacity-30">
         <Image

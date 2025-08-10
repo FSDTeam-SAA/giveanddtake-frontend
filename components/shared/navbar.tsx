@@ -203,6 +203,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 md:gap-4">
           {status === "authenticated" ? (
             <>
+              <Link href="/notifications">
               <Button
                 size="icon"
                 className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
@@ -210,6 +211,7 @@ export function SiteHeader() {
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
               </Button>
+              </Link>
               <Link href="/messages">
                 <Button
                   size="icon"
