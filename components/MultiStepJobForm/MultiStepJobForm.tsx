@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ import TextEditor from './TextEditor';
 import JobPreview from './JobPreview';
 import CustomCalendar from './CustomCalendar';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 interface ApplicationRequirement {
   id: string;
@@ -84,7 +84,7 @@ export default function MultiStepJobForm() {
   const companyId = "687b65e9153a2f59d4b57ba8";
   const session = useSession();
   const userId = session.data?.user?.id;
-  console.log("user:", userId);
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     jobTitle: '',
     department: '',
@@ -139,6 +139,7 @@ export default function MultiStepJobForm() {
     mutationFn: postJob,
     onSuccess: () => {
       toast.success('Job published successfully!');
+      router.push('/jobs-success');
     },
     onError: (error) => {
       console.error('Error posting job:', error);
@@ -213,27 +214,45 @@ export default function MultiStepJobForm() {
       .map(line => line.replace('* ', '').trim())
       .filter(line => line) || [];
 
+    const experienceMap: Record<string, number> = {
+      entry: 0,
+      mid: 3,
+      senior: 5,
+      executive: 10,
+    };
+
+    const expirationDays = formData.expirationDate === 'custom' 
+      ? 90 
+      : parseInt(formData.expirationDate) || 30;
+
+    const publishDateObj = publishNow 
+      ? new Date() 
+      : new Date(formData.publishDate || (selectedDate?.toISOString() ?? new Date().toISOString()));
+
+    const deadlineDate = new Date(publishDateObj);
+    deadlineDate.setDate(deadlineDate.getDate() + expirationDays);
+
     const postData = {
       userId,
       companyId,
       title: formData.jobTitle,
       description: formData.jobDescription,
-      salaryRange: formData.compensation || '$4000 - $6000',
+      salaryRange: formData.compensation || '$0 - $0',
       location: `${formData.country}, ${formData.region}`,
-      shift: formData.employmentType === 'fulltime' ? 'Day' : 'Flexible',
+      shift: formData.employmentType === 'full-time' ? 'Day' : 'Flexible',
       companyUrl: formData.companyUrl,
       responsibilities,
       educationExperience,
       benefits,
       vacancy: 2,
-      experience: parseInt(formData.experience.match(/\d+/)?.[0] || '2'),
-      deadline: publishNow ? new Date().toISOString() : formData.publishDate || selectedDate?.toISOString() || '2025-08-31T00:00:00.000Z',
-      publishDate: publishNow ? new Date().toISOString() : formData.publishDate || selectedDate?.toISOString() || '2025-08-31T00:00:00.000Z',
+      experience: experienceMap[formData.experience] || 0,
+      deadline: deadlineDate.toISOString(),
+      publishDate: publishDateObj.toISOString(),
       status: 'active',
       jobCategoryId: formData.categoryId,
       employment_Type: formData.employmentType,
       compensation: formData.compensation ? 'Monthly' : 'Negotiable',
-      arcrivedJob: false,
+      archivedJob: false,
       applicationRequirement: applicationRequirements
         .filter(req => req.required)
         .map(req => ({ requirement: `${req.label} required` })),
@@ -242,7 +261,6 @@ export default function MultiStepJobForm() {
         .map(q => ({ question: q.question })),
     };
 
-    console.log('Posting Job Data:', postData);
     publishJob(postData);
   };
 
@@ -574,9 +592,9 @@ export default function MultiStepJobForm() {
               </ul>
               <p className="text-sm md:text-base text-[#000000] mt-3 md:mt-4">
                 For more tips on writing good job descriptions,{' '}
-                {/* <Link href="#" className="text-[#9EC7DC]">
+                <a href="#" className="text-[#9EC7DC]">
                   read our help article.
-                </Link acrobatic */}
+                </a>
               </p>
             </CardContent>
           </Card>
