@@ -7,11 +7,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { PlayIcon } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
+import { useState } from "react"
+import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-// Define TypeScript interfaces for API response
+// Define TypeScript interfaces for jobs API response
 interface ApplicationRequirement {
   requirement: string
   _id: string
@@ -56,7 +66,42 @@ interface ApiResponse {
   data: Job[]
 }
 
-// Function to fetch jobs from the API with enhanced error handling
+// Define TypeScript interfaces for applicants API response
+interface User {
+  _id: string
+  name: string
+  email: string
+}
+
+interface Applicant {
+  _id: string
+  jobId: string
+  userId: User
+  status: string
+  createdAt: string
+  updatedAt: string
+  __v: number
+}
+
+interface ApplicantsApiResponse {
+  success: boolean
+  message: string
+  data: Applicant[]
+}
+
+interface UpdateStatusResponse {
+  success: boolean
+  message: string
+  data: any
+}
+
+interface DeleteJobResponse {
+  success: boolean
+  message: string
+  data: any
+}
+
+// Function to fetch jobs from the API
 const fetchJobs = async (token?: string): Promise<ApiResponse> => {
   try {
     const headers: HeadersInit = {
@@ -82,15 +127,162 @@ const fetchJobs = async (token?: string): Promise<ApiResponse> => {
   }
 }
 
-export default function RecruiterDashboard() {
-    const { data: session } = useSession()
-    const token = session?.accessToken
-    console.log(token)
+// Function to fetch applicants for a specific job
+const fetchApplicants = async (jobId: string, token?: string): Promise<ApplicantsApiResponse> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    }
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/6896feb112980e468298ad5e`, {
+      method: "GET",
+      headers,
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+    const data: ApplicantsApiResponse = await response.json()
+    if (!data.success) {
+      throw new Error(data.message || "Failed to fetch applicants")
+    }
+    return data
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "An unexpected error occurred")
+  }
+}
 
-  // Use TanStack Query to fetch job data
-  const { data, isLoading, error } = useQuery<ApiResponse, Error>({
-    queryKey: ["jobs", token], 
+// Function to update applicant status
+
+
+const updateApplicantStatus = async (
+  applicantId: string,
+  status: string,
+  token?: string
+): Promise<UpdateStatusResponse> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    // Show loading toast
+    const toastId = toast.loading("Updating applicant status...");
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicantId}/status`,
+      {
+        method: "PATCH",
+        headers,
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data: UpdateStatusResponse = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message || "Failed to update status");
+    }
+
+    // Update toast to success
+    toast.success("Status updated successfully!", { id: toastId });
+
+    return data;
+  } catch (error) {
+    // Show error toast
+    toast.error(
+      error instanceof Error ? error.message : "An unexpected error occurred"
+    );
+    throw error;
+  }
+};
+
+// Function to delete a job
+const deleteJob = async (jobId: string, token?: string): Promise<DeleteJobResponse> => {
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    }
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`, {
+      method: "DELETE",
+      headers,
+    })
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+    const data: DeleteJobResponse = await response.json()
+    if (!data.success) {
+      throw new Error(data.message || "Failed to delete job")
+    }
+    return data
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "An unexpected error occurred")
+  }
+}
+
+export default function RecruiterDashboard() {
+  const { data: session } = useSession()
+  const token = session?.accessToken
+  const queryClient = useQueryClient()
+  const [deleteJobId, setDeleteJobId] = useState<string | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // Fetch jobs
+  const { data: jobsData, isLoading: jobsLoading, error: jobsError } = useQuery<ApiResponse, Error>({
+    queryKey: ["jobs", token],
     queryFn: () => fetchJobs(token),
+  })
+
+  // Get the first job ID dynamically
+  const firstJobId = jobsData?.data?.[0]?._id
+
+  // Fetch applicants for the first job
+  const { data: applicantsData, isLoading: applicantsLoading, error: applicantsError } = useQuery<
+    ApplicantsApiResponse,
+    Error
+  >({
+    queryKey: ["applicants", firstJobId, token],
+    queryFn: () => fetchApplicants(firstJobId!, token),
+    enabled: !!firstJobId,
+  })
+
+  // Mutation for updating applicant status
+  const statusMutation = useMutation<
+    UpdateStatusResponse,
+    Error,
+    { applicantId: string; status: string }
+  >({
+    mutationFn: ({ applicantId, status }) => updateApplicantStatus(applicantId, status, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["applicants", firstJobId] })
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update status")
+    },
+  })
+
+  // Mutation for deleting a job
+  const deleteMutation = useMutation<DeleteJobResponse, Error, string>({
+    mutationFn: (jobId) => deleteJob(jobId, token),
+    onSuccess: (data) => {
+      toast.success(data.message || "Job deleted successfully")
+      queryClient.invalidateQueries({ queryKey: ["jobs"] })
+      setIsDeleteModalOpen(false)
+      setDeleteJobId(null)
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete job")
+    },
   })
 
   // Format date for display
@@ -102,8 +294,22 @@ export default function RecruiterDashboard() {
     })
   }
 
-  // Default to empty array to simplify data access
-  const jobs = data?.data ?? []
+  // Default to empty arrays to simplify data access
+  const jobs = jobsData?.data ?? []
+  const applicants = applicantsData?.data ?? []
+
+  // Handle delete button click
+  const handleDeleteClick = (jobId: string) => {
+    setDeleteJobId(jobId)
+    setIsDeleteModalOpen(true)
+  }
+
+  // Handle confirm delete
+  const handleConfirmDelete = () => {
+    if (deleteJobId) {
+      deleteMutation.mutate(deleteJobId)
+    }
+  }
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8">
@@ -184,7 +390,7 @@ export default function RecruiterDashboard() {
         <section className="mb-10">
           <h2 className="text-2xl text-[#000000] font-semibold mb-4">Your Jobs</h2>
           <div className="rounded-lg overflow-hidden">
-            < Table>
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">Job Title</TableHead>
@@ -196,8 +402,7 @@ export default function RecruiterDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
-                  // Skeleton for table rows (match API data length or default to 3)
+                {jobsLoading ? (
                   Array.from({ length: jobs.length || 3 }).map((_, index) => (
                     <TableRow key={index}>
                       <TableCell><Skeleton className="h-4 w-32" /></TableCell>
@@ -208,17 +413,17 @@ export default function RecruiterDashboard() {
                       <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                     </TableRow>
                   ))
-                ) : error ? (
+                ) : jobsError ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-red-600">
-                      Error loading jobs: {error.message}
+                      Error loading jobs: {jobsError.message}
                     </TableCell>
                   </TableRow>
                 ) : jobs.length > 0 ? (
                   jobs.map((job: Job) => (
                     <TableRow key={job._id} className="text-base text-[#000000] font-medium">
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell>{job.vacancy}</TableCell> {/* TODO: Replace with actual applicant count if available */}
+                      <TableCell>{job.vacancy}</TableCell>
                       <TableCell>{job.status.charAt(0).toUpperCase() + job.status.slice(1)}</TableCell>
                       <TableCell>{formatDate(job.deadline)}</TableCell>
                       <TableCell>
@@ -244,8 +449,7 @@ export default function RecruiterDashboard() {
         {/* Job Cards Section */}
         <section className="mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
-            {isLoading ? (
-              // Skeleton for job cards (match API data length or default to 4)
+            {jobsLoading ? (
               Array.from({ length: jobs.length || 4 }).map((_, index) => (
                 <Card key={index}>
                   <CardHeader>
@@ -263,9 +467,9 @@ export default function RecruiterDashboard() {
                   </CardContent>
                 </Card>
               ))
-            ) : error ? (
+            ) : jobsError ? (
               <div className="text-center text-red-600 col-span-2">
-                Error loading jobs: {error.message}
+                Error loading jobs: {jobsError.message}
               </div>
             ) : jobs.length > 0 ? (
               jobs.map((job: Job) => (
@@ -282,14 +486,20 @@ export default function RecruiterDashboard() {
                         {formatDate(job.createdAt)}
                       </CardDescription>
                       <div className="text-2xl font-bold text-[#000000] bg-[#E6F3FF] px-4 py-2 rounded-[8px]">
-                        {job.vacancy} {/* TODO: Replace with actual applicant count if available */}
+                        {job.vacancy}
                         <p className="text-sm font-normal text-gray-500">Applicants</p>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex items-center justify-center">
                     <div className="space-x-2">
-                      <Button className="bg-red-600 w-[160px] hover:bg-red-700 text-white text-base">Delete</Button>
+                      <Button 
+                        className="bg-red-600 w-[160px] hover:bg-red-700 text-white text-base"
+                        onClick={() => handleDeleteClick(job._id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        {deleteMutation.isPending && deleteJobId === job._id ? "Deleting..." : "Delete"}
+                      </Button>
                       <Button className="w-[160px] text-base text-[#000000]" variant="outline">Republish</Button>
                     </div>
                   </CardContent>
@@ -302,7 +512,6 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Applicant List Section */}
-        {/* TODO: Integrate with API if applicant data is available */}
         <section className="mb-10">
           <div className="overflow-hidden">
             {/* Header Row */}
@@ -316,75 +525,121 @@ export default function RecruiterDashboard() {
 
             {/* Applicant Rows */}
             <div className="divide-y border-none">
-              {/* First Applicant */}
-              <div className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl">
-                <div className="col-span-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/applicant-profile.png" />
-                    <AvatarFallback>AL</AvatarFallback>
-                  </Avatar>
+              {applicantsLoading ? (
+                Array.from({ length: applicants.length || 3 }).map((_, index) => (
+                  <div key={index} className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl">
+                    <div className="col-span-2">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                    </div>
+                    <div className="col-span-3"><Skeleton className="h-4 w-32" /></div>
+                    <div className="col-span-2"><Skeleton className="h-4 w-16" /></div>
+                    <div className="col-span-2"><Skeleton className="h-4 w-24" /></div>
+                    <div className="col-span-3 flex space-x-2">
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-24" />
+                      <Skeleton className="h-8 w-24" />
+                    </div>
+                  </div>
+                ))
+              ) : applicantsError ? (
+                <div className="grid grid-cols-12 items-center p crescita 4 text-center text-red-600">
+                  <div className="col-span-12">Error loading applicants: {applicantsError.message}</div>
                 </div>
-                <div className="col-span-3 font-medium">Adam L.</div>
-                <div className="col-span-2">5 Years</div>
-                <div className="col-span-2">June 17</div>
-                <div className="col-span-3 flex space-x-2">
-                  <Button
-                    variant="outline"
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent text-sm h-8"
+              ) : applicants.length > 0 ? (
+                applicants.map((applicant: Applicant) => (
+                  <div
+                    key={applicant._id}
+                    className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl"
                   >
-                    Applicant Details
-                  </Button>
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white text-sm h-8"
-                  >
-                    Shortlist
-                  </Button>
-                  <Button
-                    className="bg-red-600 hover:bg-red-700 text-white text-sm h-8"
-                  >
-                    Reject
-                  </Button>
+                    <div className="col-span-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src="/applicant-profile.png" />
+                        <AvatarFallback>
+                          {applicant.userId.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                    <div className="col-span-3 font-medium">{applicant.userId.name}</div>
+                    <div className="col-span-2">N/A</div>
+                    <div className="col-span-2">{formatDate(applicant.createdAt)}</div>
+                    <div className="col-span-3 flex space-x-2">
+                      <Button
+                        variant="outline"
+                        className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent text-sm h-8"
+                      >
+                        Applicant Details
+                      </Button>
+                      <Button
+                        className="bg-green-600 hover:bg-green-700 text-white text-sm h-8"
+                        onClick={() =>
+                          statusMutation.mutate({ applicantId: applicant._id, status: "shortlisted" })
+                        }
+                        disabled={statusMutation.isPending}
+                      >
+                        {statusMutation.isPending ? "Updating..." : "Shortlist"}
+                      </Button>
+                      <Button
+                        className="bg-red-600 hover:bg-red-700 text-white text-sm h-8"
+                        onClick={() =>
+                          statusMutation.mutate({ applicantId: applicant._id, status: "rejected" })
+                        }
+                        disabled={statusMutation.isPending}
+                      >
+                        {statusMutation.isPending ? "Updating..." : "Reject"}
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="grid grid-cols-12 items-center p-4 text-center">
+                  <div className="col-span-12">No applicants found</div>
                 </div>
-              </div>
-
-              {/* Second Applicant */}
-              <div className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl">
-                <div className="col-span-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src="/applicant-profile.png" />
-                    <AvatarFallback>AL</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="col-span-3 font-medium">Adam L.</div>
-                <div className="col-span-2">5 Years</div>
-                <div className="col-span-2">June 17</div>
-                <div className="col-span-3 flex space-x-2">
-                  <Button
-                    variant="outline"
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent text-sm h-8"
-                  >
-                    Applicant Details
-                  </Button>
-                  <Button
-                    className="bg-green-600 hover:bg-green-700 text-white text-sm h-8"
-                  >
-                    Shortlist
-                  </Button>
-                  <Button
-                    className="bg-red-600 hover:bg-red-700 text-white text-sm h-8"
-                  >
-                    Reject
-                  </Button>
-                </div>
-              </div>
+              )}
             </div>
             <p className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer">See All</p>
           </div>
         </section>
 
+        {/* Delete Confirmation Modal */}
+        <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Job Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete this job? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteModalOpen(false)
+                  setDeleteJobId(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Post A Job Button */}
         <div className="text-center mt-10">
+          <Link href="/add-job">
           <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-8 py-3 text-lg">Post A Job</Button>
+          </Link>
         </div>
       </div>
     </div>
