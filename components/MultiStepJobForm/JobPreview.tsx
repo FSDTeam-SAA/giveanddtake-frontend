@@ -1,11 +1,15 @@
 'use client';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Info, Check, X } from 'lucide-react';
 import Link from 'next/link';
-import CustomCalendar from './CustomCalendar'; // Ensure this import matches your project structure
+import CustomCalendar from './CustomCalendar';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation'; // Use next/navigation for App Router
+import DOMPurify from 'dompurify';
 
 interface ApplicationRequirement {
   id: string;
@@ -18,6 +22,31 @@ interface CustomQuestion {
   question: string;
 }
 
+interface JobPostData {
+  userId: string | undefined;
+  companyId: string;
+  title: string;
+  description: string;
+  salaryRange: string;
+  location: string;
+  shift: string;
+  companyUrl: string;
+  responsibilities: string[];
+  educationExperience: string[];
+  benefits: string[];
+  vacancy: number;
+  experience: number;
+  deadline: string;
+  publishDate: string;
+  status: string;
+  jobCategoryId: string;
+  employment_Type: string;
+  compensation: string;
+  archivedJob: boolean;
+  applicationRequirement: { requirement: string }[];
+  customQuestion: { question: string }[];
+}
+
 interface JobPreviewProps {
   formData: {
     jobTitle: string;
@@ -27,9 +56,12 @@ interface JobPreviewProps {
     employmentType: string;
     experience: string;
     category: string;
+    categoryId: string;
     compensation: string;
     expirationDate: string;
     jobDescription: string;
+    publishDate: string;
+    companyUrl: string;
   };
   applicationRequirements: ApplicationRequirement[];
   customQuestions: CustomQuestion[];
@@ -37,6 +69,24 @@ interface JobPreviewProps {
   publishNow: boolean;
   companyUrl: string;
   onBackToEdit: () => void;
+}
+
+async function postJob(data: JobPostData) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const response = await fetch(`${baseUrl}/jobs`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Failed to publish job: ${response.status} - ${errorData.message || 'Unknown error'}`);
+  }
+
+  return response.json();
 }
 
 export default function JobPreview({
@@ -48,9 +98,102 @@ export default function JobPreview({
   publishNow,
   onBackToEdit,
 }: JobPreviewProps) {
+  const companyId = "687b65e9153a2f59d4b57ba8"; // TODO: Replace with dynamic value
+  const session = useSession();
+  const userId = session.data?.user?.id;
+  const router = useRouter();
+
+  const { mutate: publishJob, isPending } = useMutation({
+    mutationFn: postJob,
+    onSuccess: () => {
+      toast.success('Job published successfully!');
+      router.push('/jobs-success');
+    },
+    onError: (error: Error) => {
+      console.error('Error posting job:', error);
+      toast.error(error.message || 'An error occurred while publishing the job.');
+    },
+  });
+
+  const handlePublish = () => {
+    if (!userId) {
+      toast.error('User not authenticated. Please log in.');
+      return;
+    }
+
+    const responsibilities = formData.jobDescription
+      .split('\n')
+      .filter((line) => line.startsWith('* '))
+      .map((line) => line.replace('* ', '').trim())
+      .filter((line) => line);
+
+    const educationExperience = formData.jobDescription
+      .split('Must-Have')[1]
+      ?.split('Nice-to-Have')[0]
+      ?.split('\n')
+      .filter((line) => line.startsWith('* '))
+      .map((line) => line.replace('* ', '').trim())
+      .filter((line) => line) || [];
+
+    const benefits = formData.jobDescription
+      .split('Why Join Us?')[1]
+      ?.split('How to Apply')[0]
+      ?.split('\n')
+      .filter((line) => line.startsWith('* '))
+      .map((line) => line.replace('* ', '').trim())
+      .filter((line) => line) || [];
+
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 30);
+
+    const experienceMatch = formData.experience.match(/\d+/);
+    const experience = experienceMatch ? parseInt(experienceMatch[0]) : 0;
+
+    if (!experienceMatch) {
+      console.warn('Experience field does not contain a valid number:', formData.experience);
+    }
+
+    const postData: JobPostData = {
+      userId,
+      companyId,
+      title: formData.jobTitle,
+      description: formData.jobDescription,
+      salaryRange: formData.compensation || 'Negotiable',
+      location: `${formData.country}, ${formData.region}`,
+      shift: formData.employmentType === 'fulltime' ? 'Day' : 'Flexible',
+      companyUrl: formData.companyUrl,
+      responsibilities,
+      educationExperience,
+      benefits,
+      vacancy: 2,
+      experience,
+      deadline: publishNow
+        ? new Date().toISOString()
+        : formData.publishDate || selectedDate?.toISOString() || defaultDate.toISOString(),
+      publishDate: publishNow
+        ? new Date().toISOString()
+        : formData.publishDate || selectedDate?.toISOString() || defaultDate.toISOString(),
+      status: 'active',
+      jobCategoryId: formData.categoryId,
+      employment_Type: formData.employmentType,
+      compensation: formData.compensation ? 'Monthly' : 'Negotiable',
+      archivedJob: false,
+      applicationRequirement: applicationRequirements
+        .filter((req) => req.required)
+        .map((req) => ({ requirement: `${req.label} required` })),
+      customQuestion: customQuestions
+        .filter((q) => q.question)
+        .map((q) => ({ question: q.question })),
+    };
+
+    publishJob(postData);
+  };
+
+  const sanitizedDescription = DOMPurify.sanitize(formData.jobDescription);
+
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto   p-8">
+      <div className="max-w-6xl mx-auto p-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mx-auto">Preview Job Posting</h1>
@@ -115,13 +258,17 @@ export default function JobPreview({
               <p className="text-sm font-medium text-gray-700">Company Website</p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {companyUrl ? (
-                  <Link href={companyUrl.startsWith('http') ? companyUrl : `https://${companyUrl}`} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline">
+                  <Link
+                    href={companyUrl.startsWith('http') ? companyUrl : `https://${companyUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
                     {companyUrl}
                   </Link>
-                ) : 'N/A'}
+                ) : (
+                  'N/A'
+                )}
               </div>
             </div>
             <div className="space-y-2">
@@ -133,7 +280,6 @@ export default function JobPreview({
           </div>
         </div>
 
-        {/* Rest of the component remains the same */}
         {/* Job Description Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 bg-white">
           <Card className="lg:col-span-2 border-none shadow-sm">
@@ -141,8 +287,8 @@ export default function JobPreview({
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Job Description</h2>
               <div className="space-y-4">
                 <div
-                  className="p-4 border border-gray-300 rounded-lg  text-gray-800 whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{ __html: formData.jobDescription }}
+                  className="p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                 />
               </div>
             </CardContent>
@@ -158,9 +304,9 @@ export default function JobPreview({
                   <h3 className="text-base font-semibold text-[#9EC7DC]">TIP</h3>
                 </div>
                 <p className="text-base text-gray-800 mb-4">
-                  Job boards will often reject jobs that do not have quality job
-                  descriptions. To ensure that your job description matches the
-                  requirements for job boards, consider the following guidelines:
+                  Job boards will often reject jobs that do not have quality job descriptions. To
+                  ensure that your job description matches the requirements for job boards, consider
+                  the following guidelines:
                 </p>
                 <ul className="list-disc list-inside text-base text-gray-800 space-y-2">
                   <li>Job descriptions should be clear, well-written, and informative</li>
@@ -188,10 +334,7 @@ export default function JobPreview({
                 </div>
                 <h3 className="text-base font-semibold mb-4">Schedule Publish</h3>
                 <div className="border rounded-lg p-3">
-                  <CustomCalendar
-                    selectedDate={selectedDate}
-                    onDateSelect={() => {}} // No-op function since preview is read-only
-                  />
+                  <CustomCalendar selectedDate={selectedDate} onDateSelect={() => {}} />
                 </div>
                 {selectedDate && (
                   <p className="text-sm text-gray-600 mt-2">
@@ -229,7 +372,7 @@ export default function JobPreview({
                         ? 'bg-[#2B7FD0] text-white'
                         : 'border-[#2B7FD0] text-[#2B7FD0]'
                     }`}
-                    disabled // Make buttons non-interactive
+                    disabled
                   >
                     Optional
                   </Button>
@@ -240,7 +383,7 @@ export default function JobPreview({
                         ? 'bg-[#2B7FD0] text-white'
                         : 'border-[#2B7FD0] text-[#2B7FD0]'
                     }`}
-                    disabled // Make buttons non-interactive
+                    disabled
                   >
                     Required
                   </Button>
@@ -260,7 +403,7 @@ export default function JobPreview({
             {customQuestions.map((question) => (
               <div key={question.id} className="space-y-2">
                 <p className="text-xl font-medium text-[#2B7FD0]">Ask a question</p>
-                <div className="flex min-h-[80px] w-full rounded-md border border-gray-300  px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
+                <div className="flex min-h-[80px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
                   {question.question || 'No question entered.'}
                 </div>
               </div>
@@ -279,8 +422,10 @@ export default function JobPreview({
           </Button>
           <Button
             className="w-full sm:w-[267px] h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
+            onClick={handlePublish}
+            disabled={isPending}
           >
-            Publish Your Post
+            {isPending ? 'Publishing...' : 'Publish Your Post'}
           </Button>
         </div>
       </div>

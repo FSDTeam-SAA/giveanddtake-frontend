@@ -29,7 +29,6 @@ export default function ElevatorPitchAndResume() {
     enabled: !!session?.user?.id,
   });
 
-  console.log("Recruiter account info: ", recruiter);
 
   return (
     <section className="py-8 lg:py-20">
