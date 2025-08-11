@@ -5,7 +5,6 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-// Define the type for a single notification
 interface Notification {
   id: string
   message: string
@@ -13,7 +12,6 @@ interface Notification {
   isRead: boolean
 }
 
-// Define the type for the API response
 interface ApiResponse {
   success: boolean
   message: string
@@ -25,75 +23,20 @@ export default function NotificationsPage() {
   const userId = session?.user?.id
   const queryClient = useQueryClient()
 
-  // Mock data for demonstration purposes
-  const mockNotifications: Notification[] = [
-    {
-      id: "1",
-      message: "Your application for **UI Designer** at Adobe has been viewed.",
-      timestamp: "2 hours ago",
-      isRead: false,
-    },
-    {
-      id: "2",
-      message: "You've been invited to an interview by Shopify for the role **Frontend Developer**.",
-      timestamp: "3 hours ago",
-      isRead: false,
-    },
-    {
-      id: "3",
-      message: "Your application for **UI Designer** at Adobe has been viewed.",
-      timestamp: "4 hours ago",
-      isRead: true,
-    },
-    {
-      id: "4",
-      message: "Your application for **UI Designer** at Adobe has been viewed.",
-      timestamp: "2 hours ago",
-      isRead: false,
-    },
-    {
-      id: "5",
-      message: "You've been invited to an interview by Shopify for the role **Frontend Developer**.",
-      timestamp: "3 hours ago",
-      isRead: true,
-    },
-    {
-      id: "6",
-      message: "Your application for **UI Designer** at Adobe has been viewed.",
-      timestamp: "4 hours ago",
-      isRead: false,
-    },
-    {
-      id: "7",
-      message: "You've been invited to an interview by Shopify for the role **Frontend Developer**.",
-      timestamp: "3 hours ago",
-      isRead: true,
-    },
-    {
-      id: "8",
-      message: "Your application for **UI Designer** at Adobe has been viewed.",
-      timestamp: "4 hours ago",
-      isRead: false,
-    },
-  ]
-
   const {
-    data: notifications = mockNotifications,
+    data: notifications = [],
     isLoading,
     isError,
     error,
   } = useQuery<Notification[], Error>({
     queryKey: ["notifications", userId],
     queryFn: async (): Promise<Notification[]> => {
-      if (!userId) {
-        return mockNotifications
-      }
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}`,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      )
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -101,32 +44,23 @@ export default function NotificationsPage() {
 
       const result: ApiResponse = await response.json()
       if (result.success) {
-        return result.data.length > 0 ? result.data : mockNotifications
+        return result.data
       } else {
         throw new Error(result.message || "Failed to fetch notifications.")
       }
     },
     enabled: !!userId,
-    initialData: mockNotifications,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })
 
-  // Mutation to mark all notifications as read
-  const markAsReadMutation = useMutation<void, Error, void>({
+  const markAsReadMutation = useMutation<void, Error, void, { previousNotifications?: Notification[] }>({
     mutationFn: async () => {
-      if (!userId) {
-        return
-      }
+      if (!userId) return
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/read/${userId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { method: "PATCH", headers: { "Content-Type": "application/json" } }
       )
 
       if (!response.ok) {
@@ -139,41 +73,26 @@ export default function NotificationsPage() {
       }
     },
     onMutate: async () => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ["notifications", userId] })
-
-      // Snapshot the previous notifications
       const previousNotifications = queryClient.getQueryData<Notification[]>(["notifications", userId])
-
-      // Optimistically update the notifications to mark all as read
       queryClient.setQueryData<Notification[]>(["notifications", userId], (old) =>
-        old ? old.map((notification) => ({ ...notification, isRead: true })) : mockNotifications
+        old ? old.map((n) => ({ ...n, isRead: true })) : []
       )
-
-      // Return context with previous notifications for rollback on error
       return { previousNotifications }
     },
-    onError: (err, variables, context) => {
-      // Rollback to previous notifications on error
+    onError: (_err, _variables, context) => {
       queryClient.setQueryData(["notifications", userId], context?.previousNotifications)
     },
     onSettled: () => {
-      // Invalidate the query to refetch notifications
       queryClient.invalidateQueries({ queryKey: ["notifications", userId] })
     },
   })
 
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
-  // Animation variants for staggered list items
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.05,
-      },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
   }
 
   const itemVariants = {
@@ -181,19 +100,17 @@ export default function NotificationsPage() {
     visible: { opacity: 1, y: 0 },
   }
 
-  // Function to render message with bolded parts
   const renderMessage = (message: string) => {
     const parts = message.split(/(\*\*.*?\*\*)/g)
-    return parts.map((part, index) => {
-      if (part.startsWith("**") && part.endsWith("**")) {
-        return (
-          <strong key={index} className="font-semibold">
-            {part.slice(2, -2)}
-          </strong>
-        )
-      }
-      return part
-    })
+    return parts.map((part, i) =>
+      part.startsWith("**") && part.endsWith("**") ? (
+        <strong key={i} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      ) : (
+        part
+      )
+    )
   }
 
   return (
@@ -218,21 +135,18 @@ export default function NotificationsPage() {
       </div>
 
       {isLoading && <div className="text-center text-gray-500">Loading notifications...</div>}
-      {isError && (
-        <div className="text-center text-red-500">Error: {error?.message || "An unknown error occurred."}</div>
-      )}
+      {isError && <div className="text-center text-red-500">Error: {error?.message}</div>}
       {markAsReadMutation.isError && (
         <div className="text-center text-red-500">
-          Error marking notifications: {markAsReadMutation.error?.message || "An unknown error occurred."}
+          Error marking notifications: {markAsReadMutation.error?.message}
         </div>
       )}
-
       {!isLoading && notifications.length === 0 && !isError && (
         <div className="text-center text-gray-500">No notifications found.</div>
       )}
 
       <motion.div className="space-y-3" variants={containerVariants} initial="hidden" animate="visible">
-        {notifications.map((notification: Notification) => (
+        {notifications.map((notification) => (
           <motion.div
             key={notification.id}
             className={cn(
@@ -246,7 +160,6 @@ export default function NotificationsPage() {
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
-                viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
@@ -263,10 +176,7 @@ export default function NotificationsPage() {
               <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
             </div>
             {!notification.isRead && (
-              <span
-                className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full ml-auto"
-                aria-label="Unread notification"
-              />
+              <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full ml-auto" aria-label="Unread notification" />
             )}
           </motion.div>
         ))}

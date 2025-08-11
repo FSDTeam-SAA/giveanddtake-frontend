@@ -14,13 +14,16 @@ async function updateAvatar({ token, file }: { token: string; file: File }) {
   const formData = new FormData();
   formData.append("photo", file);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/update`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/update`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Failed to update avatar");
@@ -31,6 +34,8 @@ async function updateAvatar({ token, file }: { token: string; file: File }) {
 export function ProfileSidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+
+  const role = session?.user?.role;
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +44,9 @@ export function ProfileSidebar() {
   const avatarMutation = useMutation({
     mutationFn: updateAvatar,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userData", session?.accessToken] });
+      queryClient.invalidateQueries({
+        queryKey: ["userData", session?.accessToken],
+      });
       toast.success("Avatar updated successfully!");
     },
     onError: (error: any) => {
@@ -47,12 +54,19 @@ export function ProfileSidebar() {
     },
   });
 
+  // Define menu items and filter out "Job History" for recruiters
   const menuItems = [
     { href: "/account", label: "Personal Information", icon: User },
     { href: "/account/change-password", label: "Change Password", icon: Lock },
     { href: "/account/job-history", label: "Job History", icon: Calendar },
     { href: "/account/payment-history", label: "Payment History", icon: Lock },
-  ];
+  ].filter(
+    (item) =>
+      !(
+        (role === "recruiter" || role === "company") &&
+        item.href === "/account/job-history"
+      )
+  );
 
   // Handle loading state with skeleton loader
   if (status === "loading") {
@@ -146,7 +160,9 @@ export function ProfileSidebar() {
               href={item.href}
               onClick={() => setIsOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-sm font-medium ${
-                isActive ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50"
+                isActive
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-700 hover:bg-gray-50"
               }`}
               aria-current={isActive ? "page" : undefined}
             >
@@ -189,7 +205,11 @@ export function ProfileSidebar() {
               Profile <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-80 p-0 bg-white" onInteractOutside={() => setIsOpen(false)}>
+          <SheetContent
+            side="left"
+            className="w-80 p-0 bg-white"
+            onInteractOutside={() => setIsOpen(false)}
+          >
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold">Profile Menu</h2>
             </div>
