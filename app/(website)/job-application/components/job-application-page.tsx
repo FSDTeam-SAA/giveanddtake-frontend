@@ -1,8 +1,7 @@
+
 "use client"
-
 import type React from "react"
-
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -10,17 +9,17 @@ import { Card } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Linkedin, Twitter, Dribbble, Facebook, Instagram, Upload, Trash } from "lucide-react"
+import { ArrowLeft, Linkedin, Twitter, Dribbble, Facebook, Instagram, Upload, Trash, Eye } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
-// Define TypeScript interfaces for type safety
 interface Resume {
   id: string
   name: string
   lastUsed: string
-  selected: boolean
+  url?: string
+  selected?: boolean
 }
 
 interface UserData {
@@ -38,12 +37,18 @@ interface UserData {
   role?: string
 }
 
-interface JobApplicationPageProps {
-  jobId?: string
+interface UserDataResponse {
+  data: UserData
 }
 
+interface JobApplicationPageProps {
+  jobId: string
+}
 
-
+// Skeleton loader component
+const Skeleton = ({ className }: { className?: string }) => (
+  <div className={`animate-pulse bg-gray-200 rounded ${className}`} aria-label="Loading"></div>
+)
 
 export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const { data: session, status: sessionStatus } = useSession()
@@ -51,16 +56,11 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const token = session?.accessToken
   const queryClient = useQueryClient()
 
-  const [resumes, setResumes] = useState<Resume[]>([
-    { id: "1", name: "CV - 1.pdf", lastUsed: "2/28/2025", selected: true },
-    { id: "2", name: "CV - 2.pdf", lastUsed: "2/28/2025", selected: false },
-    { id: "3", name: "CV - 3.pdf", lastUsed: "2/28/2025", selected: false },
-  ])
+  const [resumes, setResumes] = useState<Resume[]>([])
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [agreedToShareCV, setAgreedToShareCV] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Validate environment variable
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
   if (!baseUrl) {
     console.error("NEXT_PUBLIC_BASE_URL is not defined")
@@ -68,14 +68,12 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   }
 
   // Fetch user data
-  const { data, isLoading, error } = useQuery<UserData>({
+  const { data, isLoading, error } = useQuery<UserDataResponse>({
     queryKey: ["user", token],
     queryFn: async () => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL")
       const response = await fetch(`${baseUrl}/user/single`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) throw new Error("Failed to fetch user data")
       return response.json()
@@ -83,22 +81,58 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     enabled: !!token,
   })
 
+  // Fetch resumes
+  const {
+    data: resumeData,
+    isLoading: isResumesLoading,
+    error: resumesError,
+  } = useQuery<Resume[]>({
+    queryKey: ["resumes", userId, token],
+    queryFn: async () => {
+      if (!token || !baseUrl || !userId) throw new Error("Missing token, base URL, or user ID")
+      const response = await fetch(`${baseUrl}/resume/my`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error("Failed to fetch resumes")
+      const data = await response.json()
+      return data.data.map((resume: any, index: number) => ({
+        id: resume._id,
+        name: resume.file[0]?.filename || "Unnamed Resume",
+        lastUsed: new Date(resume.uploadDate).toLocaleDateString("en-US"),
+        url: resume.file[0]?.url?.startsWith("undefined")
+          ? `${baseUrl}${resume.file[0].url.replace("undefined", "")}`
+          : resume.file[0]?.url,
+        selected: resumes.some((r) => r.selected) ? false : index === 0,
+      }))
+    },
+    enabled: !!token && !!userId,
+  })
+
+  useEffect(() => {
+    if (resumeData) {
+      setResumes((prev) => {
+        const selectedId = prev.find((r) => r.selected)?.id
+        return resumeData.map((resume: Resume) => ({
+          ...resume,
+          selected: resume.id === selectedId || (!selectedId && resume.id === resumeData[0]?.id),
+        }))
+      })
+    }
+  }, [resumeData])
+
   const userData: UserData = data?.data || {}
 
-  // Mutation for uploading resume
+  // Upload resume mutation
   const uploadResumeMutation = useMutation({
     mutationFn: async (file: File) => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL")
       const formData = new FormData()
-      formData.append("resume", file)
+      formData.append("resumes", file)
       formData.append("userId", userId || "")
 
-      // Assuming the resume upload endpoint is at /resume relative to baseUrl
       const response = await fetch(`${baseUrl}/resume`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       })
 
@@ -110,15 +144,17 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     },
     onSuccess: (data) => {
       toast.success("Resume uploaded successfully!")
-      // Assuming API returns resume data with id and name
       const newResume: Resume = {
-        id: data.data?.id || Date.now().toString(), // Use API-provided ID or generate one
-        name: data.data?.name || uploadedFile?.name || "Uploaded Resume.pdf",
-        lastUsed: new Date().toLocaleDateString("en-US"), // Current date
-        selected: true, // Auto-select the newly uploaded resume
+        id: data.data?._id || Date.now().toString(),
+        name: data.data?.file[0]?.filename || uploadedFile?.name || "Uploaded Resume.pdf",
+        lastUsed: new Date().toLocaleDateString("en-US"),
+        url: data.data?.file[0]?.url?.startsWith("undefined")
+          ? `${baseUrl}${data.data.file[0].url.replace("undefined", "")}`
+          : data.data?.file[0]?.url,
+        selected: true,
       }
-      setResumes((prev) => prev.map((r) => ({ ...r, selected: false })).concat(newResume))
-      setUploadedFile(null) // Clear the file input
+      setResumes((prev) => [...prev.map((r) => ({ ...r, selected: false })), newResume])
+      setUploadedFile(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
       }
@@ -128,16 +164,41 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     },
   })
 
-  // Mutation for job application submission
-  const applyJobMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
+  // Delete resume mutation
+  const deleteResumeMutation = useMutation({
+    mutationFn: async (resumeId: string) => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL")
-      const response = await fetch(`${baseUrl}/job-applications`, {
+      const response = await fetch(`${baseUrl}/resume/${resumeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error("Failed to delete resume")
+      return response.json()
+    },
+    onSuccess: () => {
+      toast.success("Resume deleted successfully!")
+      queryClient.invalidateQueries({ queryKey: ["resumes", userId] })
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete resume")
+    },
+  })
+
+  // Apply job mutation
+  const applyJobMutation = useMutation({
+    mutationFn: async ({ jobId, userId, resumeId }: { jobId: string; userId: string; resumeId: string }) => {
+      if (!token || !baseUrl) throw new Error("Missing token or base URL")
+      const response = await fetch(`${baseUrl}/applied-jobs`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: formData,
+        body: JSON.stringify({
+          jobId,
+          userId,
+          resumeId,
+        }),
       })
       if (!response.ok) {
         const errorData = await response.json()
@@ -148,7 +209,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     onSuccess: () => {
       toast.success("Application submitted successfully!")
       queryClient.invalidateQueries({ queryKey: ["job-applications", userId] })
-      setResumes(resumes.map((r) => ({ ...r, selected: r.id === resumes[0]?.id })))
+      setResumes((prev) => prev.map((r, index) => ({ ...r, selected: index === 0 && !prev.some((r) => r.selected) })))
       setUploadedFile(null)
       setAgreedToShareCV(false)
       if (fileInputRef.current) {
@@ -165,8 +226,10 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   }
 
   const handleResumeDelete = (id: string) => {
+    const wasSelected = resumes.find((r) => r.id === id)?.selected
+    deleteResumeMutation.mutate(id)
     const newResumes = resumes.filter((r) => r.id !== id)
-    if (newResumes.length > 0 && !newResumes.some((r) => r.selected)) {
+    if (newResumes.length > 0 && wasSelected && !newResumes.some((r) => r.selected)) {
       newResumes[0].selected = true
     }
     setResumes(newResumes)
@@ -176,7 +239,6 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     const file = e.target.files?.[0]
     if (file && file.type === "application/pdf") {
       setUploadedFile(file)
-      // Trigger upload to API
       uploadResumeMutation.mutate(file)
     } else {
       toast.error("Please select a valid PDF file.")
@@ -185,7 +247,6 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-
     if (sessionStatus === "loading") {
       toast.info("Please wait, checking authentication...")
       return
@@ -194,39 +255,87 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       toast.error("Please log in to apply for this job.")
       return
     }
+    if (!jobId) {
+      toast.error("Job ID is missing. Please try again.")
+      return
+    }
     if (!agreedToShareCV) {
       toast.error("Please agree to share your CV.")
       return
     }
 
     const selectedResume = resumes.find((r) => r.selected)
-    if (!selectedResume && !uploadedFile) {
-      toast.error("Please select a resume or upload one.")
+    if (!selectedResume) {
+      toast.error("Please select a resume.")
       return
     }
 
-    const formData = new FormData()
-    formData.append("jobId", jobId || "")
-    formData.append("userId", userId)
-
-    if (selectedResume) {
-      formData.append("resumeId", selectedResume.id)
-    }
-    if (uploadedFile) {
-      formData.append("resume", uploadedFile)
-    }
-
-    formData.append("agreedToShareCV", agreedToShareCV.toString())
-
-    applyJobMutation.mutate(formData)
+    applyJobMutation.mutate({
+      jobId,
+      userId,
+      resumeId: selectedResume.id,
+    })
   }
 
-  if (isLoading) {
-    return <div className="container mx-auto text-center">Loading user data...</div>
+  if (isLoading || isResumesLoading) {
+    return (
+      <div className="container mx-auto">
+        <div className="hidden md:block">
+          <Skeleton className="h-6 w-1/2 my-6" />
+        </div>
+        <Skeleton className="h-10 w-3/4 mx-auto mb-8" />
+        <div className="grid grid-cols-8 gap-6">
+          <div className="col-span-8 lg:col-span-2">
+            <div className="flex flex-col items-center text-center">
+              <Skeleton className="w-[170px] h-[170px] rounded mb-4" />
+              <Skeleton className="h-10 w-1/2 mb-2" />
+              <Skeleton className="h-6 w-1/3 mb-4" />
+              <div className="flex gap-2 mb-6">
+                {Array(5)
+                  .fill(0)
+                  .map((_, i) => (
+                    <Skeleton key={i} className="w-10 h-10 rounded" />
+                  ))}
+              </div>
+            </div>
+          </div>
+          <div className="col-span-8 lg:col-span-6">
+            <Skeleton className="h-10 w-1/2 mb-4" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+              {Array(4)
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i}>
+                    <Skeleton className="h-6 w-1/3 mb-2" />
+                    <Skeleton className="h-5 w-2/3" />
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+        <div className="my-12">
+          <Skeleton className="h-6 w-1/4 mb-4" />
+          <div className="space-y-3 mb-6">
+            {Array(3)
+              .fill(0)
+              .map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+              ))}
+          </div>
+          <Skeleton className="h-32 w-full rounded-lg mb-6" />
+          <Skeleton className="h-6 w-1/2 mb-4" />
+          <Skeleton className="h-12 w-full rounded-lg" />
+        </div>
+      </div>
+    )
   }
 
-  if (error) {
-    return <div className="container mx-auto text-center text-red-600">Error loading user data: {error.message}</div>
+  if (error || resumesError) {
+    return (
+      <div className="container mx-auto text-center text-red-600">
+        Error: {error?.message || resumesError?.message || "Failed to load data"}
+      </div>
+    )
   }
 
   return (
@@ -342,6 +451,13 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                           aria-label={`Select resume ${resume.name}`}
                         />
                       </RadioGroup>
+                      {resume.url && (
+                        <Button variant="ghost" size="icon" asChild aria-label={`View resume ${resume.name}`}>
+                          <Link href={resume.url} target="_blank">
+                            <Eye className="h-5 w-5 text-gray-500 hover:text-blue-600" />
+                          </Link>
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"

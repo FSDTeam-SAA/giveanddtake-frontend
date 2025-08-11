@@ -27,7 +27,7 @@ type Company = {
     avatar?: {
         url: string
     }
-    cname?: string
+    name?: string
     country?: string
     city?: string
     zipcode?: string
@@ -324,17 +324,17 @@ export default function RecruiterAccount({
                         {/* Right: meta sidebar */}
                         <aside className="space-y-8 md:pl-4">
                             <div className="space-y-3">
-                                {companyId?.cname && (
+                                {companyId?.name && (
                                     <div className="flex items-center gap-6">
                                         <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
                                             <Avatar>
                                                 <AvatarImage
                                                     src={companyId?.avatar?.url}
-                                                    alt={companyId?.cname || ""}
+                                                    alt={companyId?.name || ""}
                                                     className="rounded-none object-cover"
                                                 />
                                                 <AvatarFallback className="rounded-none">
-                                                    {companyId?.cname
+                                                    {companyId?.name
                                                         ?.split(" ")
                                                         .map((word: string) => word[0]?.toUpperCase())
                                                         .join("") || "U"}
@@ -343,7 +343,7 @@ export default function RecruiterAccount({
                                         </span>
                                         <div className="min-w-0">
                                             <p className="truncate text-sm font-medium">
-                                                {companyId.cname}
+                                                {companyId.name}
                                             </p>
                                         </div>
                                     </div>
