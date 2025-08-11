@@ -29,7 +29,6 @@ export default function ElevatorPitchAndResume() {
     enabled: !!session?.user?.id,
   });
 
-
   return (
     <section className="py-8 lg:py-20">
       {session?.user?.role === "candidate" ? (
