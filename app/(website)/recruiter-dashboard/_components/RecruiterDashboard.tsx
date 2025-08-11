@@ -153,7 +153,7 @@ const fetchApplicants = async (jobId: string, token?: string): Promise<Applicant
   }
 }
 
-// Function to update applicant status
+
 
 
 const updateApplicantStatus = async (
@@ -500,7 +500,9 @@ export default function RecruiterDashboard() {
                       >
                         {deleteMutation.isPending && deleteJobId === job._id ? "Deleting..." : "Delete"}
                       </Button>
-                      <Button className="w-[160px] text-base text-[#000000]" variant="outline">Republish</Button>
+                      <Link href={`/single-job/${job._id}`} className="w-[160px] text-base text-[#000000]">
+                      <Button className="w-[160px] text-base text-[#000000]" variant="outline">View Details</Button>
+                      </Link>
                     </div>
                   </CardContent>
                 </Card>
