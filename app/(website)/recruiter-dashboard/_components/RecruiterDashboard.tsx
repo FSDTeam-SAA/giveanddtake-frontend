@@ -136,7 +136,7 @@ const fetchApplicants = async (jobId: string, token?: string): Promise<Applicant
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
     }
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/6896feb112980e468298ad5e`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}`, {
       method: "GET",
       headers,
     })
