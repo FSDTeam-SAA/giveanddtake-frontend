@@ -40,11 +40,11 @@ const formSchema = z.object({
   cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
   industry: z.string().min(1, "Industry is required"),
-  linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
-  twitter: z.string().url("Invalid Twitter URL").optional().or(z.literal("")),
-  upwork: z.string().url("Invalid Upwork URL").optional().or(z.literal("")),
-  otherBusiness: z.string().url("Invalid URL").optional().or(z.literal("")),
-  otherProfessional: z.string().url("Invalid URL").optional().or(z.literal("")),
+  linkedin: z.string().optional().or(z.literal("")),
+  twitter: z.string().optional().or(z.literal("")),
+  upwork: z.string().optional().or(z.literal("")),
+  otherBusiness: z.string().optional().or(z.literal("")),
+  otherProfessional: z.string().optional().or(z.literal("")),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -218,7 +218,9 @@ export default function CreateCompanyPage() {
               accept="video/*"
               maxSize={100 * 1024 * 1024}
               variant="dark"
-            />
+            >
+              
+              </FileUpload>
           </div>
 
           {/* Company Logo and About */}
