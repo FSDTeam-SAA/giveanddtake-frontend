@@ -22,6 +22,7 @@ import {
   Video,
   UserPen,
   Settings,
+  Bookmark,
 } from "lucide-react";
 import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { useSession, signOut } from "next-auth/react";
@@ -257,14 +258,10 @@ export function SiteHeader() {
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-10 w-10 cursor-pointer">
                     <AvatarImage
-                      src={
-                        userAvatar || "/placeholder.svg?height=32&width=32"
-                      }
+                      src={userAvatar || "/placeholder.svg?height=32&width=32"}
                       alt="User Avatar"
                     />
-                    <AvatarFallback>
-                      {userName[0] || "CN"}
-                    </AvatarFallback>
+                    <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -285,7 +282,7 @@ export function SiteHeader() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      
+
                       {links.elevatorPitch && (
                         <DropdownMenuItem
                           className={
@@ -319,18 +316,29 @@ export function SiteHeader() {
                     </>
                   )}
                   {userRole === "candidate" && (
-                    <DropdownMenuItem
-                      className={
-                        isActive(getProfileLink()) ? "text-[#2B7FD0]" : ""
-                      }
-                    >
-                      <Link
-                        href={getProfileLink()}
-                        className="flex items-center"
+                    <>
+                      <DropdownMenuItem
+                        className={
+                          isActive(getProfileLink()) ? "text-[#2B7FD0]" : ""
+                        }
                       >
-                        <UserPen className="mr-2 h-4 w-4" /> Profile
-                      </Link>
-                    </DropdownMenuItem>
+                        <Link
+                          href={getProfileLink()}
+                          className="flex items-center"
+                        >
+                          <UserPen className="mr-2 h-4 w-4" /> Profile
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className={
+                          isActive("/bookmarks") ? "text-[#2B7FD0]" : ""
+                        }
+                      >
+                        <Link href="/bookmarks" className="flex items-center">
+                          <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
