@@ -285,21 +285,7 @@ export function SiteHeader() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      {links.myPlan && (
-                        <DropdownMenuItem
-                          className={
-                            isActive(links.myPlan) ? "text-[#2B7FD0]" : ""
-                          }
-                        >
-                          <Link
-                            href={links.myPlan}
-                            className="flex items-center"
-                          >
-                            <ChartNoAxesGantt className="mr-2 h-4 w-4" /> My
-                            Plan
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
+                      
                       {links.elevatorPitch && (
                         <DropdownMenuItem
                           className={

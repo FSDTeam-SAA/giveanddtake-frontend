@@ -6,15 +6,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/components/shared/pagination";
+import { format } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Type for individual payment data
+// Type for individual payment data (updated to match API fields)
 interface Payment {
   transactionId: string;
-  dateTime: string;
-  planName: string;
-  amountPaid: number;
+  createdAt: string;
+  planTitle: string;
+  amount: number;
   paymentMethod: string;
-  status: string;
+  paymentStatus: string;
 }
 
 // Type for pagination metadata
@@ -25,10 +27,26 @@ interface Meta {
   itemsPerPage: number;
 }
 
-// Type for API response
+// Type for API response (updated to reflect actual API structure)
 interface ApiResponse {
   success: boolean;
-  data: Payment[];
+  data: {
+    _id: string;
+    userId: string;
+    amount: number;
+    planId: {
+      _id: string;
+      title: string;
+      price: number;
+    };
+    paymentStatus: string;
+    transactionId: string;
+    paymentMethod: string;
+    planStatus: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  }[];
   meta: Meta;
 }
 
@@ -77,6 +95,11 @@ export function PaymentHistory() {
         return;
       }
 
+      if (!process.env.NEXT_PUBLIC_BASE_URL) {
+        setError("API base URL is not configured.");
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
@@ -91,12 +114,26 @@ export function PaymentHistory() {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch payment history.");
+          if (response.status === 401) {
+            throw new Error("Unauthorized access. Please log in again.");
+          } else if (response.status === 404) {
+            throw new Error("No payment history found for this user.");
+          }
+          throw new Error(`Failed to fetch payment history: ${response.statusText}`);
         }
 
         const result: ApiResponse = await response.json();
         if (result.success) {
-          setPaymentData(result.data);
+          // Transform API data to match Payment interface
+          const transformedData: Payment[] = result.data.map((item) => ({
+            transactionId: item.transactionId,
+            createdAt: item.createdAt,
+            planTitle: item.planId.title,
+            amount: item.amount,
+            paymentMethod: item.paymentMethod,
+            paymentStatus: item.paymentStatus,
+          }));
+          setPaymentData(transformedData);
           setMeta(result.meta);
         } else {
           throw new Error("API returned unsuccessful response.");
@@ -111,11 +148,40 @@ export function PaymentHistory() {
     fetchPaymentData();
   }, [token, userId, currentPage]);
 
+  const handleDownload = async (transactionId: string) => {
+    if (!process.env.NEXT_PUBLIC_BASE_URL) {
+      setError("API base URL is not configured.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/payments/receipt/${transactionId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to download receipt.");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `receipt_${transactionId}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to download receipt.");
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6 text-center">Payment History</h2>
 
-      {isLoading && <p className="text-center">Loading...</p>}
       {error && (
         <div className="text-center">
           <p className="text-red-600">{error}</p>
@@ -129,35 +195,40 @@ export function PaymentHistory() {
           )}
         </div>
       )}
-      {!isLoading && !error && paymentData.length === 0 && (
-        <p className="text-center text-gray-600">No payment history available.</p>
-      )}
 
-      {paymentData.length > 0 && (
+      {isLoading ? (
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      ) : paymentData.length === 0 ? (
+        <p className="text-center text-gray-600">No payment history available.</p>
+      ) : (
         <div className="overflow-x-auto">
-          <Table>
+          <Table aria-label="Payment history table">
             <TableHeader>
               <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Plan Name</TableHead>
-                <TableHead>Amount Paid</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Receipt</TableHead>
+                <TableHead scope="col">Transaction ID</TableHead>
+                <TableHead scope="col">Date & Time</TableHead>
+                <TableHead scope="col">Plan Name</TableHead>
+                <TableHead scope="col">Amount Paid</TableHead>
+                <TableHead scope="col">Receipt</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paymentData.map((payment, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{payment.transactionId}</TableCell>
-                  <TableCell>{payment.dateTime}</TableCell>
-                  <TableCell>{payment.planName}</TableCell>
-                  <TableCell>{payment.amountPaid}</TableCell>
-                  <TableCell>{payment.paymentMethod}</TableCell>
-                  <TableCell className="text-green-600">{payment.status}</TableCell>
+                  <TableCell>{format(new Date(payment.createdAt), "PPp")}</TableCell>
+                  <TableCell>{payment.planTitle}</TableCell>
+                  <TableCell>${payment.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button variant="link" className="text-blue-600">
+                    <Button 
+                      variant="link" 
+                      className="text-blue-600" 
+                      onClick={() => handleDownload(payment.transactionId)}
+                    >
                       Download
                     </Button>
                   </TableCell>
