@@ -243,6 +243,8 @@ export default function RecruiterDashboard() {
     queryFn: () => fetchJobs(token),
   })
 
+
+
   // Get the first job ID dynamically
   const firstJobId = jobsData?.data?.[0]?._id
 
@@ -255,6 +257,8 @@ export default function RecruiterDashboard() {
     queryFn: () => fetchApplicants(firstJobId!, token),
     enabled: !!firstJobId,
   })
+
+  
 
   // Mutation for updating applicant status
   const statusMutation = useMutation<
@@ -427,7 +431,7 @@ export default function RecruiterDashboard() {
                       <TableCell>{job.status.charAt(0).toUpperCase() + job.status.slice(1)}</TableCell>
                       <TableCell>{formatDate(job.deadline)}</TableCell>
                       <TableCell>
-                        <Link href={`/jobs/${job._id}`} className="text-blue-600 hover:underline">
+                        <Link href={`/candidate-list/${job._id}`} className="text-blue-600 hover:underline">
                           View
                         </Link>
                       </TableCell>
