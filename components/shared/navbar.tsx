@@ -140,18 +140,18 @@ export function SiteHeader() {
           >
             All Jobs
           </Link>
-          {(userRole === "candidate" || userRole === "recruiter") && (
-            <Link
-              href="/elevator-pitch-resume"
-              className={`transition-colors ${
-                isActive("/elevator-pitch-resume")
-                  ? "text-[#2B7FD0]"
-                  : "hover:text-[#2B7FD0]"
-              }`}
-            >
-              Elevator Pitch & Resume
-            </Link>
-          )}
+
+          <Link
+            href="/elevator-pitch-resume"
+            className={`transition-colors ${
+              isActive("/elevator-pitch-resume")
+                ? "text-[#2B7FD0]"
+                : "hover:text-[#2B7FD0]"
+            }`}
+          >
+            Elevator Pitch & Resume
+          </Link>
+
           <Link
             href="/blog"
             className={`transition-colors ${
@@ -257,14 +257,10 @@ export function SiteHeader() {
                 <DropdownMenuTrigger asChild>
                   <Avatar className="h-10 w-10 cursor-pointer">
                     <AvatarImage
-                      src={
-                        userAvatar || "/placeholder.svg?height=32&width=32"
-                      }
+                      src={userAvatar || "/placeholder.svg?height=32&width=32"}
                       alt="User Avatar"
                     />
-                    <AvatarFallback>
-                      {userName[0] || "CN"}
-                    </AvatarFallback>
+                    <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -285,7 +281,7 @@ export function SiteHeader() {
                           </Link>
                         </DropdownMenuItem>
                       )}
-                      
+
                       {links.elevatorPitch && (
                         <DropdownMenuItem
                           className={

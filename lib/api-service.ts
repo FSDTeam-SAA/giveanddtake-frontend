@@ -137,77 +137,81 @@ export async function uploadElevatorPitch({
 // Create Resume API
 export async function createResume(data: FormData) {
   try {
-    const response = await apiClient.post("/create-resume/create-resume", data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    })
-    console.log("Resume creation successful: ", response)
-    return response.data
+    const response = await apiClient.post(
+      "/create-resume/create-resume",
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    console.log("Resume creation successful: ", response);
+    return response.data;
   } catch (error) {
-    console.error("Error in createResume API call:", error)
-    throw error
+    console.error("Error in createResume API call:", error);
+    throw error;
   }
 }
 
-
-
-// Get my resume 
+// Get my resume
 export async function getMyResume() {
-  const res = await apiClient.get('/create-resume/get-resume')
-  return res.data
+  const res = await apiClient.get("/create-resume/get-resume");
+  return res.data;
 }
-
 
 // Get resume by user id
 export async function getResumeByUserId(userId: string) {
-  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
-  return res.data
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`);
+  return res.data;
 }
 
 // Get candidate applied jobs
 export async function getAppliedJobs(userId: string) {
-  const res = await apiClient.get(`/applied-jobs/user/${userId}`)
-  return res.data
+  const res = await apiClient.get(`/applied-jobs/user/${userId}`);
+  return res.data;
 }
-
 
 // Get recruiter account
 export async function getRecruiterAccount(userId: string) {
-  const res = await apiClient.get(`/recruiter/recruiter-account/${userId}`)
-  return res.data
+  const res = await apiClient.get(`/recruiter/recruiter-account/${userId}`);
+  return res.data;
 }
 
+// Get company account
+export async function getCompanyAccount(userId: string) {
+  const res = await apiClient.get(`/company/user/${userId}`);
+  return res.data;
+}
 
 // Get recruiter jobs
 export async function getRecruiterJobs() {
-  const res = await apiClient.get(`/jobs/recruiter/company`)
-  return res.data
+  const res = await apiClient.get(`/jobs/recruiter/company`);
+  return res.data;
 }
 
 // Get archived jobs
 export async function getArchivedJobs() {
-  const res = await apiClient.get(`/jobs/archived/user`)
-  return res.data
+  const res = await apiClient.get(`/jobs/archived/user`);
+  return res.data;
 }
 
 // Update Archive Job Api
 export async function updateArchiveJob(jobId: string, arcrivedJob: boolean) {
-  const res = await apiClient.patch(`/jobs/${jobId}`, { arcrivedJob })
-  return res.data
+  const res = await apiClient.patch(`/jobs/${jobId}`, { arcrivedJob });
+  return res.data;
 }
 
 // Get applications by job id
 export async function getApplicationsByJobId(jobId: string) {
-  const res = await apiClient.get(`/applied-jobs/job/${jobId}`)
-  return res.data
+  const res = await apiClient.get(`/applied-jobs/job/${jobId}`);
+  return res.data;
 }
 
 // Delete Job API
 export async function deleteJob(jobId: string) {
-  const res = await apiClient.delete(`/jobs/${jobId}`)
-  return res.data
+  const res = await apiClient.delete(`/jobs/${jobId}`);
+  return res.data;
 }
-
 
 export default apiClient;
