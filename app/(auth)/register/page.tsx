@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,7 @@ import {
 import { Eye, EyeOff, User, Mail, Phone, Lock } from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterData>({
@@ -40,6 +40,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<
+    "candidate" | "recruiter" | "company"
+  >("candidate");
+
   const router = useRouter();
 
   const registerMutation = useMutation({
@@ -51,6 +55,10 @@ export default function RegisterPage() {
       console.error("Registration failed:", error);
     },
   });
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, role: selectedRole }));
+  }, [selectedRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +214,34 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Role Selection */}
+            <div className="flex gap-2">
+              {[
+                { value: "recruiter", label: "Join As A Recruiter" },
+                { value: "company", label: "Join As A Company" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setSelectedRole((prev) =>
+                      prev === option.value
+                        ? "candidate"
+                        : (option.value as "recruiter" | "company")
+                    )
+                  }
+                  className={cn(
+                    "w-full px-4 py-2 border rounded-md transition-colors scale-y-95",
+                    selectedRole === option.value
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-transparent border-gray-300 hover:bg-gray-100"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="terms"
@@ -227,7 +263,13 @@ export default function RegisterPage() {
               className="w-full"
               disabled={registerMutation.isPending}
             >
-              {registerMutation.isPending ? "Creating Account..." : "Sign Up"}
+              {registerMutation.isPending
+                ? "Creating Account..."
+                : selectedRole === "candidate"
+                ? "Join as Candidate"
+                : selectedRole === "recruiter"
+                ? "Join as Recruiter"
+                : "Join as Company"}
             </Button>
 
             <div className="text-center">
@@ -241,14 +283,6 @@ export default function RegisterPage() {
                 Sign In Here
               </Link>
             </div>
-
-            <Button
-              variant="outline"
-              className="w-full bg-transparent"
-              type="button"
-            >
-              Join As A Recruiter
-            </Button>
 
             <div className="flex justify-center space-x-4 pt-4">
               <Button

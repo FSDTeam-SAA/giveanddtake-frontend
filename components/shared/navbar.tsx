@@ -141,18 +141,18 @@ export function SiteHeader() {
           >
             All Jobs
           </Link>
-          {(userRole === "candidate" || userRole === "recruiter") && (
-            <Link
-              href="/elevator-pitch-resume"
-              className={`transition-colors ${
-                isActive("/elevator-pitch-resume")
-                  ? "text-[#2B7FD0]"
-                  : "hover:text-[#2B7FD0]"
-              }`}
-            >
-              Elevator Pitch & Resume
-            </Link>
-          )}
+
+          <Link
+            href="/elevator-pitch-resume"
+            className={`transition-colors ${
+              isActive("/elevator-pitch-resume")
+                ? "text-[#2B7FD0]"
+                : "hover:text-[#2B7FD0]"
+            }`}
+          >
+            Elevator Pitch & Resume
+          </Link>
+
           <Link
             href="/blog"
             className={`transition-colors ${
