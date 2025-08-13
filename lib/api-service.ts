@@ -146,10 +146,24 @@ export async function createResume(data: FormData) {
         },
       }
     );
-    console.log("Resume creation successful: ", response);
     return response.data;
   } catch (error) {
     console.error("Error in createResume API call:", error);
+    throw error;
+  }
+}
+
+// Update Resume API
+export async function updateResume(data: FormData) {
+  try {
+    const response = await apiClient.patch(`/create-resume/resume/update`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateResume API call:", error);
     throw error;
   }
 }
