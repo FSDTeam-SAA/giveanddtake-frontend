@@ -1,17 +1,61 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
-import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
-import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
-import Link from "next/link";
-import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal, AwaitedReactNode } from "react";
+import {
+  fetchCompanyDetails,
+  fetchCompanyJobs,
+  editCompanyAccount,
+} from "@/lib/api-service";
+import {
+  MapPin,
+  Users,
+  Calendar,
+  ExternalLink,
+  Archive,
+  Edit,
+  Save,
+  X,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
 
-export default function CompanyProfilePage({ userId }: { userId?: string }) {
+type Company = {
+  _id: string;
+  userId: string;
+  cname: string;
+  aboutUs: string;
+  industry: string;
+  city: string;
+  country: string;
+  clogo?: string;
+  links: string[];
+  service: string[];
+  employeesId?: string[];
+};
+
+export default function EditableCompanyProfile({
+  userId,
+  onSave,
+}: {
+  userId?: string;
+  onSave?: (updatedCompany: Company) => void;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCompany, setEditedCompany] = useState<Company | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const queryClient = useQueryClient();
+
+  const { data: session } = useSession();
+
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
     queryFn: () => fetchCompanyDetails(userId as string),
@@ -31,16 +75,56 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     );
   }
 
-  // if (!companyData?.companies?.[0]) {
-  //   return (
-  //     <div className="flex justify-center items-center min-h-screen">
-  //       Company not found
-  //     </div>
-  //   );
-  // }
+  if (!companyData?.companies?.[0]) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Company not found
+      </div>
+    );
+  }
 
-  const company = companyData.companies[0];
+  const company = isEditing
+    ? editedCompany || companyData.companies[0]
+    : companyData.companies[0];
   const honors = companyData.honors || [];
+
+  const handleEdit = () => {
+    setEditedCompany({ ...companyData.companies[0] });
+    setIsEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!editedCompany || !userId) return;
+
+    setIsSaving(true);
+    try {
+      await editCompanyAccount(company._id, editedCompany);
+      queryClient.invalidateQueries({
+        queryKey: ["company", userId],
+      });
+      onSave?.(editedCompany);
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to save company profile:", error);
+      // You can add error handling UI here
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditedCompany(null);
+    setIsEditing(false);
+  };
+
+  const updateCompanyField = (field: keyof Company, value: any) => {
+    if (editedCompany) {
+      setEditedCompany({
+        ...editedCompany,
+        [field]: value,
+      });
+    }
+  };
 
   // Parse JSON strings
   const links = company.links || [];
@@ -64,52 +148,155 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           </div>
 
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-1 text-gray-900">
-              {company.cname}
-            </h1>
-            <p className="text-gray-600 mb-4 text-sm">{company.industry}</p>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="cname">Company Name</Label>
+                  <Input
+                    id="cname"
+                    value={editedCompany?.cname || ""}
+                    onChange={(e) =>
+                      updateCompanyField("cname", e.target.value)
+                    }
+                    className="text-2xl font-bold"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    value={editedCompany?.industry || ""}
+                    onChange={(e) =>
+                      updateCompanyField("industry", e.target.value)
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={editedCompany?.city || ""}
+                      onChange={(e) =>
+                        updateCompanyField("city", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={editedCompany?.country || ""}
+                      onChange={(e) =>
+                        updateCompanyField("country", e.target.value)
+                      }
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="links">Website Links (comma separated)</Label>
+                  <Input
+                    id="links"
+                    value={editedCompany?.links?.join(", ") || ""}
+                    onChange={(e) =>
+                      updateCompanyField(
+                        "links",
+                        e.target.value.split(", ").filter(Boolean)
+                      )
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="services">Services (comma separated)</Label>
+                  <Input
+                    id="services"
+                    value={editedCompany?.service?.join(", ") || ""}
+                    onChange={(e) =>
+                      updateCompanyField(
+                        "service",
+                        e.target.value.split(", ").filter(Boolean)
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold mb-1 text-gray-900">
+                  {company.cname}
+                </h1>
+                <p className="text-gray-600 mb-4 text-sm">{company.industry}</p>
 
-            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {company.city}, {company.country}
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {company.employeesId?.length || 0} employees
-              </div>
-              <div className="flex items-center gap-1">
-                <span>📍</span>
-                <span>Contact</span>
-              </div>
-            </div>
+                <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {company.city}, {company.country}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {company.employeesId?.length || 0} employees
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span>📍</span>
+                    <span>Contact</span>
+                  </div>
+                </div>
 
-            {/* Social Links */}
-            <div className="flex gap-2">
-              {links.map((link: string, index: number) => (
-                <SocialIcon key={index} url={link} />
-              ))}
-            </div>
+                {/* Social Links */}
+                <div className="flex gap-2">
+                  {links.map((link: string, index: number) => (
+                    <SocialIcon key={index} url={link} />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="text-right">
-            <p className="text-sm text-gray-600 mb-2 font-medium">
-              Try it Free - Post Your First Job in No Cost!
-            </p>
-            <p className="text-xs text-gray-500 mb-4 max-w-xs">
-              Easily post your company job openings and reach the right talent
-              fast. Get quality applications in no time.
-            </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Post a Job
-            </Button>
-            <Link
-              href={`/elevator-pitch-resume/edit-company/${company.userId}`}
-            >
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 ml-2">
-                Edit Profile
-              </Button>
-            </Link>
+            {!isEditing ? (
+              <>
+                <p className="text-sm text-gray-600 mb-2 font-medium">
+                  Try it Free - Post Your First Job in No Cost!
+                </p>
+                <p className="text-xs text-gray-500 mb-4 max-w-xs">
+                  Easily post your company job openings and reach the right
+                  talent fast. Get quality applications in no time.
+                </p>
+                <div className="flex items-center space-x-5">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 block">
+                    Post a Job
+                  </Button>
+                  <Button
+                    onClick={handleEdit}
+                    variant="outline"
+                    className="px-6 flex items-center gap-2 bg-transparent"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit Profile
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-2">
+                {/* Updated save button to show loading state */}
+                <Button
+                  onClick={handleSave}
+                  className="bg-[#2B7FD0] hover:bg-green-700 text-white px-6 flex items-center gap-2"
+                  disabled={isSaving}
+                >
+                  <Save className="h-4 w-4" />
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="px-6 flex items-center gap-2 bg-transparent"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -206,9 +393,22 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* About Us */}
       <div>
         <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
-        <p className="text-gray-700 leading-relaxed text-sm">
-          {company.aboutUs}
-        </p>
+        {isEditing ? (
+          <div>
+            <Label htmlFor="aboutUs">About Us</Label>
+            <Textarea
+              id="aboutUs"
+              value={editedCompany?.aboutUs || ""}
+              onChange={(e) => updateCompanyField("aboutUs", e.target.value)}
+              rows={6}
+              className="mt-2"
+            />
+          </div>
+        ) : (
+          <p className="text-gray-700 leading-relaxed text-sm">
+            {company.aboutUs}
+          </p>
+        )}
       </div>
 
       {/* Company Details */}
@@ -331,21 +531,32 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map((honor: { _id: Key | null | undefined; title: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeName: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeDate: string | number | Date; description: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; }) => (
-              <Card key={honor._id}>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900">{honor.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {honor.programeName}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-2">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    {new Date(honor.programeDate).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-700">{honor.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {honors.map(
+              (honor: {
+                _id: string;
+                userId: string;
+                title: string;
+                programeName: string;
+                programeDate: string;
+                description: string;
+              }) => (
+                <Card key={honor._id}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-gray-900">
+                      {honor.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {honor.programeName}
+                    </p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      <Calendar className="inline h-4 w-4 mr-1" />
+                      {new Date(honor.programeDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-700">{honor.description}</p>
+                  </CardContent>
+                </Card>
+              )
+            )}
           </div>
         </div>
       )}

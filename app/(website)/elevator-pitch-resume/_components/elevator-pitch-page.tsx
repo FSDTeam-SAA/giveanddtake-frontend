@@ -18,6 +18,8 @@ import CreateCompanyPage from "./create-company";
 import { Card, CardContent } from "@/components/ui/card";
 import MyResume from "./resume";
 import UpdateResumeForm from "./update-resume-form";
+import EditableRecruiterAccount from "./editable-recruiter-account";
+import EditableCompanyProfile from "./editable-company-profile";
 
 export default function ElevatorPitchAndResume() {
   const { data: session, status } = useSession(); // Added status to handle loading state
@@ -115,7 +117,7 @@ export default function ElevatorPitchAndResume() {
         ) : session?.user?.role === "recruiter" ? (
           recruiter ? (
             <div className="lg:space-y-16 space-y-6">
-              <RecruiterAccount recruiter={recruiter} />
+              <EditableRecruiterAccount recruiter={recruiter} />
               <CreatedJobs />
               <RecruiterElevator recruiter={recruiter} />
             </div>
@@ -124,7 +126,7 @@ export default function ElevatorPitchAndResume() {
           )
         ) : Array.isArray(company?.companies) &&
           company.companies.length > 0 ? (
-          <CompanyProfilePage userId={session?.user?.id} />
+          <EditableCompanyProfile userId={session?.user?.id} />
         ) : (
           <CreateCompanyPage />
         )}

@@ -69,7 +69,7 @@ export default function CreatedJobs() {
           >
             <div className="flex justify-between items-center">
               <div className="">
-                <h3 className="lg:text-lg text-base font-semibold">
+                <h3 className="lg:text-lg text-base font-semibold capitalize">
                   {job.title}
                 </h3>
               </div>
