@@ -9,6 +9,7 @@ import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
 import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
 import Link from "next/link";
+import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal, AwaitedReactNode } from "react";
 
 export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
@@ -330,7 +331,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map((honor) => (
+            {honors.map((honor: { _id: Key | null | undefined; title: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeName: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeDate: string | number | Date; description: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; }) => (
               <Card key={honor._id}>
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-gray-900">{honor.title}</h3>
