@@ -1,5 +1,7 @@
 "use client";
 
+import type React from "react";
+
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +26,9 @@ import {
   Edit,
   Save,
   X,
+  Camera,
 } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 type Company = {
   _id: string;
@@ -51,10 +54,9 @@ export default function EditableCompanyProfile({
   const [isEditing, setIsEditing] = useState(false);
   const [editedCompany, setEditedCompany] = useState<Company | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-
-  const { data: session } = useSession();
 
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
@@ -99,14 +101,12 @@ export default function EditableCompanyProfile({
     setIsSaving(true);
     try {
       await editCompanyAccount(company._id, editedCompany);
-      queryClient.invalidateQueries({
-        queryKey: ["company", userId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["company"] });
       onSave?.(editedCompany);
       setIsEditing(false);
+      setLogoPreview(null);
     } catch (error) {
       console.error("Failed to save company profile:", error);
-      // You can add error handling UI here
     } finally {
       setIsSaving(false);
     }
@@ -115,6 +115,7 @@ export default function EditableCompanyProfile({
   const handleCancel = () => {
     setEditedCompany(null);
     setIsEditing(false);
+    setLogoPreview(null);
   };
 
   const updateCompanyField = (field: keyof Company, value: any) => {
@@ -126,7 +127,26 @@ export default function EditableCompanyProfile({
     }
   };
 
-  // Parse JSON strings
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSizeInBytes = 9 * 1024 * 1024; // 10 MB
+
+    if (file.size > maxSizeInBytes) {
+      toast.error("File size exceeds 10 MB. Please select a smaller file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setLogoPreview(result);
+      updateCompanyField("clogo", result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const links = company.links || [];
   const services = company.service || [];
 
@@ -135,21 +155,51 @@ export default function EditableCompanyProfile({
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-8">
         <div className="flex items-start gap-6">
-          <div className="w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0">
-            {company.clogo ? (
+          <div className="relative w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0 group">
+            {logoPreview || company.clogo ? (
               <img
-                src={company.clogo || "/placeholder.svg"}
+                src={logoPreview || company.clogo || "/placeholder.svg"}
                 alt={company.cname}
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
               <div className="w-full h-full bg-gray-600 rounded-lg" />
             )}
+
+            {isEditing && (
+              <>
+                <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+              </>
+            )}
           </div>
 
           <div className="flex-1">
             {isEditing ? (
               <div className="space-y-4">
+                <div>
+                  <Label htmlFor="logo-upload">Company Logo</Label>
+                  <div className="mt-2">
+                    <input
+                      id="logo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                    <p className="mt-1 text-sm text-gray-500">
+                      Upload a new logo for your company
+                    </p>
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="cname">Company Name</Label>
                   <Input
@@ -262,7 +312,7 @@ export default function EditableCompanyProfile({
                   Easily post your company job openings and reach the right
                   talent fast. Get quality applications in no time.
                 </p>
-                <div className="flex items-center space-x-5">
+                <div className="space-x-5 flex items-center" >
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 block">
                     Post a Job
                   </Button>
@@ -278,10 +328,9 @@ export default function EditableCompanyProfile({
               </>
             ) : (
               <div className="space-y-2">
-                {/* Updated save button to show loading state */}
                 <Button
                   onClick={handleSave}
-                  className="bg-[#2B7FD0] hover:bg-green-700 text-white px-6 flex items-center gap-2"
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 flex items-center gap-2"
                   disabled={isSaving}
                 >
                   <Save className="h-4 w-4" />
