@@ -31,6 +31,8 @@ export default function ElevatorPitchAndResume() {
     enabled: !!session?.user, // Only fetch if user is authenticated
   });
 
+  console.log("My resume here: ", myresume);
+
   const { data: recruiter } = useQuery({
     queryKey: ["recruiter"],
     queryFn: () => getRecruiterAccount(session?.user?.id || ""),
@@ -97,7 +99,7 @@ export default function ElevatorPitchAndResume() {
     <section className="py-8 lg:py-20">
       <div className="container mx-auto lg:px-6">
         {session?.user?.role === "candidate" ? (
-          myresume ? (
+          myresume?.resume ? (
             isEditing ? (
               <UpdateResumeForm
                 resume={myresume}

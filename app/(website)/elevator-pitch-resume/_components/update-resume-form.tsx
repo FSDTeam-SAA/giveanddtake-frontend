@@ -1,31 +1,18 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import type React from "react"
+import { useState } from "react"
+import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Resume schema for validation
 const resumeSchema = z.object({
@@ -44,13 +31,14 @@ const resumeSchema = z.object({
       z.object({
         label: z.string(),
         url: z.string().url("Invalid URL"),
-      })
+      }),
     )
     .optional(),
   experiences: z.array(
     z.object({
-      employer: z.string().min(1, "Employer is required"),
-      jobTitle: z.string().min(1, "Job title is required"),
+      position: z.string().min(1, "Position is required"), // Changed from jobTitle
+      company: z.string().min(1, "Company is required"), // Changed from employer
+      duration: z.string().optional(), // Added duration field
       startDate: z.string().optional(),
       endDate: z.string().optional(),
       country: z.string().optional(),
@@ -58,32 +46,32 @@ const resumeSchema = z.object({
       zip: z.string().optional(),
       jobDescription: z.string().optional(),
       jobCategory: z.string().optional(),
-    })
+    }),
   ),
   educationList: z.array(
     z.object({
       institution: z.string().min(1, "Institution is required"),
       degree: z.string().min(1, "Degree is required"),
       fieldOfStudy: z.string().optional(),
-      graduationYear: z.string().min(1, "Year is required"),
-    })
+      year: z.string().min(1, "Year is required"), // Changed from graduationYear
+    }),
   ),
   awardsAndHonors: z.array(
     z.object({
       title: z.string().min(1, "Award title is required"),
       programName: z.string().optional(),
-      programeDate: z.string().min(1, "Year is required"),
+      year: z.string().min(1, "Year is required"), // Changed from programeDate
       description: z.string().optional(),
-    })
+    }),
   ),
-});
+})
 
-type ResumeFormData = z.infer<typeof resumeSchema>;
+type ResumeFormData = z.infer<typeof resumeSchema>
 
 interface UpdateResumeFormProps {
-  resume: any;
-  onCancel: () => void;
-  onUpdate: (data: FormData) => Promise<void>;
+  resume: any
+  onCancel: () => void
+  onUpdate: (data: FormData) => Promise<void>
 }
 
 // Skills list for autocomplete
@@ -117,77 +105,115 @@ const skillsList = [
   "Leadership",
   "Communication",
   "Problem Solving",
-];
+]
 
-export default function UpdateResumeForm({
-  resume,
-  onCancel,
-  onUpdate,
-}: UpdateResumeFormProps) {
-  const [selectedSkills, setSelectedSkills] = useState<string[]>(
-    resume.resume.skills || []
-  );
-  const [skillSearch, setSkillSearch] = useState("");
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateResumeFormProps) {
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(resume.resume?.skills || [])
+  const [skillSearch, setSkillSearch] = useState("")
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const filteredSkills = skillsList.filter(
-    (skill) =>
-      skill.toLowerCase().includes(skillSearch.toLowerCase()) &&
-      !selectedSkills.includes(skill)
-  );
+    (skill) => skill.toLowerCase().includes(skillSearch.toLowerCase()) && !selectedSkills.includes(skill),
+  )
 
   const form = useForm<ResumeFormData>({
     resolver: zodResolver(resumeSchema),
     defaultValues: {
-      firstName: resume.resume.firstName || "",
-      lastName: resume.resume.lastName || "",
-      email: resume.resume.email || "",
-      phoneNumber: resume.resume.phoneNumber || "",
-      title: resume.resume.title || "",
-      city: resume.resume.city || "",
-      zipCode: resume.resume.zipCode || "",
-      country: resume.resume.country || "",
-      aboutUs: resume.resume.aboutUs || "",
-      skills: resume.resume.skills || [],
-      sLink:
-        resume.sLinks?.length > 0
-          ? resume.sLinks.map((link: { label: string; url: string }) => ({
-              label: link.label === link.url ? "website" : link.label, // Fix existing data
-              url: link.url,
+      firstName: resume.resume?.firstName || "",
+      lastName: resume.resume?.lastName || "",
+      email: resume.resume?.email || "",
+      phoneNumber: resume.resume?.phoneNumber || "",
+      title: resume.resume?.title || "",
+      city: resume.resume?.city || "",
+      zipCode: resume.resume?.zipCode || "",
+      country: resume.resume?.country || "",
+      aboutUs: resume.resume?.aboutUs || "",
+      skills: Array.isArray(resume.resume?.skills) ? resume.resume.skills : [],
+      sLink: (() => {
+        // Ensure sLink is always an array with 5 elements
+        const defaultLinks = [
+          { label: "website", url: "" },
+          { label: "linkedin", url: "" },
+          { label: "twitter", url: "" },
+          { label: "upwork", url: "" },
+          { label: "other", url: "" },
+        ]
+
+        // Check for sLink in resume.resume.sLink (correct API structure)
+        if (Array.isArray(resume.resume?.sLink) && resume.resume.sLink.length > 0) {
+          return resume.resume.sLink
+            .map((link: { label: string; url: string }, index: number) => ({
+              label: link.label || defaultLinks[index]?.label || "website",
+              url: link.url || "",
             }))
-          : resume.website
-          ? [{ label: "website", url: resume.website }]
-          : [{ label: "website", url: "" }],
-      experiences: resume.experiences?.map((exp: any) => ({
-        employer: exp.employer || "",
-        jobTitle: exp.jobTitle || "",
-        startDate: exp.startDate ? exp.startDate.split("T")[0] : "",
-        endDate: exp.endDate ? exp.endDate.split("T")[0] : "",
-        country: exp.country || "",
-        city: exp.city || "",
-        zip: exp.zip || "",
-        jobDescription: exp.jobDescription || "",
-        jobCategory: exp.jobCategory || "",
-      })) || [{ employer: "", jobTitle: "" }],
-      educationList: resume.education?.map((edu: any) => ({
-        institution: edu.instituteName || "",
-        degree: edu.degree || "",
-        fieldOfStudy: edu.fieldOfStudy || "",
-        graduationYear: edu.graduationDate
-          ? new Date(edu.graduationDate).getFullYear().toString()
-          : "",
-      })) || [{ degree: "", institution: "", graduationYear: "" }],
-      awardsAndHonors: resume.awardsAndHonors?.map((award: any) => ({
-        title: award.title || "",
-        programName: "",
-        programeDate: award.createdAt
-          ? new Date(award.createdAt).getFullYear().toString()
-          : "",
-        description: award.description || "",
-      })) || [{ title: "", year: "" }],
+            .concat(defaultLinks.slice(resume.resume.sLink.length))
+        }
+
+        // Fallback: check for legacy website field
+        if (resume.resume?.website) {
+          defaultLinks[0].url = resume.resume.website
+        }
+
+        return defaultLinks
+      })(),
+
+      experiences: (() => {
+        if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
+          return resume.experiences.map((exp: any) => ({
+            position: exp.position || exp.jobTitle || "",
+            company: exp.company || exp.employer || "",
+            duration: exp.duration || "",
+            startDate: exp.startDate ? exp.startDate.split("T")[0] : "",
+            endDate: exp.endDate ? exp.endDate.split("T")[0] : "",
+            country: exp.country || "",
+            city: exp.city || "",
+            zip: exp.zip || "",
+            jobDescription: exp.jobDescription || "",
+            jobCategory: exp.jobCategory || "",
+          }))
+        }
+        return [
+          {
+            position: "",
+            company: "",
+            duration: "",
+            startDate: "",
+            endDate: "",
+            country: "",
+            city: "",
+            zip: "",
+            jobDescription: "",
+            jobCategory: "",
+          },
+        ]
+      })(),
+      educationList: (() => {
+        if (Array.isArray(resume.education) && resume.education.length > 0) {
+          return resume.education.map((edu: any) => ({
+            institution: edu.instituteName || "",
+            degree: edu.degree || "",
+            fieldOfStudy: edu.fieldOfStudy || "",
+            year: edu.year || (edu.graduationDate ? new Date(edu.graduationDate).getFullYear().toString() : ""),
+          }))
+        }
+        return [{ degree: "", institution: "", year: "", fieldOfStudy: "" }]
+      })(),
+      awardsAndHonors: (() => {
+        if (Array.isArray(resume.awardsAndHonors) && resume.awardsAndHonors.length > 0) {
+          return resume.awardsAndHonors.map((award: any) => ({
+            title: award.title || "",
+            programName: award.programName || "",
+            year:
+              award.year ||
+              (award.createdAt ? new Date(award.createdAt).getFullYear().toString() : award.programeDate || ""),
+            description: award.description || "",
+          }))
+        }
+        return [{ title: "", programName: "", year: "", description: "" }]
+      })(),
     },
-  });
+  })
 
   const {
     fields: experienceFields,
@@ -196,7 +222,7 @@ export default function UpdateResumeForm({
   } = useFieldArray({
     control: form.control,
     name: "experiences",
-  });
+  })
 
   const {
     fields: educationFields,
@@ -205,7 +231,7 @@ export default function UpdateResumeForm({
   } = useFieldArray({
     control: form.control,
     name: "educationList",
-  });
+  })
 
   const {
     fields: awardFields,
@@ -214,80 +240,85 @@ export default function UpdateResumeForm({
   } = useFieldArray({
     control: form.control,
     name: "awardsAndHonors",
-  });
+  })
 
   const addSkill = (skill: string) => {
     if (!selectedSkills.includes(skill)) {
-      const newSkills = [...selectedSkills, skill];
-      setSelectedSkills(newSkills);
-      form.setValue("skills", newSkills);
+      const newSkills = [...selectedSkills, skill]
+      setSelectedSkills(newSkills)
+      form.setValue("skills", newSkills)
     }
-  };
+  }
 
   const removeSkill = (skillToRemove: string) => {
-    const newSkills = selectedSkills.filter((skill) => skill !== skillToRemove);
-    setSelectedSkills(newSkills);
-    form.setValue("skills", newSkills);
-  };
+    const newSkills = selectedSkills.filter((skill) => skill !== skillToRemove)
+    setSelectedSkills(newSkills)
+    form.setValue("skills", newSkills)
+  }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPhotoFile(e.target.files[0]);
+      setPhotoFile(e.target.files[0])
     }
-  };
+  }
 
   const onSubmit = async (data: ResumeFormData) => {
-    console.log("Form submission started");
+    console.log("Form submission started")
     try {
-      setIsSubmitting(true);
+      setIsSubmitting(true)
 
       // Validate all fields
-      const isValid = await form.trigger();
+      const isValid = await form.trigger()
       if (!isValid) {
-        console.error("Form validation failed");
-        return;
+        console.error("Form validation failed")
+        return
       }
 
-      console.log("Form data is valid:", data);
+      console.log("Form data is valid:", data)
 
       // Create FormData
-      const formData = new FormData();
+      const formData = new FormData()
 
-      // Add all simple fields
-      formData.append("firstName", data.firstName);
-      formData.append("lastName", data.lastName);
-      formData.append("email", data.email);
-      formData.append("phoneNumber", data.phoneNumber);
-      if (data.title) formData.append("title", data.title);
-      if (data.city) formData.append("city", data.city);
-      if (data.zipCode) formData.append("zipCode", data.zipCode);
-      if (data.country) formData.append("country", data.country);
-      formData.append("aboutUs", data.aboutUs);
+      const resumeObject = {
+        type: "candidate",
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        title: data.title || "",
+        city: data.city || "",
+        zipCode: data.zipCode || "",
+        country: data.country || "",
+        aboutUs: data.aboutUs,
+        skills: data.skills,
+        sLink: data.sLink || [],
+      }
 
-      // Add arrays as JSON strings
-      formData.append("skills", JSON.stringify(data.skills));
-      if (data.sLink) formData.append("sLink", JSON.stringify(data.sLink));
-      formData.append("experiences", JSON.stringify(data.experiences));
-      formData.append("educationList", JSON.stringify(data.educationList));
-      formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors));
+      // Add resume object as JSON string
+      formData.append("resume", JSON.stringify(resumeObject))
+
+      // Add arrays as direct JSON strings (not nested in resume)
+      formData.append("experiences", JSON.stringify(data.experiences))
+      formData.append("educationList", JSON.stringify(data.educationList))
+      formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors))
 
       // Add photo if exists
       if (photoFile) {
-        formData.append("photo", photoFile);
+        formData.append("photo", photoFile)
       }
 
       // Log FormData contents for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value)
       }
 
-      await onUpdate(formData);
+      await onUpdate(formData)
     } catch (error) {
-      console.error("Error in form submission:", error);
+      console.error("Error in form submission:", error)
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -321,15 +352,8 @@ export default function UpdateResumeForm({
                   />
                 )}
                 <div>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoChange}
-                    className="mb-2"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Upload a new photo to replace the current one
-                  </p>
+                  <Input type="file" accept="image/*" onChange={handlePhotoChange} className="mb-2" />
+                  <p className="text-sm text-muted-foreground">Upload a new photo to replace the current one</p>
                 </div>
               </div>
             </CardContent>
@@ -349,10 +373,7 @@ export default function UpdateResumeForm({
                     <FormItem>
                       <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                        >
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select title" />
                           </SelectTrigger>
@@ -446,11 +467,7 @@ export default function UpdateResumeForm({
                     <FormItem>
                       <FormLabel>Email Address*</FormLabel>
                       <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="Enter Your Email Address"
-                          {...field}
-                        />
+                        <Input type="email" placeholder="Enter Your Email Address" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -482,15 +499,123 @@ export default function UpdateResumeForm({
                   name="sLink.0.url"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Website</FormLabel>
+                      <FormLabel>Website URL</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="https://example.com"
+                          placeholder="Enter Your Website URL"
                           value={field.value || ""}
                           onChange={(e) => {
                             // Always set label to "website" when URL changes
-                            form.setValue("sLink.0.label", "website");
-                            field.onChange(e.target.value);
+                            form.setValue("sLink.0.label", "website")
+                            field.onChange(e.target.value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.1.label"
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.1.url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LinkedIn URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter Your LinkedIn URL"
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            form.setValue("sLink.1.label", "linkedin")
+                            field.onChange(e.target.value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.2.label"
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.2.url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twitter URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter Your Twitter URL"
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            form.setValue("sLink.2.label", "twitter")
+                            field.onChange(e.target.value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.3.label"
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.3.url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Upwork URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter Your Upwork URL"
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            form.setValue("sLink.3.label", "upwork")
+                            field.onChange(e.target.value)
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.4.label"
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="sLink.4.url"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Other Business URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter Your Other Business URL"
+                          value={field.value || ""}
+                          onChange={(e) => {
+                            form.setValue("sLink.4.label", "other")
+                            field.onChange(e.target.value)
                           }}
                         />
                       </FormControl>
@@ -515,11 +640,7 @@ export default function UpdateResumeForm({
                   <FormItem>
                     <FormLabel>About Yourself*</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Tell us about yourself..."
-                        className="min-h-[100px]"
-                        {...field}
-                      />
+                      <Textarea placeholder="Tell us about yourself..." className="min-h-[100px]" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -550,8 +671,8 @@ export default function UpdateResumeForm({
                           type="button"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100"
                           onClick={() => {
-                            addSkill(skill);
-                            setSkillSearch("");
+                            addSkill(skill)
+                            setSkillSearch("")
                           }}
                         >
                           {skill}
@@ -568,10 +689,7 @@ export default function UpdateResumeForm({
                       className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                     >
                       {skill}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => removeSkill(skill)}
-                      />
+                      <X className="h-3 w-3 cursor-pointer" onClick={() => removeSkill(skill)} />
                     </Badge>
                   ))}
                 </div>
@@ -586,17 +704,14 @@ export default function UpdateResumeForm({
             </CardHeader>
             <CardContent>
               {experienceFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.employer`}
+                      name={`experiences.${index}.company`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Employer</FormLabel>
+                          <FormLabel>Company</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. IBM" {...field} />
                           </FormControl>
@@ -607,15 +722,26 @@ export default function UpdateResumeForm({
 
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.jobTitle`}
+                      name={`experiences.${index}.position`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Job Title</FormLabel>
+                          <FormLabel>Position</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g. Software Engineer"
-                              {...field}
-                            />
+                            <Input placeholder="e.g. Software Engineer" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`experiences.${index}.duration`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Duration</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 2 years" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -686,10 +812,7 @@ export default function UpdateResumeForm({
                       <FormItem>
                         <FormLabel>Job Description</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Describe your responsibilities and achievements"
-                            {...field}
-                          />
+                          <Textarea placeholder="Describe your responsibilities and achievements" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -697,12 +820,7 @@ export default function UpdateResumeForm({
                   />
 
                   {experienceFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeExperience(index)}
-                    >
+                    <Button type="button" variant="destructive" size="sm" onClick={() => removeExperience(index)}>
                       Remove Experience
                     </Button>
                   )}
@@ -711,7 +829,7 @@ export default function UpdateResumeForm({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => appendExperience({ employer: "", jobTitle: "" })}
+                onClick={() => appendExperience({ position: "", company: "", duration: "" })}
               >
                 Add Experience
               </Button>
@@ -725,10 +843,7 @@ export default function UpdateResumeForm({
             </CardHeader>
             <CardContent>
               {educationFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -737,10 +852,7 @@ export default function UpdateResumeForm({
                         <FormItem>
                           <FormLabel>Institution Name</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g. Harvard University"
-                              {...field}
-                            />
+                            <Input placeholder="e.g. Harvard University" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -754,10 +866,7 @@ export default function UpdateResumeForm({
                         <FormItem>
                           <FormLabel>Degree</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g. Bachelor's Degree"
-                              {...field}
-                            />
+                            <Input placeholder="e.g. Bachelor's Degree" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -771,10 +880,7 @@ export default function UpdateResumeForm({
                         <FormItem>
                           <FormLabel>Field Of Study</FormLabel>
                           <FormControl>
-                            <Input
-                              placeholder="e.g. Computer Science"
-                              {...field}
-                            />
+                            <Input placeholder="e.g. Computer Science" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -783,10 +889,10 @@ export default function UpdateResumeForm({
 
                     <FormField
                       control={form.control}
-                      name={`educationList.${index}.graduationYear`}
+                      name={`educationList.${index}.year`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Graduation Year</FormLabel>
+                          <FormLabel>Year</FormLabel>
                           <FormControl>
                             <Input
                               type="number"
@@ -803,12 +909,7 @@ export default function UpdateResumeForm({
                   </div>
 
                   {educationFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeEducation(index)}
-                    >
+                    <Button type="button" variant="destructive" size="sm" onClick={() => removeEducation(index)}>
                       Remove Education
                     </Button>
                   )}
@@ -821,7 +922,7 @@ export default function UpdateResumeForm({
                   appendEducation({
                     degree: "",
                     institution: "",
-                    graduationYear: "",
+                    year: "",
                   })
                 }
               >
@@ -837,10 +938,7 @@ export default function UpdateResumeForm({
             </CardHeader>
             <CardContent>
               {awardFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -858,7 +956,7 @@ export default function UpdateResumeForm({
 
                     <FormField
                       control={form.control}
-                      name={`awardsAndHonors.${index}.programeDate`}
+                      name={`awardsAndHonors.${index}.year`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Year Received</FormLabel>
@@ -884,10 +982,7 @@ export default function UpdateResumeForm({
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder="Award description"
-                            {...field}
-                          />
+                          <Textarea placeholder="Award description" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -895,22 +990,13 @@ export default function UpdateResumeForm({
                   />
 
                   {awardFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeAward(index)}
-                    >
+                    <Button type="button" variant="destructive" size="sm" onClick={() => removeAward(index)}>
                       Remove Award
                     </Button>
                   )}
                 </div>
               ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => appendAward({ title: "", programeDate: "" })}
-              >
+              <Button type="button" variant="outline" onClick={() => appendAward({ title: "", year: "" })}>
                 Add Award
               </Button>
             </CardContent>
@@ -928,5 +1014,5 @@ export default function UpdateResumeForm({
         </form>
       </Form>
     </div>
-  );
+  )
 }
