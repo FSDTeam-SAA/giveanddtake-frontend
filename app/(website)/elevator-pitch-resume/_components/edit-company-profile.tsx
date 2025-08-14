@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Plus, X } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -37,11 +36,6 @@ const formSchema = z.object({
   cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
   industry: z.string().min(1, "Industry is required"),
-  linkedin: z.string().optional().or(z.literal("")),
-  twitter: z.string().optional().or(z.literal("")),
-  upwork: z.string().optional().or(z.literal("")),
-  otherBusiness: z.string().optional().or(z.literal("")),
-  otherProfessional: z.string().optional().or(z.literal("")),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -50,102 +44,31 @@ interface EditCompanyPageProps {
   companyId: string;
 }
 
-const fetchCompany = async (companyId: string) => {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/company/user/${companyId}`
-  );
-  if (!response.ok) {
-    throw new Error("Failed to fetch company");
-  }
-  return response.json();
-};
+interface SocialLink {
+  id: string;
+  url: string;
+}
 
-const updateCompany = async (companyId: string, data: any) => {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyId}`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to update company");
-  }
-
-  return response.json();
-};
-
-const uploadElevatorPitch = async (companyId: string, file: File) => {
-  const formData = new FormData();
-  formData.append("video", file);
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyId}/elevator-pitch`,
-    {
-      method: "PUT",
-      body: formData,
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to upload elevator pitch");
-  }
-
-  return response.json();
-};
+interface Honor {
+  id: string;
+  title: string;
+  description: string;
+}
 
 export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
-  const { data: session } = useSession();
-  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [companyData, setCompanyData] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [websites, setWebsites] = useState<string[]>([""]);
-  const [services, setServices] = useState<string[]>([""]);
-  const [awards, setAwards] = useState([
-    {
-      title: "",
-      issuer: "",
-      issueDate: "",
-      description: "",
-    },
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
+    { id: "1", url: "" },
   ]);
-
-  const { data: companyData, isLoading } = useQuery({
-    queryKey: ["company", companyId],
-    queryFn: () => fetchCompany(companyId),
-    enabled: !!companyId,
-  });
-
-  const updateCompanyMutation = useMutation({
-    mutationFn: (data: any) => {
-      if (!companyData?.companies?.[0]?._id) {
-        throw new Error("Company ID not found");
-      }
-      return updateCompany(companyData.companies[0]._id, data);
-    },
-    onSuccess: () => {
-      toast.success("Company updated successfully!");
-      queryClient.invalidateQueries({ queryKey: ["company", companyId] });
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to update company");
-    },
-  });
-
-  const uploadElevatorPitchMutation = useMutation({
-    mutationFn: (file: File) => uploadElevatorPitch(companyId, file),
-    onSuccess: () => {
-      toast.success("Elevator pitch updated successfully!");
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Failed to upload video");
-    },
-  });
+  const [services, setServices] = useState<string[]>([""]);
+  const [honors, setHonors] = useState<Honor[]>([
+    { id: "1", title: "", description: "" },
+  ]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -158,17 +81,41 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       cPhoneNumber: "",
       aboutUs: "",
       industry: "",
-      linkedin: "",
-      twitter: "",
-      upwork: "",
-      otherBusiness: "",
-      otherProfessional: "",
     },
   });
 
+  // Fetch company data
   useEffect(() => {
-    if (companyData?.companies?.[0]) {
-      const company = companyData.companies[0];
+    const fetchCompany = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/company/user/${companyId}`
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch company");
+        }
+        const data = await response.json();
+        setCompanyData(data);
+      } catch (error) {
+        console.error("Error fetching company:", error);
+        toast.error("Failed to load company data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (companyId) {
+      fetchCompany();
+    }
+  }, [companyId]);
+
+  // Load data when companyData is available
+  useEffect(() => {
+    if (companyData?.data?.companies?.[0]) {
+      const company = companyData.data.companies[0];
+
+      // Load form data
       form.reset({
         cname: company.cname || "",
         country: company.country || "",
@@ -178,64 +125,184 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         cPhoneNumber: company.cPhoneNumber || "",
         aboutUs: company.aboutUs || "",
         industry: company.industry || "",
-        linkedin: company.linkedin || "",
-        twitter: company.twitter || "",
-        upwork: company.upwork || "",
-        otherBusiness: company.otherBusiness || "",
-        otherProfessional: company.otherProfessional || "",
       });
 
-      // Populate other fields
-      if (company.links) setWebsites(company.links);
-      if (company.service) setServices(company.service);
-      if (company.employeesId) setSelectedEmployees(company.employeesId);
-      if (companyData.honors) {
-        setAwards(
-          companyData.honors.map((honor: any) => ({
-            title: honor.title || "",
-            issuer: honor.issuer || "",
-            issueDate: honor.issueDate || "",
-            description: honor.description || "",
+      // Load social links from API response
+      if (company.links && company.links.length > 0) {
+        setSocialLinks(
+          company.links.map((link: string, index: number) => ({
+            id: `${index + 1}`,
+            url: link,
           }))
         );
       }
+
+      // Load services
+      if (company.service && company.service.length > 0) {
+        setServices(company.service);
+      }
+
+      // Load employees
+      if (company.employeesId) {
+        setSelectedEmployees(company.employeesId);
+      }
+    }
+
+    // Load honors data
+    if (companyData?.data?.honors && companyData.data.honors.length > 0) {
+      setHonors(
+        companyData.data.honors.map((honor: any, index: number) => ({
+          id: `${index + 1}`,
+          title: honor.title || "",
+          description: honor.description || "",
+        }))
+      );
     }
   }, [companyData, form]);
 
-  const addAward = () => {
-    setAwards([
-      ...awards,
-      { title: "", issuer: "", issueDate: "", description: "" },
+  // Social Links Management
+  const addSocialLink = () => {
+    setSocialLinks([...socialLinks, { id: Date.now().toString(), url: "" }]);
+  };
+
+  const removeSocialLink = (id: string) => {
+    if (socialLinks.length > 1) {
+      setSocialLinks(socialLinks.filter((link) => link.id !== id));
+    }
+  };
+
+  const updateSocialLink = (id: string, url: string) => {
+    setSocialLinks(
+      socialLinks.map((link) => (link.id === id ? { ...link, url } : link))
+    );
+  };
+
+  // Services Management
+  const addService = () => {
+    setServices([...services, ""]);
+  };
+
+  const removeService = (index: number) => {
+    if (services.length > 1) {
+      setServices(services.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateService = (index: number, value: string) => {
+    const updatedServices = [...services];
+    updatedServices[index] = value;
+    setServices(updatedServices);
+  };
+
+  // Honors Management
+  const addHonor = () => {
+    setHonors([
+      ...honors,
+      { id: Date.now().toString(), title: "", description: "" },
     ]);
   };
 
-  const removeAward = (index: number) => {
-    setAwards(awards.filter((_, i) => i !== index));
+  const removeHonor = (id: string) => {
+    if (honors.length > 1) {
+      setHonors(honors.filter((honor) => honor.id !== id));
+    }
   };
 
-  const updateAward = (index: number, field: string, value: string) => {
-    const updatedAwards = [...awards];
-    updatedAwards[index] = { ...updatedAwards[index], [field]: value };
-    setAwards(updatedAwards);
+  const updateHonor = (
+    id: string,
+    field: "title" | "description",
+    value: string
+  ) => {
+    setHonors(
+      honors.map((honor) =>
+        honor.id === id ? { ...honor, [field]: value } : honor
+      )
+    );
+  };
+
+  const updateCompany = async (data: any) => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyData.data.companies[0]._id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update company");
+    }
+
+    return response.json();
+  };
+
+  const uploadElevatorPitch = async (file: File) => {
+    const formData = new FormData();
+    formData.append("video", file);
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyId}/elevator-pitch`,
+      {
+        method: "PUT",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to upload elevator pitch");
+    }
+
+    return response.json();
   };
 
   const onSubmit = async (data: FormData) => {
-    const formData = {
-      ...data,
-      websites,
-      services,
-      selectedEmployees,
-      awards,
-    };
-
     try {
-      await updateCompanyMutation.mutateAsync(formData);
+      setIsUpdating(true);
+
+      // Prepare social links array (filter out empty ones)
+      const slinks = socialLinks
+        .map((link) => link.url.trim())
+        .filter((url) => url !== "");
+
+      // Prepare services array (filter out empty ones)
+      const filteredServices = services
+        .map((service) => service.trim())
+        .filter((service) => service !== "");
+
+      // Prepare honors array (filter out empty ones)
+      const filteredHonors = honors
+        .filter(
+          (honor) =>
+            honor.title.trim() !== "" || honor.description.trim() !== ""
+        )
+        .map((honor) => ({
+          title: honor.title.trim(),
+          description: honor.description.trim(),
+        }));
+
+      const formData = {
+        ...data,
+        links: slinks,
+        service: filteredServices,
+        selectedEmployees,
+        honors: filteredHonors,
+      };
+
+      await updateCompany(formData);
+      toast.success("Company updated successfully!");
 
       if (elevatorPitchFile) {
-        await uploadElevatorPitchMutation.mutateAsync(elevatorPitchFile);
+        await uploadElevatorPitch(elevatorPitchFile);
+        toast.success("Elevator pitch updated successfully!");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating company:", error);
+      toast.error(error.message || "Failed to update company");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -274,12 +341,6 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       company and what should make candidates want to join you!
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6"
-                  >
-                    Upload/Change Elevator Pitch
-                  </Button>
                 </div>
 
                 <FileUpload
@@ -359,23 +420,9 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         <FormLabel className="text-sm font-medium text-gray-900">
                           Country*
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Country" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="usa">USA</SelectItem>
-                            <SelectItem value="canada">Canada</SelectItem>
-                            <SelectItem value="uk">United Kingdom</SelectItem>
-                            <SelectItem value="germany">Germany</SelectItem>
-                            <SelectItem value="france">France</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter Country" />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -389,24 +436,9 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         <FormLabel className="text-sm font-medium text-gray-900">
                           City*
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select City" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="new-york">New York</SelectItem>
-                            <SelectItem value="los-angeles">
-                              Los Angeles
-                            </SelectItem>
-                            <SelectItem value="chicago">Chicago</SelectItem>
-                            <SelectItem value="houston">Houston</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter City" />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -420,21 +452,9 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         <FormLabel className="text-sm font-medium text-gray-900">
                           Zip Code / Postal Code*
                         </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Enter code" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="10001">10001</SelectItem>
-                            <SelectItem value="90210">90210</SelectItem>
-                            <SelectItem value="60601">60601</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <FormControl>
+                          <Input {...field} placeholder="Enter Zip Code" />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -513,95 +533,174 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 />
               </div>
 
-              {/* Social Links */}
+              {/* Social Links - Dynamic Array */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Social Links
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="linkedin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          LinkedIn
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter LinkedIn URL" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="twitter"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          Twitter
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter Twitter URL" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="upwork"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          Upwork
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter Upwork URL" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="otherProfessional"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          Other Professional Website
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter Website Address"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Social Links
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addSocialLink}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Link
+                  </Button>
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="otherBusiness"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-900">
-                        Other Business
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Enter Business URL" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-3">
+                  {socialLinks.map((link, index) => (
+                    <div key={link.id} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          value={link.url}
+                          onChange={(e) =>
+                            updateSocialLink(link.id, e.target.value)
+                          }
+                          placeholder={`Social Link ${
+                            index + 1
+                          } (e.g., https://linkedin.com/company/yourcompany)`}
+                        />
+                      </div>
+                      {socialLinks.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeSocialLink(link.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Services - Dynamic Array */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Services
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addService}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Service
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {services.map((service, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          value={service}
+                          onChange={(e) => updateService(index, e.target.value)}
+                          placeholder={`Service ${index + 1}`}
+                        />
+                      </div>
+                      {services.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeService(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Honors - Dynamic Array */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Honors & Awards
+                  </h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addHonor}
+                    className="flex items-center gap-2 bg-transparent"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Honor
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  {honors.map((honor) => (
+                    <div
+                      key={honor.id}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-900">
+                          Honor/Award
+                        </h4>
+                        {honors.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeHonor(honor.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">
+                            Title
+                          </Label>
+                          <Input
+                            value={honor.title}
+                            onChange={(e) =>
+                              updateHonor(honor.id, "title", e.target.value)
+                            }
+                            placeholder="Award/Honor Title"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-sm font-medium text-gray-700">
+                            Description
+                          </Label>
+                          <Textarea
+                            value={honor.description}
+                            onChange={(e) =>
+                              updateHonor(
+                                honor.id,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            placeholder="Description of the award/honor"
+                            className="min-h-[80px]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Submit Button */}
@@ -609,11 +708,9 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 <Button
                   type="submit"
                   className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
-                  disabled={updateCompanyMutation.isPending}
+                  disabled={isUpdating}
                 >
-                  {updateCompanyMutation.isPending
-                    ? "Updating..."
-                    : "Update Company"}
+                  {isUpdating ? "Updating..." : "Update Company"}
                 </Button>
                 <Button
                   type="button"

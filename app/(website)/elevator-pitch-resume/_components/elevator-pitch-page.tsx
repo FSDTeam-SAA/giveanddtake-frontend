@@ -126,7 +126,7 @@ export default function ElevatorPitchAndResume() {
           )
         ) : Array.isArray(company?.companies) &&
           company.companies.length > 0 ? (
-          <EditableCompanyProfile userId={session?.user?.id} />
+          <CompanyProfilePage userId={session?.user?.id} />
         ) : (
           <CreateCompanyPage />
         )}
