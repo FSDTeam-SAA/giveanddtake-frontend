@@ -68,6 +68,7 @@ export type Recruiter = {
   bio?: string;
   photo?: string;
   title?: string;
+  aboutUs?: string;
   firstName?: string;
   lastName?: string;
   sureName?: string;
@@ -262,6 +263,7 @@ export default function EditableRecruiterAccount({
     firstName,
     lastName,
     title,
+    aboutUs,
     photo,
     bio,
     country,
@@ -349,7 +351,7 @@ export default function EditableRecruiterAccount({
                     <Button
                       onClick={handleSave}
                       size="sm"
-                      className="flex items-center gap-2 bg-[#2B7FD0] hover:bg-[#2B7FD0] text-white hover:text-white" 
+                      className="flex items-center gap-2 bg-[#2B7FD0] hover:bg-[#2B7FD0] text-white hover:text-white"
                       disabled={isSaving}
                     >
                       <Save className="h-4 w-4" />
@@ -432,6 +434,19 @@ export default function EditableRecruiterAccount({
                         setEditedRecruiter({
                           ...editedRecruiter,
                           title: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="aboutUs">About Us</Label>
+                    <Input
+                      id="aboutUs"
+                      value={editedRecruiter.aboutUs || ""}
+                      onChange={(e) =>
+                        setEditedRecruiter({
+                          ...editedRecruiter,
+                          aboutUs: e.target.value,
                         })
                       }
                     />
