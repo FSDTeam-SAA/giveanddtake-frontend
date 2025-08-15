@@ -17,8 +17,7 @@ interface Blog {
   createdAt: string;
   updatedAt: string;
   __v: number;
-  // Note: 'author' field is not in your provided API response,
-  // but is present in the image. It will be hardcoded as "Alex Robert" for design consistency.
+
 }
 
 interface ApiResponse {
@@ -92,27 +91,24 @@ export default function BlogListingPage() {
             day: "numeric",
           }).format(new Date(blog.createdAt));
 
-          const truncatedDescription =
-            blog.description.length > 100
-              ? blog.description.substring(0, 97) + "..."
-              : blog.description;
+       
 
           return (
             <Link href={`/blog/${blog._id}`}>
               <Card
                 key={blog._id}
-                className="w-full max-w-sm rounded-lg border-none overflow-hidden transition-all "
+                className="w-full max-w-sm shadow-none border-none overflow-hidden transition-all "
               >
-                <div className="relative w-[377px]  h-[277px]">
+                <div className="relative w-full  h-[277px]">
                   <Image
-                    src={"assets/blog.jpg"}
+                    src={blog.image}
                     alt={blog.title}
                     width={1000}
                     height={1000}
                     className="rounded-lg w-full h-full "
                   />
                 </div>
-                <CardContent className="p-4 space-y-2">
+                <CardContent className="py-4 !px-0 space-y-2 ">
                   <div className="text-xs text-[#595959] flex gap-[20px] ">
                     {formattedDate}
                     <span className="text-[#595959]">{"Alex Robert"} </span>
@@ -120,17 +116,24 @@ export default function BlogListingPage() {
                   <h3 className="text-sm font-semibold text-[#272727]">
                     {blog.title}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {truncatedDescription}
-                  </p>
+                  <div
+                    className="text-gray-600 dark:text-gray-300 prose"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        blog.description
+                          ? `${blog.description.split(' ').slice(0, 10).join(' ')}${blog.description.split(' ').length > 10 ? '...' : ''}`
+                          : "No description available."
+                    }}
+                  />
+
                 </CardContent>
-                <CardFooter className="p-4 pt-0">
+                <CardFooter className="py-4 pt-0 px-0">
                   <Link
                     href={`/blog/${blog._id}`}
                     className="inline-flex items-center text-sm font-medium text-[#9EC7DC] "
                   >
                     Read More
-                    <ArrowRight className="ml-1 h-4 w-4" />
+                    <ArrowRight className=" h-4 w-4" />
                   </Link>
                 </CardFooter>
               </Card>

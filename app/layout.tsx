@@ -14,6 +14,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Elivator Pitch",
   description: "Shape Your Future with the Right Elevator Pitch",
+    icons: {
+    icon: "/assets/fav.ico", 
+ 
+  },
 };
 
 export default function RootLayout({

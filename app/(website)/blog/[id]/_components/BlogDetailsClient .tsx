@@ -149,11 +149,11 @@ export function BlogDetailsClient({ id }: { id: string }) {
               <Image
                 src={blogPost.image || "/assets/blog2.png"}
                 alt={blogPost.title}
-                width={1200}
-                height={675}
-                className="w-full h-auto object-cover rounded-lg shadow-md"
+                width={1000}
+                height={100}
+                className="w-full h-[383px] object-cover rounded-[8px]"
                 priority
-                sizes="(max-width: 768px) 100vw, 1200px"
+                
               />
             </div>
           )}
