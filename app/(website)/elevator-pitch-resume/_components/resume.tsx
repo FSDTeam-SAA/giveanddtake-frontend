@@ -414,7 +414,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">Experience</h3>
               <div className="space-y-6">
                 {resume.experiences
-                  ?.filter((exp) => exp.jobTitle)
                   .map((exp) => (
                     <div key={exp._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                       <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">

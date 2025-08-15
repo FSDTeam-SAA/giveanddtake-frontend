@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronLeft, ChevronRight} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 interface User {
@@ -145,6 +145,8 @@ export default function JobApplicantsPage() {
     );
   }
 
+  console.log("Applications: ", applications);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -244,7 +246,11 @@ export default function JobApplicantsPage() {
                       <TableCell>{formatDate(application.createdAt)}</TableCell>
                       <TableCell>
                         <div className="flex gap-2 flex-wrap">
-                          <Link href={`/applicant-details/${application.userId._id}?resumeId=${application.resumeId?._id || ""}`}>
+                          <Link
+                            href={`/applicant-details/${
+                              application.userId._id
+                            }?resumeId=${application.resumeId?._id || ""}`}
+                          >
                             <Badge
                               className={`${statusConfig.pending.color} text-white hover:${statusConfig.pending.color}/80`}
                             >

@@ -36,7 +36,6 @@ const resumeSchema = z.object({
     .optional(),
   experiences: z.array(
     z.object({
-      position: z.string().min(1, "Position is required"), // Changed from jobTitle
       company: z.string().min(1, "Company is required"), // Changed from employer
       duration: z.string().optional(), // Added duration field
       startDate: z.string().optional(),
@@ -44,6 +43,7 @@ const resumeSchema = z.object({
       country: z.string().optional(),
       city: z.string().optional(),
       zip: z.string().optional(),
+      jobTitle: z.string().optional(),
       jobDescription: z.string().optional(),
       jobCategory: z.string().optional(),
     }),
@@ -161,7 +161,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
       experiences: (() => {
         if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
           return resume.experiences.map((exp: any) => ({
-            position: exp.position || exp.jobTitle || "",
             company: exp.company || exp.employer || "",
             duration: exp.duration || "",
             startDate: exp.startDate ? exp.startDate.split("T")[0] : "",
@@ -169,6 +168,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
             country: exp.country || "",
             city: exp.city || "",
             zip: exp.zip || "",
+            jobTitle: exp.jobTitle || "",
             jobDescription: exp.jobDescription || "",
             jobCategory: exp.jobCategory || "",
           }))
@@ -183,6 +183,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
             country: "",
             city: "",
             zip: "",
+            jobTitle: "",
             jobDescription: "",
             jobCategory: "",
           },
@@ -722,7 +723,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.position`}
+                      name={`experiences.${index}.jobTitle`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Position</FormLabel>
@@ -829,7 +830,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => appendExperience({ position: "", company: "", duration: "" })}
+                onClick={() => appendExperience({ jobTitle: "", company: "", duration: "" })}
               >
                 Add Experience
               </Button>

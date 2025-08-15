@@ -112,7 +112,7 @@ export function SiteHeader() {
   const links = getDashboardLinks();
 
   return (
-    <header className="w-full">
+    <div className="w-full">
       {/* Top Navbar */}
       <div className="container flex h-16 items-center justify-between px-4 md:px-6 border-b">
         {/* Left Section: Logo */}
@@ -442,6 +442,6 @@ export function SiteHeader() {
       </div>
       {/* Bottom Blue Scrolling Bar */}
       <ScrollingInfoBar />
-    </header>
+    </div>
   );
 }

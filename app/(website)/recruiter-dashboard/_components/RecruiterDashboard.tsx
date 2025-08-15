@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import JobList from "./joblist";
 
 // Define TypeScript interfaces for jobs API response
 interface ApplicationRequirement {
@@ -377,7 +378,6 @@ export default function RecruiterDashboard() {
     queryFn: () => fetchJobs(token),
   });
 
-
   console.log(jobsData);
 
   // Get the first job ID dynamically
@@ -393,6 +393,8 @@ export default function RecruiterDashboard() {
     queryFn: () => fetchApplicants(firstJobId!, token),
     enabled: !!firstJobId,
   });
+
+  console.log("Applicants", jobsData);
 
   const {
     data: recruiterAccount,
@@ -731,6 +733,8 @@ export default function RecruiterDashboard() {
             )}
           </div>
         </section>
+
+        <JobList />
 
         {/* Applicant List Section */}
         <section className="mb-10">

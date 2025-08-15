@@ -40,7 +40,7 @@ export default function ApplicantDetails({ applicantId }: { applicantId: string 
         )
     }
 
-    console.log("Applicant resume here: ", applicantResume)
+    console.log("Applicantsssssssssss resume here: ", applicantResume)
 
     const applicationDate = applicantResume?.applications?.find((application: any) => application?.userId?._id === applicantId).createdAt
 
@@ -92,11 +92,11 @@ export default function ApplicantDetails({ applicantId }: { applicantId: string 
                                         <Briefcase className="w-8 h-8 text-blue-600" />
                                     </div>
                                     <div className="">
-                                        <h4 className="font-semibold text-[#595959] text-lg capitalize">{exp.jobTitle}</h4>
+                                        <h4 className="font-semibold text-[#595959] text-lg capitalize">{exp.jobTitle || "Job Title"}</h4>
                                         <h3 className='text-gray-600 text-sm'>{exp.employer}</h3>
                                         <p className="text-gray-600 text-sm flex items-center gap-2">
                                             <MapPin className="w-4 h-4" />
-                                            <span>{exp.city && `${exp.city}, `} {exp.country}</span>
+                                            <span>{`${exp.city || "City"}, `} {exp.country}</span>
                                         </p>
                                         <p className="text-gray-500 text-sm">
                                             {formatDate(exp.endDate)} - {formatDate(exp.startDate)}
