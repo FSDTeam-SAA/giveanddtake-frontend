@@ -28,6 +28,7 @@ import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -118,8 +119,13 @@ export function SiteHeader() {
         {/* Left Section: Logo */}
         <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-lg">
-            <div className="w-8 h-8 bg-blue-500 rounded-md" />
-            YOUR LOGO
+            <Image
+              src={"/assets/evp-logo.jpg"}
+              alt="Logo"
+              width={500}
+              height={500}
+              className="h-[48px] w-[180px]"
+            />
           </Link>
         </div>
 

@@ -9,7 +9,14 @@ import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
 import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
 import Link from "next/link";
-import { Key, ReactElement, JSXElementConstructor, ReactNode, ReactPortal, AwaitedReactNode } from "react";
+import {
+  Key,
+  ReactElement,
+  JSXElementConstructor,
+  ReactNode,
+  ReactPortal,
+  AwaitedReactNode,
+} from "react";
 
 export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
@@ -100,9 +107,16 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               Easily post your company job openings and reach the right talent
               fast. Get quality applications in no time.
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Post a Job
-            </Button>
+            <Link href="/manage-jobs">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 mr-2">
+                Manage Jobs
+              </Button>
+            </Link>
+            <Link href="/add-job">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+                Post a Job
+              </Button>
+            </Link>
             <Link
               href={`/elevator-pitch-resume/edit-company/${company.userId}`}
             >
@@ -331,21 +345,61 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map((honor: { _id: Key | null | undefined; title: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeName: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; programeDate: string | number | Date; description: string | number | bigint | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<AwaitedReactNode> | null | undefined; }) => (
-              <Card key={honor._id}>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900">{honor.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {honor.programeName}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-2">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    {new Date(honor.programeDate).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-700">{honor.description}</p>
-                </CardContent>
-              </Card>
-            ))}
+            {honors.map(
+              (honor: {
+                _id: Key | null | undefined;
+                title:
+                  | string
+                  | number
+                  | bigint
+                  | boolean
+                  | ReactElement<any, string | JSXElementConstructor<any>>
+                  | Iterable<ReactNode>
+                  | ReactPortal
+                  | Promise<AwaitedReactNode>
+                  | null
+                  | undefined;
+                programeName:
+                  | string
+                  | number
+                  | bigint
+                  | boolean
+                  | ReactElement<any, string | JSXElementConstructor<any>>
+                  | Iterable<ReactNode>
+                  | ReactPortal
+                  | Promise<AwaitedReactNode>
+                  | null
+                  | undefined;
+                programeDate: string | number | Date;
+                description:
+                  | string
+                  | number
+                  | bigint
+                  | boolean
+                  | ReactElement<any, string | JSXElementConstructor<any>>
+                  | Iterable<ReactNode>
+                  | ReactPortal
+                  | Promise<AwaitedReactNode>
+                  | null
+                  | undefined;
+              }) => (
+                <Card key={honor._id}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-gray-900">
+                      {honor.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {honor.programeName}
+                    </p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      <Calendar className="inline h-4 w-4 mr-1" />
+                      {new Date(honor.programeDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-700">{honor.description}</p>
+                  </CardContent>
+                </Card>
+              )
+            )}
           </div>
         </div>
       )}
