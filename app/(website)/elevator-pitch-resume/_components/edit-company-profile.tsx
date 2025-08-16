@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
+import { useSession } from "next-auth/react";
 
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -36,7 +37,6 @@ const formSchema = z.object({
   cemail: z.string().email("Invalid email address"),
   cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
-  industry: z.string().min(1, "Industry is required"),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -52,10 +52,13 @@ interface SocialLink {
 
 interface Honor {
   id: string;
+  _id?: string; // Backend ID for existing honors
   title: string;
   issuer: string;
-  date: string;
+  programeDate: string;
   description: string;
+  isNew?: boolean; // Track if this is a new honor
+  isDeleted?: boolean; // Track if this honor should be deleted
 }
 
 function EditCompanyPage({ companyId }: EditCompanyPageProps) {
@@ -70,8 +73,16 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   ]);
   const [services, setServices] = useState<string[]>([""]);
   const [honors, setHonors] = useState<Honor[]>([
-    { id: "1", title: "", issuer: "", date: "", description: "" },
+    {
+      id: "1",
+      title: "",
+      issuer: "",
+      programeDate: "",
+      description: "",
+      isNew: true,
+    },
   ]);
+  const [originalHonors, setOriginalHonors] = useState<Honor[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -83,11 +94,12 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       cemail: "",
       cPhoneNumber: "",
       aboutUs: "",
-      industry: "",
     },
   });
 
-  // Fetch company data
+  const sesison = useSession();
+  const token = sesison?.data?.accessToken || "";
+
   useEffect(() => {
     const fetchCompany = async () => {
       try {
@@ -113,25 +125,20 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     }
   }, [companyId]);
 
-  // Load data when companyData is available
   useEffect(() => {
     if (companyData?.data?.companies?.[0]) {
       const company = companyData.data.companies[0];
 
-      // Load form data
       form.reset({
         cname: company.cname || "",
         country: company.country || "",
         city: company.city || "",
-
         zipcode: company.zipcode || "",
         cemail: company.cemail || "",
         cPhoneNumber: company.cPhoneNumber || "",
         aboutUs: company.aboutUs || "",
-        industry: company.industry || "",
       });
 
-      // Load social links from API response
       if (company.links && company.links.length > 0) {
         setSocialLinks(
           company.links.map((link: string, index: number) => ({
@@ -141,32 +148,34 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         );
       }
 
-      // Load services
       if (company.service && company.service.length > 0) {
         setServices(company.service);
       }
 
-      // Load employees
       if (company.employeesId) {
         setSelectedEmployees(company.employeesId);
       }
     }
 
-    // Load honors data
     if (companyData?.data?.honors && companyData.data.honors.length > 0) {
-      setHonors(
-        companyData.data.honors.map((honor: any, index: number) => ({
-          id: `${index + 1}`,
+      const loadedHonors = companyData.data.honors.map(
+        (honor: any, index: number) => ({
+          id: `existing-${index}`,
+          _id: honor._id,
           title: honor.title || "",
           issuer: honor.issuer || "",
-          date: honor.date || "",
+          programeDate: honor.programeDate
+            ? new Date(honor.programeDate).toISOString().split("T")[0]
+            : "",
           description: honor.description || "",
-        }))
+          isNew: false,
+        })
       );
+      setHonors(loadedHonors);
+      setOriginalHonors([...loadedHonors]);
     }
   }, [companyData, form]);
 
-  // Social Links Management
   const addSocialLink = () => {
     setSocialLinks([...socialLinks, { id: Date.now().toString(), url: "" }]);
   };
@@ -183,7 +192,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     );
   };
 
-  // Services Management
   const addService = () => {
     setServices([...services, ""]);
   };
@@ -200,29 +208,37 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     setServices(updatedServices);
   };
 
-  // Honors Management
   const addHonor = () => {
     setHonors([
       ...honors,
       {
-        id: Date.now().toString(),
+        id: `new-${Date.now()}`,
         title: "",
         issuer: "",
-        date: "",
+        programeDate: "",
         description: "",
+        isNew: true,
       },
     ]);
   };
 
   const removeHonor = (id: string) => {
-    if (honors.length > 1) {
+    const honorToRemove = honors.find((h) => h.id === id);
+
+    if (honorToRemove?.isNew) {
       setHonors(honors.filter((honor) => honor.id !== id));
+    } else {
+      setHonors(
+        honors.map((honor) =>
+          honor.id === id ? { ...honor, isDeleted: true } : honor
+        )
+      );
     }
   };
 
   const updateHonor = (
     id: string,
-    field: "title" | "issuer" | "date" | "description",
+    field: "title" | "issuer" | "programeDate" | "description",
     value: string
   ) => {
     setHonors(
@@ -233,14 +249,30 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   };
 
   const updateCompany = async (data: any) => {
+    const formData = new FormData();
+
+    Object.keys(data).forEach((key) => {
+      if (key === "honors") {
+        formData.append(key, JSON.stringify(data[key]));
+      } else if (Array.isArray(data[key])) {
+        formData.append(key, JSON.stringify(data[key]));
+      } else {
+        formData.append(key, data[key]);
+      }
+    });
+
+    if (logoFile) {
+      formData.append("clogo", logoFile);
+    }
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyData.data.companies[0]._id}`,
       {
         method: "PUT",
+        body: formData,
         headers: {
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(data),
       }
     );
 
@@ -274,37 +306,74 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     try {
       setIsUpdating(true);
 
-      // Prepare social links array (filter out empty ones)
       const slinks = socialLinks
         .map((link) => link.url.trim())
         .filter((url) => url !== "");
 
-      // Prepare services array (filter out empty ones)
       const filteredServices = services
         .map((service) => service.trim())
         .filter((service) => service !== "");
 
-      // Prepare honors array (filter out empty ones)
-      const filteredHonors = honors
+      const processedHonors = honors
+        .filter((honor) => !honor.isDeleted)
         .filter(
           (honor) =>
             honor.title.trim() !== "" || honor.description.trim() !== ""
         )
+        .map((honor) => {
+          const baseHonor = {
+            title: honor.title.trim(),
+            issuer: honor.issuer.trim(),
+            programeDate: honor.programeDate,
+            description: honor.description.trim(),
+          };
+
+          if (honor.isNew) {
+            return {
+              ...baseHonor,
+              type: "create",
+            };
+          } else {
+            const original = originalHonors.find(
+              (orig) => orig._id === honor._id
+            );
+            const isModified =
+              !original ||
+              original.title !== honor.title ||
+              original.issuer !== honor.issuer ||
+              original.programeDate !== honor.programeDate ||
+              original.description !== honor.description;
+
+            return {
+              ...baseHonor,
+              _id: honor._id,
+              type: isModified ? "update" : "update",
+            };
+          }
+        });
+
+      const deletedHonors = originalHonors
+        .filter((original) => {
+          const stillExists = honors.find(
+            (h) => h._id === original._id && !h.isDeleted
+          );
+          return !stillExists;
+        })
         .map((honor) => ({
-          title: honor.title.trim(),
-          id: honor._id,
-          issuer: honor.issuer.trim(),
-          date: honor.date,
-          description: honor.description.trim(),
+          _id: honor._id,
+          type: "delete",
         }));
-      console.log("filteredHonors", filteredHonors);
+
+      const allHonors = [...processedHonors, ...deletedHonors];
+
+      console.log("Processed honors for backend:", allHonors);
 
       const formData = {
         ...data,
         links: slinks,
         service: filteredServices,
-        selectedEmployees,
-        honors: filteredHonors,
+        employeesId: selectedEmployees,
+        honors: allHonors,
       };
 
       await updateCompany(formData);
@@ -330,7 +399,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     );
   }
 
-  console.log("companyData", companyData);
+  console.log("companyData", honors);
   return (
     <div className="">
       <div className="container mx-auto px-2">
@@ -343,7 +412,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              {/* Elevator Pitch Upload */}
               <div className="bg-blue-50 p-6 rounded-lg">
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -365,7 +433,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 />
               </div>
 
-              {/* Company Logo and About */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-900">
@@ -408,7 +475,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 </div>
               </div>
 
-              {/* Company Details */}
               <div className="space-y-6">
                 <FormField
                   control={form.control}
@@ -517,7 +583,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   />
                 </div>
 
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="industry"
                   render={({ field }) => (
@@ -527,7 +593,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value}
+                        value={field.value || undefined}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -545,10 +611,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
               </div>
 
-              {/* Social Links - Dynamic Array */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -596,7 +661,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 </div>
               </div>
 
-              {/* Services - Dynamic Array */}
               <div className="space-y-4">
                 <div className="">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -649,7 +713,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 />
               </div>
 
-              {/* Honors - Dynamic Array */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">
@@ -668,13 +731,24 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 </div>
 
                 <div className="space-y-4">
-                  {honors.map((honor) => (
-                    <div key={honor.id} className=" space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-900">
-                          Honor/Award
-                        </h4>
-                        {honors.length > 1 && (
+                  {honors
+                    .filter((honor) => !honor.isDeleted)
+                    .map((honor) => (
+                      <div
+                        key={honor.id}
+                        className={`space-y-3 ${
+                          honor.isNew ? "border-l-4 border-green-500 pl-4" : ""
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                            Honor/Award
+                            {honor.isNew && (
+                              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
+                                New
+                              </span>
+                            )}
+                          </h4>
                           <Button
                             type="button"
                             variant="ghost"
@@ -684,76 +758,80 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           >
                             <X className="h-4 w-4" />
                           </Button>
-                        )}
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            Award Title
-                          </Label>
-                          <Input
-                            value={honor.title}
-                            onChange={(e) =>
-                              updateHonor(honor.id, "title", e.target.value)
-                            }
-                            placeholder="Award/Honor Title"
-                          />
                         </div>
 
-                        {/* Employee Selection */}
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
                           <div className="space-y-2">
                             <Label className="text-sm font-medium text-gray-700">
-                              Award Issuer
+                              Award Title
                             </Label>
                             <Input
-                              value={honor.issuer}
+                              value={honor.title}
                               onChange={(e) =>
-                                updateHonor(honor.id, "issuer", e.target.value)
+                                updateHonor(honor.id, "title", e.target.value)
                               }
-                              placeholder="Award/Honor Issuer"
+                              placeholder="Award/Honor Title"
                             />
                           </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-gray-700">
+                                Award Issuer
+                              </Label>
+                              <Input
+                                value={honor.issuer}
+                                onChange={(e) =>
+                                  updateHonor(
+                                    honor.id,
+                                    "issuer",
+                                    e.target.value
+                                  )
+                                }
+                                placeholder="Award/Honor Issuer"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm font-medium text-gray-700">
+                                Award Date
+                              </Label>
+                              <Input
+                                type="date"
+                                value={honor.programeDate}
+                                onChange={(e) =>
+                                  updateHonor(
+                                    honor.id,
+                                    "programeDate",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </div>
+                          </div>
+
                           <div className="space-y-2">
                             <Label className="text-sm font-medium text-gray-700">
-                              Award Date
+                              Award Short Description
                             </Label>
-                            <Input
-                              type="date"
-                              value={honor.date}
+                            <Textarea
+                              value={honor.description}
                               onChange={(e) =>
-                                updateHonor(honor.id, "date", e.target.value)
+                                updateHonor(
+                                  honor.id,
+                                  "description",
+                                  e.target.value
+                                )
                               }
+                              placeholder="Description of the award/honor"
+                              className="min-h-[80px]"
                             />
                           </div>
                         </div>
-
-                        <div className="space-y-2">
-                          <Label className="text-sm font-medium text-gray-700">
-                            Award Short Description
-                          </Label>
-                          <Textarea
-                            value={honor.description}
-                            onChange={(e) =>
-                              updateHonor(
-                                honor.id,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Description of the award/honor"
-                            className="min-h-[80px]"
-                          />
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
 
-              {/* Submit Button */}
               <div className="flex gap-4">
                 <Button
                   type="submit"

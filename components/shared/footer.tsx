@@ -6,6 +6,7 @@ import { MapPin, Mail, Phone } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
+import Image from "next/image";
 
 export function Footer() {
   const { data: session } = useSession();
@@ -39,8 +40,13 @@ export function Footer() {
         {/* Column 1: Company Info */}
         <div className="flex flex-col gap-4">
           <Link href="#" className="flex items-center gap-2 font-bold text-lg">
-            <div className="w-8 h-8 bg-white rounded-md" />
-            YOUR LOGO
+            <Image
+              src={"/assets/evp-logo.jpg"}
+              alt="Logo"
+              width={500}
+              height={500}
+              className="h-[48px] w-[180px] rounded-md"
+            />
           </Link>
           <p className="text-sm text-white/80">
             Connecting talent with opportunities and businesses with clients,
@@ -174,8 +180,8 @@ export function Footer() {
             <Link href="#" className="text-white/80 hover:underline">
               Pitch services and events
             </Link>
-            <Link 
-               href="/company-profile" // Required by Next.js type definitions
+            <Link
+              href="/company-profile" // Required by Next.js type definitions
               onClick={(e) => {
                 e.preventDefault(); // stop default Link navigation
                 if (!token) {
@@ -184,7 +190,8 @@ export function Footer() {
                   router.push("/company-profile");
                 }
               }}
-            className="text-white/80 hover:underline">
+              className="text-white/80 hover:underline"
+            >
               Company Dashboard
             </Link>
           </nav>

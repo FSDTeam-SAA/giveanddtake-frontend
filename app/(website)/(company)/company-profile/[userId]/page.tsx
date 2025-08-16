@@ -9,6 +9,7 @@ import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
 import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
+import Link from "next/link";
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -102,9 +103,11 @@ export default function CompanyProfilePage() {
               Easily post your company job openings and reach the right talent
               fast. Get quality applications in no time.
             </p>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
-              Post a Job
-            </Button>
+            <Link href="/add-job">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+                Post a Job
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
