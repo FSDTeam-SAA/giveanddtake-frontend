@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChevronLeft, MapPin, Calendar, Play, ExternalLink, Download } from "lucide-react"
 import { useState, useEffect } from "react"
+import Link from "next/link"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Resume {
   _id: string
@@ -148,6 +150,8 @@ export default function ApplicantDetailsPage() {
 
   const [resumeData, setResumeData] = useState<ResumeData | null>(null)
   const [resumeLoading, setResumeLoading] = useState(false)
+  const [applicationStatus, setApplicationStatus] = useState<string>("pending")
+  const [statusLoading, setStatusLoading] = useState(false)
 
   const fetchResumeData = async () => {
     if (!resumeId || !token) return
@@ -221,7 +225,10 @@ export default function ApplicantDetailsPage() {
 
     // Map social links to preserve the full object structure with normalized URLs
     const validLinks = (apiData.resume?.sLink || [])
-      .filter((link): link is { label: string; url: string; _id: string } => !!link && typeof link === "object" && "url" in link && "label" in link && "_id" in link)
+      .filter(
+        (link): link is { label: string; url: string; _id: string } =>
+          !!link && typeof link === "object" && "url" in link && "label" in link && "_id" in link,
+      )
       .map((link) => ({
         ...link,
         url: normalizeUrl(link.url), // Normalize the URL while keeping other properties
@@ -268,6 +275,32 @@ export default function ApplicantDetailsPage() {
     queryFn: fetchApplicantDetails,
     enabled: !!token && !!applicationId,
   })
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    try {
+      setStatusLoading(true)
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicationId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        const allowedStatuses = ["selected", "shortlisted", "rejected", "pending", "interviewed"]
+        if (allowedStatuses.includes(newStatus)) {
+          setApplicationStatus(newStatus)
+        } else {
+          console.error(`Invalid status: ${newStatus}`)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error)
+    } finally {
+      setStatusLoading(false)
+    }
+  }
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Present"
@@ -591,6 +624,31 @@ export default function ApplicantDetailsPage() {
             </CardContent>
           </Card>
         )}
+
+        <div className="flex items-center gap-4 mt-6">
+          <div>
+            <Link href="/resume-builder">
+              <Button variant="outline">
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Message
+              </Button>
+            </Link>
+          </div>
+          <div>
+            <Select value={applicationStatus} onValueChange={handleStatusUpdate} disabled={statusLoading}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Change Status" />
+              </SelectTrigger>
+              <SelectContent>
+                {["pending", "shortlisted", "rejected"].map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
     </div>
   )
