@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/company/file-upload";
+import { EmployeeSelector } from "@/components/company/employee-selector";
 
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -52,10 +53,12 @@ interface SocialLink {
 interface Honor {
   id: string;
   title: string;
+  issuer: string;
+  date: string;
   description: string;
 }
 
-export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
+function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [companyData, setCompanyData] = useState<any>(null);
@@ -67,7 +70,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   ]);
   const [services, setServices] = useState<string[]>([""]);
   const [honors, setHonors] = useState<Honor[]>([
-    { id: "1", title: "", description: "" },
+    { id: "1", title: "", issuer: "", date: "", description: "" },
   ]);
 
   const form = useForm<FormData>({
@@ -120,6 +123,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         cname: company.cname || "",
         country: company.country || "",
         city: company.city || "",
+
         zipcode: company.zipcode || "",
         cemail: company.cemail || "",
         cPhoneNumber: company.cPhoneNumber || "",
@@ -154,6 +158,8 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         companyData.data.honors.map((honor: any, index: number) => ({
           id: `${index + 1}`,
           title: honor.title || "",
+          issuer: honor.issuer || "",
+          date: honor.date || "",
           description: honor.description || "",
         }))
       );
@@ -198,7 +204,13 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const addHonor = () => {
     setHonors([
       ...honors,
-      { id: Date.now().toString(), title: "", description: "" },
+      {
+        id: Date.now().toString(),
+        title: "",
+        issuer: "",
+        date: "",
+        description: "",
+      },
     ]);
   };
 
@@ -210,7 +222,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
   const updateHonor = (
     id: string,
-    field: "title" | "description",
+    field: "title" | "issuer" | "date" | "description",
     value: string
   ) => {
     setHonors(
@@ -222,7 +234,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
   const updateCompany = async (data: any) => {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyData.data.companies[0]._id}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyData.data.companies[0]._id}`,
       {
         method: "PUT",
         headers: {
@@ -244,7 +256,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     formData.append("video", file);
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/companies/${companyId}/elevator-pitch`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}/elevator-pitch`,
       {
         method: "PUT",
         body: formData,
@@ -280,8 +292,12 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         )
         .map((honor) => ({
           title: honor.title.trim(),
+          id: honor._id,
+          issuer: honor.issuer.trim(),
+          date: honor.date,
           description: honor.description.trim(),
         }));
+      console.log("filteredHonors", filteredHonors);
 
       const formData = {
         ...data,
@@ -314,17 +330,15 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     );
   }
 
+  console.log("companyData", companyData);
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="">
+      <div className="container mx-auto px-2">
         <div className="bg-white rounded-lg shadow-sm p-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
-              Edit Company Profile
+          <div className="mb-16">
+            <h1 className="text-[48px] font-bold text-[#131313] mb-2 text-center">
+              Edit Company/Business Account
             </h1>
-            <p className="text-gray-600">
-              Update your company information and settings
-            </p>
           </div>
 
           <Form {...form}>
@@ -360,11 +374,12 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   <div className="aspect-square">
                     <FileUpload
                       onFileSelect={setLogoFile}
+                      defaultUrl={companyData.data.companies[0].clogo}
                       accept="image/*"
                       className="h-full"
                     >
                       <div className="w-full h-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium rounded-lg">
-                        photo/recruiter logo
+                        photo/Company logo
                       </div>
                     </FileUpload>
                   </div>
@@ -583,20 +598,10 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
               {/* Services - Dynamic Array */}
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="">
                   <h3 className="text-lg font-semibold text-gray-900">
                     Services
                   </h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addService}
-                    className="flex items-center gap-2 bg-transparent"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Service
-                  </Button>
                 </div>
 
                 <div className="space-y-3">
@@ -623,13 +628,32 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     </div>
                   ))}
                 </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addService}
+                  className="flex items-center gap-2 bg-transparent"
+                >
+                  Add more
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  View your company employees
+                </h3>
+                <EmployeeSelector
+                  selectedEmployees={selectedEmployees}
+                  onEmployeesChange={setSelectedEmployees}
+                />
               </div>
 
               {/* Honors - Dynamic Array */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-900">
-                    Honors & Awards
+                    Company Awards and Honours
                   </h3>
                   <Button
                     type="button"
@@ -645,10 +669,7 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
                 <div className="space-y-4">
                   {honors.map((honor) => (
-                    <div
-                      key={honor.id}
-                      className="border rounded-lg p-4 space-y-3"
-                    >
+                    <div key={honor.id} className=" space-y-3">
                       <div className="flex items-center justify-between">
                         <h4 className="font-medium text-gray-900">
                           Honor/Award
@@ -667,9 +688,9 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       </div>
 
                       <div className="space-y-3">
-                        <div>
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-gray-700">
-                            Title
+                            Award Title
                           </Label>
                           <Input
                             value={honor.title}
@@ -680,9 +701,38 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           />
                         </div>
 
-                        <div>
+                        {/* Employee Selection */}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">
+                              Award Issuer
+                            </Label>
+                            <Input
+                              value={honor.issuer}
+                              onChange={(e) =>
+                                updateHonor(honor.id, "issuer", e.target.value)
+                              }
+                              placeholder="Award/Honor Issuer"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm font-medium text-gray-700">
+                              Award Date
+                            </Label>
+                            <Input
+                              type="date"
+                              value={honor.date}
+                              onChange={(e) =>
+                                updateHonor(honor.id, "date", e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
                           <Label className="text-sm font-medium text-gray-700">
-                            Description
+                            Award Short Description
                           </Label>
                           <Textarea
                             value={honor.description}
@@ -728,3 +778,5 @@ export default function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     </div>
   );
 }
+
+export default EditCompanyPage;
