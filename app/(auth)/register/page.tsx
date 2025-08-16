@@ -44,6 +44,14 @@ export default function RegisterPage() {
     "candidate" | "recruiter" | "company"
   >("candidate");
 
+  const [passwordValidation, setPasswordValidation] = useState({
+    minLength: false,
+    hasNumber: false,
+    hasSpecialChar: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+  });
+
   const router = useRouter();
 
   const registerMutation = useMutation({
@@ -60,11 +68,28 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
   }, [selectedRole]);
 
+  const validatePassword = (password: string) => {
+    const validation = {
+      minLength: password.length >= 10,
+      hasNumber: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+    };
+    setPasswordValidation(validation);
+    return Object.values(validation).every(Boolean);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (formData.password !== confirmPassword) {
       alert("Passwords do not match");
+      return;
+    }
+
+    if (!validatePassword(formData.password)) {
+      alert("Password does not meet the requirements");
       return;
     }
 
@@ -78,6 +103,9 @@ export default function RegisterPage() {
 
   const handleInputChange = (field: keyof RegisterData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "password") {
+      validatePassword(value);
+    }
   };
 
   return (
@@ -185,6 +213,67 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+
+              {formData.password && (
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm font-medium text-red-600 mb-2">
+                    Passwords should be:
+                  </p>
+                  <div className="space-y-1 text-sm">
+                    <p
+                      className={cn(
+                        passwordValidation.minLength
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      A minimum of '10 characters'
+                    </p>
+                    <p
+                      className={cn(
+                        passwordValidation.hasNumber
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      A minimum of 1 number
+                    </p>
+                    <p
+                      className={cn(
+                        passwordValidation.hasSpecialChar
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      A minimum of 1 special character
+                    </p>
+                    <p
+                      className={cn(
+                        passwordValidation.hasUpperCase
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      A minimum of 1 upper case character
+                    </p>
+                    <p
+                      className={cn(
+                        passwordValidation.hasLowerCase
+                          ? "text-green-600"
+                          : "text-red-600"
+                      )}
+                    >
+                      A minimum of 1 lower case character
+                    </p>
+                    <p className="text-red-600">
+                      You should not use any of your last 5 passwords
+                    </p>
+                    <p className="text-red-600">
+                      Keep your password as safe as your bank pin number!
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowRight } from "lucide-react"
-import { motion } from "framer-motion"
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 export function ScrollingInfoBar() {
   const items = [
-    { text: "60-Second Free Elevator Pitch", link: "#" },
+    { text: "30-Second Free Elevator Pitch", link: "#" },
     { text: "Perfect Your Message", link: "#" },
     { text: "Elevate Your Business", link: "#" },
-    { text: "60-Second Free Elevator Pitch", link: "#" },
+    { text: "30-Second Free Elevator Pitch", link: "#" },
     { text: "Perfect Your Message", link: "#" },
     { text: "Elevate Your Business", link: "#" },
-  ]
+  ];
 
   // Duplicate items to create a seamless loop
-  const duplicatedItems = [...items, ...items, ...items]
+  const duplicatedItems = [...items, ...items, ...items];
 
   return (
     <div className="bg-v0-blue-500 text-white py-3 px-4 md:px-6 overflow-hidden relative">
@@ -34,7 +34,10 @@ export function ScrollingInfoBar() {
       >
         {duplicatedItems.map((item, index) => (
           <div key={index} className="flex items-center gap-4">
-            <Link href={item.link} className="flex items-center gap-2 hover:underline text-sm">
+            <Link
+              href={item.link}
+              className="flex items-center gap-2 hover:underline text-sm"
+            >
               <span className="h-2 w-2 rounded-full bg-white" />
               {item.text}
             </Link>
@@ -50,5 +53,5 @@ export function ScrollingInfoBar() {
         ))}
       </motion.div>
     </div>
-  )
+  );
 }
