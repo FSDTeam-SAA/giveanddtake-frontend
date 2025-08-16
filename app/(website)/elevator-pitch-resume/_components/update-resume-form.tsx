@@ -1,6 +1,8 @@
 "use client"
 
-import type React from "react"
+import React from "react"
+
+import type { ReactElement } from "react"
 import { useState } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Resume schema for validation
 const resumeSchema = z.object({
@@ -40,6 +43,7 @@ const resumeSchema = z.object({
       duration: z.string().optional(), // Added duration field
       startDate: z.string().optional(),
       endDate: z.string().optional(),
+      currentlyWorking: z.boolean().optional(), // Added currently working field
       country: z.string().optional(),
       city: z.string().optional(),
       zip: z.string().optional(),
@@ -107,10 +111,11 @@ const skillsList = [
   "Problem Solving",
 ]
 
-export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateResumeFormProps) {
+export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateResumeFormProps): ReactElement {
   const [selectedSkills, setSelectedSkills] = useState<string[]>(resume.resume?.skills || [])
   const [skillSearch, setSkillSearch] = useState("")
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const filteredSkills = skillsList.filter(
@@ -157,7 +162,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
         return defaultLinks
       })(),
-
       experiences: (() => {
         if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
           return resume.experiences.map((exp: any) => ({
@@ -165,6 +169,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
             duration: exp.duration || "",
             startDate: exp.startDate ? exp.startDate.split("T")[0] : "",
             endDate: exp.endDate ? exp.endDate.split("T")[0] : "",
+            currentlyWorking: exp.currentlyWorking || false, // Added currentlyWorking field
             country: exp.country || "",
             city: exp.city || "",
             zip: exp.zip || "",
@@ -175,15 +180,15 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
         }
         return [
           {
-            position: "",
             company: "",
+            jobTitle: "",
             duration: "",
             startDate: "",
             endDate: "",
+            currentlyWorking: false,
             country: "",
             city: "",
             zip: "",
-            jobTitle: "",
             jobDescription: "",
             jobCategory: "",
           },
@@ -259,9 +264,23 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPhotoFile(e.target.files[0])
+      const file = e.target.files[0]
+      setPhotoFile(file)
+
+      const previewUrl = URL.createObjectURL(file)
+      setPhotoPreview(previewUrl)
     }
   }
+
+  const cleanup = () => {
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview)
+    }
+  }
+
+  React.useEffect(() => {
+    return cleanup
+  }, [photoPreview])
 
   const onSubmit = async (data: ResumeFormData) => {
     console.log("Form submission started")
@@ -345,16 +364,20 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
-                {resume.resume.photo && (
+                {(photoPreview || resume.resume.photo) && (
                   <img
-                    src={resume.resume.photo || "/placeholder.svg"}
-                    alt="Current photo"
+                    src={photoPreview || resume.resume.photo || "/placeholder.svg"}
+                    alt={photoPreview ? "Selected photo preview" : "Current photo"}
                     className="w-20 h-20 rounded-lg object-cover"
                   />
                 )}
                 <div>
                   <Input type="file" accept="image/*" onChange={handlePhotoChange} className="mb-2" />
-                  <p className="text-sm text-muted-foreground">Upload a new photo to replace the current one</p>
+                  <p className="text-sm text-muted-foreground">
+                    {photoPreview
+                      ? "New photo selected - will be updated on save"
+                      : "Upload a new photo to replace the current one"}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -383,6 +406,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                             <SelectItem value="mrs">Mrs.</SelectItem>
                             <SelectItem value="ms">Ms.</SelectItem>
                             <SelectItem value="dr">Dr.</SelectItem>
+                            <SelectItem value="Md">Md.</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -491,12 +515,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                 <FormField
                   control={form.control}
-                  name="sLink.0.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
                   name="sLink.0.url"
                   render={({ field }) => (
                     <FormItem>
@@ -506,7 +524,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                           placeholder="Enter Your Website URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            // Always set label to "website" when URL changes
                             form.setValue("sLink.0.label", "website")
                             field.onChange(e.target.value)
                           }}
@@ -515,12 +532,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.1.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
                 />
 
                 <FormField
@@ -546,12 +557,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                 <FormField
                   control={form.control}
-                  name="sLink.2.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
                   name="sLink.2.url"
                   render={({ field }) => (
                     <FormItem>
@@ -573,12 +578,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                 <FormField
                   control={form.control}
-                  name="sLink.3.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
                   name="sLink.3.url"
                   render={({ field }) => (
                     <FormItem>
@@ -596,12 +595,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                       <FormMessage />
                     </FormItem>
                   )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.4.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
                 />
 
                 <FormField
@@ -765,16 +758,47 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.endDate`}
+                      name={`experiences.${index}.currentlyWorking`}
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Date</FormLabel>
+                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Checkbox
+                              checked={field.value}
+                              onCheckedChange={(checked) => {
+                                field.onChange(checked)
+                                if (checked) {
+                                  form.setValue(`experiences.${index}.endDate`, "")
+                                }
+                              }}
+                            />
                           </FormControl>
-                          <FormMessage />
+                          <div className="space-y-1 leading-none">
+                            <FormLabel>Currently working here</FormLabel>
+                          </div>
                         </FormItem>
                       )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`experiences.${index}.endDate`}
+                      render={({ field }) => {
+                        const currentlyWorking = form.watch(`experiences.${index}.currentlyWorking`)
+                        return (
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                disabled={currentlyWorking}
+                                value={currentlyWorking ? "" : field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )
+                      }}
                     />
 
                     <FormField
@@ -830,7 +854,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => appendExperience({ jobTitle: "", company: "", duration: "" })}
+                onClick={() => appendExperience({ jobTitle: "", company: "", duration: "", currentlyWorking: false })}
               >
                 Add Experience
               </Button>
