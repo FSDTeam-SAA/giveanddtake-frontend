@@ -52,7 +52,7 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
     }
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
             <input
                 ref={fileInputRef}
                 type="file"
@@ -63,11 +63,11 @@ export function FileUpload({ files, onFilesChange }: FileUploadProps) {
             />
 
             {files.length > 0 && (
-                <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-lg absolute -top-20 z-40">
+                <div className="flex flex-wrap">
                     {files.map((file, index) => (
                         <div
                             key={index}
-                            className="flex items-center space-x-2 bg-white px-3 py-2 rounded-md border"
+                            className="flex items-center space-x-2 bg-white px-3 py-2 rounded-md border absolute -top-12 left-0"
                         >
                             {getFileIcon(file)}
                             <div className="flex-1 min-w-0">

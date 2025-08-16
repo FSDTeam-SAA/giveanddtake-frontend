@@ -9,7 +9,7 @@ interface Notification {
   id: string
   message: string
   timestamp: string
-  isRead: boolean
+  isViewed: boolean
 }
 
 interface ApiResponse {
@@ -88,7 +88,7 @@ export default function NotificationsPage() {
     },
   })
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length
+  const unreadCount = notifications.filter((n) => !n.isViewed).length
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -151,7 +151,7 @@ export default function NotificationsPage() {
             key={notification.id}
             className={cn(
               "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-colors duration-200",
-              notification.isRead ? "bg-white" : "bg-blue-50"
+              notification.isViewed ? "bg-white" : "bg-blue-50"
             )}
             variants={itemVariants}
           >
@@ -175,7 +175,7 @@ export default function NotificationsPage() {
               <p className="text-sm text-gray-800 leading-snug">{renderMessage(notification.message)}</p>
               <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
             </div>
-            {!notification.isRead && (
+            {!notification.isViewed && (
               <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full ml-auto" aria-label="Unread notification" />
             )}
           </motion.div>

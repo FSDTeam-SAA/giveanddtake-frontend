@@ -743,6 +743,8 @@ export default function RecruiterDashboard() {
           )}
         </section>
 
+        <JobList />
+
         {/* Job Cards Section */}
         <section className="mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
