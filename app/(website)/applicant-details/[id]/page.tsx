@@ -19,10 +19,11 @@ interface Resume {
   firstName?: string
   lastName?: string
   country?: string
+  city?: string
   email?: string
   phoneNumber?: string
   skills?: string[]
-  sLink?: string[]
+  sLink?: Array<{ label: string; url: string; _id: string }>
   createdAt?: string
   updatedAt?: string
 }
@@ -76,23 +77,6 @@ interface ApplicantData {
   elevatorPitch?: ElevatorPitch[]
 }
 
-interface ApiResponse {
-  success: boolean
-  message: string
-  data: {
-    _id: string
-    name: string
-    email: string
-    phoneNum: string
-    address: string
-    sLink: string[]
-    avatar: {
-      url: string
-    }
-    // Other fields in the API response are not used by the component
-  }
-}
-
 interface ResumeFile {
   filename: string
   url: string
@@ -115,6 +99,12 @@ interface ResumeApiResponse {
   data: ResumeData[]
 }
 
+interface ApiResponse {
+  success: boolean
+  message: string
+  data: ApplicantData
+}
+
 const degreeLabels: Record<string, string> = {
   bachelor: "Bachelor's Degree",
   master: "Master's Degree",
@@ -125,6 +115,27 @@ const degreeLabels: Record<string, string> = {
 }
 
 const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"]
+
+// Helper function to validate URLs
+const isValidUrl = (urlString: string): boolean => {
+  try {
+    new URL(urlString)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// Helper function to normalize URLs by adding protocol if missing
+const normalizeUrl = (url: unknown): string => {
+  if (typeof url !== "string" || !url) {
+    return ""
+  }
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    return `https://${url}`
+  }
+  return url
+}
 
 export default function ApplicantDetailsPage() {
   const params = useParams()
@@ -190,7 +201,7 @@ export default function ApplicantDetailsPage() {
   }
 
   const fetchApplicantDetails = async (): Promise<ApplicantData> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/single/${applicationId}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${applicationId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -206,26 +217,44 @@ export default function ApplicantDetailsPage() {
       throw new Error(result.message || "Failed to fetch applicant details")
     }
 
-    const apiUserData = result.data
-    const applicantData: ApplicantData = {
-      resume: {
-        _id: apiUserData._id,
-        userId: apiUserData._id,
-        photo: apiUserData.avatar?.url || "/placeholder.svg",
-        firstName: apiUserData.name.split(" ")[0],
-        lastName: apiUserData.name.split(" ").slice(1).join(" "),
-        email: apiUserData.email,
-        phoneNumber: apiUserData.phoneNum,
-        country: apiUserData.address,
-        sLink: apiUserData.sLink?.length > 0 ? apiUserData.sLink : [],
-      },
-      experiences: [],
-      education: [],
-      awardsAndHonors: [],
-      elevatorPitch: [],
-    }
+    const apiData = result.data
 
-    return applicantData
+    // Map social links to preserve the full object structure with normalized URLs
+    const validLinks = (apiData.resume?.sLink || [])
+      .filter((link): link is { label: string; url: string; _id: string } => !!link && typeof link === "object" && "url" in link && "label" in link && "_id" in link)
+      .map((link) => ({
+        ...link,
+        url: normalizeUrl(link.url), // Normalize the URL while keeping other properties
+      }))
+      .filter((link) => isValidUrl(link.url))
+
+    console.log("Social Links (filtered):", validLinks) // Debug log
+
+    return {
+      resume: apiData.resume
+        ? {
+            _id: apiData.resume._id,
+            userId: apiData.resume.userId,
+            photo: apiData.resume.photo || "/placeholder.svg",
+            aboutUs: apiData.resume.aboutUs,
+            title: apiData.resume.title,
+            firstName: apiData.resume.firstName,
+            lastName: apiData.resume.lastName,
+            country: apiData.resume.country,
+            city: apiData.resume.city,
+            email: apiData.resume.email,
+            phoneNumber: apiData.resume.phoneNumber,
+            skills: apiData.resume.skills,
+            sLink: validLinks, // Assign the correctly typed array
+            createdAt: apiData.resume.createdAt,
+            updatedAt: apiData.resume.updatedAt,
+          }
+        : undefined,
+      experiences: apiData.experiences || [],
+      education: apiData.education || [],
+      awardsAndHonors: apiData.awardsAndHonors || [],
+      elevatorPitch: apiData.elevatorPitch || [],
+    }
   }
 
   const {
@@ -342,7 +371,7 @@ export default function ApplicantDetailsPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="">
         <Button variant="ghost" onClick={() => router.back()} className="mb-6">
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back to Applicants
@@ -545,12 +574,19 @@ export default function ApplicantDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {resume.sLink.map((link, index) => (
-                  <Button key={index} variant="outline" onClick={() => window.open(link, "_blank")}>
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    {new URL(link).hostname}
-                  </Button>
-                ))}
+                {resume.sLink.map((link, index) => {
+                  const normalizedLink = normalizeUrl(link.url)
+                  return (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      onClick={() => normalizedLink && window.open(normalizedLink, "_blank")}
+                    >
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      {isValidUrl(normalizedLink) ? new URL(normalizedLink).hostname : link.label || "Invalid Link"}
+                    </Button>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>

@@ -162,7 +162,7 @@ function SocialIconLink({ href, label, icon: Icon }: Social) {
   );
 }
 
-export default function EditableRecruiterAccount({
+export default function  EditableRecruiterAccount({
   recruiter,
   onSave,
 }: {

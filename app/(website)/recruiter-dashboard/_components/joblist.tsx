@@ -12,6 +12,16 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+interface Job {
+  _id: string;
+  title: string;
+  status: string;
+  createdAt: string;
+  userId: string;
+  companyId: string;
+  description: string;
+}
+
 export default function JobList() {
   const [applicationCounts, setApplicationCounts] = useState<{
     [jobId: string]: number;
@@ -35,16 +45,15 @@ export default function JobList() {
   } = useQuery({
     queryKey: ["jobs"],
     queryFn: getRecruiterJobs,
-    select: (data) => data?.data,
+    select: (data) => data?.data, // Extract the `data` array from the response
   });
 
-  // ✅ Fetch applicants for each job only once after jobs are loaded
   useEffect(() => {
-    if (!jobs || jobs.length === 0) return;
+    if (!jobs || !Array.isArray(jobs) || jobs.length === 0) return;
 
     const fetchApplications = async () => {
       const results = await Promise.all(
-        jobs.map(async (job: any) => {
+        jobs.map(async (job: Job) => {
           const res = await getApplicationsByJobId(job._id);
           return { jobId: job._id, count: res?.data?.length ?? 0 };
         })
@@ -93,9 +102,18 @@ export default function JobList() {
     );
   }
 
+  if (!Array.isArray(jobs)) {
+    console.error("Jobs is not an array:", jobs);
+    return (
+      <div className="flex justify-center items-center text-red-400">
+        Error: Invalid job data
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {jobs?.map((job: any) => (
+      {jobs.map((job: Job) => (
         <div
           key={job._id}
           className="bg-white p-6 rounded-lg shadow-[0px_0px_8px_0px_#00000029]"

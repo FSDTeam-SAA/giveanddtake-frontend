@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlayIcon } from "lucide-react";
+import { PlayIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
@@ -182,7 +182,10 @@ const fetchRecruiterAccount = async (
 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/recruiter/recruiter-account/${applicantId}`,
-    { method: "GET", headers }
+    {
+      method: "GET",
+      headers,
+    }
   );
 
   if (!res.ok) {
@@ -368,6 +371,10 @@ export default function RecruiterDashboard() {
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
+  const [currentPageTable, setCurrentPageTable] = useState(1);
+  const [currentPageCards, setCurrentPageCards] = useState(1);
+  const itemsPerPage = 4;
+
   // Fetch jobs
   const {
     data: jobsData,
@@ -378,7 +385,7 @@ export default function RecruiterDashboard() {
     queryFn: () => fetchJobs(token),
   });
 
-  console.log(jobsData);
+  console.log("JJJJJJ", jobsData);
 
   // Get the first job ID dynamically
   const firstJobId = jobsData?.data?.[0]?._id;
@@ -450,6 +457,48 @@ export default function RecruiterDashboard() {
   // Default to empty arrays to simplify data access
   const jobs = jobsData?.data ?? [];
   const applicants = applicantsData?.data ?? [];
+
+  const totalPagesTable = Math.ceil(jobs.length / itemsPerPage);
+  const startIndexTable = (currentPageTable - 1) * itemsPerPage;
+  const endIndexTable = startIndexTable + itemsPerPage;
+  const currentJobsTable = jobs.slice(startIndexTable, endIndexTable);
+
+  const totalPagesCards = Math.ceil(jobs.length / itemsPerPage);
+  const startIndexCards = (currentPageCards - 1) * itemsPerPage;
+  const endIndexCards = startIndexCards + itemsPerPage;
+  const currentJobsCards = jobs.slice(startIndexCards, endIndexCards);
+
+  const handlePageChangeTable = (page: number) => {
+    setCurrentPageTable(page);
+  };
+
+  const handlePreviousTable = () => {
+    if (currentPageTable > 1) {
+      setCurrentPageTable(currentPageTable - 1);
+    }
+  };
+
+  const handleNextTable = () => {
+    if (currentPageTable < totalPagesTable) {
+      setCurrentPageTable(currentPageTable + 1);
+    }
+  };
+
+  const handlePageChangeCards = (page: number) => {
+    setCurrentPageCards(page);
+  };
+
+  const handlePreviousCards = () => {
+    if (currentPageCards > 1) {
+      setCurrentPageCards(currentPageCards - 1);
+    }
+  };
+
+  const handleNextCards = () => {
+    if (currentPageCards < totalPagesCards) {
+      setCurrentPageCards(currentPageCards + 1);
+    }
+  };
 
   // Handle delete button click
   const handleDeleteClick = (jobId: string) => {
@@ -560,9 +609,9 @@ export default function RecruiterDashboard() {
 
         {/* Your Jobs Section */}
         <section className="mb-10">
-          <h2 className="text-2xl text-[#000000] font-semibold mb-4">
-            Your Jobs
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl text-[#000000] font-semibold">Your Jobs</h2>
+          </div>
           <div className="rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -589,7 +638,7 @@ export default function RecruiterDashboard() {
               </TableHeader>
               <TableBody>
                 {jobsLoading ? (
-                  Array.from({ length: jobs.length || 3 }).map((_, index) => (
+                  Array.from({ length: itemsPerPage }).map((_, index) => (
                     <TableRow key={index}>
                       <TableCell>
                         <Skeleton className="h-4 w-32" />
@@ -617,8 +666,8 @@ export default function RecruiterDashboard() {
                       Error loading jobs: {jobsError.message}
                     </TableCell>
                   </TableRow>
-                ) : jobs.length > 0 ? (
-                  jobs.map((job: Job) => (
+                ) : currentJobsTable.length > 0 ? (
+                  currentJobsTable.map((job: Job) => (
                     <TableRow
                       key={job._id}
                       className="text-base text-[#000000] font-medium"
@@ -651,13 +700,54 @@ export default function RecruiterDashboard() {
               </TableBody>
             </Table>
           </div>
+
+          {jobs.length > itemsPerPage && (
+            <div className="flex items-center justify-between mt-6">
+              <Button
+                variant="outline"
+                onClick={handlePreviousTable}
+                disabled={currentPageTable === 1}
+                className="flex items-center gap-2 bg-transparent"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+
+              <div className="flex items-center gap-2">
+                {Array.from({ length: totalPagesTable }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={
+                        currentPageTable === page ? "default" : "outline"
+                      }
+                      onClick={() => handlePageChangeTable(page)}
+                      className="w-10 h-10"
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={handleNextTable}
+                disabled={currentPageTable === totalPagesTable}
+                className="flex items-center gap-2 bg-transparent"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Job Cards Section */}
         <section className="mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
             {jobsLoading ? (
-              Array.from({ length: jobs.length || 4 }).map((_, index) => (
+              Array.from({ length: itemsPerPage }).map((_, index) => (
                 <Card key={index}>
                   <CardHeader>
                     <Skeleton className="h-6 w-64 mb-4" />
@@ -678,8 +768,8 @@ export default function RecruiterDashboard() {
               <div className="text-center text-red-600 col-span-2">
                 Error loading jobs: {jobsError.message}
               </div>
-            ) : jobs.length > 0 ? (
-              jobs.map((job: Job) => (
+            ) : currentJobsCards.length > 0 ? (
+              currentJobsCards.map((job: Job) => (
                 <Card key={job._id}>
                   <CardHeader>
                     <CardTitle className="text-[#000000] text-2xl font-normal">
@@ -718,7 +808,7 @@ export default function RecruiterDashboard() {
                         className="w-[160px] text-base text-[#000000]"
                       >
                         <Button
-                          className="w-[160px] text-base text-[#000000]"
+                          className="w-[160px] text-base text-[#000000] bg-transparent"
                           variant="outline"
                         >
                           View Details
@@ -732,9 +822,48 @@ export default function RecruiterDashboard() {
               <div className="text-center col-span-2">No jobs found</div>
             )}
           </div>
-        </section>
 
-        <JobList />
+          {jobs.length > itemsPerPage && (
+            <div className="flex items-center justify-center mt-8">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handlePreviousCards}
+                  disabled={currentPageCards === 1}
+                  className="flex items-center gap-2 bg-transparent"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+
+                {Array.from({ length: totalPagesCards }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant={
+                        currentPageCards === page ? "default" : "outline"
+                      }
+                      onClick={() => handlePageChangeCards(page)}
+                      className="w-10 h-10"
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+
+                <Button
+                  variant="outline"
+                  onClick={handleNextCards}
+                  disabled={currentPageCards === totalPagesCards}
+                  className="flex items-center gap-2 bg-transparent"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
 
         {/* Applicant List Section */}
         <section className="mb-10">
@@ -778,7 +907,7 @@ export default function RecruiterDashboard() {
                   )
                 )
               ) : applicantsError ? (
-                <div className="grid grid-cols-12 items-center p crescita 4 text-center text-red-600">
+                <div className="grid grid-cols-12 items-center p-4 text-center text-red-600">
                   <div className="col-span-12">
                     Error loading applicants: {applicantsError.message}
                   </div>
