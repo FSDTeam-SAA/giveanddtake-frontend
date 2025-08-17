@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Heart, Briefcase } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Job {
   _id: string;
@@ -132,6 +133,7 @@ export default function BookmarksPage() {
     );
   }
 
+
   return (
     <div className="container mx-auto px-4 py-8">
       {isError || !data?.data.bookmarks || data.data.bookmarks.length === 0 ? (
@@ -147,24 +149,29 @@ export default function BookmarksPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {data.data.bookmarks.map((bookmark) => (
-            <Link key={bookmark._id} href={`/alljobs/${bookmark.jobId._id}`}>
+            <Link key={bookmark._id} href={`/alljobs/${bookmark?.jobId?._id}`}>
               <Card key={bookmark._id} className="relative">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        49
+                        <Image
+                          src=""
+                          alt=""
+                          width={24}
+                          height={24}
+                        />
                       </div>
                       <h3 className="text-lg font-semibold text-[#595959]">
-                        {bookmark.jobId.title}
+                        {bookmark?.jobId?.title}
                       </h3>
                     </div>
                     <button
                       onClick={() => handleToggleBookmark(bookmark.jobId._id)}
                       disabled={
-                        submittingId === bookmark.jobId._id ||
+                        submittingId === bookmark.jobId?._id ||
                         data.data.bookmarks.some(
-                          (b) => b.jobId._id === bookmark.jobId._id
+                          (b) => b.jobId?._id === bookmark.jobId?._id
                         )
                       }
                       className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3]"
@@ -174,9 +181,9 @@ export default function BookmarksPage() {
                   </div>
 
                   <p className="text-[#707070] text-sm mb-6 leading-relaxed">
-                    {bookmark.jobId.description.length > 120
-                      ? `${bookmark.jobId.description.slice(0, 120)}...`
-                      : bookmark.jobId.description}
+                    {bookmark.jobId?.description.length > 120
+                      ? `${bookmark.jobId?.description.slice(0, 120)}...`
+                      : bookmark.jobId?.description}
                   </p>
 
                   <div className="flex items-center justify-between gap-3">

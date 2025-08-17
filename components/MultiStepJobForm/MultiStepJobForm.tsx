@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Plus, Search, Info, Check } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
-
 import { toast } from 'sonner';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import TextEditor from './TextEditor';
@@ -31,6 +30,11 @@ interface JobCategory {
   _id: string;
   name: string;
   categoryIcon: string;
+}
+
+interface Country {
+  country: string;
+  cities: string[];
 }
 
 interface FormData {
@@ -120,12 +124,63 @@ export default function MultiStepJobForm() {
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [publishNow, setPublishNow] = useState(false);
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
 
   // Fetch job categories
   const { data: jobCategories, isLoading: categoriesLoading, error: categoriesError } = useQuery({
     queryKey: ['jobCategories'],
     queryFn: fetchJobCategories,
   });
+
+  // Fetch countries on component mount
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setIsLoadingCountries(true);
+      try {
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+        const data = await response.json();
+        if (!data.error) {
+          setCountries(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+        toast.error("Failed to load countries");
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
+
+  // Fetch cities when country is selected
+  useEffect(() => {
+    const fetchCities = async () => {
+      if (!formData.country) return;
+      setIsLoadingCities(true);
+      try {
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ country: formData.country }),
+        });
+        const data = await response.json();
+        if (!data.error) {
+          setCities(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching cities:", error);
+        toast.error("Failed to load cities");
+      } finally {
+        setIsLoadingCities(false);
+      }
+    };
+    fetchCities();
+  }, [formData.country]);
 
   const steps = [
     { number: 1, title: 'Job Details', active: currentStep >= 1 },
@@ -357,39 +412,53 @@ export default function MultiStepJobForm() {
             </Select>
           </div>
 
-          {/* Location - Country & Region */}
+          {/* Location - Country & City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700" htmlFor="country">
                 Country<span className="text-red-500 ml-1">*</span>
               </Label>
-              <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}>
+              <Select 
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, country: value, region: '' }))}
+                disabled={isLoadingCountries}
+              >
                 <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                  <SelectValue placeholder="Select country" />
+                  <SelectValue placeholder={isLoadingCountries ? "Loading countries..." : "Select country"} />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg shadow-lg">
-                  <SelectItem value="us">United States</SelectItem>
-                  <SelectItem value="uk">United Kingdom</SelectItem>
-                  <SelectItem value="ca">Canada</SelectItem>
-                  <SelectItem value="au">Australia</SelectItem>
-                  <SelectItem value="in">India</SelectItem>
+                  {isLoadingCountries ? (
+                    <SelectItem value="loading">Loading...</SelectItem>
+                  ) : (
+                    countries.map((country) => (
+                      <SelectItem key={country.country} value={country.country}>
+                        {country.country}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700" htmlFor="region">
-                Region/State<span className="text-red-500 ml-1">*</span>
+                City<span className="text-red-500 ml-1">*</span>
               </Label>
-              <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}>
+              <Select 
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, region: value }))}
+                disabled={isLoadingCities || !formData.country}
+              >
                 <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                  <SelectValue placeholder="Select region" />
+                  <SelectValue placeholder={isLoadingCities ? "Loading cities..." : "Select city"} />
                 </SelectTrigger>
                 <SelectContent className="rounded-lg shadow-lg">
-                  <SelectItem value="west">West</SelectItem>
-                  <SelectItem value="east">East</SelectItem>
-                  <SelectItem value="central">Central</SelectItem>
-                  <SelectItem value="north">North</SelectItem>
-                  <SelectItem value="south">South</SelectItem>
+                  {isLoadingCities ? (
+                    <SelectItem value="loading">Loading...</SelectItem>
+                  ) : (
+                    cities.map((city) => (
+                      <SelectItem key={city} value={city}>
+                        {city}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -408,7 +477,6 @@ export default function MultiStepJobForm() {
                 <SelectItem value="full-time">Full-time</SelectItem>
                 <SelectItem value="part-time">Part-time</SelectItem>
                 <SelectItem value="internship">Internship</SelectItem>
-               
               </SelectContent>
             </Select>
           </div>

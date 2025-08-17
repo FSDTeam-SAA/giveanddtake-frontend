@@ -33,6 +33,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import JobList from "./joblist";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define TypeScript interfaces for jobs API response
 interface ApplicationRequirement {
@@ -744,7 +751,7 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Job Cards Section */}
-        {/* <section className="mb-10">
+        <section className="mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
             {jobsLoading ? (
               Array.from({ length: itemsPerPage }).map((_, index) => (
@@ -863,12 +870,8 @@ export default function RecruiterDashboard() {
               </div>
             </div>
           )}
-        </section> */}
-
-        <section className="mb-8">
-          <JobList />
         </section>
-
+        
         {/* Applicant List Section */}
         <section className="mb-10">
           <div className="overflow-hidden">
@@ -882,7 +885,7 @@ export default function RecruiterDashboard() {
             </div>
 
             {/* Applicant Rows */}
-            <div className="divide-y border-none">
+            <div className="divide-y border-none space-y-2">
               {applicantsLoading ? (
                 Array.from({ length: applicants.length || 3 }).map(
                   (_, index) => (
@@ -917,7 +920,7 @@ export default function RecruiterDashboard() {
                   </div>
                 </div>
               ) : applicants.length > 0 ? (
-                applicants.map((applicant: Applicant) => (
+                applicants.slice(0, 2).map((applicant: Applicant) => (
                   <div
                     key={applicant._id}
                     className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl"
@@ -935,13 +938,17 @@ export default function RecruiterDashboard() {
                         </AvatarFallback>
                       </Avatar>
                     </div>
+
                     <div className="col-span-3 font-medium">
                       {applicant.userId.name}
                     </div>
+
                     <div className="col-span-2">N/A</div>
+
                     <div className="col-span-2">
                       {formatDate(applicant.createdAt)}
                     </div>
+
                     <div className="col-span-3 flex space-x-2">
                       <Button
                         variant="outline"
@@ -949,30 +956,32 @@ export default function RecruiterDashboard() {
                       >
                         Applicant Details
                       </Button>
-                      <Button
-                        className="bg-green-600 hover:bg-green-700 text-white text-sm h-8"
-                        onClick={() =>
+
+                      {/* Status Select */}
+                      <Select
+                        value={applicant.status}
+                        onValueChange={(value) =>
                           statusMutation.mutate({
                             applicantId: applicant._id,
-                            status: "shortlisted",
+                            status: value,
                           })
                         }
                         disabled={statusMutation.isPending}
                       >
-                        {statusMutation.isPending ? "Updating..." : "Shortlist"}
-                      </Button>
-                      <Button
-                        className="bg-red-600 hover:bg-red-700 text-white text-sm h-8"
-                        onClick={() =>
-                          statusMutation.mutate({
-                            applicantId: applicant._id,
-                            status: "rejected",
-                          })
-                        }
-                        disabled={statusMutation.isPending}
-                      >
-                        {statusMutation.isPending ? "Updating..." : "Reject"}
-                      </Button>
+                        <SelectTrigger className="w-40 h-8 text-sm border text-blue-600 border-blue-600">
+                          <SelectValue placeholder="Change Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {["pending", "shortlisted", "rejected"].map(
+                            (status) => (
+                              <SelectItem key={status} value={status}>
+                                {status.charAt(0).toUpperCase() +
+                                  status.slice(1)}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 ))
@@ -982,9 +991,16 @@ export default function RecruiterDashboard() {
                 </div>
               )}
             </div>
-            <p className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer">
-              See All
-            </p>
+
+            {/* See All */}
+            <div className="flex justify-end">
+              <Link
+                href={`/candidate-list/${firstJobId}`}
+                className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer"
+              >
+                See All
+              </Link>
+            </div>
           </div>
         </section>
 
