@@ -32,6 +32,7 @@ import Image from "next/image";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
+  const token = session?.accessToken;
   const pathname = usePathname();
   const [userAvatar, setUserAvatar] = useState("");
   const [userName, setUserName] = useState("");
@@ -148,16 +149,18 @@ export function SiteHeader() {
             All Jobs
           </Link>
 
-          <Link
-            href="/elevator-pitch-resume"
-            className={`transition-colors ${
-              isActive("/elevator-pitch-resume")
-                ? "text-[#2B7FD0]"
-                : "hover:text-[#2B7FD0]"
-            }`}
-          >
-            Elevator Pitch & Resume
-          </Link>
+          {token && (
+            <Link
+              href="/elevator-pitch-resume"
+              className={`transition-colors ${
+                isActive("/elevator-pitch-resume")
+                  ? "text-[#2B7FD0]"
+                  : "hover:text-[#2B7FD0]"
+              }`}
+            >
+              Elevator Pitch & Resume
+            </Link>
+          )}
 
           <Link
             href="/blog"

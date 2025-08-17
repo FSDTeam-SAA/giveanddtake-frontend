@@ -148,6 +148,8 @@ export default function ApplicantDetailsPage() {
   const applicationId = params.id as string
   const resumeId = searchParams.get("resumeId")
 
+  const applicatUserJobId = searchParams.get("applicationId")
+
   const [resumeData, setResumeData] = useState<ResumeData | null>(null)
   const [resumeLoading, setResumeLoading] = useState(false)
   const [applicationStatus, setApplicationStatus] = useState<string>("pending")
@@ -279,7 +281,7 @@ export default function ApplicantDetailsPage() {
   const handleStatusUpdate = async (newStatus: string) => {
     try {
       setStatusLoading(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicationId}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicatUserJobId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -625,18 +627,17 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        <div className="flex items-center gap-4 mt-6">
+        <div className="flex items-center justify-center gap-4 mt-6">
           <div>
-            <Link href="/resume-builder">
-              <Button variant="outline">
-                <ExternalLink className="h-4 w-4 mr-2" />
+            <Link href="/massage">
+              <Button variant="outline" className="bg-[#2B7FD0] text-white">
                 Message
               </Button>
             </Link>
           </div>
           <div>
             <Select value={applicationStatus} onValueChange={handleStatusUpdate} disabled={statusLoading}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-40 border text-blue-600 border-blue-600">
                 <SelectValue placeholder="Change Status" />
               </SelectTrigger>
               <SelectContent>
@@ -648,6 +649,14 @@ export default function ApplicantDetailsPage() {
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        <div>
+          <Link href="/recruiter-dashboard">
+            <Button variant="outline" className="bg-[#2B7FD0] text-white">
+              Return To Dashboard
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

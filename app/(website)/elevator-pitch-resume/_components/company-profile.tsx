@@ -49,12 +49,14 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const company = companyData.companies[0];
   const honors = companyData.honors || [];
 
+  const companyId = companyData.companies[0]._id;
+
   // Parse JSON strings
   const links = company.links || [];
   const services = company.service || [];
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8 bg-white">
+    <div className="container mx-auto p-6 space-y-8 bg-white">
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-8">
         <div className="flex items-start gap-6">
@@ -331,9 +333,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             <p className="text-gray-500">No employees added yet.</p>
           )}
           <div className="text-center pt-4">
-            <Button variant="link" className="text-blue-600">
-              See All
-            </Button>
+            <Link href={`/recruiter-list/${companyId}`}>
+              <Button variant="link" className="text-blue-600">
+                See All
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

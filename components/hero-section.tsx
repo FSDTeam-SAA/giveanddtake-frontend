@@ -150,7 +150,7 @@ export function HeroSection() {
         </div>
         {/* Video Carousel Section */}
         <div className="relative">
-          <div className="absolute ml-[20px] md:ml-[70px] -mt-[10px] hidden lg:block">
+          <div className="absolute ml-[20px] md:ml-[120px] -mt-[10px] hidden lg:block">
             <Image
               src="/assets/hero-video.svg"
               alt="Job search video placeholder"
