@@ -743,10 +743,8 @@ export default function RecruiterDashboard() {
           )}
         </section>
 
-        <JobList />
-
         {/* Job Cards Section */}
-        <section className="mb-10">
+        {/* <section className="mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
             {jobsLoading ? (
               Array.from({ length: itemsPerPage }).map((_, index) => (
@@ -865,6 +863,10 @@ export default function RecruiterDashboard() {
               </div>
             </div>
           )}
+        </section> */}
+
+        <section className="mb-8">
+          <JobList />
         </section>
 
         {/* Applicant List Section */}
