@@ -45,8 +45,6 @@ function MessagingContent() {
         setSelectedRoomId(null)
     }
 
-    console.log("SELECTED ROOM ID: ", selectedRoomId)
-
     return (
         <div className="flex h-screen bg-gray-50 container">
             {/* Mobile: Show either sidebar or chat, Desktop: Show both */}

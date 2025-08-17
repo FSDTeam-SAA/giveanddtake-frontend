@@ -79,9 +79,12 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
 
     const formatTime = (dateString: string) => {
         return new Date(dateString).toLocaleTimeString('en-US', {
+            day: 'numeric',
+            month: 'numeric',
+            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
-            hour12: false
+            hour12: true
         })
     }
 
@@ -97,7 +100,7 @@ export function MessageBubble({ message, isOwn, showAvatar }: MessageBubbleProps
                     onClick={() => window.open(file.url, '_blank')}
                 />
             )
-        } else if (['mp4', 'mov', 'avi', 'webm'].includes(ext || '')) {
+        } else if (['mp4', 'mov', 'avi', 'webm', 'mkv'].includes(ext || '')) {
             return (
                 <video
                     src={file.url}
