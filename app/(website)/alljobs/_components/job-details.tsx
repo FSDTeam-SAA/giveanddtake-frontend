@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import DOMPurify from "dompurify";
 import Link from "next/link";
+import Image from "next/image";
 
 interface JobDetailsData {
   _id: string;
@@ -21,11 +22,13 @@ interface JobDetailsData {
   shift: string;
   responsibilities: string[];
   educationExperience: string[];
+
   benefits: string[];
   vacancy: number;
   experience: number;
   deadline: string;
   status: string;
+  companyId: string;
   compensation: string;
   applicationRequirement: Array<{
     requirement: string;
@@ -233,185 +236,220 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             Back to jobs
           </Button>
         </Link>
-        <div className="md:flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-            <div className="flex items-center gap-4 text-gray-600 mb-4">
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-1" />
-                {job.location}
-              </div>
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 mr-1" />
-                {job.shift}
-              </div>
-              <div className="flex items-center">
-                <DollarSign className="h-4 w-4 mr-1" />
-                {job.salaryRange}
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              onClick={handleSaveJob}
-              disabled={
-                saveJobMutation.isPending ||
-                sessionStatus === "loading" ||
-                !userId
-              }
-            >
-              {saveJobMutation.isPending ? "Saving..." : "Save Job"}
-            </Button>
-            <Link href={`/job-application?id=${job._id}`}>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                Apply Now
-              </Button>
-            </Link>
-          </div>
-        </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Job Description */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/* Description - safely render HTML with line clamp */}
-              <div
-                className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(job.description),
-                }}
-              />
-            </CardContent>
-          </Card>
-          {/* Responsibilities */}
-          {job.responsibilities && job.responsibilities.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Responsibilities</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {job.responsibilities.map((responsibility, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-gray-700">{responsibility}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {/* Education & Experience */}
-          {job.educationExperience && job.educationExperience.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Education & Experience</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {job.educationExperience.map((item, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-          {/* Benefits */}
-          {job.benefits && job.benefits.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Benefits</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {job.benefits.map((benefit, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-gray-700">{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Job Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Experience</span>
-                <span className="font-medium">{job.experience}+ years</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Positions</span>
-                <span className="font-medium">{job.vacancy}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Compensation</span>
-                <span className="font-medium">{job.compensation}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Application Deadline</span>
-                <span className="font-medium">{formatDate(job.deadline)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-600">Status</span>
-                <Badge
-                  variant={job.status === "active" ? "default" : "secondary"}
-                >
-                  {job.status}
-                </Badge>
-              </div>
-            </CardContent>
-          </Card>
-          {/* Job Location */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Location</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <div className="flex items-center mb-2">
-                  <MapPin className="h-4 w-4 mr-2 text-gray-600" />
-                  <span className="font-medium">{job.location}</span>
+
+      <div className="grid grid-cols-9 gap-8">
+        <div className="col-span-6">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div>
+                  <Link href={`/company-profile/${job.companyId}`}>
+                    <Image
+                      src=""
+                      alt=""
+                      width={100}
+                      height={100}
+                      className="w-16 h-16 object-cover rounded-full"
+                    />
+                  </Link>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
+                  <div className="flex items-center gap-4 text-gray-600 mb-4">
+                    <Link
+                      href={`/company-profile/${job.companyId}`}
+                      className="text-[#2042E3]"
+                    >
+                      company name
+                    </Link>
+                    <div className="flex items-center">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {job.location}
+                    </div>
+                  </div>
                 </div>
               </div>
-              <JobMap location={job.location} />
-            </CardContent>
+
+              <div>
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-1" />
+                  {job.shift}
+                </div>
+                <div className="flex items-center">
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  {job.salaryRange}
+                </div>
+              </div>
+            </div>
+            {/* Job Description */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Description</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Description - safely render HTML with line clamp */}
+                <div
+                  className="text-gray-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(job.description),
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <div className="col-span-3">
+          <Card className="mb-4">
+            <div className="flex gap-3 p-4">
+              <Button
+                variant="outline"
+                onClick={handleSaveJob}
+                disabled={
+                  saveJobMutation.isPending ||
+                  sessionStatus === "loading" ||
+                  !userId
+                }
+              >
+                {saveJobMutation.isPending ? "Saving..." : "Save Job"}
+              </Button>
+              <Link href={`/job-application?id=${job._id}`}>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Apply Now
+                </Button>
+              </Link>
+            </div>
           </Card>
-          {/* Application Requirements */}
-          {job.applicationRequirement &&
-            job.applicationRequirement.length > 0 && (
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Responsibilities */}
+            {job.responsibilities && job.responsibilities.length > 0 && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Application Requirements</CardTitle>
+                  <CardTitle>Responsibilities</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {job.applicationRequirement.map((req) => (
-                      <li key={req._id} className="flex items-start">
-                        <span className="w-2 h-2 bg-red-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                        <span className="text-gray-700">{req.requirement}</span>
+                    {job.responsibilities.map((responsibility, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                        <span className="text-gray-700">{responsibility}</span>
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
             )}
+            {/* Education & Experience */}
+            {job.educationExperience && job.educationExperience.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Education & Experience</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {job.educationExperience.map((item, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                        <span className="text-gray-700">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+            {/* Benefits */}
+            {job.benefits && job.benefits.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Benefits</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-2">
+                    {job.benefits.map((benefit, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-2 h-2 bg-purple-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                        <span className="text-gray-700">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Job Overview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Experience</span>
+                  <span className="font-medium">{job.experience}+ years</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Positions</span>
+                  <span className="font-medium">{job.vacancy}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Compensation</span>
+                  <span className="font-medium">{job.compensation}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Application Deadline</span>
+                  <span className="font-medium">
+                    {formatDate(job.deadline)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Status</span>
+                  <Badge
+                    variant={job.status === "active" ? "default" : "secondary"}
+                  >
+                    {job.status}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+            {/* Job Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Location</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <div className="flex items-center mb-2">
+                    <MapPin className="h-4 w-4 mr-2 text-gray-600" />
+                    <span className="font-medium">{job.location}</span>
+                  </div>
+                </div>
+                <JobMap location={job.location} />
+              </CardContent>
+            </Card>
+            {/* Application Requirements */}
+            {job.applicationRequirement &&
+              job.applicationRequirement.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Application Requirements</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {job.applicationRequirement.map((req) => (
+                        <li key={req._id} className="flex items-start">
+                          <span className="w-2 h-2 bg-red-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <span className="text-gray-700">
+                            {req.requirement}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+          </div>
         </div>
       </div>
     </div>
