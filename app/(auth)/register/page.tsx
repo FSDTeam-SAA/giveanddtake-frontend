@@ -170,7 +170,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="address">Country</Label>
               <Select
                 onValueChange={(value) => handleInputChange("address", value)}
               >
@@ -265,12 +265,12 @@ export default function RegisterPage() {
                     >
                       A minimum of 1 lower case character
                     </p>
-                    <p className="text-red-600">
+                    {/* <p className="text-red-600">
                       You should not use any of your last 5 passwords
                     </p>
                     <p className="text-red-600">
                       Keep your password as safe as your bank pin number!
-                    </p>
+                    </p> */}
                   </div>
                 </div>
               )}
@@ -306,8 +306,8 @@ export default function RegisterPage() {
             {/* Role Selection */}
             <div className="flex gap-2">
               {[
-                { value: "recruiter", label: "Join As A Recruiter" },
-                { value: "company", label: "Join As A Company" },
+                { value: "recruiter", label: "Sign up as a Recruiter" },
+                { value: "company", label: "Sign up as a Company" },
               ].map((option) => (
                 <button
                   key={option.value}
@@ -355,10 +355,10 @@ export default function RegisterPage() {
               {registerMutation.isPending
                 ? "Creating Account..."
                 : selectedRole === "candidate"
-                ? "Join as Candidate"
+                ? "Sign up as a Candidate"
                 : selectedRole === "recruiter"
-                ? "Join as Recruiter"
-                : "Join as Company"}
+                ? "Sign up as a Recruiter"
+                : "Sign up as a Company"}
             </Button>
 
             <div className="text-center">
