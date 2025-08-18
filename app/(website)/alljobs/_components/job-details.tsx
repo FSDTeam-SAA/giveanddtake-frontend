@@ -226,6 +226,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const job = jobData.data;
 
+  console.log("dddddddddddddddd", job)
+
   return (
     <div className="">
       {/* Header */}
@@ -244,7 +246,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <div>
-                  <Link href={`/company-profile/${job.companyId}`}>
+                  <Link href={`/company-profile/${job.userId}`}>
                     <Image
                       src=""
                       alt=""
@@ -258,7 +260,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
                   <div className="flex items-center gap-4 text-gray-600 mb-4">
                     <Link
-                      href={`/company-profile/${job.companyId}`}
+                      href={`/company-profile/${job.userId}`}
                       className="text-[#2042E3]"
                     >
                       company name

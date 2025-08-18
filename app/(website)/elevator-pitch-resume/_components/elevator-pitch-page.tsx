@@ -20,6 +20,7 @@ import MyResume from "./resume";
 import UpdateResumeForm from "./update-resume-form";
 import EditableRecruiterAccount from "./editable-recruiter-account";
 import EditableCompanyProfile from "./editable-company-profile";
+import CreateRecruiterAccount from "./create-recruiter-account";
 
 export default function ElevatorPitchAndResume() {
   const { data: session, status } = useSession(); // Added status to handle loading state
@@ -122,7 +123,7 @@ export default function ElevatorPitchAndResume() {
               <RecruiterElevator recruiter={recruiter} />
             </div>
           ) : (
-            <CreateResumeForm />
+            <CreateRecruiterAccount />
           )
         ) : Array.isArray(company?.companies) &&
           company.companies.length > 0 ? (
