@@ -23,6 +23,7 @@ import {
   UserPen,
   Settings,
   Bookmark,
+  CreditCard,
 } from "lucide-react";
 import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { useSession, signOut } from "next-auth/react";
@@ -273,6 +274,7 @@ export function SiteHeader() {
                     <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end">
                   {(userRole === "recruiter" || userRole === "company") && (
                     <>
@@ -308,6 +310,7 @@ export function SiteHeader() {
                           </Link>
                         </DropdownMenuItem>
                       )}
+
                       {links.settings && (
                         <DropdownMenuItem
                           className={
@@ -322,8 +325,23 @@ export function SiteHeader() {
                           </Link>
                         </DropdownMenuItem>
                       )}
+
+                      {/* ✅ My Plan menu item */}
+                      <DropdownMenuItem>
+                        <Link
+                          href={
+                            userRole === "recruiter"
+                              ? "/recruiter-pricing"
+                              : "/company-pricing"
+                          }
+                          className="flex items-center"
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" /> My Plan
+                        </Link>
+                      </DropdownMenuItem>
                     </>
                   )}
+
                   {userRole === "candidate" && (
                     <>
                       <DropdownMenuItem
@@ -347,8 +365,18 @@ export function SiteHeader() {
                           <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
                         </Link>
                       </DropdownMenuItem>
+                      {/* ✅ My Plan menu item */}
+                      <DropdownMenuItem>
+                        <Link
+                          href="/candidate-pricing"
+                          className="flex items-center"
+                        >
+                          <CreditCard className="mr-2 h-4 w-4" /> My Plan
+                        </Link>
+                      </DropdownMenuItem>
                     </>
                   )}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => signOut()}>
                     <LogOut className="mr-2 h-4 w-4" /> Log Out
