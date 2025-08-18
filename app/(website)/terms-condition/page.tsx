@@ -4,10 +4,10 @@ import React from 'react'
 const page = () => {
    return (
     <div className="container mx-auto px-4 py-8  ">
-      <PageHeaders title="Terms & Conditions" description='Lorem ipsum is a dummy or placeholder text commonly used in graphic design, publishing, and web development.' />
-      <div className="flex items-center mb-8">
+      <PageHeaders title="Terms & Conditions"  />
+      {/* <div className="flex items-center mb-8">
         <h1 className="text-[32px] font-bold text-[#131313]">Terms & Conditions</h1>
-      </div>
+      </div> */}
 
       <div className="space-y-6 text-gray-700 dark:text-gray-300 text-sm leading-relaxed">
         <section>
