@@ -4,16 +4,17 @@ const page = () => {
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12 lg:py-16">
       <div className="container space-y-8">
-        <PageHeaders
-          title="Privacy Policy"
-          description="We understand that your privacy is important to you and that you care about how your personal data is used and shared online."
-        />
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+        <PageHeaders title="Privacy Policy" />
+        {/* <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Privacy Policy
-        </h1>
+        </h1> */}
 
         <div className="space-y-4 text-gray-700 dark:text-gray-300">
           <h2 className="text-2xl font-bold">Overview</h2>
+          <p>
+            We understand that your privacy is important to you and that you
+            care about how your personal data is used and shared online.
+          </p>
           <p>
             Elevator Video Pitch Ltd. is registered with the UK Information
             Commissioners Office (ICO) – Reference Number ZB932999.
