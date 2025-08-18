@@ -642,12 +642,17 @@ export default function  EditableRecruiterAccount({
                     <p className="text-sm text-muted-foreground">
                       {"Try It Free — Post Your First Job at No Cost!"}
                     </p>
-                    <Button
+                    <Link
+                      href="/add-job"
+                      className="text-blue-600 hover:underline capitalize"
+                    >
+                      <Button
                       size="lg"
                       className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]"
                     >
-                      {"Post A Job"}
+                      Post A Job
                     </Button>
+                    </Link>
                   </div>
                 </div>
               )}
