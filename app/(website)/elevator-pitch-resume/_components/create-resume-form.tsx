@@ -31,6 +31,8 @@ import { Upload, X, Copy, Check } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { createResume } from "@/lib/api-service";
+import TextEditor from "@/components/MultiStepJobForm/TextEditor";
+import Image from "next/image";
 
 // Dummy skills data
 const DUMMY_SKILLS = [
@@ -89,7 +91,7 @@ const resumeSchema = z.object({
     .array(
       z.object({
         label: z.string(),
-        url: z.string().url("Invalid URL"),
+        url: z.string().url("Invalid URL").or(z.string().length(0)),
       })
     )
     .optional(),
@@ -132,8 +134,15 @@ interface Country {
   cities: string[];
 }
 
+interface DialCode {
+  name: string;
+  code: string;
+  dial_code: string;
+}
+
 export default function CreateResumeForm() {
   const [countries, setCountries] = useState<Country[]>([]);
+  const [dialCodes, setDialCodes] = useState<DialCode[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [skillSearch, setSkillSearch] = useState("");
@@ -146,6 +155,7 @@ export default function CreateResumeForm() {
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const [isLoadingDialCodes, setIsLoadingDialCodes] = useState(false);
   const { data: session } = useSession();
 
   const form = useForm<ResumeFormData>({
@@ -237,9 +247,6 @@ export default function CreateResumeForm() {
       toast.error(
         error?.message || "Failed to create resume. Please try again."
       );
-      if (error instanceof Error) {
-        console.log(error.message);
-      }
       console.error("Error creating resume:", error);
     },
   });
@@ -255,6 +262,10 @@ export default function CreateResumeForm() {
         const data = await response.json();
         if (!data.error) {
           setCountries(data.data);
+          if (data.data.length > 0) {
+            setSelectedCountry(data.data[0].country);
+            form.setValue("country", data.data[0].country);
+          }
         }
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -263,7 +274,32 @@ export default function CreateResumeForm() {
       }
     };
     fetchCountries();
-  }, []);
+  }, [form]);
+
+  // Fetch dial codes on component mount
+  useEffect(() => {
+    const fetchDialCodes = async () => {
+      setIsLoadingDialCodes(true);
+      try {
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/codes"
+        );
+        const data = await response.json();
+        if (!data.error) {
+          setDialCodes(data.data);
+          if (data.data.length > 0) {
+            const defaultDialCode = data.data[0].dial_code;
+            form.setValue("phoneNumber", defaultDialCode);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching dial codes:", error);
+      } finally {
+        setIsLoadingDialCodes(false);
+      }
+    };
+    fetchDialCodes();
+  }, [form]);
 
   // Fetch cities when country is selected
   useEffect(() => {
@@ -284,6 +320,7 @@ export default function CreateResumeForm() {
         const data = await response.json();
         if (!data.error) {
           setCities(data.data);
+          form.setValue("city", "");
         }
       } catch (error) {
         console.error("Error fetching cities:", error);
@@ -292,7 +329,21 @@ export default function CreateResumeForm() {
       }
     };
     fetchCities();
-  }, [selectedCountry]);
+  }, [selectedCountry, form]);
+
+  // Update phone number with dial code when country changes
+  useEffect(() => {
+    if (selectedCountry && dialCodes.length > 0) {
+      const selectedDialCode = dialCodes.find(
+        (dc) => dc.name === selectedCountry
+      )?.dial_code;
+      if (selectedDialCode) {
+        const currentPhone = form.getValues("phoneNumber");
+        const phoneWithoutDial = currentPhone.replace(/^\+\d+/, "");
+        form.setValue("phoneNumber", selectedDialCode + phoneWithoutDial);
+      }
+    }
+  }, [selectedCountry, dialCodes, form]);
 
   // Filter skills based on search
   useEffect(() => {
@@ -330,7 +381,6 @@ export default function CreateResumeForm() {
       setVideoFile(file);
       const url = URL.createObjectURL(file);
       setVideoPreview(url);
-      console.log("Video file selected:", file.name);
     }
   };
 
@@ -383,12 +433,10 @@ export default function CreateResumeForm() {
     formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors));
     formData.append("userId", session?.user?.id as string);
 
-    // Add photo if uploaded
     if (photoFile) {
       formData.append("photo", photoFile);
     }
 
-    // Add video if uploaded
     if (videoFile) {
       formData.append("video", videoFile);
     }
@@ -476,7 +524,7 @@ export default function CreateResumeForm() {
                 {/* Photo Upload */}
                 <div className="flex-shrink-0">
                   <Label className="text-sm font-medium text-blue-600 mb-2 block">
-                    Photo/Recruiter logo
+                    Photo
                   </Label>
                   <div
                     className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
@@ -485,9 +533,11 @@ export default function CreateResumeForm() {
                     }
                   >
                     {photoPreview ? (
-                      <img
+                      <Image
                         src={photoPreview || "/placeholder.svg"}
                         alt="Preview"
+                        width={100}
+                        height={100}
                         className="w-full h-full object-cover rounded-lg"
                       />
                     ) : (
@@ -535,10 +585,9 @@ export default function CreateResumeForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Textarea
-                            placeholder="Write your description here (max 400 words)"
-                            className="min-h-[200px] resize-none"
-                            {...field}
+                          <TextEditor
+                            value={field.value}
+                            onChange={field.onChange}
                           />
                         </FormControl>
                         <FormMessage />
@@ -563,7 +612,7 @@ export default function CreateResumeForm() {
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Mr" />
@@ -621,7 +670,7 @@ export default function CreateResumeForm() {
                             field.onChange(value);
                             setSelectedCountry(value);
                           }}
-                          defaultValue={field.value}
+                          value={field.value}
                           disabled={isLoadingCountries}
                         >
                           <SelectTrigger>
@@ -661,7 +710,7 @@ export default function CreateResumeForm() {
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                           disabled={isLoadingCities || !selectedCountry}
                         >
                           <SelectTrigger>
@@ -728,9 +777,32 @@ export default function CreateResumeForm() {
                   name="phoneNumber"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Phone number*</FormLabel>
+                      <FormLabel>Phone Number*</FormLabel>
                       <FormControl>
-                        <Input placeholder="+49 72517 3740" {...field} />
+                        <Input
+                          placeholder={
+                            isLoadingDialCodes
+                              ? "Loading..."
+                              : selectedCountry
+                              ? `${
+                                  dialCodes.find(
+                                    (dc) => dc.name === selectedCountry
+                                  )?.dial_code || ""
+                                } Enter phone number`
+                              : "Select country first"
+                          }
+                          {...field}
+                          onChange={(e) => {
+                            const selectedDialCode = dialCodes.find(
+                              (dc) => dc.name === selectedCountry
+                            )?.dial_code;
+                            let value = e.target.value;
+                            if (selectedDialCode && !value.startsWith(selectedDialCode)) {
+                              value = selectedDialCode + value.replace(/^\+\d+/, "");
+                            }
+                            field.onChange(value);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1012,7 +1084,7 @@ export default function CreateResumeForm() {
                           <FormControl>
                             <Select
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Country" />
@@ -1171,7 +1243,7 @@ export default function CreateResumeForm() {
                           <FormControl>
                             <Select
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a degree" />
