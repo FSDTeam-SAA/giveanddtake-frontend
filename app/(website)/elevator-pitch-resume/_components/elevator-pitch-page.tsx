@@ -10,8 +10,6 @@ import {
   updateResume,
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
-import RecruiterAccount from "./recruiter-account";
-import CreatedJobs from "./jobs";
 import RecruiterElevator from "./recruiter-elevator";
 import CompanyProfilePage from "./company-profile";
 import CreateCompanyPage from "./create-company";
@@ -19,45 +17,100 @@ import { Card, CardContent } from "@/components/ui/card";
 import MyResume from "./resume";
 import UpdateResumeForm from "./update-resume-form";
 import EditableRecruiterAccount from "./editable-recruiter-account";
-import EditableCompanyProfile from "./editable-company-profile";
 import CreateRecruiterAccount from "./create-recruiter-account";
+import { Skeleton } from "@/components/ui/skeleton";
+import CreatedJobs from "./jobs";
 
 export default function ElevatorPitchAndResume() {
-  const { data: session, status } = useSession(); // Added status to handle loading state
+  const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: myresume } = useQuery({
+  // Resume query
+  const {
+    data: myresume,
+    isLoading: resumeLoading,
+    isFetching: resumeFetching,
+  } = useQuery({
     queryKey: ["my-resume"],
     queryFn: getMyResume,
     select: (data) => data?.data,
-    enabled: !!session?.user, // Only fetch if user is authenticated
+    enabled: !!session?.user,
   });
 
-  console.log("My resume here: ", myresume);
-
-  const { data: recruiter } = useQuery({
+  // Recruiter query
+  const {
+    data: recruiter,
+    isLoading: recruiterLoading,
+    isFetching: recruiterFetching,
+  } = useQuery({
     queryKey: ["recruiter"],
     queryFn: () => getRecruiterAccount(session?.user?.id || ""),
     select: (data) => data?.data,
     enabled: !!session?.user?.role,
   });
 
-  const { data: company } = useQuery({
+  // Company query
+  const {
+    data: company,
+    isLoading: companyLoading,
+    isFetching: companyFetching,
+  } = useQuery({
     queryKey: ["company-account", session?.user?.id],
     queryFn: () => getCompanyAccount(session?.user?.id || ""),
     select: (data) => data?.data,
     enabled: !!session?.user?.id,
   });
 
-  // Show loading state while session is being fetched
+  const handleUpdate = async (data: FormData) => {
+    try {
+      await updateResume(data);
+      queryClient.invalidateQueries({ queryKey: ["my-resume"] });
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update resume:", error);
+    }
+  };
+
+  // 🔹 Session loading skeleton
   if (status === "loading") {
     return (
       <section className="py-8 lg:py-20">
-        <div className="container mx-auto lg:px-6">
+        <div className="container mx-auto lg:px-6 space-y-6">
           <Card>
-            <CardContent className="p-6">
-              <p>Loading...</p>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
             </CardContent>
           </Card>
         </div>
@@ -65,32 +118,61 @@ export default function ElevatorPitchAndResume() {
     );
   }
 
-  console.log("My resume here: ", myresume);
-  console.log("Session user here: ", session?.user);
+  // 🔹 Unauthenticated state
+  // if (!session?.user) {
+  //   return (
+  //     <section className="py-8 lg:py-20">
+  //       <div className="container mx-auto lg:px-6">
+  //         <Card>
+  //           <CardContent className="p-6">
+  //             <h2 className="text-2xl font-bold mb-4">Welcome to Resume App</h2>
+  //             <p>Please sign in to access your resume.</p>
+  //           </CardContent>
+  //         </Card>
+  //       </div>
+  //     </section>
+  //   );
+  // }
 
-  const handleUpdate = async (data: FormData) => {
-    console.log("Received form data in parent:", data);
-    try {
-      await updateResume(data);
-      // Invalidate and refetch the resume data
-      queryClient.invalidateQueries({ queryKey: ["my-resume"] });
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to update resume:", error);
-      // You might want to show an error toast here
-    }
-  };
-
-  // Handle unauthenticated state
-  if (!session?.user) {
+  // 🔹 Global loading skeleton while queries fetch
+  if (resumeLoading || recruiterLoading || companyLoading) {
     return (
       <section className="py-8 lg:py-20">
-        <div className="container mx-auto lg:px-6">
+        <div className="container mx-auto lg:px-6 space-y-6">
           <Card>
-            <CardContent className="p-6">
-              <h2 className="text-2xl font-bold mb-4">Welcome to Resume App</h2>
-              <p>Please sign in to access your resume.</p>
-              {/* You can add a sign-in button here */}
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
             </CardContent>
           </Card>
         </div>

@@ -172,7 +172,7 @@ export default function PricingPlans() {
         </h1>
         <p className="text-xl text-gray-600">For Elevator Pitch</p>
       </div>
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="flex  items-center justify-center bg-gray-50 py-16">
         {/* Plan Options Modal */}
         {showPlanOptions && selectedPlan && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

@@ -385,7 +385,7 @@ const transformApiPlanToLocalPlan = (apiPlan: Plan): {
       text: feature,
       included: true
     })),
-    buttonText: "Sign up",
+    buttonText: "Sign up to  bronze",
     planId: apiPlan._id
   };
 };
@@ -443,7 +443,7 @@ export default function PricingPage() {
   const pricingPlans = apiPlans.map(transformApiPlanToLocalPlan);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+    <div className="flex items-center justify-center bg-gray-50 p-4">
       <div>
         <div className="mb-12 mt-[60px] text-center">
           <h1 className="mb-2 text-4xl font-bold text-gray-800">
@@ -451,7 +451,7 @@ export default function PricingPage() {
           </h1>
           <p className="text-xl text-gray-600">For Elevator Pitch</p>
         </div>
-        <div className="grid w-full max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid w-full container grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 py-4">
           {pricingPlans.map((plan, index) => (
             <Card
               key={index}
