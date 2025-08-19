@@ -45,7 +45,7 @@ export function Footer() {
               alt="Logo"
               width={500}
               height={500}
-              className="h-[48px] w-[180px] rounded-md"
+              className="h-[60px] w-[200px] rounded-md"
             />
           </Link>
           <p className="text-sm text-white/80">
