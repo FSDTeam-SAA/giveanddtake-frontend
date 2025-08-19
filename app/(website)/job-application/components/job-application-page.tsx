@@ -75,7 +75,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Inside your component:
-const router = useRouter();
+  const router = useRouter();
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
@@ -385,8 +385,7 @@ const router = useRouter();
     );
   }
 
-
-  console.log("UUUUUUUUUUUUUUUU", userData)
+  console.log("UUUUUUUUUUUUUUUU", userData);
   return (
     <div className="container mx-auto">
       <div className="">
@@ -619,7 +618,7 @@ const router = useRouter();
             </div>
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 py-6 text-lg"
+              className="w-full bg-primary hover:bg-blue-700 py-6 text-lg"
               disabled={
                 applyJobMutation.isPending ||
                 sessionStatus === "loading" ||

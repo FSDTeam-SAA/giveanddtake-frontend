@@ -445,7 +445,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       accept="image/*"
                       className="h-full"
                     >
-                      <div className="w-full h-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium rounded-lg">
+                      <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
                         photo/Company logo
                       </div>
                     </FileUpload>
@@ -835,7 +835,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
               <div className="flex gap-4">
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                  className="flex-1 bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
                   disabled={isUpdating}
                 >
                   {isUpdating ? "Updating..." : "Update Company"}

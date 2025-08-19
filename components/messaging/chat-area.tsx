@@ -232,7 +232,7 @@ export function ChatArea({
               sendMessageMutation.isPending ||
               (!message.trim() && files.length === 0)
             }
-            className="bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+            className="bg-primary hover:bg-blue-700 flex-shrink-0"
             size="sm"
           >
             <Send className="w-4 h-4" />

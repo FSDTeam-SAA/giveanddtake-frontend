@@ -104,7 +104,7 @@ export default function CompanyProfilePage() {
               fast. Get quality applications in no time.
             </p>
             <Link href="/add-job">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+              <Button className="bg-primary hover:bg-blue-700 text-white px-6">
                 Post a Job
               </Button>
             </Link>

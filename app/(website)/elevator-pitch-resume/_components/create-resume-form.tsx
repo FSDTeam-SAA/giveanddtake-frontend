@@ -1,23 +1,36 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState, useEffect } from "react"
-import { useForm, useFieldArray } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useMutation } from "@tanstack/react-query"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Upload, X, Copy, Check } from "lucide-react"
-import { useSession } from "next-auth/react"
-import { toast } from "sonner"
-import { createResume } from "@/lib/api-service"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Upload, X, Copy, Check } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { createResume } from "@/lib/api-service";
 
 // Dummy skills data
 const DUMMY_SKILLS = [
@@ -59,7 +72,7 @@ const DUMMY_SKILLS = [
   "Critical Thinking",
   "Web Design",
   "UI/UX Design",
-]
+];
 
 const resumeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -77,7 +90,7 @@ const resumeSchema = z.object({
       z.object({
         label: z.string(),
         url: z.string().url("Invalid URL"),
-      }),
+      })
     )
     .optional(),
   experiences: z.array(
@@ -92,7 +105,7 @@ const resumeSchema = z.object({
       zip: z.string().optional(),
       jobDescription: z.string().optional(),
       jobCategory: z.string().optional(),
-    }),
+    })
   ),
   educationList: z.array(
     z.object({
@@ -100,7 +113,7 @@ const resumeSchema = z.object({
       degree: z.string().min(1, "Degree is required"),
       fieldOfStudy: z.string().optional(),
       year: z.string().min(1, "Year is required"),
-    }),
+    })
   ),
   awardsAndHonors: z.array(
     z.object({
@@ -108,32 +121,32 @@ const resumeSchema = z.object({
       programName: z.string().optional(),
       year: z.string().min(1, "Year is required"),
       description: z.string().optional(),
-    }),
+    })
   ),
-})
+});
 
-type ResumeFormData = z.infer<typeof resumeSchema>
+type ResumeFormData = z.infer<typeof resumeSchema>;
 
 interface Country {
-  country: string
-  cities: string[]
+  country: string;
+  cities: string[];
 }
 
 export default function CreateResumeForm() {
-  const [countries, setCountries] = useState<Country[]>([])
-  const [cities, setCities] = useState<string[]>([])
-  const [selectedCountry, setSelectedCountry] = useState<string>("")
-  const [skillSearch, setSkillSearch] = useState("")
-  const [filteredSkills, setFilteredSkills] = useState<string[]>([])
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [photoFile, setPhotoFile] = useState<File | null>(null)
-  const [videoFile, setVideoFile] = useState<File | null>(null)
-  const [videoPreview, setVideoPreview] = useState<string | null>(null)
-  const [copyUrlSuccess, setCopyUrlSuccess] = useState(false)
-  const [isLoadingCountries, setIsLoadingCountries] = useState(false)
-  const [isLoadingCities, setIsLoadingCities] = useState(false)
-  const { data: session } = useSession()
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [cities, setCities] = useState<string[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [skillSearch, setSkillSearch] = useState("");
+  const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const { data: session } = useSession();
 
   const form = useForm<ResumeFormData>({
     resolver: zodResolver(resumeSchema),
@@ -186,7 +199,7 @@ export default function CreateResumeForm() {
         },
       ],
     },
-  })
+  });
 
   const {
     fields: experienceFields,
@@ -195,7 +208,7 @@ export default function CreateResumeForm() {
   } = useFieldArray({
     control: form.control,
     name: "experiences",
-  })
+  });
 
   const {
     fields: educationFields,
@@ -204,7 +217,7 @@ export default function CreateResumeForm() {
   } = useFieldArray({
     control: form.control,
     name: "educationList",
-  })
+  });
 
   const {
     fields: awardFields,
@@ -213,132 +226,141 @@ export default function CreateResumeForm() {
   } = useFieldArray({
     control: form.control,
     name: "awardsAndHonors",
-  })
+  });
 
   const createResumeMutation = useMutation({
     mutationFn: createResume,
     onSuccess: (data: any) => {
-      toast.success(data?.message || "Resume created successfully!")
+      toast.success(data?.message || "Resume created successfully!");
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to create resume. Please try again.")
+      toast.error(
+        error?.message || "Failed to create resume. Please try again."
+      );
       if (error instanceof Error) {
-        console.log(error.message)
+        console.log(error.message);
       }
-      console.error("Error creating resume:", error)
+      console.error("Error creating resume:", error);
     },
-  })
+  });
 
   // Fetch countries on component mount
   useEffect(() => {
     const fetchCountries = async () => {
-      setIsLoadingCountries(true)
+      setIsLoadingCountries(true);
       try {
-        const response = await fetch("https://countriesnow.space/api/v0.1/countries")
-        const data = await response.json()
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries"
+        );
+        const data = await response.json();
         if (!data.error) {
-          setCountries(data.data)
+          setCountries(data.data);
         }
       } catch (error) {
-        console.error("Error fetching countries:", error)
+        console.error("Error fetching countries:", error);
       } finally {
-        setIsLoadingCountries(false)
+        setIsLoadingCountries(false);
       }
-    }
-    fetchCountries()
-  }, [])
+    };
+    fetchCountries();
+  }, []);
 
   // Fetch cities when country is selected
   useEffect(() => {
     const fetchCities = async () => {
-      if (!selectedCountry) return
-      setIsLoadingCities(true)
+      if (!selectedCountry) return;
+      setIsLoadingCities(true);
       try {
-        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ country: selectedCountry }),
-        })
-        const data = await response.json()
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/cities",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ country: selectedCountry }),
+          }
+        );
+        const data = await response.json();
         if (!data.error) {
-          setCities(data.data)
+          setCities(data.data);
         }
       } catch (error) {
-        console.error("Error fetching cities:", error)
+        console.error("Error fetching cities:", error);
       } finally {
-        setIsLoadingCities(false)
+        setIsLoadingCities(false);
       }
-    }
-    fetchCities()
-  }, [selectedCountry])
+    };
+    fetchCities();
+  }, [selectedCountry]);
 
   // Filter skills based on search
   useEffect(() => {
     const timer = setTimeout(() => {
       if (skillSearch.length >= 1) {
         const filtered = DUMMY_SKILLS.filter(
-          (skill) => skill.toLowerCase().includes(skillSearch.toLowerCase()) && !selectedSkills.includes(skill),
-        )
-        setFilteredSkills(filtered)
+          (skill) =>
+            skill.toLowerCase().includes(skillSearch.toLowerCase()) &&
+            !selectedSkills.includes(skill)
+        );
+        setFilteredSkills(filtered);
       } else {
-        setFilteredSkills([])
+        setFilteredSkills([]);
       }
-    }, 300) // 300ms delay
+    }, 300); // 300ms delay
 
-    return () => clearTimeout(timer)
-  }, [skillSearch, selectedSkills])
+    return () => clearTimeout(timer);
+  }, [skillSearch, selectedSkills]);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      setPhotoFile(file)
-      const reader = new FileReader()
+      setPhotoFile(file);
+      const reader = new FileReader();
       reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-  }
+  };
 
   const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
     if (file) {
-      setVideoFile(file)
-      const url = URL.createObjectURL(file)
-      setVideoPreview(url)
-      console.log("Video file selected:", file.name)
+      setVideoFile(file);
+      const url = URL.createObjectURL(file);
+      setVideoPreview(url);
+      console.log("Video file selected:", file.name);
     }
-  }
+  };
 
   const addSkill = (skill: string) => {
     if (!selectedSkills.includes(skill)) {
-      const newSkills = [...selectedSkills, skill]
-      setSelectedSkills(newSkills)
-      form.setValue("skills", newSkills)
-      setSkillSearch("")
+      const newSkills = [...selectedSkills, skill];
+      setSelectedSkills(newSkills);
+      form.setValue("skills", newSkills);
+      setSkillSearch("");
     }
-  }
+  };
 
   const removeSkill = (skillToRemove: string) => {
-    const newSkills = selectedSkills.filter((skill) => skill !== skillToRemove)
-    setSelectedSkills(newSkills)
-    form.setValue("skills", newSkills)
-  }
+    const newSkills = selectedSkills.filter((skill) => skill !== skillToRemove);
+    setSelectedSkills(newSkills);
+    form.setValue("skills", newSkills);
+  };
 
   const handleCopyUrl = async () => {
     try {
-      await navigator.clipboard.writeText(window.location.href)
-      setCopyUrlSuccess(true)
-      setTimeout(() => setCopyUrlSuccess(false), 2000)
+      await navigator.clipboard.writeText(window.location.href);
+      setCopyUrlSuccess(true);
+      setTimeout(() => setCopyUrlSuccess(false), 2000);
     } catch (err) {
-      console.error("Failed to copy URL:", err)
+      console.error("Failed to copy URL:", err);
     }
-  }
+  };
 
   const onSubmit = (data: ResumeFormData) => {
-    const formData = new FormData()
+    const formData = new FormData();
 
     // Prepare resume data according to backend model
     const resumeData = {
@@ -353,35 +375,37 @@ export default function CreateResumeForm() {
       aboutUs: data.aboutUs,
       skills: data.skills,
       sLink: data.sLink,
-    }
+    };
 
-    formData.append("resume", JSON.stringify(resumeData))
-    formData.append("experiences", JSON.stringify(data.experiences))
-    formData.append("educationList", JSON.stringify(data.educationList))
-    formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors))
-    formData.append("userId", session?.user?.id as string)
+    formData.append("resume", JSON.stringify(resumeData));
+    formData.append("experiences", JSON.stringify(data.experiences));
+    formData.append("educationList", JSON.stringify(data.educationList));
+    formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors));
+    formData.append("userId", session?.user?.id as string);
 
     // Add photo if uploaded
     if (photoFile) {
-      formData.append("photo", photoFile)
+      formData.append("photo", photoFile);
     }
 
     // Add video if uploaded
     if (videoFile) {
-      formData.append("video", videoFile)
+      formData.append("video", videoFile);
     }
 
-    createResumeMutation.mutate(formData)
-  }
+    createResumeMutation.mutate(formData);
+  };
 
   return (
     <div className="p-6 space-y-8">
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit, (errors) => {
-            const firstError = Object.values(errors)[0]
+            const firstError = Object.values(errors)[0];
             if (firstError) {
-              toast.error(firstError.message || "Please fill in all required fields")
+              toast.error(
+                firstError.message || "Please fill in all required fields"
+              );
             }
           })}
           className="space-y-8"
@@ -392,13 +416,13 @@ export default function CreateResumeForm() {
               <div>
                 <CardTitle>Upload Your Elevator Pitch</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Upload a 60-second elevator video pitch introducing your agency and what makes you stand out from the
-                  rest.
+                  Upload a 60-second elevator video pitch introducing your
+                  agency and what makes you stand out from the rest.
                 </p>
               </div>
               <Button
                 type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="bg-primary hover:bg-blue-700 text-white"
                 onClick={() => document.getElementById("video-upload")?.click()}
               >
                 Upload/Change Elevator Pitch
@@ -408,8 +432,14 @@ export default function CreateResumeForm() {
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-gray-900 text-white">
                 {videoPreview ? (
                   <div className="space-y-4">
-                    <video src={videoPreview} controls className="mx-auto max-w-md rounded-lg" />
-                    <p className="text-sm text-green-400">Video uploaded: {videoFile?.name}</p>
+                    <video
+                      src={videoPreview}
+                      controls
+                      className="mx-auto max-w-md rounded-lg"
+                    />
+                    <p className="text-sm text-green-400">
+                      Video uploaded: {videoFile?.name}
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -420,13 +450,21 @@ export default function CreateResumeForm() {
                       type="button"
                       variant="secondary"
                       className="bg-gray-700 hover:bg-gray-600 text-white"
-                      onClick={() => document.getElementById("video-upload")?.click()}
+                      onClick={() =>
+                        document.getElementById("video-upload")?.click()
+                      }
                     >
                       Choose File
                     </Button>
                   </>
                 )}
-                <Input id="video-upload" type="file" accept="video/*" className="hidden" onChange={handleVideoUpload} />
+                <Input
+                  id="video-upload"
+                  type="file"
+                  accept="video/*"
+                  className="hidden"
+                  onChange={handleVideoUpload}
+                />
               </div>
             </CardContent>
           </Card>
@@ -437,10 +475,14 @@ export default function CreateResumeForm() {
               <div className="flex items-start gap-8">
                 {/* Photo Upload */}
                 <div className="flex-shrink-0">
-                  <Label className="text-sm font-medium text-blue-600 mb-2 block">Photo/Recruiter logo</Label>
+                  <Label className="text-sm font-medium text-blue-600 mb-2 block">
+                    Photo/Recruiter logo
+                  </Label>
                   <div
                     className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
-                    onClick={() => document.getElementById("photo-upload")?.click()}
+                    onClick={() =>
+                      document.getElementById("photo-upload")?.click()
+                    }
                   >
                     {photoPreview ? (
                       <img
@@ -464,7 +506,9 @@ export default function CreateResumeForm() {
                 {/* About Us Text Area */}
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <FormLabel className="text-blue-600 font-medium">About Us*</FormLabel>
+                    <FormLabel className="text-blue-600 font-medium">
+                      About Us*
+                    </FormLabel>
                     <Button
                       type="button"
                       variant="ghost"
@@ -517,7 +561,10 @@ export default function CreateResumeForm() {
                     <FormItem>
                       <FormLabel>Title*</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Mr" />
                           </SelectTrigger>
@@ -571,19 +618,28 @@ export default function CreateResumeForm() {
                       <FormControl>
                         <Select
                           onValueChange={(value: string) => {
-                            field.onChange(value)
-                            setSelectedCountry(value)
+                            field.onChange(value);
+                            setSelectedCountry(value);
                           }}
                           defaultValue={field.value}
                           disabled={isLoadingCountries}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={isLoadingCountries ? "Loading countries..." : "Select Country"} />
+                            <SelectValue
+                              placeholder={
+                                isLoadingCountries
+                                  ? "Loading countries..."
+                                  : "Select Country"
+                              }
+                            />
                           </SelectTrigger>
                           {!isLoadingCountries && (
                             <SelectContent>
                               {countries.map((country) => (
-                                <SelectItem key={country.country} value={country.country}>
+                                <SelectItem
+                                  key={country.country}
+                                  value={country.country}
+                                >
                                   {country.country}
                                 </SelectItem>
                               ))}
@@ -614,8 +670,8 @@ export default function CreateResumeForm() {
                                 !selectedCountry
                                   ? "Select country first"
                                   : isLoadingCities
-                                    ? "Loading cities..."
-                                    : "Select City"
+                                  ? "Loading cities..."
+                                  : "Select City"
                               }
                             />
                           </SelectTrigger>
@@ -656,7 +712,11 @@ export default function CreateResumeForm() {
                     <FormItem>
                       <FormLabel>Email Address*</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="Enter Your Email Address" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="Enter Your Email Address"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -694,8 +754,8 @@ export default function CreateResumeForm() {
                           placeholder="Enter Your Website URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            form.setValue("sLink.0.label", "website")
-                            field.onChange(e.target.value)
+                            form.setValue("sLink.0.label", "website");
+                            field.onChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -721,8 +781,8 @@ export default function CreateResumeForm() {
                           placeholder="Enter Your LinkedIn URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            form.setValue("sLink.1.label", "linkedin")
-                            field.onChange(e.target.value)
+                            form.setValue("sLink.1.label", "linkedin");
+                            field.onChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -748,8 +808,8 @@ export default function CreateResumeForm() {
                           placeholder="Enter Your Twitter URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            form.setValue("sLink.2.label", "twitter")
-                            field.onChange(e.target.value)
+                            form.setValue("sLink.2.label", "twitter");
+                            field.onChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -775,8 +835,8 @@ export default function CreateResumeForm() {
                           placeholder="Enter Your Upwork URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            form.setValue("sLink.3.label", "upwork")
-                            field.onChange(e.target.value)
+                            form.setValue("sLink.3.label", "upwork");
+                            field.onChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -802,8 +862,8 @@ export default function CreateResumeForm() {
                           placeholder="Enter Your Other Business URL"
                           value={field.value || ""}
                           onChange={(e) => {
-                            form.setValue("sLink.4.label", "other")
-                            field.onChange(e.target.value)
+                            form.setValue("sLink.4.label", "other");
+                            field.onChange(e.target.value);
                           }}
                         />
                       </FormControl>
@@ -819,7 +879,9 @@ export default function CreateResumeForm() {
           <Card>
             <CardHeader>
               <CardTitle>Skills</CardTitle>
-              <p className="text-sm text-muted-foreground">Showcase your strengths and what sets you apart.</p>
+              <p className="text-sm text-muted-foreground">
+                Showcase your strengths and what sets you apart.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -838,8 +900,8 @@ export default function CreateResumeForm() {
                           type="button"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100"
                           onClick={() => {
-                            addSkill(skill)
-                            setSkillSearch("")
+                            addSkill(skill);
+                            setSkillSearch("");
                           }}
                         >
                           {skill}
@@ -856,7 +918,10 @@ export default function CreateResumeForm() {
                       className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                     >
                       {skill}
-                      <X className="h-3 w-3 cursor-pointer" onClick={() => removeSkill(skill)} />
+                      <X
+                        className="h-3 w-3 cursor-pointer"
+                        onClick={() => removeSkill(skill)}
+                      />
                     </Badge>
                   ))}
                 </div>
@@ -868,11 +933,16 @@ export default function CreateResumeForm() {
           <Card>
             <CardHeader>
               <CardTitle>Experience</CardTitle>
-              <p className="text-sm text-muted-foreground">Highlight your work journey and key achievements.</p>
+              <p className="text-sm text-muted-foreground">
+                Highlight your work journey and key achievements.
+              </p>
             </CardHeader>
             <CardContent>
               {experienceFields.map((field, index) => (
-                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
+                <div
+                  key={field.id}
+                  className="space-y-4 p-4 border rounded-lg mb-4"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -895,7 +965,10 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Job Title</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Software Engineer" {...field} />
+                            <Input
+                              placeholder="e.g. Software Engineer"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -937,13 +1010,19 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Country" />
                               </SelectTrigger>
                               <SelectContent>
                                 {countries.map((country) => (
-                                  <SelectItem key={country.country} value={country.country}>
+                                  <SelectItem
+                                    key={country.country}
+                                    value={country.country}
+                                  >
                                     {country.country}
                                   </SelectItem>
                                 ))}
@@ -1005,7 +1084,10 @@ export default function CreateResumeForm() {
                       <FormItem>
                         <FormLabel>Job Description</FormLabel>
                         <FormControl>
-                          <Textarea placeholder="Describe your responsibilities and achievements" {...field} />
+                          <Textarea
+                            placeholder="Describe your responsibilities and achievements"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1013,7 +1095,12 @@ export default function CreateResumeForm() {
                   />
 
                   {experienceFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeExperience(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeExperience(index)}
+                    >
                       Remove Experience
                     </Button>
                   )}
@@ -1047,11 +1134,16 @@ export default function CreateResumeForm() {
           <Card className="border-2 border-blue-500">
             <CardHeader>
               <CardTitle>Education</CardTitle>
-              <p className="text-sm text-muted-foreground">Showcase your academic background and qualifications.</p>
+              <p className="text-sm text-muted-foreground">
+                Showcase your academic background and qualifications.
+              </p>
             </CardHeader>
             <CardContent>
               {educationFields.map((field, index) => (
-                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
+                <div
+                  key={field.id}
+                  className="space-y-4 p-4 border rounded-lg mb-4"
+                >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -1060,7 +1152,10 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Institution Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Harvard University" {...field} />
+                            <Input
+                              placeholder="e.g. Harvard University"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1074,15 +1169,24 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Degree</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a degree" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
-                                <SelectItem value="master">Master's Degree</SelectItem>
+                                <SelectItem value="bachelor">
+                                  Bachelor's Degree
+                                </SelectItem>
+                                <SelectItem value="master">
+                                  Master's Degree
+                                </SelectItem>
                                 <SelectItem value="phd">PhD</SelectItem>
-                                <SelectItem value="associate">Associate Degree</SelectItem>
+                                <SelectItem value="associate">
+                                  Associate Degree
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </FormControl>
@@ -1098,7 +1202,10 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Field Of Study</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Computer Science" {...field} />
+                            <Input
+                              placeholder="e.g. Computer Science"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1127,7 +1234,12 @@ export default function CreateResumeForm() {
                   </div>
 
                   {educationFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeEducation(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeEducation(index)}
+                    >
                       Remove Education
                     </Button>
                   )}
@@ -1155,11 +1267,16 @@ export default function CreateResumeForm() {
           <Card>
             <CardHeader>
               <CardTitle>Awards and Honours</CardTitle>
-              <p className="text-sm text-muted-foreground">Tell employers what you are in a few impactful sentences.</p>
+              <p className="text-sm text-muted-foreground">
+                Tell employers what you are in a few impactful sentences.
+              </p>
             </CardHeader>
             <CardContent>
               {awardFields.map((field, index) => (
-                <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
+                <div
+                  key={field.id}
+                  className="space-y-4 p-4 border rounded-lg mb-4"
+                >
                   <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
@@ -1227,7 +1344,12 @@ export default function CreateResumeForm() {
                   </div>
 
                   {awardFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeAward(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeAward(index)}
+                    >
                       Remove Award
                     </Button>
                   )}
@@ -1236,7 +1358,14 @@ export default function CreateResumeForm() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => appendAward({ title: "", programName: "", year: "", description: "" })}
+                onClick={() =>
+                  appendAward({
+                    title: "",
+                    programName: "",
+                    year: "",
+                    description: "",
+                  })
+                }
                 className="flex items-center gap-2"
               >
                 Add Award
@@ -1247,8 +1376,10 @@ export default function CreateResumeForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg font-medium"
-            disabled={createResumeMutation.isPending || form.formState.isSubmitting}
+            className="w-full bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
+            disabled={
+              createResumeMutation.isPending || form.formState.isSubmitting
+            }
           >
             {createResumeMutation.isPending || form.formState.isSubmitting ? (
               <div className="flex items-center gap-2">
@@ -1258,7 +1389,14 @@ export default function CreateResumeForm() {
                   fill="none"
                   viewBox="0 0 24 24"
                 >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
                   <path
                     className="opacity-75"
                     fill="currentColor"
@@ -1274,5 +1412,5 @@ export default function CreateResumeForm() {
         </form>
       </Form>
     </div>
-  )
+  );
 }

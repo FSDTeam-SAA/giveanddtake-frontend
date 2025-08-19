@@ -19,7 +19,7 @@ export function ScrollingInfoBar() {
   const duplicatedItems = [...items, ...items, ...items];
 
   return (
-    <div className="bg-v0-blue-500 text-white py-3 px-4 md:px-6 overflow-hidden relative">
+    <div className="bg-primary text-white py-3 px-4 md:px-6 overflow-hidden relative">
       <motion.div
         className="flex items-center gap-8 whitespace-nowrap"
         animate={{ x: ["0%", "-100%"] }}

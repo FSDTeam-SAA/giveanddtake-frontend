@@ -35,13 +35,13 @@ export function Footer() {
     }
   };
   return (
-    <footer className="bg-v0-blue-500 text-white py-12 md:py-16 lg:py-20">
+    <footer className="bg-primary text-white py-12 md:py-16 lg:py-20">
       <div className="container px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Column 1: Company Info */}
         <div className="flex flex-col gap-4">
           <Link href="#" className="flex items-center gap-2 font-bold text-lg">
             <Image
-              src={"/assets/evp-logo.jpg"}
+              src={"/assets/footer-logo.jpg"}
               alt="Logo"
               width={500}
               height={500}

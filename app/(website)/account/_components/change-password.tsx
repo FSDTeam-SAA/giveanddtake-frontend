@@ -13,7 +13,11 @@ interface ChangePasswordFormData {
   confirmPassword: string;
 }
 
-export function ChangePassword({ onShowSecurityQuestions }: { onShowSecurityQuestions: () => void }) {
+export function ChangePassword({
+  onShowSecurityQuestions,
+}: {
+  onShowSecurityQuestions: () => void;
+}) {
   const [passwords, setPasswords] = useState<ChangePasswordFormData>({
     oldPassword: "",
     newPassword: "",
@@ -94,7 +98,10 @@ export function ChangePassword({ onShowSecurityQuestions }: { onShowSecurityQues
               type={showNewPassword ? "text" : "password"}
               value={passwords.newPassword}
               onChange={(e) =>
-                setPasswords((prev) => ({ ...prev, newPassword: e.target.value }))
+                setPasswords((prev) => ({
+                  ...prev,
+                  newPassword: e.target.value,
+                }))
               }
               placeholder="New Password"
               className="mt-2 pr-10"
@@ -145,7 +152,7 @@ export function ChangePassword({ onShowSecurityQuestions }: { onShowSecurityQues
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-primary hover:bg-blue-700"
           disabled={mutation.isPending}
         >
           {mutation.isPending ? "Updating..." : "Update Password"}

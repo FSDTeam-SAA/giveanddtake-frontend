@@ -1,48 +1,52 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Play } from "lucide-react" // Keep Play icon for overlay
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react"; // Keep Play icon for overlay
 
 interface VideoCarouselProps {
   videos: {
-    src: string
-    alt: string
-  }[]
+    src: string;
+    alt: string;
+  }[];
 }
 
 export function VideoCarousel({ videos }: VideoCarouselProps) {
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(true) // Assume playing initially
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true); // Assume playing initially
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.play().catch((e) => console.error("Video play failed:", e))
+        videoRef.current
+          .play()
+          .catch((e) => console.error("Video play failed:", e));
       } else {
-        videoRef.current.pause()
+        videoRef.current.pause();
       }
     }
-  }, [currentVideoIndex, isPlaying])
+  }, [currentVideoIndex, isPlaying]);
 
   const handleDotClick = (index: number) => {
-    setCurrentVideoIndex(index)
-    setIsPlaying(true) // Play video when a dot is clicked
-  }
+    setCurrentVideoIndex(index);
+    setIsPlaying(true); // Play video when a dot is clicked
+  };
 
   const togglePlayPause = () => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.pause()
+        videoRef.current.pause();
       } else {
-        videoRef.current.play().catch((e) => console.error("Video play failed:", e))
+        videoRef.current
+          .play()
+          .catch((e) => console.error("Video play failed:", e));
       }
-      setIsPlaying(!isPlaying)
+      setIsPlaying(!isPlaying);
     }
-  }
+  };
 
-  const currentVideo = videos[currentVideoIndex]
+  const currentVideo = videos[currentVideoIndex];
 
   return (
     <div className="relative flex justify-center items-center h-[300px] md:h-[400px] lg:h-[581px] rounded-tr-[80px] rounded-bl-[80px] overflow-hidden shadow-lg border border-gray-200">
@@ -89,7 +93,9 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
               variant="ghost"
               size="icon"
               className={`h-3 w-3 rounded-full ${
-                index === currentVideoIndex ? "bg-v0-blue-500" : "bg-gray-300 hover:bg-gray-400"
+                index === currentVideoIndex
+                  ? "bg-primary"
+                  : "bg-gray-300 hover:bg-gray-400"
               }`}
               onClick={() => handleDotClick(index)}
               aria-label={`Go to video ${index + 1}`}
@@ -98,5 +104,5 @@ export function VideoCarousel({ videos }: VideoCarouselProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

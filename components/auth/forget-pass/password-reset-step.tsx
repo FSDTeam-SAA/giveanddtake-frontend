@@ -115,7 +115,7 @@ export default function PasswordResetStep({
           Your password has been successfully reset. You can now log in with
           your new password.
         </p>
-        <Button className="w-full bg-blue-600 hover:bg-blue-700">
+        <Button className="w-full bg-primary hover:bg-blue-700">
           Go to Login
         </Button>
       </div>
@@ -178,7 +178,7 @@ export default function PasswordResetStep({
 
         <Button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700"
+          className="w-full bg-primary hover:bg-blue-700"
           disabled={
             isLoading || !formData.password || !formData.confirmPassword
           }

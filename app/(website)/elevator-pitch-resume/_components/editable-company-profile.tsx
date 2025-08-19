@@ -312,8 +312,8 @@ export default function EditableCompanyProfile({
                   Easily post your company job openings and reach the right
                   talent fast. Get quality applications in no time.
                 </p>
-                <div className="space-x-5 flex items-center" >
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 block">
+                <div className="space-x-5 flex items-center">
+                  <Button className="bg-primary hover:bg-blue-700 text-white px-6 block">
                     Post a Job
                   </Button>
                   <Button

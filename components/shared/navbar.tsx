@@ -146,7 +146,7 @@ export function SiteHeader() {
               isActive("/alljobs") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
-            All Jobs
+            Jobs
           </Link>
 
           {token && (
@@ -248,7 +248,7 @@ export function SiteHeader() {
               <Link href="/notifications">
                 <Button
                   size="icon"
-                  className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                  className="rounded-full bg-blue-500 text-white hover:bg-primary"
                 >
                   <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
@@ -257,7 +257,7 @@ export function SiteHeader() {
               <Link href="/messages">
                 <Button
                   size="icon"
-                  className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                  className="rounded-full bg-blue-500 text-white hover:bg-primary"
                 >
                   <MessageCircle className="h-5 w-5" />
                   <span className="sr-only">Messages</span>
@@ -359,7 +359,7 @@ export function SiteHeader() {
           ) : (
             <Link href="/login">
               <Button
-                className={`bg-blue-500 hover:bg-blue-600 text-white ${
+                className={`bg-blue-500 hover:bg-primary text-white ${
                   isActive("/login") ? "bg-[#2B7FD0]" : ""
                 }`}
               >
@@ -441,7 +441,7 @@ export function SiteHeader() {
                 >
                   More
                 </Link>
-                <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
+                <Button className="w-full bg-blue-500 hover:bg-primary text-white">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </nav>

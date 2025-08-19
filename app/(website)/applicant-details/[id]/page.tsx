@@ -1,110 +1,123 @@
-"use client"
+"use client";
 
-import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { useSession } from "next-auth/react"
-import { useQuery } from "@tanstack/react-query"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { ChevronLeft, MapPin, Calendar, Play, ExternalLink, Download } from "lucide-react"
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ChevronLeft,
+  MapPin,
+  Calendar,
+  Play,
+  ExternalLink,
+  Download,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Resume {
-  _id: string
-  userId: string
-  photo?: string
-  aboutUs?: string
-  title?: string
-  firstName?: string
-  lastName?: string
-  country?: string
-  city?: string
-  email?: string
-  phoneNumber?: string
-  skills?: string[]
-  sLink?: Array<{ label: string; url: string; _id: string }>
-  createdAt?: string
-  updatedAt?: string
+  _id: string;
+  userId: string;
+  photo?: string;
+  aboutUs?: string;
+  title?: string;
+  firstName?: string;
+  lastName?: string;
+  country?: string;
+  city?: string;
+  email?: string;
+  phoneNumber?: string;
+  skills?: string[];
+  sLink?: Array<{ label: string; url: string; _id: string }>;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Experience {
-  _id: string
-  userId: string
-  employer?: string
-  jobTitle?: string
-  startDate?: string
-  endDate?: string
-  country?: string
-  city?: string
-  zip?: string
-  jobDescription?: string
-  jobCategory?: string
-  createdAt?: string
-  updatedAt?: string
+  _id: string;
+  userId: string;
+  employer?: string;
+  jobTitle?: string;
+  startDate?: string;
+  endDate?: string;
+  country?: string;
+  city?: string;
+  zip?: string;
+  jobDescription?: string;
+  jobCategory?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Education {
-  _id: string
-  userId: string
-  degree?: string
-  fieldOfStudy?: string
-  createdAt?: string
-  updatedAt?: string
+  _id: string;
+  userId: string;
+  degree?: string;
+  fieldOfStudy?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface Award {
-  _id: string
-  userId: string
-  title?: string
-  description?: string
-  createdAt?: string
-  updatedAt?: string
+  _id: string;
+  userId: string;
+  title?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface ElevatorPitch {
-  _id: string
-  userId: string
-  videoUrl?: string
-  description?: string
+  _id: string;
+  userId: string;
+  videoUrl?: string;
+  description?: string;
 }
 
 interface ApplicantData {
-  resume?: Resume
-  experiences?: Experience[]
-  education?: Education[]
-  awardsAndHonors?: Award[]
-  elevatorPitch?: ElevatorPitch[]
+  resume?: Resume;
+  experiences?: Experience[];
+  education?: Education[];
+  awardsAndHonors?: Award[];
+  elevatorPitch?: ElevatorPitch[];
 }
 
 interface ResumeFile {
-  filename: string
-  url: string
-  uploadedAt: string
-  _id: string
+  filename: string;
+  url: string;
+  uploadedAt: string;
+  _id: string;
 }
 
 interface ResumeData {
-  _id: string
-  userId: string
-  file: ResumeFile[]
-  uploadDate: string
-  createdAt: string
-  updatedAt: string
+  _id: string;
+  userId: string;
+  file: ResumeFile[];
+  uploadDate: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface ResumeApiResponse {
-  success: boolean
-  message: string
-  data: ResumeData[]
+  success: boolean;
+  message: string;
+  data: ResumeData[];
 }
 
 interface ApiResponse {
-  success: boolean
-  message: string
-  data: ApplicantData
+  success: boolean;
+  message: string;
+  data: ApplicantData;
 }
 
 const degreeLabels: Record<string, string> = {
@@ -114,130 +127,142 @@ const degreeLabels: Record<string, string> = {
   associate: "Associate Degree",
   diploma: "Diploma",
   certificate: "Certificate",
-}
+};
 
-const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"]
+const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
 // Helper function to validate URLs
 const isValidUrl = (urlString: string): boolean => {
   try {
-    new URL(urlString)
-    return true
+    new URL(urlString);
+    return true;
   } catch {
-    return false
+    return false;
   }
-}
+};
 
 // Helper function to normalize URLs by adding protocol if missing
 const normalizeUrl = (url: unknown): string => {
   if (typeof url !== "string" || !url) {
-    return ""
+    return "";
   }
   if (!url.startsWith("http://") && !url.startsWith("https://")) {
-    return `https://${url}`
+    return `https://${url}`;
   }
-  return url
-}
+  return url;
+};
 
 export default function ApplicantDetailsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { data: session } = useSession()
-  const token = session?.accessToken
-  const applicationId = params.id as string
-  const resumeId = searchParams.get("resumeId")
+  const params = useParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const token = session?.accessToken;
+  const applicationId = params.id as string;
+  const resumeId = searchParams.get("resumeId");
 
-  const applicatUserJobId = searchParams.get("applicationId")
+  const applicatUserJobId = searchParams.get("applicationId");
 
-  const [resumeData, setResumeData] = useState<ResumeData | null>(null)
-  const [resumeLoading, setResumeLoading] = useState(false)
-  const [applicationStatus, setApplicationStatus] = useState<string>("pending")
-  const [statusLoading, setStatusLoading] = useState(false)
+  const [resumeData, setResumeData] = useState<ResumeData | null>(null);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<string>("pending");
+  const [statusLoading, setStatusLoading] = useState(false);
 
   const fetchResumeData = async () => {
-    if (!resumeId || !token) return
+    if (!resumeId || !token) return;
 
     try {
-      setResumeLoading(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/resume/user/${applicationId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      setResumeLoading(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/resume/user/${applicationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch resume data")
+        throw new Error("Failed to fetch resume data");
       }
 
-      const result: ResumeApiResponse = await response.json()
+      const result: ResumeApiResponse = await response.json();
 
       if (result.success) {
-        const matchingResume = result.data.find((resume) => resume._id === resumeId)
+        const matchingResume = result.data.find(
+          (resume) => resume._id === resumeId
+        );
         if (matchingResume) {
-          setResumeData(matchingResume)
+          setResumeData(matchingResume);
         }
       }
     } catch (error) {
-      console.error("Error fetching resume data:", error)
+      console.error("Error fetching resume data:", error);
     } finally {
-      setResumeLoading(false)
+      setResumeLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     if (resumeId && token) {
-      fetchResumeData()
+      fetchResumeData();
     }
-  }, [resumeId, token])
+  }, [resumeId, token]);
 
   const handleResumeDownload = () => {
     if (resumeData && resumeData.file.length > 0) {
-      const fileUrl = resumeData.file[0].url
-      const filename = resumeData.file[0].filename
+      const fileUrl = resumeData.file[0].url;
+      const filename = resumeData.file[0].filename;
 
-      const link = document.createElement("a")
-      link.href = fileUrl
-      link.download = filename
-      link.target = "_blank"
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = filename;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
-  }
+  };
 
   const fetchApplicantDetails = async (): Promise<ApplicantData> => {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${applicationId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${applicationId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch applicant details")
+      throw new Error("Failed to fetch applicant details");
     }
 
-    const result: ApiResponse = await response.json()
+    const result: ApiResponse = await response.json();
 
     if (!result.success) {
-      throw new Error(result.message || "Failed to fetch applicant details")
+      throw new Error(result.message || "Failed to fetch applicant details");
     }
 
-    const apiData = result.data
+    const apiData = result.data;
 
     // Map social links to preserve the full object structure with normalized URLs
     const validLinks = (apiData.resume?.sLink || [])
       .filter(
         (link): link is { label: string; url: string; _id: string } =>
-          !!link && typeof link === "object" && "url" in link && "label" in link && "_id" in link,
+          !!link &&
+          typeof link === "object" &&
+          "url" in link &&
+          "label" in link &&
+          "_id" in link
       )
       .map((link) => ({
         ...link,
         url: normalizeUrl(link.url), // Normalize the URL while keeping other properties
       }))
-      .filter((link) => isValidUrl(link.url))
+      .filter((link) => isValidUrl(link.url));
 
-    console.log("Social Links (filtered):", validLinks) // Debug log
+    console.log("Social Links (filtered):", validLinks); // Debug log
 
     return {
       resume: apiData.resume
@@ -263,8 +288,8 @@ export default function ApplicantDetailsPage() {
       education: apiData.education || [],
       awardsAndHonors: apiData.awardsAndHonors || [],
       elevatorPitch: apiData.elevatorPitch || [],
-    }
-  }
+    };
+  };
 
   const {
     data: applicantData,
@@ -276,56 +301,67 @@ export default function ApplicantDetailsPage() {
     queryKey: ["applicant-details", applicationId],
     queryFn: fetchApplicantDetails,
     enabled: !!token && !!applicationId,
-  })
+  });
 
   const handleStatusUpdate = async (newStatus: string) => {
     try {
-      setStatusLoading(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicatUserJobId}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
+      setStatusLoading(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicatUserJobId}/status`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
 
       if (response.ok) {
-        const allowedStatuses = ["selected", "shortlisted", "rejected", "pending", "interviewed"]
+        const allowedStatuses = [
+          "selected",
+          "shortlisted",
+          "rejected",
+          "pending",
+          "interviewed",
+        ];
         if (allowedStatuses.includes(newStatus)) {
-          setApplicationStatus(newStatus)
+          setApplicationStatus(newStatus);
         } else {
-          console.error(`Invalid status: ${newStatus}`)
+          console.error(`Invalid status: ${newStatus}`);
         }
       }
     } catch (error) {
-      console.error("Failed to update status:", error)
+      console.error("Failed to update status:", error);
     } finally {
-      setStatusLoading(false)
+      setStatusLoading(false);
     }
-  }
+  };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "Present"
+    if (!dateString) return "Present";
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   const getYearsOfExperience = (experiences: Experience[] = []) => {
-    if (!experiences.length) return "0+ years"
+    if (!experiences.length) return "0+ years";
 
     const totalMonths = experiences.reduce((total, exp) => {
-      if (!exp.startDate) return total
-      const start = new Date(exp.startDate)
-      const end = exp.endDate ? new Date(exp.endDate) : new Date()
-      const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
-      return total + Math.max(0, months)
-    }, 0)
+      if (!exp.startDate) return total;
+      const start = new Date(exp.startDate);
+      const end = exp.endDate ? new Date(exp.endDate) : new Date();
+      const months =
+        (end.getFullYear() - start.getFullYear()) * 12 +
+        (end.getMonth() - start.getMonth());
+      return total + Math.max(0, months);
+    }, 0);
 
-    const years = Math.floor(totalMonths / 12)
-    return `${years}+ years`
-  }
+    const years = Math.floor(totalMonths / 12);
+    return `${years}+ years`;
+  };
 
   if (isLoading) {
     return (
@@ -354,7 +390,7 @@ export default function ApplicantDetailsPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (isError || !applicantData) {
@@ -364,14 +400,16 @@ export default function ApplicantDetailsPage() {
           <Card>
             <CardContent className="flex items-center justify-center py-8">
               <div className="text-center">
-                <p className="text-red-600 mb-4">Error: {(error as Error)?.message || "No data found"}</p>
+                <p className="text-red-600 mb-4">
+                  Error: {(error as Error)?.message || "No data found"}
+                </p>
                 <Button onClick={() => refetch()}>Try Again</Button>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   const {
@@ -380,28 +418,36 @@ export default function ApplicantDetailsPage() {
     education = [],
     awardsAndHonors = [],
     elevatorPitch = [],
-  } = applicantData
+  } = applicantData;
 
-  const hasResumeData = resume.firstName || resume.lastName || resume.email || resume.phoneNumber
+  const hasResumeData =
+    resume.firstName || resume.lastName || resume.email || resume.phoneNumber;
 
   if (!hasResumeData && experiences.length === 0 && education.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <Button variant="ghost" onClick={() => router.back()} className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="mb-6"
+          >
             <ChevronLeft className="h-4 w-4 mr-2" />
             Back to Applicants
           </Button>
           <Card>
             <CardContent className="flex items-center justify-center py-8">
               <div className="text-center">
-                <p className="text-gray-600 mb-4">No detailed profile information is available for this applicant.</p>
+                <p className="text-gray-600 mb-4">
+                  No detailed profile information is available for this
+                  applicant.
+                </p>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -446,7 +492,7 @@ export default function ApplicantDetailsPage() {
                     </div>
                   </div>
                   <Button
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-primary hover:bg-blue-700"
                     onClick={handleResumeDownload}
                     disabled={!resumeData || resumeLoading}
                   >
@@ -457,10 +503,12 @@ export default function ApplicantDetailsPage() {
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="font-medium">Current Role:</span> {resume.title || "Not specified"}
+                    <span className="font-medium">Current Role:</span>{" "}
+                    {resume.title || "Not specified"}
                   </div>
                   <div>
-                    <span className="font-medium">Years of Experience:</span> {getYearsOfExperience(experiences)}
+                    <span className="font-medium">Years of Experience:</span>{" "}
+                    {getYearsOfExperience(experiences)}
                   </div>
                   {resume.email && (
                     <div>
@@ -469,7 +517,8 @@ export default function ApplicantDetailsPage() {
                   )}
                   {resume.phoneNumber && (
                     <div>
-                      <span className="font-medium">Contact:</span> {resume.phoneNumber}
+                      <span className="font-medium">Contact:</span>{" "}
+                      {resume.phoneNumber}
                     </div>
                   )}
                 </div>
@@ -499,12 +548,18 @@ export default function ApplicantDetailsPage() {
                 {elevatorPitch.map((pitch) => (
                   <div key={pitch._id} className="flex items-start gap-4">
                     {pitch.videoUrl && (
-                      <Button variant="outline" size="icon" onClick={() => window.open(pitch.videoUrl, "_blank")}>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => window.open(pitch.videoUrl, "_blank")}
+                      >
                         <Play className="h-4 w-4" />
                       </Button>
                     )}
                     <div>
-                      <p className="text-gray-700">{pitch.description || "No description provided"}</p>
+                      <p className="text-gray-700">
+                        {pitch.description || "No description provided"}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -521,11 +576,18 @@ export default function ApplicantDetailsPage() {
             <CardContent>
               <div className="space-y-6">
                 {experiences.map((exp) => (
-                  <div key={exp._id} className="border-l-2 pl-4 border-gray-200">
+                  <div
+                    key={exp._id}
+                    className="border-l-2 pl-4 border-gray-200"
+                  >
                     <div className="flex justify-between">
                       <div>
-                        <h3 className="font-semibold text-lg">{exp.jobTitle || "Unknown Position"}</h3>
-                        <p className="text-gray-600">{exp.employer || "Unknown Employer"}</p>
+                        <h3 className="font-semibold text-lg">
+                          {exp.jobTitle || "Unknown Position"}
+                        </h3>
+                        <p className="text-gray-600">
+                          {exp.employer || "Unknown Employer"}
+                        </p>
                       </div>
                       <div className="text-gray-500 text-sm">
                         {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
@@ -534,10 +596,14 @@ export default function ApplicantDetailsPage() {
                     {exp.country && (
                       <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
                         <MapPin className="h-3 w-3" />
-                        <span>{[exp.city, exp.country].filter(Boolean).join(", ")}</span>
+                        <span>
+                          {[exp.city, exp.country].filter(Boolean).join(", ")}
+                        </span>
                       </div>
                     )}
-                    {exp.jobDescription && <p className="mt-2 text-gray-700">{exp.jobDescription}</p>}
+                    {exp.jobDescription && (
+                      <p className="mt-2 text-gray-700">{exp.jobDescription}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -553,12 +619,18 @@ export default function ApplicantDetailsPage() {
             <CardContent>
               <div className="space-y-6">
                 {education.map((edu) => (
-                  <div key={edu._id} className="border-l-2 pl-4 border-gray-200">
+                  <div
+                    key={edu._id}
+                    className="border-l-2 pl-4 border-gray-200"
+                  >
                     <div>
                       <h3 className="font-semibold text-lg">
-                        {degreeLabels[edu.degree?.toLowerCase() || ""] || "Degree not specified"}
+                        {degreeLabels[edu.degree?.toLowerCase() || ""] ||
+                          "Degree not specified"}
                       </h3>
-                      <p className="text-gray-600">{edu.fieldOfStudy || "Field of study not specified"}</p>
+                      <p className="text-gray-600">
+                        {edu.fieldOfStudy || "Field of study not specified"}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -575,7 +647,10 @@ export default function ApplicantDetailsPage() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {resume.skills.map((skill, index) => (
-                  <div key={index} className="px-3 py-1 bg-gray-100 rounded-full text-sm">
+                  <div
+                    key={index}
+                    className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+                  >
                     {skill}
                   </div>
                 ))}
@@ -594,7 +669,9 @@ export default function ApplicantDetailsPage() {
                 {awardsAndHonors.map((award) => (
                   <div key={award._id}>
                     <h3 className="font-semibold">{award.title}</h3>
-                    {award.description && <p className="text-gray-700 mt-1">{award.description}</p>}
+                    {award.description && (
+                      <p className="text-gray-700 mt-1">{award.description}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -610,17 +687,21 @@ export default function ApplicantDetailsPage() {
             <CardContent>
               <div className="flex flex-wrap gap-2">
                 {resume.sLink.map((link, index) => {
-                  const normalizedLink = normalizeUrl(link.url)
+                  const normalizedLink = normalizeUrl(link.url);
                   return (
                     <Button
                       key={index}
                       variant="outline"
-                      onClick={() => normalizedLink && window.open(normalizedLink, "_blank")}
+                      onClick={() =>
+                        normalizedLink && window.open(normalizedLink, "_blank")
+                      }
                     >
                       <ExternalLink className="h-4 w-4 mr-2" />
-                      {isValidUrl(normalizedLink) ? new URL(normalizedLink).hostname : link.label || "Invalid Link"}
+                      {isValidUrl(normalizedLink)
+                        ? new URL(normalizedLink).hostname
+                        : link.label || "Invalid Link"}
                     </Button>
-                  )
+                  );
                 })}
               </div>
             </CardContent>
@@ -636,7 +717,11 @@ export default function ApplicantDetailsPage() {
             </Link>
           </div>
           <div>
-            <Select value={applicationStatus} onValueChange={handleStatusUpdate} disabled={statusLoading}>
+            <Select
+              value={applicationStatus}
+              onValueChange={handleStatusUpdate}
+              disabled={statusLoading}
+            >
               <SelectTrigger className="w-40 border text-blue-600 border-blue-600">
                 <SelectValue placeholder="Change Status" />
               </SelectTrigger>
@@ -660,5 +745,5 @@ export default function ApplicantDetailsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

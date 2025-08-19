@@ -79,7 +79,9 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       }
       const response = (await res.json()) as ApiResponse;
       if (!response.success) {
-        throw new Error(response.message || "API returned an unsuccessful response");
+        throw new Error(
+          response.message || "API returned an unsuccessful response"
+        );
       }
       return response;
     },
@@ -233,7 +235,7 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
               size="sm"
               className={`h-8 w-8 p-0 ${
                 currentPage === page
-                  ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                  ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
                   : "bg-transparent"
               }`}
               onClick={() => setCurrentPage(page)}
@@ -252,9 +254,7 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
           </Button>
         </div>
         {isFetching && (
-          <div className="text-center text-gray-500 pb-4">
-            Updating list...
-          </div>
+          <div className="text-center text-gray-500 pb-4">Updating list...</div>
         )}
       </div>
     </div>
