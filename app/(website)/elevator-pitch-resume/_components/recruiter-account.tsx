@@ -328,7 +328,7 @@ export default function RecruiterAccount({
                   size="lg"
                   className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]"
                 >
-                  {"Post A Job"}
+                  Post A Job
                 </Button>
               </div>
             </div>

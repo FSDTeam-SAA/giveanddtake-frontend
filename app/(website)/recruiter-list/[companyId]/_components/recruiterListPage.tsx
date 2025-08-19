@@ -60,8 +60,6 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
-  console.log("CCCCCCCCCCCCCCCCCCC", companyId);
-
   // Fetch employees with pagination
   const { data, isLoading, isError, error, isFetching } = useQuery<
     ApiResponse,
@@ -85,35 +83,104 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       }
       return response;
     },
-    placeholderData: (previousData) => previousData, // Replaces keepPreviousData
+    placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: 2, // Retry failed requests up to 2 times
   });
 
-  // Delete employee mutation
+  // Mutation for deleting an employee
   const deleteMutation = useMutation<DeleteResponse, Error, string>({
-    mutationFn: async (id: string) => {
+    mutationFn: async (employeeId: string) => {
+      // Fetch the current company data to get the existing employeesId array
+      const companyRes = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`
+      );
+      if (!companyRes.ok) {
+        throw new Error("Failed to fetch company data");
+      }
+      const companyData = await companyRes.json();
+      const currentEmployeesId = companyData.data.companies[0].employeesId;
+
+      // Filter out the employeeId to be deleted
+      const updatedEmployeesId = currentEmployeesId.filter(
+        (id: string) => id !== employeeId
+      );
+
+      // Send PUT request to update the employeesId array
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/employees/${id}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`,
         {
-          method: "DELETE",
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            employeesId: updatedEmployeesId,
+          }),
         }
       );
+
       if (!res.ok) {
         throw new Error("Failed to delete employee");
       }
-      return res.json();
+
+      const response = (await res.json()) as DeleteResponse;
+      if (!response.success) {
+        throw new Error(response.message || "Failed to delete employee");
+      }
+      return response;
+    },
+    onMutate: async (employeeId: string) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: ["employees", companyId, currentPage],
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData([
+        "employees",
+        companyId,
+        currentPage,
+      ]);
+
+      // Optimistically update the employees list
+      queryClient.setQueryData(
+        ["employees", companyId, currentPage],
+        (old: ApiResponse | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              employees: old.data.employees.filter((e) => e._id !== employeeId),
+            },
+          };
+        }
+      );
+
+      // Return context with the previous data for rollback on error
+      return { previousData };
+    },
+    onError: (err, employeeId, context) => {
+      // Rollback to the previous data on error
+      queryClient.setQueryData(
+        ["employees", companyId, currentPage],
+        context?.previousData
+      );
+      console.error("Error deleting employee:", err.message);
     },
     onSuccess: () => {
-      // Invalidate queries to refresh the employee list
+      // Invalidate the query to refetch the updated data
       queryClient.invalidateQueries({
         queryKey: ["employees", companyId, currentPage],
       });
     },
-    onError: (error) => {
-      alert(`Error deleting employee: ${error.message}`);
-    },
   });
+
+  // Handle delete button click
+  const handleDelete = (employeeId: string) => {
+    deleteMutation.mutate(employeeId);
+  };
 
   // Map API data to table structure
   const recruiters: EmployeeData[] = data?.data?.employees || [];
@@ -126,12 +193,6 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
 
   const handleNextPage = () => {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-  };
-
-  // Handle delete recruiter
-  const handleDelete = (id: string) => {
-    if (!confirm("Are you sure you want to delete this recruiter?")) return;
-    deleteMutation.mutate(id);
   };
 
   if (isLoading && !data) {

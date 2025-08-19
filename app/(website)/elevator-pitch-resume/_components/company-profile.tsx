@@ -49,7 +49,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const company = companyData.companies[0];
   const honors = companyData.honors || [];
 
-  const companyId = companyData.companies[0]._id;
+  const companyId = companyData.companies[0].userId;
 
   // Parse JSON strings
   const links = company.links || [];
