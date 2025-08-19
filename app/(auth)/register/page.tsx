@@ -27,6 +27,12 @@ import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
 
+interface Country {
+  name: string;
+  code: string;
+  dial_code: string;
+}
+
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterData>({
     name: "",
@@ -43,6 +49,9 @@ export default function RegisterPage() {
   const [selectedRole, setSelectedRole] = useState<
     "candidate" | "recruiter" | "company"
   >("candidate");
+  const [countries, setCountries] = useState<Country[]>([]);
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
 
   const [passwordValidation, setPasswordValidation] = useState({
     minLength: false,
@@ -67,6 +76,35 @@ export default function RegisterPage() {
   useEffect(() => {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
   }, [selectedRole]);
+
+  useEffect(() => {
+    const fetchCountries = async () => {
+      setIsLoadingCountries(true);
+      try {
+        // Using /countries/codes for dial_code data; replace with /countries if needed and map dial codes separately
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/codes"
+        );
+        const data = await response.json();
+        if (!data.error) {
+          setCountries(data.data);
+          if (data.data.length > 0) {
+            setSelectedCountry(data.data[0].name);
+            setFormData((prev) => ({
+              ...prev,
+              address: data.data[0].name,
+              phoneNum: data.data[0].dial_code,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching countries:", error);
+      } finally {
+        setIsLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, []);
 
   const validatePassword = (password: string) => {
     const validation = {
@@ -102,10 +140,32 @@ export default function RegisterPage() {
   };
 
   const handleInputChange = (field: keyof RegisterData, value: string) => {
+    if (field === "phoneNum") {
+      const selectedCountryData = countries.find(
+        (country) => country.name === formData.address
+      );
+      const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
+      if (!value.startsWith(dialCode)) {
+        value = dialCode + value.replace(/^\+\d+/, "");
+      }
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (field === "password") {
       validatePassword(value);
     }
+  };
+
+  const handleCountryChange = (value: string) => {
+    setSelectedCountry(value);
+    const selectedCountryData = countries.find(
+      (country) => country.name === value
+    );
+    const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
+    setFormData((prev) => ({
+      ...prev,
+      address: value,
+      phoneNum: dialCode + prev.phoneNum.replace(/^\+\d+/, ""),
+    }));
   };
 
   return (
@@ -153,6 +213,36 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="address">Country</Label>
+              <Select
+                onValueChange={handleCountryChange}
+                disabled={isLoadingCountries}
+                value={selectedCountry}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isLoadingCountries ? "Loading countries..." : "Country"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingCountries ? (
+                    <SelectItem value="loading" disabled>
+                      Loading...
+                    </SelectItem>
+                  ) : (
+                    countries.map((country) => (
+                      <SelectItem key={country.code} value={country.name}>
+                        {country.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -167,23 +257,6 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">Country</Label>
-              <Select
-                onValueChange={(value) => handleInputChange("address", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Country/Region" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="bangladesh">Bangladesh</SelectItem>
-                  <SelectItem value="usa">United States</SelectItem>
-                  <SelectItem value="uk">United Kingdom</SelectItem>
-                  <SelectItem value="canada">Canada</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
 
             <div className="space-y-2">
@@ -265,12 +338,6 @@ export default function RegisterPage() {
                     >
                       A minimum of 1 lower case character
                     </p>
-                    {/* <p className="text-red-600">
-                      You should not use any of your last 5 passwords
-                    </p>
-                    <p className="text-red-600">
-                      Keep your password as safe as your bank pin number!
-                    </p> */}
                   </div>
                 </div>
               )}
@@ -303,7 +370,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Role Selection */}
             <div className="flex gap-2">
               {[
                 { value: "recruiter", label: "Sign up as a Recruiter" },
@@ -351,6 +417,7 @@ export default function RegisterPage() {
               type="submit"
               className="w-full"
               disabled={registerMutation.isPending}
+              
             >
               {registerMutation.isPending
                 ? "Creating Account..."
