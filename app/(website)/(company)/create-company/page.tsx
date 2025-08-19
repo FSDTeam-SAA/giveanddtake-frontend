@@ -207,7 +207,7 @@ export default function CreateCompanyPage() {
               </div>
               <Button
                 type="button"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+                className="bg-primary hover:bg-blue-700 text-white px-6"
               >
                 Upload/Change Elevator Pitch
               </Button>
@@ -218,9 +218,7 @@ export default function CreateCompanyPage() {
               accept="video/*"
               maxSize={100 * 1024 * 1024}
               variant="dark"
-            >
-              
-              </FileUpload>
+            ></FileUpload>
           </div>
 
           {/* Company Logo and About */}
@@ -235,7 +233,7 @@ export default function CreateCompanyPage() {
                   accept="image/*"
                   className="h-full"
                 >
-                  <div className="w-full h-full bg-blue-600 text-white flex items-center justify-center text-sm font-medium rounded-lg">
+                  <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
                     photo/recruiter logo
                   </div>
                 </FileUpload>
@@ -643,7 +641,7 @@ export default function CreateCompanyPage() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+            className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
             disabled={createCompanyMutation.isPending}
           >
             {createCompanyMutation.isPending ? "Creating..." : "Save"}

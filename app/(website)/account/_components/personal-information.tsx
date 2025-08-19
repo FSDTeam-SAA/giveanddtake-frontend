@@ -7,15 +7,25 @@ import { Edit2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 
 async function fetchUserData(token: string) {
-  const response = await fetch("https://giveandtake-backend.onrender.com/api/v1/user/single", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    "https://giveandtake-backend.onrender.com/api/v1/user/single",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   if (!response.ok) {
     throw new Error("Failed to fetch user data");
   }
@@ -23,14 +33,17 @@ async function fetchUserData(token: string) {
 }
 
 async function updateUserData({ token, data }: { token: string; data: any }) {
-  const response = await fetch("https://giveandtake-backend.onrender.com/api/v1/user/update", {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
+  const response = await fetch(
+    "https://giveandtake-backend.onrender.com/api/v1/user/update",
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
   if (!response.ok) {
     throw new Error("Failed to update user data");
   }
@@ -38,12 +51,15 @@ async function updateUserData({ token, data }: { token: string; data: any }) {
 }
 
 async function deactivateAccount(token: string) {
-  const response = await fetch("https://giveandtake-backend.onrender.com/api/v1/user/deactivate", {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await fetch(
+    "https://giveandtake-backend.onrender.com/api/v1/user/deactivate",
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   if (!response.ok) {
     throw new Error("Failed to deactivate account");
   }
@@ -58,8 +74,6 @@ export function PersonalInformation() {
   const token = session?.accessToken || "";
   const queryClient = useQueryClient();
   const router = useRouter();
-
-
 
   // Fetch user data using TanStack Query
   const { data, isLoading, error } = useQuery({
@@ -207,7 +221,7 @@ export function PersonalInformation() {
         </h1>
         <Button
           onClick={() => setIsEditing(!isEditing)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm"
+          className="bg-primary hover:bg-blue-700 text-white px-4 py-2 text-sm"
         >
           <Edit2 className="h-4 w-4 mr-2" />
           Edit
@@ -333,7 +347,7 @@ export function PersonalInformation() {
         <div className="mt-8">
           <Button
             onClick={handleSave}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2"
+            className="bg-primary hover:bg-blue-700 text-white px-8 py-2"
             disabled={updateMutation.isPending}
           >
             {updateMutation.isPending ? "Updating..." : "Update"}
@@ -348,7 +362,9 @@ export function PersonalInformation() {
           className="px-8 py-2 w-full border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent h-[51px]"
           disabled={deactivateMutation.isPending}
         >
-          {deactivateMutation.isPending ? "Deactivating..." : "Deactivate Account"}
+          {deactivateMutation.isPending
+            ? "Deactivating..."
+            : "Deactivate Account"}
         </Button>
 
         <div className="">
@@ -367,12 +383,16 @@ export function PersonalInformation() {
       </div>
 
       {/* Deactivation Confirmation Modal */}
-      <Dialog open={isDeactivateModalOpen} onOpenChange={setIsDeactivateModalOpen}>
+      <Dialog
+        open={isDeactivateModalOpen}
+        onOpenChange={setIsDeactivateModalOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Account Deactivation</DialogTitle>
             <DialogDescription>
-              Are you sure you want to deactivate your account? You will be logged out, and your account will be disabled until reactivated.
+              Are you sure you want to deactivate your account? You will be
+              logged out, and your account will be disabled until reactivated.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -399,7 +419,9 @@ export function PersonalInformation() {
           <DialogHeader>
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete your account? This action is permanent and cannot be undone. All your data will be removed in the next 30 days.
+              Are you sure you want to delete your account? This action is
+              permanent and cannot be undone. All your data will be removed in
+              the next 30 days.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

@@ -322,7 +322,7 @@ export default function RegisterPage() {
                   className={cn(
                     "w-full px-4 py-2 border rounded-md transition-colors scale-y-95",
                     selectedRole === option.value
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-primary text-white border-blue-600"
                       : "bg-transparent border-gray-300 hover:bg-gray-100"
                   )}
                 >

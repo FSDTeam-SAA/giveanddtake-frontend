@@ -203,7 +203,7 @@ export default function JobsListing() {
           </div>
           <button
             onClick={handleFilter} // Re-added onClick handler
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
+            className="bg-primary hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
           >
             Filter
           </button>

@@ -80,7 +80,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                         Apply
                       </button>
                     </Link>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
+                    <button className="bg-primary hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
                       Full Time
                     </button>
                   </div>
@@ -157,7 +157,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                         Apply
                       </button>
                     </Link>
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white text-sm">
+                    <Button className="bg-primary hover:bg-blue-700 text-white text-sm">
                       Full Time
                     </Button>
                   </div>

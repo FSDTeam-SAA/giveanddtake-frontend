@@ -159,7 +159,7 @@ export default function OtpStep({
         <div className="space-y-3">
           <Button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-primary hover:bg-blue-700"
             disabled={isLoading || otpValues.join("").length !== 6}
           >
             {isLoading ? "Verifying..." : "Verify"}

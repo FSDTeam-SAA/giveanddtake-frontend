@@ -86,67 +86,69 @@ export function HeroSection() {
             Unlock your full potential and begin creating the life you truly
             deserve — one meaningful opportunity at a time.
           </p>
-          <div className="w-full lg:max-w-[396px] mt-8 md:mt-[48px] mx-auto lg:mx-0">
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
-                <div className="space-y-1 text-start">
-                  <Label
-                    htmlFor="job-title"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Job Title
-                  </Label>
-                  <input
-                    id="job-title"
-                    placeholder="Input Job type"
-                    className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
-                    value={jobTitleInput}
-                    onChange={(e) => setJobTitleInput(e.target.value)}
-                  />
+          {session.status === "authenticated" && (
+            <div className="w-full lg:max-w-[396px] mt-8 md:mt-[48px] mx-auto lg:mx-0">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
+                  <div className="space-y-1 text-start">
+                    <Label
+                      htmlFor="job-title"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Job Title
+                    </Label>
+                    <input
+                      id="job-title"
+                      placeholder="Input Job type"
+                      className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
+                      value={jobTitleInput}
+                      onChange={(e) => setJobTitleInput(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200  text-start">
+                    <Label
+                      htmlFor="location"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Location
+                    </Label>
+                    <input
+                      id="location"
+                      placeholder="Search Location"
+                      className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
+                      value={locationInput}
+                      onChange={(e) => setLocationInput(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200  text-start">
-                  <Label
-                    htmlFor="location"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                <div className="flex items-start justify-start">
+                  <Button
+                    onClick={handleSearch}
+                    className="w-full sm:w-[160px] bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 h-[51px] text-white rounded-[8px] mt-2 sm:mt-6"
                   >
-                    Location
-                  </Label>
-                  <input
-                    id="location"
-                    placeholder="Search Location"
-                    className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
-                    value={locationInput}
-                    onChange={(e) => setLocationInput(e.target.value)}
-                  />
+                    Search
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-start justify-start">
-                <Button
-                  onClick={handleSearch}
-                  className="w-full sm:w-[160px] bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 h-[51px] text-white rounded-[8px] mt-2 sm:mt-6"
+              <div className="flex flex-wrap gap-2 items-center justify-center lg:justify-start text-xs sm:text-sm mt-6 md:mt-[48px]">
+                <span className="font-medium text-[#595959]">
+                  Trending Keywords:
+                </span>
+                <Badge
+                  variant="outline"
+                  className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border-[#BAC4F6] text-[#999999] bg-gray-100"
                 >
-                  Search
-                </Button>
+                  Web Development
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border-[#BAC4F6] text-[#999999] bg-gray-100"
+                >
+                  UI/UX Design
+                </Badge>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2 items-center justify-center lg:justify-start text-xs sm:text-sm mt-6 md:mt-[48px]">
-              <span className="font-medium text-[#595959]">
-                Trending Keywords:
-              </span>
-              <Badge
-                variant="outline"
-                className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border-[#BAC4F6] text-[#999999] bg-gray-100"
-              >
-                Web Development
-              </Badge>
-              <Badge
-                variant="outline"
-                className="px-2 py-0.5 sm:px-3 sm:py-1 rounded-full border-[#BAC4F6] text-[#999999] bg-gray-100"
-              >
-                UI/UX Design
-              </Badge>
-            </div>
-          </div>
+          )}
         </div>
         {/* Video Carousel Section */}
         <div className="relative">

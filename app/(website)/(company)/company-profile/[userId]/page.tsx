@@ -120,6 +120,11 @@ export default function CompanyProfilePage() {
               Easily post your company job openings and reach the right talent
               fast. Get quality applications in no time.
             </p>
+            <Link href="/add-job">
+              <Button className="bg-primary hover:bg-blue-700 text-white px-6">
+                Post a Job
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

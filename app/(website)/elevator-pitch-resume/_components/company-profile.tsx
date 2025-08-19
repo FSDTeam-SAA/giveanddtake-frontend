@@ -110,19 +110,19 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               fast. Get quality applications in no time.
             </p>
             <Link href="/manage-jobs">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 mr-2">
+              <Button className="bg-primary hover:bg-blue-700 text-white px-6 mr-2">
                 Manage Jobs
               </Button>
             </Link>
             <Link href="/add-job">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6">
+              <Button className="bg-primary hover:bg-blue-700 text-white px-6">
                 Post a Job
               </Button>
             </Link>
             <Link
               href={`/elevator-pitch-resume/edit-company/${company.userId}`}
             >
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white px-6 ml-2">
+              <Button className="bg-primary hover:bg-blue-700 text-white px-6 ml-2">
                 Edit Profile
               </Button>
             </Link>

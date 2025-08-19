@@ -1,122 +1,142 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect, use } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "sonner"
-import { Loader2 } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { useState, useEffect, use } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 interface SecurityQuestionsProps {
-  onBack: () => void
-  onComplete: (token: string) => void
+  onBack: () => void;
+  onComplete: (token: string) => void;
 }
 
-export function SecurityQuestions({ onBack, onComplete }: SecurityQuestionsProps) {
-  const [questions, setQuestions] = useState<string[]>([])
-  const [answers, setAnswers] = useState<string[]>(["", "", "", "", ""])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function SecurityQuestions({
+  onBack,
+  onComplete,
+}: SecurityQuestionsProps) {
+  const [questions, setQuestions] = useState<string[]>([]);
+  const [answers, setAnswers] = useState<string[]>(["", "", "", "", ""]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  const session = useSession();
 
-  const session = useSession()
-
-  const userEmail = session.data?.user?.email
+  const userEmail = session.data?.user?.email;
 
   // Fetch security questions from API
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/default-security-questions`)
-        const data = await response.json()
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/default-security-questions`
+        );
+        const data = await response.json();
 
         if (data.success) {
           // Take first 5 questions or all available questions
-          const availableQuestions = data.date || data.data || []
-          setQuestions(availableQuestions.slice(0, 5))
+          const availableQuestions = data.date || data.data || [];
+          setQuestions(availableQuestions.slice(0, 5));
         } else {
-          throw new Error(data.message || "Failed to fetch questions")
+          throw new Error(data.message || "Failed to fetch questions");
         }
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to load security questions"
-        setError(errorMessage)
-        toast.error(errorMessage)
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : "Failed to load security questions";
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchQuestions()
-  }, [])
+    fetchQuestions();
+  }, []);
 
   // Handle answer change for specific question
   const handleAnswerChange = (index: number, value: string) => {
-    const updatedAnswers = [...answers]
-    updatedAnswers[index] = value
-    setAnswers(updatedAnswers)
-  }
+    const updatedAnswers = [...answers];
+    updatedAnswers[index] = value;
+    setAnswers(updatedAnswers);
+  };
 
   // Handle email change
 
-
   // Handle form submission - verify security answers
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-
+    e.preventDefault();
 
     // Validate that all questions have answers
-    const filledAnswers = answers.filter((answer) => answer.trim() !== "")
+    const filledAnswers = answers.filter((answer) => answer.trim() !== "");
     if (filledAnswers.length < questions.length) {
-      toast.error("Please answer all security questions")
-      return
+      toast.error("Please answer all security questions");
+      return;
     }
 
     // Prepare answers array (only the answers, not question-answer pairs)
-    const answersArray = answers.slice(0, questions.length).map((answer) => answer.trim())
+    const answersArray = answers
+      .slice(0, questions.length)
+      .map((answer) => answer.trim());
 
-    setSubmitting(true)
+    setSubmitting(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/verify-security-answers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: userEmail,
-          answers: answersArray,
-        }),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/verify-security-answers`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: userEmail,
+            answers: answersArray,
+          }),
+        }
+      );
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (response.ok && data.success) {
-        toast.success(data.message || "Security answers verified successfully!")
+        toast.success(
+          data.message || "Security answers verified successfully!"
+        );
 
         // Extract reset token from response
-        const resetToken = data.data?.resetToken
+        const resetToken = data.data?.resetToken;
         if (resetToken) {
-          onComplete(resetToken)
+          onComplete(resetToken);
         } else {
-          throw new Error("Reset token not received from server")
+          throw new Error("Reset token not received from server");
         }
       } else {
-        throw new Error(data.message || "Failed to verify security answers")
+        throw new Error(data.message || "Failed to verify security answers");
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to verify security answers"
-      toast.error(errorMessage)
-      console.error("Security verification error:", err)
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Failed to verify security answers";
+      toast.error(errorMessage);
+      console.error("Security verification error:", err);
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -126,7 +146,7 @@ export function SecurityQuestions({ onBack, onComplete }: SecurityQuestionsProps
           <span className="ml-2">Loading questions...</span>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (error) {
@@ -139,25 +159,29 @@ export function SecurityQuestions({ onBack, onComplete }: SecurityQuestionsProps
           </Button>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
     <div className="space-y-4">
       <div className="text-center space-y-4">
-        <CardTitle className="text-2xl font-bold">Verify Your Security Questions</CardTitle>
+        <CardTitle className="text-2xl font-bold">
+          Verify Your Security Questions
+        </CardTitle>
         <CardDescription>
-          Please answer your security questions to verify your identity and reset your password.
+          Please answer your security questions to verify your identity and
+          reset your password.
         </CardDescription>
       </div>
       <div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          
-
           {/* Security Questions */}
           {questions.map((question, index) => (
             <div key={index} className="space-y-2">
-              <Label htmlFor={`question-${index}`} className="text-sm font-medium text-blue-600">
+              <Label
+                htmlFor={`question-${index}`}
+                className="text-sm font-medium text-blue-600"
+              >
                 {question}
               </Label>
               <Input
@@ -182,7 +206,11 @@ export function SecurityQuestions({ onBack, onComplete }: SecurityQuestionsProps
             >
               Back
             </Button>
-            <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={submitting}>
+            <Button
+              type="submit"
+              className="flex-1 bg-primary hover:bg-blue-700"
+              disabled={submitting}
+            >
               {submitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -200,19 +228,24 @@ export function SecurityQuestions({ onBack, onComplete }: SecurityQuestionsProps
           <div className="flex justify-between text-xs text-gray-500 mb-2">
             <span>Progress</span>
             <span>
-              {answers.filter((answer) => answer.trim() !== "").length}/{questions.length}
+              {answers.filter((answer) => answer.trim() !== "").length}/
+              {questions.length}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-primary h-2 rounded-full transition-all duration-300"
               style={{
-                width: `${(answers.filter((answer) => answer.trim() !== "").length / questions.length) * 100}%`,
+                width: `${
+                  (answers.filter((answer) => answer.trim() !== "").length /
+                    questions.length) *
+                  100
+                }%`,
               }}
             />
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

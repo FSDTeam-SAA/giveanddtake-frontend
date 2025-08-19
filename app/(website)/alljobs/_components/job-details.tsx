@@ -316,7 +316,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 {saveJobMutation.isPending ? "Saving..." : "Save Job"}
               </Button>
               <Link href={`/job-application?id=${job._id}`}>
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-primary hover:bg-blue-700">
                   Apply Now
                 </Button>
               </Link>
@@ -334,7 +334,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <ul className="space-y-2">
                     {job.responsibilities.map((responsibility, index) => (
                       <li key={index} className="flex items-start">
-                        <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                        <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
                         <span className="text-gray-700">{responsibility}</span>
                       </li>
                     ))}
