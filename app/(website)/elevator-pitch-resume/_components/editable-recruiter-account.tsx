@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,10 +27,11 @@ import {
   X,
   Camera,
 } from "lucide-react";
+import DOMPurify from "dompurify";
 import { cn } from "@/lib/utils";
 import { editRecruiterAccount } from "@/lib/api-service";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 
 type MaybeStringifiedArray = string[] | string | undefined;
 
@@ -150,7 +150,7 @@ function SocialIconLink({ href, label, icon: Icon }: Social) {
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition"
+            "inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#9EC7DC] bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition"
           )}
           aria-label={label}
         >
@@ -162,7 +162,7 @@ function SocialIconLink({ href, label, icon: Icon }: Social) {
   );
 }
 
-export default function  EditableRecruiterAccount({
+export default function EditableRecruiterAccount({
   recruiter,
   onSave,
 }: {
@@ -173,7 +173,6 @@ export default function  EditableRecruiterAccount({
   const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>(recruiter);
   const [isSaving, setIsSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const queryClient = useQueryClient();
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(recruiter?.followerCount);
@@ -193,24 +192,49 @@ export default function  EditableRecruiterAccount({
     Boolean
   );
 
-  const socials: Social[] = [
-    { label: "LinkedIn", href: recruiter?.linkedIn, icon: Linkedin },
-    { label: "X (Twitter)", href: recruiter?.xLink, icon: Twitter },
-    { label: "Upwork", href: recruiter?.upworkUrl, icon: BriefcaseBusiness },
-    {
-      label: "Website / Other",
-      href: recruiter?.OtherLink,
-      icon: ExternalLink,
-    },
-  ];
+  const socials: Social[] = useMemo(() => {
+    const sLinks = recruiter?.sLink || [];
+    const socialMap: {
+      [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    } = {
+      linkedin: Linkedin,
+      twitter: Twitter,
+      x: Twitter,
+      upwork: BriefcaseBusiness,
+      website: ExternalLink,
+      other: ExternalLink,
+    };
 
-  if (!recruiter) {
-    return (
-      <div className="container mx-auto max-w-5xl px-4 py-12">
-        <p className="text-muted-foreground">{"No recruiter data found."}</p>
-      </div>
+    return sLinks.map((link) => ({
+      label: link.label,
+      href: link.url,
+      icon: socialMap[link.label.toLowerCase()] || ExternalLink,
+    }));
+  }, [recruiter?.sLink]);
+
+  const updateSLink = (
+    index: number,
+    field: "label" | "url",
+    value: string
+  ) => {
+    const newSLink = [...(editedRecruiter.sLink || [])];
+    if (newSLink[index]) {
+      newSLink[index] = { ...newSLink[index], [field]: value };
+    }
+    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
+  };
+
+  const addSLink = () => {
+    const newSLink = [...(editedRecruiter.sLink || []), { label: "", url: "" }];
+    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
+  };
+
+  const removeSLink = (index: number) => {
+    const newSLink = (editedRecruiter.sLink || []).filter(
+      (_, i) => i !== index
     );
-  }
+    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
+  };
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -219,7 +243,7 @@ export default function  EditableRecruiterAccount({
     const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
 
     if (file.size > maxSizeInBytes) {
-      toast.error("File size exceeds 10 MB. select a smaller file.");
+      toast.error("File size exceeds 10 MB. Select a smaller file.");
       return;
     }
 
@@ -240,14 +264,32 @@ export default function  EditableRecruiterAccount({
 
     setIsSaving(true);
     try {
-      await editRecruiterAccount(editedRecruiter.userId, editedRecruiter);
-      queryClient.invalidateQueries({ queryKey: ["recruiter"] });
-      onSave?.(editedRecruiter);
+      const formData = new FormData();
+      Object.entries(editedRecruiter).forEach(([key, value]) => {
+        if (key === "sLink") {
+          (value as SLinkItem[]).forEach((link, index) => {
+            formData.append(`sLink[${index}][label]`, link.label);
+            formData.append(`sLink[${index}][url]`, link.url);
+          });
+        } else if (key === "photo" && photoPreview) {
+          // Assuming photo needs to be sent as a file; adjust based on backend requirements
+          formData.append(key, photoPreview);
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+
+      const updatedRecruiter = await editRecruiterAccount(
+        editedRecruiter.userId,
+        formData // Updated to send FormData
+      );
+      onSave?.(updatedRecruiter);
       setIsEditing(false);
       setPhotoPreview(null);
+      toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to save recruiter account:", error);
-      // You can add error handling UI here
+      toast.error("Failed to update profile. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -291,9 +333,7 @@ export default function  EditableRecruiterAccount({
       <div className="w-full">
         <div className="relative h-36 sm:h-44 md:h-56 lg:h-80 bg-muted">
           <Image
-            src={
-              "/placeholder.svg?height=256&width=1600&query=recruiter%20profile%20cover%20subtle%20gray"
-            }
+            src=""
             alt={"Cover image"}
             fill
             className="object-cover opacity-80"
@@ -347,7 +387,6 @@ export default function  EditableRecruiterAccount({
                   </Button>
                 ) : (
                   <div className="flex gap-2">
-                    {/* Updated save button to show loading state */}
                     <Button
                       onClick={handleSave}
                       size="sm"
@@ -439,19 +478,6 @@ export default function  EditableRecruiterAccount({
                     />
                   </div>
                   <div>
-                    <Label htmlFor="aboutUs">About Us</Label>
-                    <Input
-                      id="aboutUs"
-                      value={editedRecruiter.aboutUs || ""}
-                      onChange={(e) =>
-                        setEditedRecruiter({
-                          ...editedRecruiter,
-                          aboutUs: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
                     <Label htmlFor="roleAtCompany">Role at Company</Label>
                     <Input
                       id="roleAtCompany"
@@ -493,74 +519,76 @@ export default function  EditableRecruiterAccount({
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
+                    <Label htmlFor="bio" className="text-sm font-medium">
+                      Bio
+                    </Label>
+                    <TextEditor
                       value={editedRecruiter.bio || ""}
-                      onChange={(e) =>
-                        setEditedRecruiter({
-                          ...editedRecruiter,
-                          bio: e.target.value,
-                        })
+                      onChange={(value) =>
+                        setEditedRecruiter({ ...editedRecruiter, bio: value })
                       }
-                      rows={4}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="linkedIn">LinkedIn URL</Label>
-                      <Input
-                        id="linkedIn"
-                        value={editedRecruiter.linkedIn || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            linkedIn: e.target.value,
-                          })
-                        }
-                      />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label>Social Links</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addSLink}
+                        className="text-xs bg-transparent"
+                      >
+                        Add Link
+                      </Button>
                     </div>
-                    <div>
-                      <Label htmlFor="xLink">X (Twitter) URL</Label>
-                      <Input
-                        id="xLink"
-                        value={editedRecruiter.xLink || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            xLink: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="upworkUrl">Upwork URL</Label>
-                      <Input
-                        id="upworkUrl"
-                        value={editedRecruiter.upworkUrl || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            upworkUrl: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="OtherLink">Other Link</Label>
-                      <Input
-                        id="OtherLink"
-                        value={editedRecruiter.OtherLink || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            OtherLink: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
+                    {(editedRecruiter.sLink || []).map((link, index) => (
+                      <div
+                        key={index}
+                        className="grid grid-cols-3 gap-2 items-end"
+                      >
+                        <div>
+                          <Label htmlFor={`slink-label-${index}`}>
+                            Platform
+                          </Label>
+                          <Input
+                            id={`slink-label-${index}`}
+                            placeholder="e.g., LinkedIn"
+                            value={link.label}
+                            onChange={(e) =>
+                              updateSLink(index, "label", e.target.value)
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`slink-url-${index}`}>URL</Label>
+                          <Input
+                            id={`slink-url-${index}`}
+                            placeholder="https://..."
+                            value={link.url}
+                            onChange={(e) =>
+                              updateSLink(index, "url", e.target.value)
+                            }
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeSLink(index)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    {(!editedRecruiter.sLink ||
+                      editedRecruiter.sLink.length === 0) && (
+                      <p className="text-sm text-muted-foreground">
+                        No social links added yet.
+                      </p>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -588,11 +616,16 @@ export default function  EditableRecruiterAccount({
                     )}
                   </div>
 
-                  <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                    {companyId?.aboutUs ||
-                      bio ||
-                      "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."}
-                  </p>
+                  <div
+                    className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(
+                        companyId?.aboutUs ||
+                          bio ||
+                          "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."
+                      ),
+                    }}
+                  />
 
                   {followersText && (
                     <p className="text-sm text-muted-foreground">
@@ -601,10 +634,10 @@ export default function  EditableRecruiterAccount({
                   )}
 
                   <TooltipProvider delayDuration={100}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {socials.map((s) => (
+                    <div className="flex flex-wrap items-center gap-2 ">
+                      {socials.map((s, index) => (
                         <SocialIconLink
-                          key={s.label}
+                          key={`${s.label}-${index}`}
                           href={s.href}
                           label={s.label}
                           icon={s.icon}
@@ -613,33 +646,8 @@ export default function  EditableRecruiterAccount({
                     </div>
                   </TooltipProvider>
 
-                  <div className="flex gap-3 items-center">
-                    {Array.isArray(recruiter?.sLink) &&
-                      recruiter.sLink.map((item, index) => {
-                        if (
-                          typeof item === "object" &&
-                          item !== null &&
-                          "label" in item &&
-                          "url" in item
-                        ) {
-                          return (
-                            <Link
-                              key={index}
-                              href={item.url as string}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline capitalize"
-                            >
-                              {item.label}
-                            </Link>
-                          );
-                        }
-                        return null;
-                      })}
-                  </div>
-
-                  <div className="space-y-3 pt-2">
-                    <p className="text-sm text-muted-foreground">
+                  <div className=" pt-2">
+                    <p className="text-[20px] mb-4">
                       {"Try It Free — Post Your First Job at No Cost!"}
                     </p>
                     <Link
@@ -647,11 +655,11 @@ export default function  EditableRecruiterAccount({
                       className="text-blue-600 hover:underline capitalize"
                     >
                       <Button
-                      size="lg"
-                      className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]"
-                    >
-                      Post A Job
-                    </Button>
+                        size="lg"
+                        className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]"
+                      >
+                        Post A Job
+                      </Button>
                     </Link>
                   </div>
                 </div>
