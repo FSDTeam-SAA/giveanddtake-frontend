@@ -4,6 +4,8 @@ import { SectorSection } from "@/components/sector-section";
 import { RecentJobsSection } from "@/components/recent-jobs-section";
 import PricingSection from "@/components/pricing-section";
 import { Suspense } from "react";
+import { HowItWorksRecruiter } from "@/components/how-it-works-rec";
+import { HowItWorksCompany } from "@/components/how-it-works-company";
 
 export default function Home() {
   return (
@@ -11,9 +13,11 @@ export default function Home() {
       <Suspense fallback={<div>Loading...</div>}>
         <HeroSection />
         <HowItWorksSection />
-        <SectorSection />
+        <HowItWorksRecruiter />
+        <HowItWorksCompany />
+        {/* <SectorSection />
         <RecentJobsSection />
-        <PricingSection />
+        <PricingSection /> */}
       </Suspense>
     </div>
   );
