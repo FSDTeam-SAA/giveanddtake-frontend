@@ -18,7 +18,7 @@ export default function CompanyProfilePage() {
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
     queryFn: () => fetchCompanyDetails(userId),
-    enabled: !!userId,
+    enabled: !!userId, 
   });
 
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
