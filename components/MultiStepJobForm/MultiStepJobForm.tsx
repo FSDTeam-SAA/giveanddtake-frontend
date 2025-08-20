@@ -48,6 +48,7 @@ interface FormData {
   department: string;
   country: string;
   region: string;
+  vacancy: string;
   employmentType: string;
   experience: string;
   category: string;
@@ -94,7 +95,7 @@ async function postJob(data: any) {
 export default function MultiStepJobForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
-  const companyId = "687b65e9153a2f59d4b57ba8";
+  // const companyId = "687b65e9153a2f59d4b57ba8";
   const session = useSession();
   const userId = session.data?.user?.id;
   const router = useRouter();
@@ -105,6 +106,7 @@ export default function MultiStepJobForm() {
     region: "",
     employmentType: "",
     experience: "",
+    vacancy: "",
     category: "",
     categoryId: "",
     compensation: "",
@@ -326,7 +328,6 @@ export default function MultiStepJobForm() {
 
     const postData = {
       userId,
-      companyId,
       title: formData.jobTitle,
       description: formData.jobDescription,
       salaryRange: formData.compensation || "$0 - $0",
@@ -336,13 +337,13 @@ export default function MultiStepJobForm() {
       responsibilities,
       educationExperience,
       benefits,
-      vacancy: 2,
+      vacancy: formData.vacancy,
       experience: experienceMap[formData.experience] || 0,
       deadline: deadlineDate.toISOString(),
       publishDate: publishDateObj.toISOString(),
       status: "active",
       jobCategoryId: formData.categoryId,
-      employment_Type: formData.employmentType,
+      employement_Type: formData.employmentType,
       compensation: formData.compensation ? "Monthly" : "Negotiable",
       archivedJob: false,
       applicationRequirement: applicationRequirements
@@ -439,7 +440,7 @@ export default function MultiStepJobForm() {
               className="text-sm font-medium text-[#2A2A2A]"
               htmlFor="department"
             >
-              Department (Optional)
+              Department
             </Label>
             <Select
               onValueChange={(value) =>
@@ -557,6 +558,26 @@ export default function MultiStepJobForm() {
                 <SelectItem value="internship">Internship</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* vacancy */}
+
+          <div>
+            <Label
+              className="text-sm font-medium text-gray-700"
+              htmlFor="vacancy"
+            >
+              Vacancy<span className="text-red-500 ml-1">*</span>
+            </Label>
+            <Input
+              id="vacancy"
+              className="border-gray-300 h-12 rounded-lg focus-visible:ring-2"
+              placeholder="e.g. 5"
+              value={formData.vacancy}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, vacancy: e.target.value }))
+              }
+            />
           </div>
 
           {/* Experience Level */}

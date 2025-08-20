@@ -5,6 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, DollarSign } from "lucide-react";
 import Link from "next/link";
 import DOMPurify from "dompurify";
+import Image from "next/image";
+
+interface CompanyId {
+  _id: string;
+  cname: string;
+  clogo: string;
+}
 
 interface Job {
   _id: string;
@@ -13,6 +20,8 @@ interface Job {
   salaryRange: string;
   location: string;
   shift: string;
+  employement_Type?: string; // <-- optional
+  companyId?: CompanyId;
   vacancy: number;
   experience: number;
   compensation: string;
@@ -59,9 +68,17 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
               {/* Icon Section */}
               <div className="col-span-1 hidden md:block">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">
-                    {getCompanyInitials(job.title)}
-                  </span>
+                  <div className="w-[50px] h-[50px] flex items-center justify-center">
+                    {job.companyId && (
+                      <Image
+                        src={job.companyId.clogo}
+                        alt={job.companyId.cname}
+                        width={500}
+                        height={500}
+                        className="w-[50px] h-[50px]"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -81,7 +98,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                       </button>
                     </Link>
                     <button className="bg-primary hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
-                      Full Time
+                      {job.employement_Type}
                     </button>
                   </div>
                 </div>
@@ -135,10 +152,16 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
             <div className="grid grid-cols-8">
               {/* Icon Section */}
               <div className="col-span-1">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-blue-600 font-semibold text-sm">
-                    {getCompanyInitials(job.title)}
-                  </span>
+                <div className="w-[50px] h-[50px] flex items-center justify-center">
+                  {job.companyId && (
+                    <Image
+                      src={job.companyId.clogo}
+                      alt={job.companyId.cname}
+                      width={500}
+                      height={500}
+                      className="w-[50px] h-[50px]"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -158,7 +181,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                       </button>
                     </Link>
                     <Button className="bg-primary hover:bg-blue-700 text-white text-sm">
-                      Full Time
+                      {job.employement_Type}
                     </Button>
                   </div>
                 </div>
