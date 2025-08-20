@@ -4,6 +4,7 @@ import { SectorSection } from "@/components/sector-section";
 import { RecentJobsSection } from "@/components/recent-jobs-section";
 import PricingSection from "@/components/pricing-section";
 import { Suspense } from "react";
+import CandidateRecruiterCompanyList from "@/components/CandidateRecruiterCompanyList";
 
 export default function Home() {
   return (
@@ -14,6 +15,8 @@ export default function Home() {
         <SectorSection />
         <RecentJobsSection />
         <PricingSection />
+
+        <CandidateRecruiterCompanyList />
       </Suspense>
     </div>
   );
