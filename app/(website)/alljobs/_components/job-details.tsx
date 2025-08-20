@@ -13,8 +13,14 @@ import DOMPurify from "dompurify";
 import Link from "next/link";
 import Image from "next/image";
 
+interface CompanyData {
+  clogo: string;
+  cname: string;
+}
+
 interface JobDetailsData {
   _id: string;
+  userId: string;
   title: string;
   description: string;
   salaryRange: string;
@@ -22,13 +28,13 @@ interface JobDetailsData {
   shift: string;
   responsibilities: string[];
   educationExperience: string[];
-
+  companyId: CompanyData;
   benefits: string[];
   vacancy: number;
+  employement_Type?: string;
   experience: number;
   deadline: string;
   status: string;
-  companyId: string;
   compensation: string;
   applicationRequirement: Array<{
     requirement: string;
@@ -226,8 +232,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const job = jobData.data;
 
-  console.log("dddddddddddddddd", job)
-
   return (
     <div className="">
       {/* Header */}
@@ -244,12 +248,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
         <div className="col-span-6">
           <div>
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <div>
-                  <Link href={`/company-profile/${job.userId}`}>
+                  <Link href={`/companies-profile/${job.userId}`}>
                     <Image
-                      src=""
-                      alt=""
+                      src={job.companyId.clogo}
+                      alt={job.companyId.cname}
                       width={100}
                       height={100}
                       className="w-16 h-16 object-cover rounded-full"
@@ -258,29 +262,30 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-                  <div className="flex items-center gap-4 text-gray-600 mb-4">
+                  <div className="flex items-center gap-4  mb-4">
                     <Link
-                      href={`/company-profile/${job.userId}`}
-                      className="text-[#2042E3]"
+                      href={`/companies-profile/${job.userId}`}
+                      className="text-[16px] font-medium"
                     >
-                      company name
+                      {job.companyId.cname}
                     </Link>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-1" />
+                    <div className="flex items-center text-[#707070] text-[16px] font-medium">
+                      <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" />
                       {job.location}
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  {job.shift}
-                </div>
-                <div className="flex items-center">
+              <div className="space-y-2">
+                <div className="flex items-center text-[#707070] text-[16px] font-medium">
                   <DollarSign className="h-4 w-4 mr-1" />
                   {job.salaryRange}
+                </div>
+                <div className="flex items-center">
+                  <Button className="bg-[#E9ECFC] hover:bg-blue-700 text-[#2042E3] text-sm">
+                    {job.employement_Type}
+                  </Button>
                 </div>
               </div>
             </div>
