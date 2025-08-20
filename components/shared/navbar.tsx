@@ -81,9 +81,8 @@ export function SiteHeader() {
         };
       case "company":
         return {
-          dashboard: "/company-dashboard",
+          dashboard: "/elevator-pitch-resume",
           myPlan: "/my-plans",
-          elevatorPitch: "/elevator-pitch",
           settings: "/account",
         };
       case "candidate":

@@ -7,16 +7,40 @@ import { motion } from "framer-motion";
 
 export function ScrollingInfoBar() {
   const items = [
-    { text: "30-Second Free Elevator Pitch", link: "#" },
-    { text: "Perfect Your Message", link: "#" },
-    { text: "Elevate Your Business", link: "#" },
-    { text: "30-Second Free Elevator Pitch", link: "#" },
-    { text: "Perfect Your Message", link: "#" },
-    { text: "Elevate Your Business", link: "#" },
+    {
+      text: "Companies showcase their culture with a video pitch",
+      role: "company",
+    },
+    {
+      text: "Recruiters present top opportunities through video",
+      role: "recruiter",
+    },
+    {
+      text: "Candidates stand out with a 60-second elevator pitch",
+      role: "candidate",
+    },
+    {
+      text: "Attach your pitch video directly to your CV/resume",
+      role: "candidate",
+    },
+    {
+      text: "Build trust instantly with authentic video introductions",
+      role: "company",
+    },
+    {
+      text: "Connect faster — video pitches cut through the noise",
+      role: "recruiter",
+    },
   ];
 
   // Duplicate items to create a seamless loop
-  const duplicatedItems = [...items, ...items, ...items];
+  const duplicatedItems = [...items, ...items];
+
+  const roleButtonText: Record<string, string> = {
+    company: "Sign Up as Company",
+    recruiter: "Sign Up as Recruiter",
+    candidate: "Sign Up as Candidate",
+  };
 
   return (
     <div className="bg-primary text-white py-3 px-4 md:px-6 overflow-hidden relative">
@@ -27,28 +51,29 @@ export function ScrollingInfoBar() {
           x: {
             repeat: Number.POSITIVE_INFINITY,
             repeatType: "loop",
-            duration: 30, // Adjust duration for speed
+            duration: 40, // slowed down a bit for readability
             ease: "linear",
           },
         }}
       >
         {duplicatedItems.map((item, index) => (
           <div key={index} className="flex items-center gap-4">
-            <Link
-              href={item.link}
-              className="flex items-center gap-2 hover:underline text-sm"
-            >
+            <span className="flex items-center gap-2 text-sm">
               <span className="h-2 w-2 rounded-full bg-white" />
               {item.text}
-            </Link>
-            {index % 3 === 1 && ( // Add "Get Started" button after every second item in the original list
-              <Button
-                variant="secondary"
-                className="bg-white text-v0-blue-500 hover:bg-gray-100 text-sm h-auto py-1.5 px-3"
-              >
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
+            </span>
+
+            {/* Role-based signup button */}
+            <Button
+              asChild
+              variant="secondary"
+              className="bg-white text-v0-blue-500 hover:bg-gray-100 text-sm h-auto py-1.5 px-3"
+            >
+              <Link href={`/signup?role=${item.role}`}>
+                {roleButtonText[item.role]}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         ))}
       </motion.div>
