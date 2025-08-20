@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useRef } from "react";
+import Hls from "hls.js";
 
 interface VideoPlayerProps {
   pitchId: string;
@@ -10,48 +11,40 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  const session = useSession();
-  const token = session.data?.accessToken;
-  // const userId = session.data?.user?.id;
+  const { data: session } = useSession();
+  const token = session?.accessToken;
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    if (!pitchId) return;
 
     const hlsUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/stream/${pitchId}`;
+    console.log("Loading HLS from:", hlsUrl);
+   
 
-    // Check if HLS.js is supported
-    if (typeof window !== "undefined" && "Hls" in window) {
-      const Hls = (window as any).Hls;
+    if (Hls.isSupported()) {
+      const hls = new Hls({
+        xhrSetup: (xhr: XMLHttpRequest) => {
+          if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+          }
+        },
+      });
 
-      if (Hls.isSupported()) {
-        const hls = new Hls({
-          xhrSetup: (xhr: XMLHttpRequest) => {
-            // Add auth header if available
+      hls.loadSource(hlsUrl);
+      hls.attachMedia(video);
 
-            if (token) {
-              xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-            }
-          },
-        });
+      hls.on(Hls.Events.ERROR, (event, data) => {
+        console.error("HLS error:", data);
+      });
 
-        hls.loadSource(hlsUrl);
-        hls.attachMedia(video);
-
-        hls.on(Hls.Events.ERROR, (event: any, data: any) => {
-          console.error("HLS Error:", data);
-        });
-
-        return () => {
-          hls.destroy();
-        };
-      }
+      return () => hls.destroy();
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native HLS support (Safari)
+      // Safari native support
       video.src = hlsUrl;
     }
-  }, [pitchId]);
+  }, [pitchId, token]);
 
   return (
     <div className={`relative ${className}`}>
