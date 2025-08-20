@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 
-export function HowItWorksSection() {
+export function HowItWorksRecruiter() {
   const { data: session } = useSession();
   const token = session?.accessToken;
   const router = useRouter();
@@ -24,9 +24,9 @@ export function HowItWorksSection() {
     <section className="w-full py-10 md:py-16 bg-gray-50">
       <div className="container px-4 md:px-6">
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px] text-[#000000]">
-          How It Works in three simple steps (Candidate)
+          How It Works in three simple steps (Recruiter)
         </h2>
-        <div className="w-[790px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
+        <div className="w-[770px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
         <div className="md:text-xl">
           <ol className="list-decimal list-inside space-y-1 text-[#707070] font-medium justify-start mt-[32px]">
             <li>
@@ -34,7 +34,7 @@ export function HowItWorksSection() {
               upgrade!)
             </li>
             <li>Add a link to your video elevator pitch in your CV/resume</li>
-            <li>Search and apply for jobs on our site</li>
+            <li>Start posting for jobs</li>
           </ol>
         </div>
         <div className="grid gap-8 md:grid-cols-3 mt-12">
@@ -59,8 +59,8 @@ export function HowItWorksSection() {
                   Create Account
                 </CardTitle>
                 <p className="text-gray-500">
-                  Sign up in seconds and build your profile to start your job
-                  search journey.
+                  Sign up in seconds and build your profile to start posting
+                  jobs.
                 </p>
               </div>
             </CardContent>

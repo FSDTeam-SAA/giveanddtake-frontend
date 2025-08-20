@@ -1,52 +1,57 @@
-"use client"
+"use client";
 
-import { useEffect, useRef } from "react"
+import { useSession } from "next-auth/react";
+import { useEffect, useRef } from "react";
 
 interface VideoPlayerProps {
-  pitchId: string
-  className?: string
+  pitchId: string;
+  className?: string;
 }
 
 export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const session = useSession();
+  const token = session.data?.accessToken;
+  // const userId = session.data?.user?.id;
 
   useEffect(() => {
-    const video = videoRef.current
-    if (!video) return
+    const video = videoRef.current;
+    if (!video) return;
 
-    const hlsUrl = `https://giveandtake-backend.onrender.com/api/v1/elevator-pitch/stream/${pitchId}`
+    const hlsUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/stream/${pitchId}`;
 
     // Check if HLS.js is supported
     if (typeof window !== "undefined" && "Hls" in window) {
-      const Hls = (window as any).Hls
+      const Hls = (window as any).Hls;
 
       if (Hls.isSupported()) {
         const hls = new Hls({
           xhrSetup: (xhr: XMLHttpRequest) => {
             // Add auth header if available
-            const token = localStorage.getItem("auth-token")
+
             if (token) {
-              xhr.setRequestHeader("Authorization", `Bearer ${token}`)
+              xhr.setRequestHeader("Authorization", `Bearer ${token}`);
             }
           },
-        })
+        });
 
-        hls.loadSource(hlsUrl)
-        hls.attachMedia(video)
+        hls.loadSource(hlsUrl);
+        hls.attachMedia(video);
 
         hls.on(Hls.Events.ERROR, (event: any, data: any) => {
-          console.error("HLS Error:", data)
-        })
+          console.error("HLS Error:", data);
+        });
 
         return () => {
-          hls.destroy()
-        }
+          hls.destroy();
+        };
       }
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Native HLS support (Safari)
-      video.src = hlsUrl
+      video.src = hlsUrl;
     }
-  }, [pitchId])
+  }, [pitchId]);
 
   return (
     <div className={`relative ${className}`}>
@@ -59,5 +64,5 @@ export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
         Your browser does not support the video tag.
       </video>
     </div>
-  )
+  );
 }

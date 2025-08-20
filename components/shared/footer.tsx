@@ -146,9 +146,9 @@ export function Footer() {
             >
               Employer Dashboard
             </Link>
-            <Link href="#" className="text-white/80 hover:underline">
+            {/* <Link href="#" className="text-white/80 hover:underline">
               Company Dashboard
-            </Link>
+            </Link> */}
           </nav>
         </div>
 

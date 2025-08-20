@@ -4,7 +4,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
-import { VideoCarousel } from "./hero-video-carousel";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -67,7 +66,7 @@ export function HeroSection() {
         alt="Abstract blue circle"
         width={150}
         height={150}
-        className="absolute top-[50%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
+        className="absolute top-[55%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
       />
       <Image
         src="/assets/hero.png"
@@ -161,8 +160,15 @@ export function HeroSection() {
               className="w-full h-[400px] lg:h-[581px] rounded-xl"
             />
           </div>
-          <div className="relative p-2 md:p-4">
-            <VideoCarousel videos={videos} />
+          <div className="relative p-2 md:p-4 ">
+            {/* <VideoCarousel videos={videos} /> */}
+            <Image
+              src="/assets/evp-bluebg.jpg"
+              alt="EVP Logo"
+              width={700}
+              height={500}
+              className="w-full h-[300px] rounded-xl relative flex justify-center items-center  md:h-[400px] lg:h-[581px] rounded-tr-[80px] rounded-bl-[80px] overflow-hidden shadow-lg "
+            />
           </div>
         </div>
       </div>
