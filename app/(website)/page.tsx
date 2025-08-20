@@ -6,6 +6,7 @@ import PricingSection from "@/components/pricing-section";
 import { Suspense } from "react";
 import { HowItWorksRecruiter } from "@/components/how-it-works-rec";
 import { HowItWorksCompany } from "@/components/how-it-works-company";
+import CandidateRecruiterCompanyList from "@/components/CandidateRecruiterCompanyList";
 
 export default function Home() {
   return (
@@ -18,6 +19,8 @@ export default function Home() {
         {/* <SectorSection />
         <RecentJobsSection />
         <PricingSection /> */}
+
+        <CandidateRecruiterCompanyList />
       </Suspense>
     </div>
   );
