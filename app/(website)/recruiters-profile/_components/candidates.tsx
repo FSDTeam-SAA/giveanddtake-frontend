@@ -36,7 +36,7 @@ interface RecruiterData {
   __v: number;
 }
 
-export default function Candidates({ userId }: MydataProps) {
+export default function Recruiters({ userId }: MydataProps) {
   const { data: session } = useSession();
   const token = session?.accessToken;
 

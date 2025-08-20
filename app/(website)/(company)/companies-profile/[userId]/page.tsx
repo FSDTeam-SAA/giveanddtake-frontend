@@ -11,6 +11,19 @@ import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
 import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
 import Link from "next/link";
 
+
+interface Honor {
+  id: string
+  _id?: string
+  title: string
+  issuer: string
+  programeDate: string
+  programeName: string
+  description: string
+  isNew?: boolean
+  isDeleted?: boolean
+}
+
 export default function CompanyProfilePage() {
   const params = useParams();
   const userId = params.userId as string;
@@ -321,7 +334,7 @@ export default function CompanyProfilePage() {
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map((honor) => (
+            {honors.map((honor: Honor) => (
               <Card key={honor._id}>
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-gray-900">{honor.title}</h3>
