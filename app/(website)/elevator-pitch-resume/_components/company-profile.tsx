@@ -16,9 +16,39 @@ import {
   ReactNode,
   ReactPortal,
   AwaitedReactNode,
+  useEffect,
+  useState,
 } from "react";
+import { useSession } from "next-auth/react";
+
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  total: number;
+  data: PitchData[];
+}
 
 export default function CompanyProfilePage({ userId }: { userId?: string }) {
+  const { data: session } = useSession();
+  const [pitchData, setPitchData] = useState<PitchData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
     queryFn: () => fetchCompanyDetails(userId as string),
@@ -30,6 +60,51 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     queryFn: fetchCompanyJobs,
   });
 
+  useEffect(() => {
+    const fetchPitchData = async () => {
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const response = await fetch(
+          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=company`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch pitch data");
+        }
+
+        const apiResponse: ApiResponse = await response.json();
+
+        // Find the pitch that matches the current user's ID
+        const userPitch = apiResponse.data.find(
+          (pitch) => pitch.userId._id === session.user?.id
+        );
+
+        if (userPitch) {
+          setPitchData(userPitch);
+        } else {
+          setError("No pitch found for current user");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPitchData();
+  }, [session]);
+
   if (isLoadingCompany) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -38,18 +113,17 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     );
   }
 
-  // if (!companyData?.companies?.[0]) {
-  //   return (
-  //     <div className="flex justify-center items-center min-h-screen">
-  //       Company not found
-  //     </div>
-  //   );
-  // }
+  if (!companyData?.companies?.[0]) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        Company not found
+      </div>
+    );
+  }
 
   const company = companyData.companies[0];
   const honors = companyData.honors || [];
-
-  const companyId = companyData.companies[0].userId;
+  const companyId = company.userId;
 
   // Parse JSON strings
   const links = company.links || [];
@@ -212,10 +286,18 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           Elevator Pitch
         </h2>
         <div className="bg-gray-100 rounded-lg p-6">
-          <VideoPlayer
-            pitchId="687623daea00f0d9b621c53e"
-            className="w-full max-w-2xl mx-auto"
-          />
+          {pitchData ? (
+            <VideoPlayer
+              pitchId={pitchData._id}
+              className="w-full max-w-2xl mx-auto"
+            />
+          ) : loading ? (
+            <div>Loading pitch...</div>
+          ) : error ? (
+            <div className="text-red-500">Error: {error}</div>
+          ) : (
+            <div>No pitch available</div>
+          )}
         </div>
       </div>
 
