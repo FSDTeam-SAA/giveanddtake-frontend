@@ -14,13 +14,13 @@ export default function Home() {
       <Suspense fallback={<div>Loading...</div>}>
         <HeroSection />
         <HowItWorksSection />
-        <HowItWorksRecruiter />
-        <HowItWorksCompany />
+        {/* <HowItWorksRecruiter />
+        <HowItWorksCompany /> */}
         {/* <SectorSection />
         <RecentJobsSection />
         <PricingSection /> */}
 
-        <CandidateRecruiterCompanyList />
+        {/* <CandidateRecruiterCompanyList /> */}
       </Suspense>
     </div>
   );

@@ -45,7 +45,7 @@ export function Footer() {
               alt="Logo"
               width={500}
               height={500}
-              className="h-[60px] w-[200px] rounded-md"
+              className="h-[60px] w-[180px] rounded-md"
             />
           </Link>
           <p className="text-sm text-white/80">
@@ -81,7 +81,10 @@ export function Footer() {
               Browse Jobs
             </Link>
 
-            <Link
+            <Link href="/alljobs" className="text-white/80 hover:underline">
+              Apply for Jobs
+            </Link>
+            {/* <Link
               href="/bookmarks" // Required by Next.js type definitions
               onClick={(e) => {
                 e.preventDefault(); // stop default Link navigation
@@ -94,22 +97,13 @@ export function Footer() {
               className="text-white/80 hover:underline"
             >
               Saved Jobs
-            </Link>
-            <Link href="/alljobs" className="text-white/80 hover:underline">
-              Apply for Jobs
-            </Link>
-            <Link
-              href="#candidates-pricing"
-              className="text-white/80 hover:underline"
-            >
-              Plan & Pricing
-            </Link>
+            </Link> */}
           </nav>
         </div>
 
         {/* Column 3: For Recruiter */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-lg font-semibold">For Recruiter</h3>
+          <h3 className="text-lg font-semibold">For Recruiters</h3>
           <Button
             onClick={handleCreateRecruiterAccountClick}
             variant="secondary"
@@ -132,7 +126,7 @@ export function Footer() {
             >
               Post a Job
             </Link>
-            <Link
+            {/* <Link
               href="/recruiter-dashboard" // Required by Next.js type definitions
               onClick={(e) => {
                 e.preventDefault(); // stop default Link navigation
@@ -144,8 +138,8 @@ export function Footer() {
               }}
               className="text-white/80 hover:underline"
             >
-              Employer Dashboard
-            </Link>
+              Recruiter Dashboard
+            </Link> */}
             {/* <Link href="#" className="text-white/80 hover:underline">
               Company Dashboard
             </Link> */}
@@ -154,7 +148,7 @@ export function Footer() {
 
         {/* Column 4: For Company */}
         <div className="flex flex-col gap-4">
-          <h3 className="text-lg font-semibold">For Company</h3>
+          <h3 className="text-lg font-semibold">For Companies</h3>
           <Button
             onClick={handleCreateCompanyAccountClick}
             variant="secondary"
@@ -177,10 +171,10 @@ export function Footer() {
             >
               Post a Job
             </Link>
-            <Link href="#" className="text-white/80 hover:underline">
+            {/* <Link href="#" className="text-white/80 hover:underline">
               Pitch services and events
-            </Link>
-            <Link
+            </Link> */}
+            {/* <Link
               href="/company-profile" // Required by Next.js type definitions
               onClick={(e) => {
                 e.preventDefault(); // stop default Link navigation
@@ -193,12 +187,12 @@ export function Footer() {
               className="text-white/80 hover:underline"
             >
               Company Dashboard
-            </Link>
+            </Link> */}
           </nav>
         </div>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
-        <p>&copy; 2025 Company_name All rights reserved.</p>
+        <p>&copy; 2025 Elevator Video Pitch Ltd. All rights reserved.</p>
       </div>
     </footer>
   );
