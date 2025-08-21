@@ -283,7 +283,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   {job.salaryRange}
                 </div>
                 <div className="flex items-center">
-                  <Button className="bg-[#E9ECFC] hover:bg-blue-700 text-[#2042E3] text-sm">
+                  <Button className="bg-[#E9ECFC] hover:bg-blue-300 text-[#2042E3] text-sm">
                     {job.employement_Type}
                   </Button>
                 </div>
