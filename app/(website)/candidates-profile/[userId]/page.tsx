@@ -1,5 +1,5 @@
 import React from "react";
-import Candidates from "../../recruiters-profile/_components/candidates";
+import Candidates from "../_components/candidates";
 
 interface PageProps {
   params: {
@@ -11,8 +11,8 @@ function Page({ params }: PageProps) {
   const { userId } = params;
 
   return (
-    <div>
-      <Candidates userId={userId} />
+    <div className="container max-auto">
+      <Candidates  userId={userId}/>
     </div>
   );
 }

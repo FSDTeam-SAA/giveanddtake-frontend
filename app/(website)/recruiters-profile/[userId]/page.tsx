@@ -1,5 +1,5 @@
 import React from "react";
-import Recruiters from "../_components/candidates";
+import Recruiters from "../_components/recruiters";
 
 interface PageProps {
   params: {
