@@ -69,16 +69,16 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
               <div className="col-span-1 hidden md:block">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <div className="w-[50px] h-[50px] flex items-center justify-center">
-                    {job.companyId && (
-                      <Image
-                        src={job.companyId.clogo}
-                        alt={job.companyId.cname}
-                        width={500}
-                        height={500}
-                        className="w-[50px] h-[50px]"
-                      />
-                    )}
-                  </div>
+                  {job.companyId && (
+                    <Image
+                      src={job.companyId.clogo}
+                      alt={job.companyId.cname}
+                      width={500}
+                      height={500}
+                      className="w-[50px] h-[50px]"
+                    />
+                  )}
+                </div>
                 </div>
               </div>
 

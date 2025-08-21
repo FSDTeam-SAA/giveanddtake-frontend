@@ -367,7 +367,7 @@ export function SiteHeader() {
                       {/* ✅ My Plan menu item */}
                       <DropdownMenuItem>
                         <Link
-                          href="/candidate-pricing"
+                          href="/user-pricing"
                           className="flex items-center"
                         >
                           <CreditCard className="mr-2 h-4 w-4" /> My Plan
