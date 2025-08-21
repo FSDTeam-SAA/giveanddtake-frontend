@@ -115,8 +115,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const session = useSession();
   const userId = session?.data?.user?.id;
 
-  console.log("RRRRRRRRRRRRRRR", resume);
-
   if (!resume || !resume.resume) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -446,9 +444,12 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 About
               </h3>
-              <p className="text-gray-600 text-base leading-relaxed">
-                {resume.resume.aboutUs || "Here is about yourself"}
-              </p>
+              <p
+                className="text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: resume.resume.aboutUs || "Here is about yourself",
+                }}
+              />
             </section>
 
             {/* Skills Section */}
