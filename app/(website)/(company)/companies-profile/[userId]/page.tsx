@@ -10,18 +10,18 @@ import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails, fetchCompanyJobs } from "@/lib/api-service";
 import { MapPin, Users, Calendar, ExternalLink, Archive } from "lucide-react";
 import Link from "next/link";
-
+import Image from "next/image";
 
 interface Honor {
-  id: string
-  _id?: string
-  title: string
-  issuer: string
-  programeDate: string
-  programeName: string
-  description: string
-  isNew?: boolean
-  isDeleted?: boolean
+  id: string;
+  _id?: string;
+  title: string;
+  issuer: string;
+  programeDate: string;
+  programeName: string;
+  description: string;
+  isNew?: boolean;
+  isDeleted?: boolean;
 }
 
 export default function CompanyProfilePage() {
@@ -31,7 +31,7 @@ export default function CompanyProfilePage() {
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
     queryFn: () => fetchCompanyDetails(userId),
-    enabled: !!userId, 
+    enabled: !!userId,
   });
 
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
@@ -58,7 +58,6 @@ export default function CompanyProfilePage() {
   const company = companyData.companies[0];
   const honors = companyData.honors || [];
 
-  // Safely parse links
   const parseLinks = (linkString?: string): string[] => {
     if (!linkString) return [];
     try {
@@ -69,7 +68,6 @@ export default function CompanyProfilePage() {
     }
   };
 
-  // Safely parse services
   const parseServices = (serviceString?: string): string[] => {
     if (!serviceString) return [];
     try {
@@ -84,24 +82,24 @@ export default function CompanyProfilePage() {
   const services = parseServices(company.service?.[0]);
 
   return (
-    <div className="container mx-auto p-6 space-y-8 bg-white">
+    <div className="container mx-auto p-6 bg-white space-y-10">
       {/* Header Section */}
-      <div className="bg-gray-100 rounded-lg p-8">
+      <div className="bg-gray-100 rounded-lg p-6">
         <div className="flex items-start gap-6">
-          <div className="w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0">
-            <img
+          <div className="w-[170px] h-[170px] flex-shrink-0">
+            <Image
               src={company.clogo && company.clogo.trim() !== "" ? company.clogo : "/placeholder.svg"}
               alt={company.cname}
-              className="w-full h-full object-cover rounded-lg"
+              width={170}
+              height={170}
+              className="w-[170px] h-[170px] object-cover rounded"
             />
           </div>
-
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-1 text-gray-900">
+            <h1 className="text-2xl font-bold mb-2 text-gray-900">
               {company.cname}
             </h1>
-            <p className="text-gray-600 mb-4 text-sm">{company.industry}</p>
-
+            <p className="text-gray-600 text-sm mb-4">{company.industry}</p>
             <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
@@ -116,39 +114,20 @@ export default function CompanyProfilePage() {
                 <span>Contact</span>
               </div>
             </div>
-
-            {/* Social Links */}
-            <div className="flex gap-2">
+            <div className="flex gap-4">
               {links.map((link: string, index: number) => (
                 <SocialIcon key={index} url={link} />
               ))}
             </div>
-          </div>
-
-          <div className="text-right">
-            <p className="text-sm text-gray-600 mb-2 font-medium">
-              Try it Free - Post Your First Job in No Cost!
-            </p>
-            <p className="text-xs text-gray-500 mb-4 max-w-xs">
-              Easily post your company job openings and reach the right talent
-              fast. Get quality applications in no time.
-            </p>
-            <Link href="/add-job">
-              <Button className="bg-primary hover:bg-blue-700 text-white px-6">
-                Post a Job
-              </Button>
-            </Link>
           </div>
         </div>
       </div>
 
       {/* Company Jobs */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
-          Company Jobs
-        </h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Company Jobs</h2>
         {isLoadingJobs ? (
-          <div>Loading jobs...</div>
+          <div className="text-center py-10">Loading jobs...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {jobs.map((job) => (
@@ -176,14 +155,12 @@ export default function CompanyProfilePage() {
                   </Link>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <div className="space-y-1 text-sm text-gray-600 mb-4">
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
                     <p className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       {job.location}
                     </p>
-                    <p className="font-medium text-gray-900">
-                      {job.salaryRange}
-                    </p>
+                    <p className="font-medium text-gray-900">{job.salaryRange}</p>
                     <p className="text-xs text-gray-500 line-clamp-2">
                       {job.description}
                     </p>
@@ -211,7 +188,7 @@ export default function CompanyProfilePage() {
                     <Link href={`/job-application?id=${job._id}`}>
                       <Button
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-xs px-4 py-1 h-7"
+                        className="bg-green-600 hover:bg-green-700 text-xs px-4 py-1 h-7 text-white"
                       >
                         Apply Now
                       </Button>
@@ -226,9 +203,7 @@ export default function CompanyProfilePage() {
 
       {/* Elevator Pitch */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
-          Elevator Pitch
-        </h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Elevator Pitch</h2>
         <div className="bg-gray-100 rounded-lg p-6">
           <VideoPlayer
             pitchId="687623daea00f0d9b621c53e"
@@ -257,12 +232,10 @@ export default function CompanyProfilePage() {
               {links[0] || "Not provided"}
             </a>
           </div>
-
           <div>
             <h3 className="font-semibold mb-2 text-gray-900">Industry</h3>
             <p className="text-gray-700 text-sm">{company.industry}</p>
           </div>
-
           <div>
             <h3 className="font-semibold mb-2 text-gray-900">Company size</h3>
             <p className="text-gray-700 text-sm">
@@ -270,7 +243,6 @@ export default function CompanyProfilePage() {
             </p>
           </div>
         </div>
-
         <div className="space-y-6">
           <div>
             <h3 className="font-semibold mb-3 text-gray-900">Specialties</h3>
@@ -282,13 +254,12 @@ export default function CompanyProfilePage() {
               ))}
             </div>
           </div>
-
           <div>
             <h3 className="font-semibold mb-3 text-gray-900">Locations</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 text-sm">
-                  {company.city}, {company.country}
+                  Dubai, AE
                 </span>
                 <Button
                   variant="link"
@@ -300,7 +271,7 @@ export default function CompanyProfilePage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 text-sm">
-                  {company.city}, {company.country}
+                  Dubai, AE
                 </span>
                 <Button
                   variant="link"
@@ -312,7 +283,7 @@ export default function CompanyProfilePage() {
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-700 text-sm">
-                  {company.city}, {company.country}
+                  Dubai, AE
                 </span>
                 <Button
                   variant="link"
