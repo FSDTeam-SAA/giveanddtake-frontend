@@ -285,11 +285,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         <h2 className="text-xl font-semibold mb-6 text-gray-900">
           Elevator Pitch
         </h2>
-        <div className="bg-gray-100 rounded-lg p-6">
+        <div className=" rounded-lg ">
           {pitchData ? (
             <VideoPlayer
               pitchId={pitchData._id}
-              className="w-full max-w-2xl mx-auto"
+              className="w-full h-[600px] mx-auto"
             />
           ) : loading ? (
             <div>Loading pitch...</div>

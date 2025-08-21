@@ -20,7 +20,7 @@ import Image from "next/image";
 import type { StyledString } from "next/dist/build/swc/types";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { FaUpwork } from "react-icons/fa6";
 import {
@@ -29,6 +29,7 @@ import {
   uploadElevatorPitch,
 } from "@/lib/api-service";
 import { FileUpload } from "@/components/company/file-upload";
+import { VideoPlayer } from "@/components/company/video-player";
 
 interface ResumeResponse {
   success: boolean;
@@ -108,12 +109,82 @@ interface MyResumeProps {
   onEdit: () => void;
 }
 
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+interface ApiResponse {
+  success: boolean;
+  total: number;
+  data: PitchData[];
+}
+
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const [isEditingPitch, setIsEditingPitch] = useState(false);
   const [pitchVideo, setPitchVideo] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const session = useSession();
-  const userId = session?.data?.user?.id;
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const token = session?.accessToken;
+  const [pitchData, setPitchData] = useState<PitchData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPitchData = async () => {
+      if (!session?.user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const response = await fetch(
+          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=candidate`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch pitch data");
+        }
+
+        const apiResponse: ApiResponse = await response.json();
+
+        // Find the pitch that matches the current user's ID
+        const userPitch = apiResponse.data.find(
+          (pitch) => pitch.userId._id === session.user?.id
+        );
+
+        if (userPitch) {
+          setPitchData(userPitch);
+        } else {
+          setError("No pitch found for current user");
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPitchData();
+  }, [session]);
 
   if (!resume || !resume.resume) {
     return (
@@ -256,74 +327,20 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   </Button>
                 </div>
               </div>
-            ) : resume?.elevatorPitch?.[0]?.video ? (
-              <div className="space-y-4">
-                <div className="relative rounded-lg overflow-hidden">
-                  <video
-                    controls
-                    className="w-full h-auto rounded-lg"
-                    poster="/placeholder.svg?height=400&width=600"
-                  >
-                    <source
-                      src={resume.elevatorPitch[0].video.url}
-                      type="video/mp4"
-                    />
-                    Your browser does not support the video tag.
-                  </video>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePitchDownload}
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handlePitchDelete}
-                    className="text-red-600 border-red-600 hover:bg-red-50 bg-transparent"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
             ) : (
-              <div className="text-center py-12">
-                <div className="mb-4">
-                  <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <svg
-                      className="w-8 h-8 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    No Elevator Pitch Yet
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4">
-                    Upload a video to showcase your skills and personality to
-                    potential employers.
-                  </p>
-                  <Button
-                    onClick={() => setIsEditingPitch(true)}
-                    className="bg-primary hover:bg-blue-700"
-                  >
-                    Upload Video
-                  </Button>
-                </div>
+              <div className=" rounded-lg ">
+                {pitchData ? (
+                  <VideoPlayer
+                    pitchId={pitchData._id}
+                    className="w-full h-[600px] mx-auto"
+                  />
+                ) : loading ? (
+                  <div>Loading pitch...</div>
+                ) : error ? (
+                  <div className="text-red-500">Error: {error}</div>
+                ) : (
+                  <div>No pitch available</div>
+                )}
               </div>
             )}
           </CardContent>

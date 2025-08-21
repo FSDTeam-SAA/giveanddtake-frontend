@@ -409,7 +409,7 @@ export default function CreateResumeForm() {
     }
   };
 
-  const onSubmit = (data: ResumeFormData) => {
+  const onSubmit = async (data: ResumeFormData) => {
     const formData = new FormData();
 
     // Prepare resume data according to backend model
@@ -437,8 +437,34 @@ export default function CreateResumeForm() {
       formData.append("photo", photoFile);
     }
 
-    if (videoFile) {
-      formData.append("video", videoFile);
+    // if (videoFile) {
+    //   formData.append("video", videoFile);
+    // }
+
+    if (videoFile && session?.user?.id) {
+      try {
+        const videoFormData = new FormData();
+        videoFormData.append("videoFile", videoFile);
+
+        const videoResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/video?userId=${session.user.id}`,
+          {
+            method: "POST",
+            body: videoFormData,
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+
+        if (!videoResponse.ok) {
+          throw new Error("Failed to upload video");
+        }
+      } catch (error) {
+        console.error("Video upload failed:", error);
+        toast.error("Failed to upload video. Please try again.");
+        return;
+      }
     }
 
     createResumeMutation.mutate(formData);
@@ -797,8 +823,12 @@ export default function CreateResumeForm() {
                               (dc) => dc.name === selectedCountry
                             )?.dial_code;
                             let value = e.target.value;
-                            if (selectedDialCode && !value.startsWith(selectedDialCode)) {
-                              value = selectedDialCode + value.replace(/^\+\d+/, "");
+                            if (
+                              selectedDialCode &&
+                              !value.startsWith(selectedDialCode)
+                            ) {
+                              value =
+                                selectedDialCode + value.replace(/^\+\d+/, "");
                             }
                             field.onChange(value);
                           }}
