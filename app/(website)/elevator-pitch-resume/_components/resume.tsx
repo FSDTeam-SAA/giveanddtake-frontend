@@ -372,7 +372,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   <h2 className="text-xl font-bold text-gray-800">
                     {resume.resume.firstName} {resume.resume.lastName}
                   </h2>
-                  <div className="flex gap-3 items-center">
+                  <div className="flex gap-3 items-center mt-2">
                     {resume?.resume?.sLink?.map((linkObj: any) => {
                       const { label, url, _id } = linkObj;
                       const Icon = iconMap[label?.toLowerCase()] || null;
