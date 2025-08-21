@@ -661,7 +661,11 @@ export default function CreateRecruiterAccountForm() {
                           id={`social-label-${index}`}
                           value={link.label}
                           onChange={(e) =>
-                            handleSocialLinkChange(index, "label", e.target.value)
+                            handleSocialLinkChange(
+                              index,
+                              "label",
+                              e.target.value
+                            )
                           }
                           placeholder="e.g. GitHub, Portfolio"
                         />
@@ -677,7 +681,11 @@ export default function CreateRecruiterAccountForm() {
                           id={`social-link-${index}`}
                           value={link.link}
                           onChange={(e) =>
-                            handleSocialLinkChange(index, "link", e.target.value)
+                            handleSocialLinkChange(
+                              index,
+                              "link",
+                              e.target.value
+                            )
                           }
                           placeholder="https://example.com/..."
                         />
