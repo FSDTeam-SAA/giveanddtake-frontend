@@ -2,20 +2,19 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, Clock, DollarSign } from "lucide-react";
+import { ArrowLeft, MapPin, DollarSign } from "lucide-react";
 import JobMap from "./job-map";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-
 import DOMPurify from "dompurify";
 import Link from "next/link";
 import Image from "next/image";
 
 interface CompanyData {
-  clogo: string;
-  cname: string;
+  clogo?: string;
+  cname?: string;
 }
 
 interface JobDetailsData {
@@ -28,7 +27,7 @@ interface JobDetailsData {
   shift: string;
   responsibilities: string[];
   educationExperience: string[];
-  companyId: CompanyData;
+  companyId?: CompanyData;
   benefits: string[];
   vacancy: number;
   employement_Type?: string;
@@ -61,7 +60,7 @@ interface JobDetailsProps {
 export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id;
-  const token = (session?.user as any)?.accessToken; // Assuming accessToken is available on session.user
+  const token = (session?.user as any)?.accessToken;
   const queryClient = useQueryClient();
 
   const {
@@ -86,7 +85,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       }
       return data;
     },
-    enabled: !!jobId && jobId !== "undefined", // Only run query if jobId is valid
+    enabled: !!jobId && jobId !== "undefined",
   });
 
   const saveJobMutation = useMutation({
@@ -97,9 +96,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       jobId: string;
       userId: string;
     }) => {
-      // if (!token) {
-      //   throw new Error("Authentication token not available. Please log in.");
-      // }
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`,
         {
@@ -120,7 +116,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     },
     onSuccess: () => {
       toast.success("Job saved successfully!");
-      // Invalidate any queries related to saved jobs
       queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
     },
     onError: (error) => {
@@ -150,9 +145,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   if (isLoading) {
     return (
-      <div className="">
+      <div className="container mx-auto px-4">
         <div className="animate-pulse">
-          {/* Header Skeleton */}
           <div className="mb-6">
             <div className="h-10 w-32 bg-gray-200 rounded mb-4"></div>
             <div className="flex items-start justify-between">
@@ -171,7 +165,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content Skeleton */}
             <div className="lg:col-span-2 space-y-8">
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="h-6 w-40 bg-gray-200 rounded mb-4"></div>
@@ -188,7 +181,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
               </div>
             </div>
-            {/* Sidebar Skeleton */}
             <div className="space-y-6">
               <div className="bg-white p-6 rounded-lg shadow">
                 <div className="h-6 w-32 bg-gray-200 rounded mb-4"></div>
@@ -233,8 +225,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const job = jobData.data;
 
   return (
-    <div className="">
-      {/* Header */}
+    <div className="container mx-auto px-4">
       <div className="mb-6">
         <Link href="/alljobs">
           <Button variant="ghost" onClick={onBack} className="mb-4">
@@ -251,24 +242,40 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <div className="flex items-center gap-6">
                 <div>
                   <Link href={`/companies-profile/${job.userId}`}>
-                    <Image
-                      src={job.companyId.clogo}
-                      alt={job.companyId.cname}
-                      width={100}
-                      height={100}
-                      className="w-16 h-16 object-cover rounded-full"
-                    />
+                    {job.companyId ? (
+                      <Image
+                        src={job.companyId.clogo || "/default-logo.png"}
+                        alt={job.companyId.cname || "Company Logo"}
+                        width={100}
+                        height={100}
+                        className="w-16 h-16 object-cover rounded-full"
+                      />
+                    ) : (
+                      <Image
+                        src="/default-logo.png"
+                        alt="Company Logo"
+                        width={100}
+                        height={100}
+                        className="w-16 h-16 object-cover rounded-full"
+                      />
+                    )}
                   </Link>
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-                  <div className="flex items-center gap-4  mb-4">
-                    <Link
-                      href={`/companies-profile/${job.userId}`}
-                      className="text-[16px] font-medium"
-                    >
-                      {job.companyId.cname}
-                    </Link>
+                  <div className="flex items-center gap-4 mb-4">
+                    {job.companyId ? (
+                      <Link
+                        href={`/companies-profile/${job.userId}`}
+                        className="text-[16px] font-medium"
+                      >
+                        {job.companyId.cname || "Unknown Company"}
+                      </Link>
+                    ) : (
+                      <span className="text-[16px] font-medium">
+                        Unknown Company
+                      </span>
+                    )}
                     <div className="flex items-center text-[#707070] text-[16px] font-medium">
                       <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" />
                       {job.location}
@@ -284,18 +291,16 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
                 <div className="flex items-center">
                   <Button className="bg-[#E9ECFC] hover:bg-blue-300 text-[#2042E3] text-sm">
-                    {job.employement_Type}
+                    {job.employement_Type || "Not Specified"}
                   </Button>
                 </div>
               </div>
             </div>
-            {/* Job Description */}
             <Card>
               <CardHeader>
                 <CardTitle>Job Description</CardTitle>
               </CardHeader>
               <CardContent>
-                {/* Description - safely render HTML with line clamp */}
                 <div
                   className="text-gray-700 leading-relaxed"
                   dangerouslySetInnerHTML={{
@@ -327,9 +332,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </Link>
             </div>
           </Card>
-          {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
-            {/* Responsibilities */}
             {job.responsibilities && job.responsibilities.length > 0 && (
               <Card>
                 <CardHeader>
@@ -347,7 +350,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </CardContent>
               </Card>
             )}
-            {/* Education & Experience */}
             {job.educationExperience && job.educationExperience.length > 0 && (
               <Card>
                 <CardHeader>
@@ -365,7 +367,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </CardContent>
               </Card>
             )}
-            {/* Benefits */}
             {job.benefits && job.benefits.length > 0 && (
               <Card>
                 <CardHeader>
@@ -384,9 +385,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </Card>
             )}
           </div>
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Job Overview */}
             <Card>
               <CardHeader>
                 <CardTitle>Job Overview</CardTitle>
@@ -420,7 +419,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
               </CardContent>
             </Card>
-            {/* Job Location */}
             <Card>
               <CardHeader>
                 <CardTitle>Job Location</CardTitle>
@@ -435,7 +433,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 <JobMap location={job.location} />
               </CardContent>
             </Card>
-            {/* Application Requirements */}
             {job.applicationRequirement &&
               job.applicationRequirement.length > 0 && (
                 <Card>
