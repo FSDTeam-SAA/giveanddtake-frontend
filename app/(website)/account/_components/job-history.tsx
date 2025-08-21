@@ -73,7 +73,7 @@ export default function JobHistory() {
       <div className="container mx-auto py-8 px-4 md:px-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">Job History</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Jobs History</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -135,7 +135,7 @@ export default function JobHistory() {
     <div className="container mx-auto py-8 px-4 md:px-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Job History</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Jobs History</CardTitle>
         </CardHeader>
         <CardContent>
           {applications.length === 0 ? (

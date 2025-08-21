@@ -24,10 +24,10 @@ export function HowItWorksSection() {
     <section className="w-full py-10 md:py-16 bg-gray-50">
       <div className="container px-4 md:px-6">
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px] text-[#000000]">
-          How It Works in three simple steps (Candidate)
+          How It Works in three simple steps
         </h2>
-        <div className="w-[790px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
-        <div className="md:text-xl">
+        <div className="w-[590px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
+        {/* <div className="md:text-xl">
           <ol className="list-decimal list-inside space-y-1 text-[#707070] font-medium justify-start mt-[32px]">
             <li>
               Record or upload your video elevator pitch (60 seconds free or
@@ -36,7 +36,7 @@ export function HowItWorksSection() {
             <li>Add a link to your video elevator pitch in your CV/resume</li>
             <li>Search and apply for jobs on our site</li>
           </ol>
-        </div>
+        </div> */}
         <div className="grid gap-8 md:grid-cols-3 mt-12">
           <Card
             className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[300px]" // Fixed height
