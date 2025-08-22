@@ -75,6 +75,8 @@ async function updateJob(id: string, data: JobPostData) {
 export default function JobPreview() {
   const session = useSession();
   const userId = session.data?.user?.id;
+  const role = session.data?.user?.role;
+  console.log(role);
   const router = useRouter();
   const params = useParams();
   const id = (params?.id as string) || "6896fb2b12980e468298ad0f"; // Fallback ID for demonstration
@@ -320,7 +322,7 @@ export default function JobPreview() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <Link
-            href="/recruiter-dashboard"
+            href={role === "company" ? "/manage-jobs" : "/recruiter-dashboard"}
           >
             <Button variant="ghost" size="icon" className="text-gray-500">
               <ArrowLeft className="h-6 w-6 text-gray-500" />
@@ -330,9 +332,11 @@ export default function JobPreview() {
           <h1 className="text-3xl font-bold text-gray-900 mx-auto">
             Preview Job Posting
           </h1>
-          <Button variant="ghost" size="icon" onClick={onBackToEdit}>
-            <Edit className="h-6 w-6 text-gray-500" />
-          </Button>
+          {role !== "company" && (
+            <Button variant="ghost" size="icon" onClick={onBackToEdit}>
+              <Edit className="h-6 w-6 text-gray-500" />
+            </Button>
+          )}
         </div>
 
         {/* Job Details Section */}
@@ -784,6 +788,7 @@ export default function JobPreview() {
         </div>
 
         {/* Action Buttons */}
+        {/* Action Buttons */}
         <div className="flex justify-end gap-4 mt-8">
           {isEditing ? (
             <>
@@ -804,19 +809,23 @@ export default function JobPreview() {
             </>
           ) : (
             <>
-              <Button
-                variant="outline"
-                className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent"
-                onClick={onBackToEdit}
-              >
-                Edit
-              </Button>
-              <Button
-                className="w-full sm:w-[267px] h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
-                disabled={true} // This button is disabled when not in editing mode
-              >
-                Published
-              </Button>
+              {role !== "company" && (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent"
+                    onClick={onBackToEdit}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    className="w-full sm:w-[267px] h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
+                    disabled
+                  >
+                    Published
+                  </Button>
+                </>
+              )}
             </>
           )}
         </div>
