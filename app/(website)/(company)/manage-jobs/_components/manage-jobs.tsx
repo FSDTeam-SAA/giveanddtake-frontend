@@ -1,25 +1,27 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
+import DOMPurify from "dompurify";
 
 interface JobRequest {
   id: string;
   name: string;
   role: string;
-  company: string;
+  company?: string;
   date: string;
   jobTitle: string;
   jobDescription: string;
-  avatar?: string;
+  avatar?: { url: string }; // avatar is an object
 }
 
-async function fetchJobRequests(token: string) {
+async function fetchJobRequests(token: string): Promise<JobRequest[]> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/pending/job/company`,
     {
@@ -35,12 +37,68 @@ async function fetchJobRequests(token: string) {
   }
 
   const data = await response.json();
-  return data.data; // Assuming the actual data is in the 'data' property
+  return data.data.map((item: any) => ({
+    id: item._id,
+    name: item.userId.name,
+    role: item.userId.role,
+    company: item.userId.company || "N/A",
+    date: item.createdAt,
+    jobTitle: item.title,
+    jobDescription: item.description,
+    avatar: item.userId.avatar,
+  }));
 }
+
+async function approveJobRequest(token: string, id: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jobApprove: "approved", // 👈 sending in body
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to approve job request");
+  }
+
+  return response.json();
+}
+
+async function rejectJobRequest(token: string, id: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jobApprove: "rejected", // 👈 send status in body
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to reject job request");
+  }
+
+  return response.json();
+}
+
 
 export default function ManagePage() {
   const { data: session, status } = useSession();
   const token = session?.accessToken as string;
+  const queryClient = useQueryClient();
+  const router = useRouter();
 
   const {
     data: jobRequests = [],
@@ -55,9 +113,8 @@ export default function ManagePage() {
 
   const handleApprove = async (id: string) => {
     try {
-      // Implement your approve API call here
-      console.log("Approving job request:", id);
-      // await approveJobRequest(token, id);
+      await approveJobRequest(token, id);
+      queryClient.invalidateQueries({ queryKey: ["jobRequests", token] });
     } catch (err) {
       console.error("Failed to approve job request:", err);
     }
@@ -65,17 +122,15 @@ export default function ManagePage() {
 
   const handleReject = async (id: string) => {
     try {
-      // Implement your reject API call here
-      console.log("Rejecting job request:", id);
-      // await rejectJobRequest(token, id);
+      await rejectJobRequest(token, id);
+      queryClient.invalidateQueries({ queryKey: ["jobRequests", token] });
     } catch (err) {
       console.error("Failed to reject job request:", err);
     }
   };
 
   const handleJobDetails = (id: string) => {
-    console.log("View job details:", id);
-    // Navigate to job details page or show modal
+    router.push(`/single-job/${id}`);
   };
 
   if (status === "loading" || isLoading) {
@@ -97,6 +152,14 @@ export default function ManagePage() {
         <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
         <div className="text-center py-12 text-red-500">
           Error: {error.message}
+          <Button
+            onClick={() =>
+              queryClient.refetchQueries({ queryKey: ["jobRequests", token] })
+            }
+            className="mt-4"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -119,17 +182,20 @@ export default function ManagePage() {
 
       <div className="space-y-4">
         {jobRequests.map((request) => (
-          <Card key={request.id} className="p-4">
+          <Card key={request.id} className="p-4 animate-fade-in">
             <CardContent className="p-0">
               <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
                 <div className="md:col-span-2">
                   <div className="flex gap-4 items-start">
-                    <Avatar className="h-[89px] w-[89px]">
+                    <Avatar className="h-[70px] w-[70px]">
                       {request.avatar ? (
-                        <AvatarImage src={request.avatar} alt={request.name} />
+                        <AvatarImage
+                          src={request.avatar.url}
+                          alt={request.name}
+                        />
                       ) : (
                         <AvatarFallback>
-                          {request.name.charAt(0)}
+                          {request?.name?.charAt(0)}
                         </AvatarFallback>
                       )}
                     </Avatar>
@@ -140,10 +206,7 @@ export default function ManagePage() {
                         {request.role}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Company: {request.company}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {request.date}
+                        {format(new Date(request.date), "MMMM d, yyyy")}
                       </p>
                     </div>
                   </div>
@@ -156,10 +219,12 @@ export default function ManagePage() {
                         <span className="font-medium">Job Title:</span>{" "}
                         {request.jobTitle}
                       </p>
-                      <p className="text-sm line-clamp-2">
-                        <span className="font-medium">Job Post:</span>{" "}
-                        {request.jobDescription}
-                      </p>
+                      <p
+                        className="text-sm line-clamp-2"
+                        dangerouslySetInnerHTML={{
+                          __html: DOMPurify.sanitize(request.jobDescription),
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -206,7 +271,7 @@ export default function ManagePage() {
 
 function JobRequestSkeleton() {
   return (
-    <Card className="p-4">
+    <Card className="p-4 animate-fade-in">
       <CardContent className="p-0">
         <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
           <div className="md:col-span-2">

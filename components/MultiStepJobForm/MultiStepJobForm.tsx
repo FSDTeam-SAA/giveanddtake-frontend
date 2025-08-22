@@ -720,9 +720,9 @@ export default function MultiStepJobForm() {
                 <SelectValue placeholder="Select expiration date" />
               </SelectTrigger>
               <SelectContent className="rounded-lg shadow-lg">
-                <SelectItem value="30">30 days from now</SelectItem>
-                <SelectItem value="60">60 days from now</SelectItem>
-                <SelectItem value="90">90 days from now</SelectItem>
+                <SelectItem value="30">30 days</SelectItem>
+                <SelectItem value="60">60 days</SelectItem>
+                <SelectItem value="90">90 days</SelectItem>
                 <SelectItem value="custom">Custom date</SelectItem>
               </SelectContent>
             </Select>
