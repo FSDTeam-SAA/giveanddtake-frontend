@@ -73,6 +73,7 @@ export default function CreateCompanyPage() {
       toast.success("Company created successfully!");
       queryClient.invalidateQueries({ queryKey: ["company"] });
     },
+
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create company");
     },

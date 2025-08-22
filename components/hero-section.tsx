@@ -149,27 +149,15 @@ export function HeroSection() {
             </div>
           )}
         </div>
-        {/* Video Carousel Section */}
-        <div className="relative">
-          <div className="absolute ml-[20px] md:ml-[120px] -mt-[10px] hidden lg:block">
-            <Image
-              src="/assets/hero-video.svg"
-              alt="Job search video placeholder"
-              width={700}
-              height={500}
-              className="w-full h-[400px] lg:h-[581px] rounded-xl"
-            />
-          </div>
-          <div className="relative p-2 md:p-4 ">
-            {/* <VideoCarousel videos={videos} /> */}
-            <Image
-              src="/assets/evp-bluebg.jpg"
-              alt="EVP Logo"
-              width={700}
-              height={500}
-              className="w-full h-[300px] rounded-xl relative flex justify-center items-center  md:h-[400px] lg:h-[581px] rounded-tr-[80px] rounded-bl-[80px] overflow-hidden shadow-lg "
-            />
-          </div>
+
+        <div className="p-2 md:p-4">
+          <Image
+            src="/assets/evp-bluebg1.jpg"
+            alt="EVP Logo"
+            width={600}
+            height={400}
+            className="w-full max-w-[500px] md:max-w-[600px] h-auto rounded-3xl shadow-xl mx-auto"
+          />
         </div>
       </div>
     </section>

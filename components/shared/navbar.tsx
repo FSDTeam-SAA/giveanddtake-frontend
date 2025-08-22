@@ -125,7 +125,7 @@ export function SiteHeader() {
               alt="Logo"
               width={500}
               height={500}
-              className="h-[38px] lg:h-[48px] w-[140px] lg:w-[180px]"
+              className="h-[38px] lg:h-[48px] w-[100px] lg:w-[140px]"
             />
           </Link>
         </div>

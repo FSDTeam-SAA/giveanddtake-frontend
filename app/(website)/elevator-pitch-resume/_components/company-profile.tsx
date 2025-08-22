@@ -213,69 +213,69 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           <div>Loading jobs...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {jobs.map((job) => (
-              <Card key={job._id} className="border border-gray-200 shadow-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-600 font-semibold text-lg">
-                          {job.title.charAt(0)}
-                        </span>
+            {jobs.map((job) => {
+              const plainDescription = job.description?.replace(/<[^>]+>/g, ""); // Removes HTML tags
+
+              return (
+                <Card
+                  key={job._id}
+                  className="border border-gray-200 shadow-sm"
+                >
+                  <CardHeader className="pb-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-blue-600 font-semibold text-lg">
+                            {job.title.charAt(0)}
+                          </span>
+                        </div>
+                        <div>
+                          <CardTitle className="text-base font-semibold text-gray-900">
+                            {job.title}
+                          </CardTitle>
+                          <p className="text-sm text-gray-600">
+                            {company.cname}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <CardTitle className="text-base font-semibold text-gray-900">
-                          {job.title}
-                        </CardTitle>
-                        <p className="text-sm text-gray-600">{company.cname}</p>
-                      </div>
                     </div>
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <ExternalLink className="h-4 w-4 text-blue-600" />
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-1 text-sm text-gray-600 mb-4">
+                      <p className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {job.location}
+                      </p>
+                      <p className="font-medium text-gray-900">
+                        {job.salaryRange}
+                      </p>
+                      <p className="text-xs text-gray-500 line-clamp-2">
+                        {plainDescription}
+                      </p>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-1 text-sm text-gray-600 mb-4">
-                    <p className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {job.location}
-                    </p>
-                    <p className="font-medium text-gray-900">
-                      {job.salaryRange}
-                    </p>
-                    <p className="text-xs text-gray-500 line-clamp-2">
-                      {job.description}
-                    </p>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-3 py-1 h-7 bg-transparent"
-                      >
-                        View Job
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs px-3 py-1 h-7 flex items-center gap-1 bg-transparent"
-                      >
-                        <Archive className="h-3 w-3" />
-                        Archive Job
-                      </Button>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="bg-green-600 hover:bg-green-700 text-xs px-4 py-1 h-7"
-                    >
-                      Apply Now
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  
+                      {/* <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs px-3 py-1 h-7 bg-transparent"
+                        >
+                          View Job
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs px-3 py-1 h-7 flex items-center gap-1 bg-transparent"
+                        >
+                          <Archive className="h-3 w-3" />
+                          Archive Job
+                        </Button>
+                      </div> */}
+                 
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </div>
