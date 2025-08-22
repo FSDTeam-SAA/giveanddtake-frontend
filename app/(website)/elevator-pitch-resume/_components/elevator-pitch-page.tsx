@@ -26,40 +26,31 @@ export default function ElevatorPitchAndResume() {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
 
-  // Resume query
-  const {
-    data: myresume,
-    isLoading: resumeLoading,
-    isFetching: resumeFetching,
-  } = useQuery({
+  const role = session?.user?.role;
+  const userId = session?.user?.id;
+
+  // Resume query (only if role is candidate)
+  const { data: myresume, isLoading: resumeLoading } = useQuery({
     queryKey: ["my-resume"],
     queryFn: getMyResume,
     select: (data) => data?.data,
-    enabled: !!session?.user,
+    enabled: role === "candidate" && !!userId,
   });
 
-  // Recruiter query
-  const {
-    data: recruiter,
-    isLoading: recruiterLoading,
-    isFetching: recruiterFetching,
-  } = useQuery({
-    queryKey: ["recruiter"],
-    queryFn: () => getRecruiterAccount(session?.user?.id || ""),
+  // Recruiter query (only if role is recruiter)
+  const { data: recruiter, isLoading: recruiterLoading } = useQuery({
+    queryKey: ["recruiter", userId],
+    queryFn: () => getRecruiterAccount(userId || ""),
     select: (data) => data?.data,
-    enabled: !!session?.user?.role,
+    enabled: role === "recruiter" && !!userId,
   });
 
-  // Company query
-  const {
-    data: company,
-    isLoading: companyLoading,
-    isFetching: companyFetching,
-  } = useQuery({
-    queryKey: ["company-account", session?.user?.id],
-    queryFn: () => getCompanyAccount(session?.user?.id || ""),
+  // Company query (only if role is neither candidate nor recruiter)
+  const { data: company, isLoading: companyLoading } = useQuery({
+    queryKey: ["company-account", userId],
+    queryFn: () => getCompanyAccount(userId || ""),
     select: (data) => data?.data,
-    enabled: !!session?.user?.id,
+    enabled: role !== "candidate" && role !== "recruiter" && !!userId,
   });
 
   const handleUpdate = async (data: FormData) => {
@@ -72,118 +63,17 @@ export default function ElevatorPitchAndResume() {
     }
   };
 
-  // 🔹 Session loading skeleton
-  if (status === "loading") {
-    return (
-      <section className="py-8 lg:py-20">
-        <div className="container mx-auto lg:px-6 space-y-6">
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-    );
-  }
+  // Session loading skeleton
+  if (status === "loading") return <LoadingSkeleton />;
 
-  // 🔹 Unauthenticated state
-  // if (!session?.user) {
-  //   return (
-  //     <section className="py-8 lg:py-20">
-  //       <div className="container mx-auto lg:px-6">
-  //         <Card>
-  //           <CardContent className="p-6">
-  //             <h2 className="text-2xl font-bold mb-4">Welcome to Resume App</h2>
-  //             <p>Please sign in to access your resume.</p>
-  //           </CardContent>
-  //         </Card>
-  //       </div>
-  //     </section>
-  //   );
-  // }
-
-  // 🔹 Global loading skeleton while queries fetch
-  if (resumeLoading || recruiterLoading || companyLoading) {
-    return (
-      <section className="py-8 lg:py-20">
-        <div className="container mx-auto lg:px-6 space-y-6">
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <Skeleton className="h-40 w-full rounded-xl" />
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-    );
-  }
+  // Global loading skeleton while relevant query fetches
+  if (resumeLoading || recruiterLoading || companyLoading)
+    return <LoadingSkeleton />;
 
   return (
     <section className="py-8 lg:py-20">
       <div className="container mx-auto lg:px-6">
-        {session?.user?.role === "candidate" ? (
+        {role === "candidate" ? (
           myresume?.resume ? (
             isEditing ? (
               <UpdateResumeForm
@@ -197,7 +87,7 @@ export default function ElevatorPitchAndResume() {
           ) : (
             <CreateResumeForm />
           )
-        ) : session?.user?.role === "recruiter" ? (
+        ) : role === "recruiter" ? (
           recruiter ? (
             <div className="lg:space-y-16 space-y-6">
               <EditableRecruiterAccount recruiter={recruiter} />
@@ -209,10 +99,35 @@ export default function ElevatorPitchAndResume() {
           )
         ) : Array.isArray(company?.companies) &&
           company.companies.length > 0 ? (
-          <CompanyProfilePage userId={session?.user?.id} />
+          <CompanyProfilePage userId={userId} />
         ) : (
           <CreateCompanyPage />
         )}
+      </div>
+    </section>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <section className="py-8 lg:py-20">
+      <div className="container mx-auto lg:px-6 space-y-6">
+        {[...Array(3)].map((_, idx) => (
+          <Card key={idx}>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-4 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+            </CardContent>
+          </Card>
+        ))}
+        {[...Array(3)].map((_, idx) => (
+          <Card key={`b-${idx}`}>
+            <CardContent className="p-6 space-y-4">
+              <Skeleton className="h-40 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   );
