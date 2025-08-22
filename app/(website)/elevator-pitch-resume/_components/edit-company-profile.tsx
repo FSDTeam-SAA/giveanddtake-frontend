@@ -288,7 +288,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     formData.append("video", file);
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}/elevator-pitch`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/video?userId=${companyId}`,
       {
         method: "PUT",
         body: formData,
@@ -710,6 +710,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 <EmployeeSelector
                   selectedEmployees={selectedEmployees}
                   onEmployeesChange={setSelectedEmployees}
+                  companyUserId={companyId}
                 />
               </div>
 

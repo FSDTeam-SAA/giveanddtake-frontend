@@ -34,6 +34,7 @@ apiClient.interceptors.response.use(
 export interface User {
   _id: string;
   email: string;
+  role: string;
 }
 
 export interface Company {
@@ -84,8 +85,9 @@ export interface Job {
 }
 
 // Fetch all users for employee selection
-export async function fetchUsers() {
-  const response = await apiClient.get("/all/user");
+export async function fetchUsers(companyUserId?: string) {
+  const url = companyUserId ? `/all/user?userId=${companyUserId}` : "/all/user";
+  const response = await apiClient.get(url);
   return response.data.data as User[];
 }
 
@@ -285,6 +287,5 @@ export async function deleteJob(jobId: string) {
   const res = await apiClient.delete(`/jobs/${jobId}`);
   return res.data;
 }
-
 
 export default apiClient;

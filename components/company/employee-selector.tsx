@@ -23,17 +23,19 @@ import {
 interface EmployeeSelectorProps {
   selectedEmployees: string[];
   onEmployeesChange: (employees: string[]) => void;
+  companyUserId?: string;
 }
 
 export function EmployeeSelector({
   selectedEmployees,
   onEmployeesChange,
+  companyUserId,
 }: EmployeeSelectorProps) {
   const [open, setOpen] = useState(false);
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ["users"],
-    queryFn: fetchUsers,
+    queryKey: ["users", companyUserId],
+    queryFn: () => fetchUsers(companyUserId),
   });
 
   const selectedUsers = users.filter((user) =>
@@ -78,22 +80,24 @@ export function EmployeeSelector({
                   {isLoading ? "Loading..." : "No employees found."}
                 </CommandEmpty>
                 <CommandGroup>
-                  {users.map((user) => (
-                    <CommandItem
-                      key={user._id}
-                      value={user.email}
-                      onSelect={() => handleSelect(user._id)}
-                    >
-                      <Check
-                        className={`mr-2 h-4 w-4 ${
-                          selectedEmployees.includes(user._id)
-                            ? "opacity-100"
-                            : "opacity-0"
-                        }`}
-                      />
-                      {user.email}
-                    </CommandItem>
-                  ))}
+                  {users
+                    .filter((user) => user.role === "recruiter")
+                    .map((user) => (
+                      <CommandItem
+                        key={user._id}
+                        value={user.email}
+                        onSelect={() => handleSelect(user._id)}
+                      >
+                        <Check
+                          className={`mr-2 h-4 w-4 ${
+                            selectedEmployees.includes(user._id)
+                              ? "opacity-100"
+                              : "opacity-0"
+                          }`}
+                        />
+                        {user.email}
+                      </CommandItem>
+                    ))}
                 </CommandGroup>
               </CommandList>
             </Command>
