@@ -1,3 +1,4 @@
+
 "use client";
 
 import type React from "react";
@@ -27,12 +28,13 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, Copy, Check } from "lucide-react";
+import { Upload, X, Copy, Check, Plus } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { createResume } from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // Dummy skills data
 const DUMMY_SKILLS = [
@@ -90,7 +92,7 @@ const resumeSchema = z.object({
   sLink: z
     .array(
       z.object({
-        label: z.string(),
+        label: z.string().min(1, "Platform name is required"),
         url: z.string().url("Invalid URL").or(z.string().length(0)),
       })
     )
@@ -107,24 +109,43 @@ const resumeSchema = z.object({
       zip: z.string().optional(),
       jobDescription: z.string().optional(),
       jobCategory: z.string().optional(),
-    })
+      currentlyWorking: z.boolean().optional().default(false),
+    }).refine(
+      (data) => data.currentlyWorking || (!data.currentlyWorking && data.endDate),
+      {
+        message: "End date is required unless currently working",
+        path: ["endDate"],
+      }
+    )
   ),
   educationList: z.array(
     z.object({
-      institution: z.string().min(1, "Institution is required"),
+      institutionName: z.string().min(1, "Institution name is required"),
       degree: z.string().min(1, "Degree is required"),
       fieldOfStudy: z.string().optional(),
-      year: z.string().min(1, "Year is required"),
-    })
+      startDate: z.string().optional(),
+      graduationDate: z.string().optional(),
+      currentlyStudying: z.boolean().optional().default(false),
+      city: z.string().optional(),
+      country: z.string().optional(),
+    }).refine(
+      (data) => data.currentlyStudying || (!data.currentlyStudying && data.graduationDate),
+      {
+        message: "Graduation date is required unless currently studying",
+        path: ["graduationDate"],
+      }
+    )
   ),
   awardsAndHonors: z.array(
     z.object({
       title: z.string().min(1, "Award title is required"),
       programName: z.string().optional(),
-      year: z.string().min(1, "Year is required"),
+      programeDate: z.string().min(1, "Program date is required"),
       description: z.string().optional(),
     })
   ),
+  certifications: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
 });
 
 type ResumeFormData = z.infer<typeof resumeSchema>;
@@ -152,10 +173,15 @@ export default function CreateResumeForm() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [isLoadingDialCodes, setIsLoadingDialCodes] = useState(false);
+  const [certificationInput, setCertificationInput] = useState("");
+  const [languageInput, setLanguageInput] = useState("");
+
   const { data: session } = useSession();
 
   const form = useForm<ResumeFormData>({
@@ -171,13 +197,7 @@ export default function CreateResumeForm() {
       country: "",
       aboutUs: "",
       skills: [],
-      sLink: [
-        { label: "website", url: "" },
-        { label: "linkedin", url: "" },
-        { label: "twitter", url: "" },
-        { label: "upwork", url: "" },
-        { label: "other", url: "" },
-      ],
+      sLink: [],
       experiences: [
         {
           company: "",
@@ -190,24 +210,31 @@ export default function CreateResumeForm() {
           zip: "",
           jobDescription: "",
           jobCategory: "",
+          currentlyWorking: false,
         },
       ],
       educationList: [
         {
-          institution: "",
+          institutionName: "",
           degree: "",
           fieldOfStudy: "",
-          year: "",
+          startDate: "",
+          graduationDate: "",
+          currentlyStudying: false,
+          city: "",
+          country: "",
         },
       ],
       awardsAndHonors: [
         {
           title: "",
           programName: "",
-          year: "",
+          programeDate: "",
           description: "",
         },
       ],
+      certifications: [],
+      languages: [],
     },
   });
 
@@ -236,6 +263,15 @@ export default function CreateResumeForm() {
   } = useFieldArray({
     control: form.control,
     name: "awardsAndHonors",
+  });
+
+  const {
+    fields: sLinkFields,
+    append: appendSLink,
+    remove: removeSLink,
+  } = useFieldArray({
+    control: form.control,
+    name: "sLink",
   });
 
   const createResumeMutation = useMutation({
@@ -384,6 +420,18 @@ export default function CreateResumeForm() {
     }
   };
 
+  const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const addSkill = (skill: string) => {
     if (!selectedSkills.includes(skill)) {
       const newSkills = [...selectedSkills, skill];
@@ -397,6 +445,57 @@ export default function CreateResumeForm() {
     const newSkills = selectedSkills.filter((skill) => skill !== skillToRemove);
     setSelectedSkills(newSkills);
     form.setValue("skills", newSkills);
+  };
+
+  const addCertification = (certification: string) => {
+    if (certification.trim()) {
+      const currentCertifications = form.getValues("certifications") || [];
+      form.setValue("certifications", [
+        ...currentCertifications,
+        certification.trim(),
+      ]);
+      setCertificationInput("");
+    }
+  };
+
+  const removeCertification = (index: number) => {
+    const currentCertifications = form.getValues("certifications") || [];
+    form.setValue(
+      "certifications",
+      currentCertifications.filter((_, i) => i !== index)
+    );
+  };
+
+  const addLanguage = (language: string) => {
+    if (language.trim()) {
+      const currentLanguages = form.getValues("languages") || [];
+      form.setValue("languages", [...currentLanguages, language.trim()]);
+      setLanguageInput("");
+    }
+  };
+
+  const removeLanguage = (index: number) => {
+    const currentLanguages = form.getValues("languages") || [];
+    form.setValue(
+      "languages",
+      currentLanguages.filter((_, i) => i !== index)
+    );
+  };
+
+  const handleCertificationKeyPress = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter" && certificationInput.trim()) {
+      e.preventDefault();
+      addCertification(certificationInput);
+    }
+  };
+
+  const handleLanguageKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && languageInput.trim()) {
+      e.preventDefault();
+      addLanguage(languageInput);
+    }
   };
 
   const handleCopyUrl = async () => {
@@ -425,6 +524,8 @@ export default function CreateResumeForm() {
       aboutUs: data.aboutUs,
       skills: data.skills,
       sLink: data.sLink,
+      certifications: data.certifications,
+      languages: data.languages,
     };
 
     formData.append("resume", JSON.stringify(resumeData));
@@ -437,9 +538,9 @@ export default function CreateResumeForm() {
       formData.append("photo", photoFile);
     }
 
-    // if (videoFile) {
-    //   formData.append("video", videoFile);
-    // }
+    if (bannerFile) {
+      formData.append("banner", bannerFile);
+    }
 
     if (videoFile && session?.user?.id) {
       try {
@@ -538,6 +639,68 @@ export default function CreateResumeForm() {
                   accept="video/*"
                   className="hidden"
                   onChange={handleVideoUpload}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Banner Upload */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Upload Banner</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Upload a banner image to enhance your resume profile.
+                </p>
+              </div>
+              <Button
+                type="button"
+                className="bg-primary hover:bg-blue-700 text-white"
+                onClick={() =>
+                  document.getElementById("banner-upload")?.click()
+                }
+              >
+                Upload/Change Banner
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-gray-50">
+                {bannerPreview ? (
+                  <div className="space-y-4">
+                    <Image
+                      src={bannerPreview}
+                      alt="Banner Preview"
+                      width={600}
+                      height={200}
+                      className="mx-auto max-w-full h-auto rounded-lg"
+                    />
+                    <p className="text-sm text-green-400">
+                      Banner uploaded: {bannerFile?.name}
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+                    <p className="text-lg mb-2">Drop your banner image here</p>
+                    <p className="text-sm mb-4">or</p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="bg-gray-200 hover:bg-gray-300"
+                      onClick={() =>
+                        document.getElementById("banner-upload")?.click()
+                      }
+                    >
+                      Choose File
+                    </Button>
+                  </>
+                )}
+                <Input
+                  id="banner-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerUpload}
                 />
               </div>
             </CardContent>
@@ -838,142 +1001,74 @@ export default function CreateResumeForm() {
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.0.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.0.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Website URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.0.label", "website");
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.1.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.1.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your LinkedIn URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.1.label", "linkedin");
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.2.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.2.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Twitter URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Twitter URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.2.label", "twitter");
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.3.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.3.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Upwork URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Upwork URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.3.label", "upwork");
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.4.label"
-                  render={({ field }) => <input type="hidden" {...field} />}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.4.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Other Business URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Other Business URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.4.label", "other");
-                            field.onChange(e.target.value);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
+
+              {/* Social Links */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium">
+                    Social Links
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sLinkFields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-4">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`sLink.${index}.label`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Platform</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="e.g. GitHub, Portfolio"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`sLink.${index}.url`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>URL</FormLabel>
+                              <FormControl>
+                                <Input
+                                  placeholder="https://example.com/..."
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mt-6"
+                        onClick={() => removeSLink(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => appendSLink({ label: "", url: "" })}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Social Link
+                  </Button>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
 
@@ -1048,20 +1143,6 @@ export default function CreateResumeForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.company`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Employer</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. IBM" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
                       name={`experiences.${index}.position`}
                       render={({ field }) => (
                         <FormItem>
@@ -1076,35 +1157,19 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name={`experiences.${index}.startDate`}
+                      name={`experiences.${index}.company`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Start Date</FormLabel>
+                          <FormLabel>Company Name</FormLabel>
                           <FormControl>
-                            <Input type="date" {...field} />
+                            <Input placeholder="e.g. IBM" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.endDate`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>End Date</FormLabel>
-                          <FormControl>
-                            <Input type="date" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
                     <FormField
                       control={form.control}
                       name={`experiences.${index}.country`}
@@ -1135,7 +1200,6 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name={`experiences.${index}.city`}
@@ -1149,36 +1213,59 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.zip`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Zip Code</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. 10115" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.jobCategory`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Job Category</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. IT" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.currentlyWorking`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked: boolean) => {
+                                  field.onChange(checked);
+                                  if (checked) {
+                                    form.setValue(`experiences.${index}.endDate`, "");
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Currently Working</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.startDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`experiences.${index}.endDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>End Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                disabled={form.watch(`experiences.${index}.currentlyWorking`)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-
                   <FormField
                     control={form.control}
                     name={`experiences.${index}.jobDescription`}
@@ -1195,7 +1282,6 @@ export default function CreateResumeForm() {
                       </FormItem>
                     )}
                   />
-
                   {experienceFields.length > 1 && (
                     <Button
                       type="button"
@@ -1223,6 +1309,7 @@ export default function CreateResumeForm() {
                     zip: "",
                     jobDescription: "",
                     jobCategory: "",
+                    currentlyWorking: false,
                   })
                 }
                 className="flex items-center gap-2"
@@ -1249,7 +1336,7 @@ export default function CreateResumeForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name={`educationList.${index}.institution`}
+                      name={`educationList.${index}.institutionName`}
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Institution Name</FormLabel>
@@ -1263,7 +1350,6 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name={`educationList.${index}.degree`}
@@ -1296,7 +1382,6 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
                       name={`educationList.${index}.fieldOfStudy`}
@@ -1313,28 +1398,102 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <FormField
                       control={form.control}
-                      name={`educationList.${index}.year`}
+                      name={`educationList.${index}.country`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Graduation Year</FormLabel>
+                          <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              placeholder="e.g. 2020"
-                              {...field}
-                            />
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Country" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {countries.map((country) => (
+                                  <SelectItem
+                                    key={country.country}
+                                    value={country.country}
+                                  >
+                                    {country.country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+                    <FormField
+                      control={form.control}
+                      name={`educationList.${index}.city`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Boston" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.currentlyStudying`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked: boolean) => {
+                                  field.onChange(checked);
+                                  if (checked) {
+                                    form.setValue(`educationList.${index}.graduationDate`, "");
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Currently Studying</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.startDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.graduationDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Graduation Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                disabled={form.watch(`educationList.${index}.currentlyStudying`)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
-
                   {educationFields.length > 1 && (
                     <Button
                       type="button"
@@ -1352,16 +1511,120 @@ export default function CreateResumeForm() {
                 variant="outline"
                 onClick={() =>
                   appendEducation({
-                    institution: "",
+                    institutionName: "",
                     degree: "",
                     fieldOfStudy: "",
-                    year: "",
+                    startDate: "",
+                    graduationDate: "",
+                    currentlyStudying: false,
+                    city: "",
+                    country: "",
                   })
                 }
                 className="flex items-center gap-2"
               >
                 Add more +
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Certifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Certifications</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                List your professional certifications.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="certifications"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Add Certification</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Type certification and press Enter"
+                          value={certificationInput}
+                          onChange={(e) =>
+                            setCertificationInput(e.target.value)
+                          }
+                          onKeyPress={handleCertificationKeyPress}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(form.getValues("certifications") || []).map(
+                    (certification, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        {certification}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeCertification(index)}
+                        />
+                      </Badge>
+                    )
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Languages */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Languages</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                List the languages you speak.
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="languages"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Add Language</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Type language and press Enter"
+                          value={languageInput}
+                          onChange={(e) => setLanguageInput(e.target.value)}
+                          onKeyPress={handleLanguageKeyPress}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-wrap gap-2">
+                  {(form.getValues("languages") || []).map(
+                    (language, index) => (
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                      >
+                        {language}
+                        <X
+                          className="h-3 w-3 cursor-pointer"
+                          onClick={() => removeLanguage(index)}
+                        />
+                      </Badge>
+                    )
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -1393,7 +1656,6 @@ export default function CreateResumeForm() {
                         </FormItem>
                       )}
                     />
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -1408,13 +1670,12 @@ export default function CreateResumeForm() {
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
-                        name={`awardsAndHonors.${index}.year`}
+                        name={`awardsAndHonors.${index}.programeDate`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Year Received</FormLabel>
+                            <FormLabel>Program Date</FormLabel>
                             <FormControl>
                               <Input
                                 type="number"
@@ -1429,7 +1690,6 @@ export default function CreateResumeForm() {
                         )}
                       />
                     </div>
-
                     <FormField
                       control={form.control}
                       name={`awardsAndHonors.${index}.description`}
@@ -1444,7 +1704,6 @@ export default function CreateResumeForm() {
                       )}
                     />
                   </div>
-
                   {awardFields.length > 1 && (
                     <Button
                       type="button"
@@ -1464,7 +1723,7 @@ export default function CreateResumeForm() {
                   appendAward({
                     title: "",
                     programName: "",
-                    year: "",
+                    programeDate: "",
                     description: "",
                   })
                 }

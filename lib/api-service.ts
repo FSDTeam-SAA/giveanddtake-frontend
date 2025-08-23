@@ -91,6 +91,12 @@ export async function fetchUsers(companyUserId?: string) {
   return response.data.data as User[];
 }
 
+export async function fetchCompanies() {
+  const url =`/all/companies`;
+  const response = await apiClient.get(url);
+  return response.data.data as User[];
+}
+
 // Fetch company details
 export async function fetchCompanyDetails(userId: string) {
   const response = await apiClient.get(`/company/user/${userId}`);

@@ -67,6 +67,7 @@ interface Job {
   vacancy: number;
   experience: number;
   deadline: string;
+  applicantCount: number;
   status: string;
   jobCategoryId: string;
   compensation: string;
@@ -164,6 +165,7 @@ interface RecruiterAccount {
   roleAtCompany: string;
   awardTitle: string;
   programName: string;
+
   programDate: string;
   awardDescription: string;
   companyId: Company;
@@ -680,7 +682,7 @@ export default function RecruiterDashboard() {
                       className="text-base text-[#000000] font-medium"
                     >
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell>{job.vacancy}</TableCell>
+                      <TableCell>{job.applicantCount}</TableCell>
                       <TableCell>
                         {job.status.charAt(0).toUpperCase() +
                           job.status.slice(1)}
@@ -792,7 +794,7 @@ export default function RecruiterDashboard() {
                         {formatDate(job.createdAt)}
                       </CardDescription>
                       <div className="text-2xl font-bold text-[#000000] bg-[#E6F3FF] px-4 py-2 rounded-[8px]">
-                        {job.vacancy}
+                        {job.applicantCount}
                         <p className="text-sm font-normal text-gray-500">
                           Applicants
                         </p>
@@ -871,7 +873,7 @@ export default function RecruiterDashboard() {
             </div>
           )}
         </section>
-        
+
         {/* Applicant List Section */}
         <section className="mb-10">
           <div className="overflow-hidden">
