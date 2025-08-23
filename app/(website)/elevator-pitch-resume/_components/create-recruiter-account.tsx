@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import apiClient from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
+import Image from "next/image";
+import { CompanySelector } from "@/components/company/company-selector";
 
 interface Education {
   school: string;
@@ -54,6 +56,8 @@ interface FormData {
   sLink: SocialLink[];
   photo?: File;
   videoFile?: File;
+  banner?: File;
+  companyId: string;
   userId?: string;
 }
 
@@ -91,6 +95,7 @@ export default function CreateRecruiterAccountForm() {
       { label: "LinkedIn", link: "https://www.linkedin.com/" },
       { label: "X", link: "https://x.com/" },
     ],
+    companyId: "",
     userId: userId || "",
   });
 
@@ -105,7 +110,17 @@ export default function CreateRecruiterAccountForm() {
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | undefined>();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
+  console.log(selectedCompany);
+
+  useEffect(() => {
+    if (selectedCompany) {
+      setFormData((prev) => ({ ...prev, companyId: selectedCompany }));
+    }
+  }, [selectedCompany]);
 
   useEffect(() => {
     const fetchCountries = async () => {
@@ -159,20 +174,14 @@ export default function CreateRecruiterAccountForm() {
     const data = new FormData();
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (
-        key === "skills" ||
-        key === "educations" ||
-        key === "languages" ||
-        key === "companyRecruiters"
-      ) {
-        data.append(key, JSON.stringify(value));
+      if (key === "companyId") {
+        data.append(key, value);
       } else if (key === "sLink") {
-        // Append each SocialLink object individually
         (value as SocialLink[]).forEach((link, index) => {
           data.append(`sLink[${index}][label]`, link.label);
           data.append(`sLink[${index}][link]`, link.link);
         });
-      } else if (key === "photo" || key === "videoFile") {
+      } else if (key === "photo" || key === "videoFile" || key === "banner") {
         if (value instanceof File) {
           data.append(key, value);
         }
@@ -180,6 +189,8 @@ export default function CreateRecruiterAccountForm() {
         data.append(key, String(value));
       }
     });
+
+    console.log(data.get("companyId"));
 
     try {
       const response = await apiClient.post(
@@ -230,7 +241,7 @@ export default function CreateRecruiterAccountForm() {
   };
 
   const handleFileChange = (
-    field: "photo" | "videoFile",
+    field: "photo" | "videoFile" | "banner",
     file: File | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: file || undefined }));
@@ -251,6 +262,15 @@ export default function CreateRecruiterAccountForm() {
       handleFileChange("photo", file);
       const url = URL.createObjectURL(file);
       setPhotoPreview(url);
+    }
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileChange("banner", file);
+      const url = URL.createObjectURL(file);
+      setBannerPreview(url);
     }
   };
 
@@ -391,6 +411,66 @@ export default function CreateRecruiterAccountForm() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-lg font-medium">
+                Upload Banner (Optional)
+              </CardTitle>
+            </div>
+            <Button
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              onClick={() => document.getElementById("banner-upload")?.click()}
+            >
+              Upload/Change Banner
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-16 text-center bg-gray-900 text-white">
+            {bannerPreview ? (
+              <div className="space-y-4">
+                <Image
+                  src={bannerPreview}
+                  alt="Banner preview"
+                  width={600}
+                  height={200}
+                  className="mx-auto rounded-lg object-cover"
+                />
+                <p className="text-sm text-green-400">
+                  Banner uploaded: {formData.banner?.name}
+                </p>
+              </div>
+            ) : (
+              <>
+                <Upload className="mx-auto h-12 w-12 mb-4 text-gray-400" />
+                <p className="text-lg mb-2">Drop image here</p>
+                <p className="text-sm mb-4 text-gray-400">or</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="bg-gray-700 hover:bg-gray-600 text-white"
+                  onClick={() =>
+                    document.getElementById("banner-upload")?.click()
+                  }
+                >
+                  Choose File
+                </Button>
+              </>
+            )}
+            <Input
+              id="banner-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleBannerUpload}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
@@ -406,9 +486,11 @@ export default function CreateRecruiterAccountForm() {
                   <div>
                     {photoPreview ? (
                       <div className="flex items-center gap-4">
-                        <img
+                        <Image
                           src={photoPreview || "/placeholder.svg"}
                           alt="Profile preview"
+                          width={80}
+                          height={80}
                           className="w-20 h-20 rounded-full object-cover border-2 border-gray-200"
                         />
                         <div>
@@ -638,6 +720,16 @@ export default function CreateRecruiterAccountForm() {
                   className="mt-1"
                 />
               </div>
+            </div>
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                View your company
+              </h3>
+              <CompanySelector
+                selectedCompany={selectedCompany}
+                onCompanyChange={setSelectedCompany}
+              />
             </div>
 
             <Card>

@@ -32,6 +32,7 @@ import { cn } from "@/lib/utils";
 import { editRecruiterAccount } from "@/lib/api-service";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
+import { CompanySelector } from "@/components/company/company-selector";
 
 type MaybeStringifiedArray = string[] | string | undefined;
 
@@ -93,6 +94,7 @@ export type Recruiter = {
   __v?: number;
   sLink?: SLinkItem[];
   followerCount?: number;
+  banner?: string;
 };
 
 function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
@@ -124,7 +126,7 @@ function getInitials(first?: string, last?: string) {
   const f = first?.[0] ?? "";
   const l = last?.[0] ?? "";
   const initials = `${f}${l}`.toUpperCase();
-  return initials || "RC"; // Recruiter
+  return initials || "RC";
 }
 
 function formatFollowerCount(n?: number) {
@@ -170,9 +172,18 @@ export default function EditableRecruiterAccount({
   onSave?: (updatedRecruiter: Recruiter) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>(recruiter);
+  const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>({
+    ...recruiter,
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  // Initialize selectedCompany with recruiter.companyId._id
+  const [selectedCompany, setSelectedCompany] = useState<string>(
+    recruiter.companyId?._id || ""
+  );
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(recruiter?.followerCount);
@@ -241,9 +252,8 @@ export default function EditableRecruiterAccount({
     if (!file) return;
 
     const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
-
     if (file.size > maxSizeInBytes) {
-      toast.error("File size exceeds 10 MB. Select a smaller file.");
+      toast.error("Photo file size exceeds 10 MB. Select a smaller file.");
       return;
     }
 
@@ -251,10 +261,26 @@ export default function EditableRecruiterAccount({
     reader.onload = (e) => {
       const result = e.target?.result as string;
       setPhotoPreview(result);
-      setEditedRecruiter({
-        ...editedRecruiter,
-        photo: result, // In a real app, you'd upload to a server and get a URL
-      });
+      setPhotoFile(file);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
+    if (file.size > maxSizeInBytes) {
+      toast.error("Banner file size exceeds 10 MB. Select a smaller file.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      setBannerPreview(result);
+      setBannerFile(file);
     };
     reader.readAsDataURL(file);
   };
@@ -271,21 +297,34 @@ export default function EditableRecruiterAccount({
             formData.append(`sLink[${index}][label]`, link.label);
             formData.append(`sLink[${index}][url]`, link.url);
           });
-        } else if (key === "photo" && photoPreview) {
-          // Assuming photo needs to be sent as a file; adjust based on backend requirements
-          formData.append(key, photoPreview);
-        } else if (value !== undefined && value !== null) {
-          formData.append(key, String(value));
+        } else if (key === "photo" && photoFile) {
+          formData.append("photo", photoFile);
+        } else if (key === "banner" && bannerFile) {
+          formData.append("banner", bannerFile);
+        } else if (key === "companyId") {
+          // Send only the company ID as a string
+          formData.append("companyId", selectedCompany);
+        } else if (typeof value === "string" && value !== "") {
+          formData.append(key, value);
         }
       });
 
       const updatedRecruiter = await editRecruiterAccount(
         editedRecruiter.userId,
-        formData // Updated to send FormData
+        formData
       );
       onSave?.(updatedRecruiter);
       setIsEditing(false);
       setPhotoPreview(null);
+      setBannerPreview(null);
+      setPhotoFile(null);
+      setBannerFile(null);
+      setEditedRecruiter({
+        ...updatedRecruiter,
+        photo: updatedRecruiter.photo,
+        banner: updatedRecruiter.banner,
+        companyId: updatedRecruiter.companyId, // Ensure companyId is updated
+      });
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to save recruiter account:", error);
@@ -297,8 +336,12 @@ export default function EditableRecruiterAccount({
 
   const handleCancel = () => {
     setEditedRecruiter(recruiter);
+    setSelectedCompany(recruiter.companyId?._id || ""); // Reset to original company
     setIsEditing(false);
     setPhotoPreview(null);
+    setBannerPreview(null);
+    setPhotoFile(null);
+    setBannerFile(null);
   };
 
   const {
@@ -318,14 +361,15 @@ export default function EditableRecruiterAccount({
     roleAtCompany,
     followerCount,
     companyId,
+    banner,
   } = isEditing ? editedRecruiter : recruiter;
 
   const fullName =
     [firstName, lastName].filter(Boolean).join(" ") || "Recruiter";
   const primaryLocation =
     location || [city, country].filter(Boolean).join(", ");
-
-  const displayPhoto = photoPreview || photo;
+  const displayPhoto = photoPreview || photo || "/placeholder.svg";
+  const displayBanner = bannerPreview || banner || "/placeholder-banner.svg";
 
   return (
     <div className="w-full bg-background">
@@ -333,13 +377,27 @@ export default function EditableRecruiterAccount({
       <div className="w-full">
         <div className="relative h-36 sm:h-44 md:h-56 lg:h-80 bg-muted">
           <Image
-            src=""
-            alt={"Cover image"}
+            src={displayBanner}
+            alt="Cover image"
             fill
             className="object-cover opacity-80"
             priority
             sizes="100vw"
           />
+          {isEditing && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
+              <Label htmlFor="banner-upload" className="cursor-pointer">
+                <Camera className="h-6 w-6 text-white" />
+                <Input
+                  id="banner-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerUpload}
+                  className="hidden"
+                />
+              </Label>
+            </div>
+          )}
         </div>
       </div>
 
@@ -351,10 +409,7 @@ export default function EditableRecruiterAccount({
             <div className="flex items-end justify-between gap-4">
               <div className="relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted">
                 <Avatar className="h-full w-full rounded-lg">
-                  <AvatarImage
-                    src={displayPhoto || "/placeholder.svg"}
-                    alt={`${fullName} photo`}
-                  />
+                  <AvatarImage src={displayPhoto} alt={`${fullName} photo`} />
                   <AvatarFallback className="rounded-lg">
                     {getInitials(firstName, lastName)}
                   </AvatarFallback>
@@ -418,6 +473,25 @@ export default function EditableRecruiterAccount({
               {isEditing ? (
                 <div className="space-y-4">
                   <div>
+                    <Label htmlFor="banner-upload-form">Banner Image</Label>
+                    <div className="mt-2">
+                      <Label
+                        htmlFor="banner-upload-form"
+                        className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Camera className="h-4 w-4" />
+                        {bannerPreview ? "Change banner" : "Upload banner"}
+                      </Label>
+                      <Input
+                        id="banner-upload-form"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleBannerUpload}
+                        className="hidden"
+                      />
+                    </div>
+                  </div>
+                  <div>
                     <Label htmlFor="photo-upload-form">Profile Photo</Label>
                     <div className="mt-2">
                       <Label
@@ -477,17 +551,19 @@ export default function EditableRecruiterAccount({
                       }
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="roleAtCompany">Role at Company</Label>
-                    <Input
-                      id="roleAtCompany"
-                      value={editedRecruiter.roleAtCompany || ""}
-                      onChange={(e) =>
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Select your company
+                    </h3>
+                    <CompanySelector
+                      selectedCompany={selectedCompany}
+                      onCompanyChange={(companyId) => {
+                        setSelectedCompany(companyId);
                         setEditedRecruiter({
                           ...editedRecruiter,
-                          roleAtCompany: e.target.value,
-                        })
-                      }
+                          companyId: { _id: companyId } as Company,
+                        });
+                      }}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -529,7 +605,6 @@ export default function EditableRecruiterAccount({
                       }
                     />
                   </div>
-
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <Label>Social Links</Label>

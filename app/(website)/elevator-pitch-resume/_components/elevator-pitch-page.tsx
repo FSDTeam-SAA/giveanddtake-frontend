@@ -71,7 +71,7 @@ export default function ElevatorPitchAndResume() {
     return <LoadingSkeleton />;
 
   return (
-    <section className="py-8 lg:py-20">
+    <section className="">
       <div className="container mx-auto lg:px-6">
         {role === "candidate" ? (
           myresume?.resume ? (

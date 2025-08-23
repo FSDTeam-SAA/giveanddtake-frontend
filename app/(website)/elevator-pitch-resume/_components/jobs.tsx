@@ -40,13 +40,13 @@ export default function CreatedJobs() {
       </div>
     );
   }
-  if (isError) {
-    return (
-      <div className="flex justify-center items-center text-red-400">
-        Error: {error.message}
-      </div>
-    );
-  }
+  // if (isError) {
+  //   return (
+  //     <div className="flex justify-center items-center text-red-400">
+  //       Error: {error.message}
+  //     </div>
+  //   );
+  // }
 
   if (!recruitersJobs?.length) {
     return (

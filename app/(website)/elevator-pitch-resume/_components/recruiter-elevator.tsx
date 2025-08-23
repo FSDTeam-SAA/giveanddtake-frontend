@@ -10,7 +10,7 @@ export default function RecruiterElevator({ recruiter }: { recruiter: { bio: str
             <div className="lg:pb-12 pb-5">
                 <h2 className='text-xl lg:text-4xl font-bold text-center'>Elevator Pitch</h2>
             </div>
-            <div className="lg:space-y-8 space-y-4">
+            <div className="lg:space-y-8 space-y-4  py-8">
                 <h2 className='text-xl lg:text-2xl font-bold'>About Us</h2>
 
                  <div

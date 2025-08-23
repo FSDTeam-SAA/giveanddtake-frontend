@@ -1,7 +1,8 @@
 "use client";
 
 import type React from "react";
-
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -16,13 +17,10 @@ import {
   Download,
 } from "lucide-react";
 import { Globe, Linkedin, Twitter, LinkIcon } from "lucide-react";
+import { FaUpwork } from "react-icons/fa6";
 import Image from "next/image";
-import type { StyledString } from "next/dist/build/swc/types";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
-import { FaUpwork } from "react-icons/fa6";
 import {
   deleteElevatorPitchVideo,
   updateElevatorPitchVideo,
@@ -50,24 +48,29 @@ interface Resume {
   userId: string;
   type: string;
   photo: string | null;
+  banner: string | null;
   title: string;
   firstName: string;
   lastName: string;
   country: string;
+  city: string;
   zipCode: string;
   email: string;
   phoneNumber: string;
   skills: string[];
-  sLink: any[];
-  createdAt: StyledString;
+  sLink: { label: string; url: string; _id: string }[];
+  certifications: string[];
+  languages: string[];
+  createdAt: string;
+  updatedAt: string;
   __v: number;
 }
 
 interface Experience {
   _id: string;
   userId: string;
-  employer?: string;
-  jobTitle?: string;
+  company: string;
+  position: string;
   startDate?: string;
   endDate?: string;
   country?: string;
@@ -82,13 +85,14 @@ interface Experience {
 
 interface Education {
   _id: string;
-  instituteName: string;
-  graduationDate: string;
   userId: string;
-  city?: string;
-  state?: string;
+  instituteName: string;
   degree: string;
   fieldOfStudy?: string;
+  startDate?: string;
+  graduationDate?: string;
+  city?: string;
+  country?: string;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -98,6 +102,7 @@ interface ResumeAward {
   _id: string;
   userId: string;
   title: string;
+  programeDate: string;
   description?: string;
   createdAt: string;
   updatedAt: string;
@@ -124,6 +129,7 @@ interface PitchData {
   createdAt: string;
   updatedAt: string;
 }
+
 interface ApiResponse {
   success: boolean;
   total: number;
@@ -165,8 +171,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
         }
 
         const apiResponse: ApiResponse = await response.json();
-
-        // Find the pitch that matches the current user's ID
         const userPitch = apiResponse.data.find(
           (pitch) => pitch.userId._id === session.user?.id
         );
@@ -184,7 +188,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     };
 
     fetchPitchData();
-  }, [session]);
+  }, [session, token]);
 
   if (!resume || !resume.resume) {
     return (
@@ -213,13 +217,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     setIsUploading(true);
     try {
       if (resume?.elevatorPitch?.[0]?.video) {
-        // Updated to use direct function call instead of apiClient method
         await updateElevatorPitchVideo({
           videoFile: pitchVideo,
           userId,
         });
       } else {
-        // Updated to use direct function call instead of apiClient method
         await uploadElevatorPitch({
           videoFile: pitchVideo,
           userId,
@@ -242,14 +244,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
       return;
     }
 
-    if (
-      !confirm("Are you sure you want to delete your elevator pitch video?")
-    ) {
+    if (!confirm("Are you sure you want to delete your elevator pitch video?")) {
       return;
     }
 
     try {
-      // Updated to use direct function call instead of apiClient method
       await deleteElevatorPitchVideo(userId);
       window.location.reload();
     } catch (error) {
@@ -259,100 +258,42 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   };
 
   const handlePitchDownload = () => {
-    if (resume?.elevatorPitch?.[0]?.video?.url) {
+    if (resume?.elevatorPitch?.[0]?.video?.hlsUrl) {
       const link = document.createElement("a");
-      link.href = resume.elevatorPitch[0].video.url;
-      link.download = "elevator-pitch-video.mp4";
+      link.href = resume.elevatorPitch[0].video.hlsUrl;
+      link.download = "elevator-pitch-video.m3u8";
       link.click();
     }
   };
 
   const iconMap: Record<string, React.ElementType> = {
+    github: LinkIcon,
     website: Globe,
     linkedin: Linkedin,
     twitter: Twitter,
-    upwork: FaUpwork, // store component, not JSX
+    upwork: FaUpwork,
     other: LinkIcon,
   };
 
   return (
     <main className="min-h-screen">
       <div className="container">
-        {/* Elevator Pitch Section */}
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Your Elevator Pitch
-                </h2>
-                <p className="text-gray-600 text-sm mt-1">
-                  Get a quick glimpse of my work and creative process through
-                  this video portfolio.
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsEditingPitch(!isEditingPitch)}
-                className="text-gray-600 hover:text-gray-800"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {isEditingPitch ? (
-              <div className="space-y-4">
-                <FileUpload
-                  accept="video/*"
-                  maxSize={50 * 1024 * 1024} // 50MB
-                  onFileSelect={(file) => setPitchVideo(file)}
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsEditingPitch(false);
-                      setPitchVideo(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handlePitchUpload}
-                    disabled={!pitchVideo || isUploading}
-                    className="bg-primary hover:bg-blue-700"
-                  >
-                    {isUploading ? "Uploading..." : "Upload Video"}
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className=" rounded-lg ">
-                {pitchData ? (
-                  <VideoPlayer
-                    pitchId={pitchData._id}
-                    className="w-full h-[600px] mx-auto"
-                  />
-                ) : loading ? (
-                  <div>Loading pitch...</div>
-                ) : error ? (
-                  <div className="text-red-500">Error: {error}</div>
-                ) : (
-                  <div>No pitch available</div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Main Resume Section */}
+        <div>
+          {resume.resume.banner ? (
+            <Image
+              src={resume.resume.banner}
+              alt="Resume Header Background"
+              width={1200}
+              height={300}
+              className="w-full h-48 object-cover rounded-t-lg"
+            />
+          ) : (
+            <div className="w-full h-48 bg-gray-200 rounded-t-lg" />
+          )}
+        </div>
         <Card className="border-0">
           <CardContent className="p-0">
             <div className="mb-2 lg:mb-0 flex items-center justify-center relative">
-              <h1 className="text-xl text-center sm:text-4xl font-bold text-gray-800">
-                My Resume
-              </h1>
               <div className="absolute right-0">
                 <Button
                   onClick={onEdit}
@@ -364,17 +305,16 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </div>
 
-            <div className="flex flex-col lg:flex-row border-b-2 lg:py-12 pb-4 gap-6 sm:px-6">
-              {/* Left Sidebar - Contact Info */}
+            <div className="flex flex-col lg:flex-row border-b-2 mt-[-20px] pb-4 gap-6 sm:px-6">
               <div className="lg:w-1/3 w-full">
                 <div className="mb-6 text-center lg:text-left">
-                  <div className="w-24 h-24 mx-auto lg:mx-0 rounded-md bg-gray-300 mb-4 overflow-hidden">
+                  <div className="w-[170px] h-[170px] mx-auto lg:mx-0 rounded-md bg-gray-300 mb-4 overflow-hidden">
                     {resume.resume.photo ? (
                       <Image
-                        src={resume.resume.photo || "/placeholder.svg"}
+                        src={resume.resume.photo}
                         alt={`${resume.resume.firstName} ${resume.resume.lastName}`}
-                        height={800}
-                        width={800}
+                        height={170}
+                        width={170}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -385,14 +325,15 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     )}
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">
+                    {resume.resume.title ? `${resume.resume.title}. ` : ""}
                     {resume.resume.firstName} {resume.resume.lastName}
                   </h2>
                   <div className="flex gap-3 items-center mt-2">
-                    {resume?.resume?.sLink?.map((linkObj: any) => {
+                    {resume.resume.sLink?.map((linkObj) => {
                       const { label, url, _id } = linkObj;
-                      const Icon = iconMap[label?.toLowerCase()] || null;
+                      const Icon = iconMap[label.toLowerCase()] || iconMap.other;
 
-                      if (!Icon || !url) return null; // skip if missing icon or url
+                      if (!url) return null;
 
                       return (
                         <Link
@@ -410,53 +351,133 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </div>
               </div>
 
-              {/* Right Content */}
-              <div className="lg:w-2/3 w-full space-y-6">
+              <div className="lg:w-2/3 w-full space-y-6 mt-[50px]">
                 <div className="space-y-4">
                   <h3 className="font-semibold text-gray-800 mb-3 text-2xl border-b-2 pb-2">
                     Contact Info
                   </h3>
-                  <div>
-                    <p className="font-semibold text-base">Location</p>
-                    <p className="text-gray-600 text-sm">
-                      {resume.resume.country}
-                    </p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="font-semibold text-base">Location</p>
+                      <p className="text-gray-600">
+                        {resume.resume.city && `${resume.resume.city}, `}
+                        {resume.resume.country}
+                        {resume.resume.zipCode && `, ${resume.resume.zipCode}`}
+                      </p>
+                    </div>
                     <div>
                       <p className="font-semibold text-base">Phone</p>
-                      <span className="text-gray-600">
-                        {resume.resume.phoneNumber}
-                      </span>
+                      <p className="text-gray-600">{resume.resume.phoneNumber}</p>
                     </div>
                     <div>
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
                     </div>
-                    <div>
-                      <p className="font-semibold text-base">Website URL</p>
-                      <span className="text-blue-600">
-                        {resume.resume.sLink?.find(
-                          (link: any) => link.label === "website"
-                        )?.url || "www.example.com"}
-                      </span>
-                    </div>
+                    {resume.resume.sLink?.length > 0 && (
+                      <div>
+                        <p className="font-semibold text-base">Links</p>
+                        {resume.resume.sLink.map((link) => (
+                          <p key={link._id} className="text-blue-600">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                              {link.label}
+                            </a>
+                          </p>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-semibold text-gray-800 text-sm">
-                      Availability to Start
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">Immediately Available</p>
                 </div>
               </div>
             </div>
 
-            {/* About Section */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">
+                      Your Elevator Pitch
+                    </h2>
+                    <p className="text-gray-600 text-sm mt-1">
+                      Get a quick glimpse of my work and creative process through this video portfolio.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingPitch(!isEditingPitch)}
+                      className="text-gray-600 hover:text-gray-800"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {pitchData && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handlePitchDelete}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {pitchData && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handlePitchDownload}
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {isEditingPitch ? (
+                  <div className="space-y-4">
+                    <FileUpload
+                      accept="video/*"
+                      maxSize={50 * 1024 * 1024} // 50MB
+                      onFileSelect={(file) => setPitchVideo(file)}
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditingPitch(false);
+                          setPitchVideo(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handlePitchUpload}
+                        disabled={!pitchVideo || isUploading}
+                        className="bg-primary hover:bg-blue-700"
+                      >
+                        {isUploading ? "Uploading..." : "Upload Video"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-lg">
+                    {pitchData ? (
+                      <VideoPlayer
+                        pitchId={pitchData._id}
+                        className="w-full h-[600px] mx-auto"
+                      />
+                    ) : loading ? (
+                      <div>Loading pitch...</div>
+                    ) : error ? (
+                      <div className="text-red-500">Error: {error}</div>
+                    ) : (
+                      <div>No pitch available</div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 About
@@ -464,12 +485,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               <p
                 className="text-gray-600 leading-relaxed"
                 dangerouslySetInnerHTML={{
-                  __html: resume.resume.aboutUs || "Here is about yourself",
+                  __html: resume.resume.aboutUs || "No description provided",
                 }}
               />
             </section>
 
-            {/* Skills Section */}
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 Skills
@@ -486,7 +506,38 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {/* Experience Section */}
+            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                Certifications
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {resume.resume.certifications?.map((cert, index) => (
+                  <Badge
+                    key={index}
+                    className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                  >
+                    {cert}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+
+            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                Languages
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {resume.resume.languages?.map((lang, index) => (
+                  <Badge
+                    key={index}
+                    className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                  >
+                    {lang}
+                  </Badge>
+                ))}
+              </div>
+            </section>
+
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 Experience
@@ -502,17 +553,22 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-[#595959] text-lg capitalize">
-                        {exp.jobTitle}
+                        {exp.position}
                       </h4>
-                      <h3>{exp.employer}</h3>
+                      <h3>{exp.company}</h3>
                       <p className="text-gray-500 text-sm">
-                        {formatDate(exp.endDate)} - {formatDate(exp.startDate)}
+                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
                       </p>
+                      {exp.jobDescription && (
+                        <p className="text-gray-600 text-sm">{exp.jobDescription}</p>
+                      )}
                     </div>
                     <p className="text-gray-600 text-sm flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       <span>
-                        {exp.city && `${exp.city}, `} {exp.country}
+                        {exp.city && `${exp.city}, `}
+                        {exp.country}
+                        {exp.zip && `, ${exp.zip}`}
                       </span>
                     </p>
                   </div>
@@ -520,7 +576,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {/* Education Section */}
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 Education
@@ -536,18 +591,19 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                        {edu.degree}{" "}
-                        {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
+                        {edu.degree}
+                        {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
                       </h4>
-                      <p className="text-sm">
-                        {formatDate(edu.graduationDate)}
-                      </p>
                       <p className="text-sm">{edu.instituteName}</p>
+                      <p className="text-gray-500 text-sm">
+                        {formatDate(edu.startDate)} - {formatDate(edu.graduationDate)}
+                      </p>
                     </div>
                     <p className="text-gray-600 text-sm flex items-center gap-2">
                       <MapPin className="w-4 h-4" />
                       <span>
-                        {edu.city && `${edu.city}, `} {edu.state}
+                        {edu.city && `${edu.city}, `}
+                        {edu.country}
                       </span>
                     </p>
                   </div>
@@ -555,7 +611,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {/* Awards & Honours Section */}
             <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                 Awards & Honours
@@ -574,12 +629,10 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         {award.title}
                       </h4>
                       <p className="text-gray-500 text-sm">
-                        {formatDate(award.createdAt)}
+                        {formatDate(award.programeDate)}
                       </p>
                       {award.description && (
-                        <p className="text-gray-600 text-sm">
-                          {award.description}
-                        </p>
+                        <p className="text-gray-600 text-sm">{award.description}</p>
                       )}
                     </div>
                   </div>
