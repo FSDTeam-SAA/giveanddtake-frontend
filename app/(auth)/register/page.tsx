@@ -1,9 +1,9 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,22 +33,41 @@ interface Country {
   dial_code: string;
 }
 
+// Define the valid roles to check against
+type ValidRole = "candidate" | "recruiter" | "company";
+const VALID_ROLES: ValidRole[] = ["candidate", "recruiter", "company"];
+
+// Child component to handle useSearchParams
+function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
+  const searchParams = useSearchParams();
+  const roleFromUrl = searchParams.get("role") as ValidRole | null;
+  const initialRole =
+    roleFromUrl && VALID_ROLES.includes(roleFromUrl)
+      ? roleFromUrl
+      : "candidate";
+
+  useEffect(() => {
+    setRole(initialRole);
+  }, [initialRole, setRole]);
+
+  return null; // This component only handles logic, no UI
+}
+
 export default function RegisterPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<RegisterData>({
     name: "",
     email: "",
     password: "",
     phoneNum: "",
     address: "",
-    role: "candidate",
+    role: "candidate", // Default role
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<
-    "candidate" | "recruiter" | "company"
-  >("candidate");
+  const [selectedRole, setSelectedRole] = useState<ValidRole>("candidate");
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
@@ -60,8 +79,6 @@ export default function RegisterPage() {
     hasUpperCase: false,
     hasLowerCase: false,
   });
-
-  const router = useRouter();
 
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
@@ -81,7 +98,6 @@ export default function RegisterPage() {
     const fetchCountries = async () => {
       setIsLoadingCountries(true);
       try {
-        // Using /countries/codes for dial_code data; replace with /countries if needed and map dial codes separately
         const response = await fetch(
           "https://countriesnow.space/api/v0.1/countries/codes"
         );
@@ -170,6 +186,9 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <Suspense fallback={<div>Loading role...</div>}>
+        <RoleSelector setRole={setSelectedRole} />
+      </Suspense>
       <Card className="w-full max-w-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
@@ -417,7 +436,6 @@ export default function RegisterPage() {
               type="submit"
               className="w-full"
               disabled={registerMutation.isPending}
-              
             >
               {registerMutation.isPending
                 ? "Creating Account..."

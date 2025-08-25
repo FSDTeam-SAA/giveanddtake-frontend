@@ -8,28 +8,49 @@ import { motion } from "framer-motion";
 export function ScrollingInfoBar() {
   const items = [
     {
-      text: "Companies showcase their culture with a video pitch",
-      role: "company",
-    },
-    {
-      text: "Recruiters present top opportunities through video",
-      role: "recruiter",
-    },
-    {
-      text: "Candidates stand out with a 60-second elevator pitch",
+      text: "30-Second free Elevator Pitch (pay to upgrade)",
       role: "candidate",
+      showButton: false,
     },
     {
-      text: "Attach your pitch video directly to your CV/resume",
+      text: "Amplify your profile",
       role: "candidate",
+      showButton: false,
     },
     {
-      text: "Build trust instantly with authentic video introductions",
-      role: "company",
+      text: "Pitch to recruiters",
+      role: "candidate",
+      showButton: false,
     },
     {
-      text: "Connect faster — video pitches cut through the noise",
+      text: "Get a job!",
+      role: "candidate",
+      showButton: true,
+    },
+    {
+      text: "Hear the human behind the profile",
       role: "recruiter",
+      showButton: false,
+    },
+    {
+      text: "Screen candidates online",
+      role: "recruiter",
+      showButton: false,
+    },
+    {
+      text: "One-click candidate feedback",
+      role: "recruiter",
+      showButton: false,
+    },
+    {
+      text: "Improve your brand",
+      role: "company",
+      showButton: false,
+    },
+    {
+      text: "30-Second free Elevator Pitch (pay to upgrade)",
+      role: "recruiter",
+      showButton: true,
     },
   ];
 
@@ -37,9 +58,9 @@ export function ScrollingInfoBar() {
   const duplicatedItems = [...items, ...items];
 
   const roleButtonText: Record<string, string> = {
-    company: "Sign Up as Company",
-    recruiter: "Sign Up as Recruiter",
-    candidate: "Sign Up as Candidate",
+    company: "Sign Up as Recruiters & Companies",
+    recruiter: "Sign Up as Recruiters & Companies",
+    candidate: "Sign Up as Candidates",
   };
 
   return (
@@ -64,16 +85,18 @@ export function ScrollingInfoBar() {
             </span>
 
             {/* Role-based signup button */}
-            <Button
-              asChild
-              variant="secondary"
-              className="bg-white text-v0-blue-500 hover:bg-gray-100 text-sm h-auto py-1.5 px-3"
-            >
-              <Link href={`/signup?role=${item.role}`}>
-                {roleButtonText[item.role]}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            {item.showButton && (
+              <Button
+                asChild
+                variant="secondary"
+                className="bg-white text-v0-blue-500 hover:bg-gray-100 text-sm h-auto py-1.5 px-3"
+              >
+                <Link href={`/register?role=${item.role}`}>
+                  {roleButtonText[item.role]}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            )}
           </div>
         ))}
       </motion.div>
