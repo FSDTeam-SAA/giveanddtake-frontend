@@ -18,14 +18,14 @@ import {
   ArrowRight,
   LogOut,
   LayoutDashboard,
-  ChartNoAxesGantt,
   Video,
-  UserPen,
+  UserPlus as UserPen,
   Settings,
   Bookmark,
   CreditCard,
 } from "lucide-react";
 import { ScrollingInfoBar } from "./scrolling-info-bar";
+import { GlobalSearch } from "../global-search";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -130,7 +130,12 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        {/* Middle Section: Navigation Links (hidden on small screens) */}
+        {/* Middle Section: Search Bar (visible on medium screens and up) */}
+        <div className="hidden md:flex flex-1 justify-center max-w-lg mx-4">
+          <GlobalSearch />
+        </div>
+
+        {/* Navigation Links (moved to right, hidden on smaller screens) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
           <Link
             href="/"
@@ -189,11 +194,11 @@ export function SiteHeader() {
               >
                 <Link href="/faq">FAQ</Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 className={isActive("/support") ? "text-[#2B7FD0]" : ""}
               >
                 <Link href="/support">Support</Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className={isActive("/contact-us") ? "text-[#2B7FD0]" : ""}
@@ -409,6 +414,11 @@ export function SiteHeader() {
                 <div className="w-8 h-8 bg-blue-500 rounded-md" />
                 YOUR LOGO
               </Link>
+
+              <div className="mb-6 md:hidden">
+                <GlobalSearch />
+              </div>
+
               <nav className="grid gap-4 text-sm font-medium">
                 <Link
                   href="/"
