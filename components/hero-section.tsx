@@ -66,7 +66,7 @@ export function HeroSection() {
         alt="Abstract blue circle"
         width={150}
         height={150}
-        className="absolute top-[55%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2 z-50 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
+        className="absolute top-[55%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2  w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
       />
       <Image
         src="/assets/hero.png"

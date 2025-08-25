@@ -10,6 +10,7 @@ export default function AboutUsPage() {
           title="About Us"
           description="Elevator Video Pitches was initially conceived in 2016 at a time of high employment amidst a ‘skills shortage’ which has abated."
           subdescription=" Today, millions of knowledgeable, highly skilled and competent professionals, graduates, school leavers have tried unsuccessfully for years to find a job. We see you, we hear you, we care."
+          align="left"
         />
 
         {/* Vision, Mission, and Image Section */}
@@ -21,7 +22,7 @@ export default function AboutUsPage() {
               </h2>
               <p className="text-base font-normal text-[#545454] leading-relaxed">
                 To amplify the voices of millions of jobseekers globally and get
-                <br />
+                
                 everyone their desired jobs.
               </p>
             </div>
@@ -32,7 +33,7 @@ export default function AboutUsPage() {
               <p className="text-base font-normal text-[#545454] leading-relaxed">
                 To provide jobseekers and professionals globally with a platform
                 to be
-                <br />
+                
                 seen and heard by leading employers, beyond a paper resume.
               </p>
             </div>
@@ -40,12 +41,12 @@ export default function AboutUsPage() {
           <div className="">
             <div className="relative w-full ">
               <Image
-                src="/assets/about.jpg"
+                src="/assets/evp-bluebg1.jpg"
                 alt="Modern office desk with laptop and camera"
                 width={1000}
                 height={1000}
                 style={{ objectFit: "cover" }}
-                className="rounded-xl w-[515px] h-[400px] md:h-[570px] "
+                className="w-full max-w-[500px] md:max-w-[600px] h-auto rounded-3xl shadow-xl mx-auto "
               />
             </div>
           </div>

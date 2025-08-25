@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import type { FormData } from "./forgot-password-form";
+import Link from "next/link";
 
 interface PasswordResetStepProps {
   formData: FormData;
@@ -115,9 +116,11 @@ export default function PasswordResetStep({
           Your password has been successfully reset. You can now log in with
           your new password.
         </p>
-        <Button className="w-full bg-primary hover:bg-blue-700">
-          Go to Login
-        </Button>
+        <Link href="/login">
+          <Button className="w-full bg-primary hover:bg-blue-700">
+            Go to Login
+          </Button>
+        </Link>
       </div>
     );
   }
