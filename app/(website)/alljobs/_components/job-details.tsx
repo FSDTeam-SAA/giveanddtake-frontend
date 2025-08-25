@@ -15,6 +15,7 @@ import Image from "next/image";
 interface CompanyData {
   clogo?: string;
   cname?: string;
+  userId: string;
 }
 
 interface JobDetailsData {
@@ -241,7 +242,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-6">
                 <div>
-                  <Link href={`/companies-profile/${job.userId}`}>
+                  <Link href={`/companies-profile/${job.companyId?.userId}`}>
                     {job.companyId ? (
                       <Image
                         src={job.companyId.clogo || "/default-logo.png"}
@@ -266,7 +267,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <div className="flex items-center gap-4 mb-4">
                     {job.companyId ? (
                       <Link
-                        href={`/companies-profile/${job.userId}`}
+                        href={`/companies-profile/${job.companyId.userId}`}
                         className="text-[16px] font-medium"
                       >
                         {job.companyId.cname || "Unknown Company"}

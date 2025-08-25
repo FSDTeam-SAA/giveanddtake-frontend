@@ -34,6 +34,8 @@ export default function CompanyProfilePage() {
     enabled: !!userId,
   });
 
+  console.log("CCCCCCCCCCCCCC", companyData);
+
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
     queryKey: ["company-jobs"],
     queryFn: fetchCompanyJobs,

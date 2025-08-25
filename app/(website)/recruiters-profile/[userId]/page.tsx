@@ -8,7 +8,6 @@ interface PageProps {
 }
 
 function Page({ params }: PageProps) {
-  const { userId } = params;
 
   return (
     <div>
