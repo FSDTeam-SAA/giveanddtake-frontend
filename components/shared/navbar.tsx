@@ -163,7 +163,7 @@ export function SiteHeader() {
                   : "hover:text-[#2B7FD0]"
               }`}
             >
-              Elevator Pitch & Resume
+              Elevator Pitch
             </Link>
           )}
 
@@ -447,7 +447,7 @@ export function SiteHeader() {
                         : "hover:text-[#2B7FD0]"
                     }`}
                   >
-                    Elevator Pitch & Resume
+                    Elevator Pitch
                   </Link>
                 )}
                 <Link
