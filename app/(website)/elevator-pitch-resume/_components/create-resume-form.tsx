@@ -1,11 +1,10 @@
-
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,13 +27,27 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, Copy, Check, Plus } from "lucide-react";
+import { Upload, X, Copy, Check, Plus, ChevronsUpDown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { createResume } from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 // Dummy skills data
 const DUMMY_SKILLS = [
@@ -87,7 +100,18 @@ const resumeSchema = z.object({
   city: z.string().optional(),
   zip: z.string().optional(),
   country: z.string().optional(),
-  aboutUs: z.string().min(1, "About section is required"),
+  aboutUs: z
+    .string()
+    .min(1, "About section is required")
+    .refine(
+      (value) => {
+        const wordCount = value.trim().split(/\s+/).length;
+        return wordCount <= 200;
+      },
+      {
+        message: "About section cannot exceed 200 words",
+      }
+    ),
   skills: z.array(z.string()).min(1, "At least one skill is required"),
   sLink: z
     .array(
@@ -97,53 +121,67 @@ const resumeSchema = z.object({
       })
     )
     .optional(),
-  experiences: z.array(
-    z.object({
-      company: z.string().min(1, "Company is required"),
-      position: z.string().min(1, "Position is required"),
-      duration: z.string().optional(),
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      country: z.string().optional(),
-      city: z.string().optional(),
-      zip: z.string().optional(),
-      jobDescription: z.string().optional(),
-      jobCategory: z.string().optional(),
-      currentlyWorking: z.boolean().optional().default(false),
-    }).refine(
-      (data) => data.currentlyWorking || (!data.currentlyWorking && data.endDate),
-      {
-        message: "End date is required unless currently working",
-        path: ["endDate"],
-      }
+  experiences: z
+    .array(
+      z
+        .object({
+          company: z.string().optional(),
+          position: z.string().optional(),
+          duration: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          country: z.string().optional(),
+          city: z.string().optional(),
+          zip: z.string().optional(),
+          jobDescription: z.string().optional(),
+          jobCategory: z.string().optional(),
+          currentlyWorking: z.boolean().optional().default(false),
+        })
+        .refine(
+          (data) =>
+            !data.company ||
+            !data.position ||
+            data.currentlyWorking ||
+            (!data.currentlyWorking && data.endDate),
+          {
+            message: "End date is required unless currently working",
+            path: ["endDate"],
+          }
+        )
     )
-  ),
+    .optional(),
   educationList: z.array(
-    z.object({
-      institutionName: z.string().min(1, "Institution name is required"),
-      degree: z.string().min(1, "Degree is required"),
-      fieldOfStudy: z.string().optional(),
-      startDate: z.string().optional(),
-      graduationDate: z.string().optional(),
-      currentlyStudying: z.boolean().optional().default(false),
-      city: z.string().optional(),
-      country: z.string().optional(),
-    }).refine(
-      (data) => data.currentlyStudying || (!data.currentlyStudying && data.graduationDate),
-      {
-        message: "Graduation date is required unless currently studying",
-        path: ["graduationDate"],
-      }
+    z
+      .object({
+        institutionName: z.string().min(1, "Institution name is required"),
+        degree: z.string().min(1, "Degree is required"),
+        fieldOfStudy: z.string().optional(),
+        startDate: z.string().optional(),
+        graduationDate: z.string().optional(),
+        currentlyStudying: z.boolean().optional().default(false),
+        city: z.string().optional(),
+        country: z.string().optional(),
+      })
+      .refine(
+        (data) =>
+          data.currentlyStudying ||
+          (!data.currentlyStudying && data.graduationDate),
+        {
+          message: "Graduation date is required unless currently studying",
+          path: ["graduationDate"],
+        }
+      )
+  ),
+  awardsAndHonors: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        programName: z.string().optional(),
+        programeDate: z.string().optional(),
+        description: z.string().optional(),
+      })
     )
-  ),
-  awardsAndHonors: z.array(
-    z.object({
-      title: z.string().min(1, "Award title is required"),
-      programName: z.string().optional(),
-      programeDate: z.string().min(1, "Program date is required"),
-      description: z.string().optional(),
-    })
-  ),
+    .optional(),
   certifications: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
 });
@@ -161,11 +199,107 @@ interface DialCode {
   dial_code: string;
 }
 
+interface Option {
+  value: string;
+  label: string;
+}
+
+function Combobox({
+  options,
+  value,
+  onChange,
+  placeholder,
+  minSearchLength = 0,
+  disabled = false,
+}: {
+  options: Option[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  minSearchLength?: number;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = useMemo(() => {
+    return options.filter((option) =>
+      option.label.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search, options]);
+
+  const displayedOptions = filteredOptions.slice(0, 100);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between"
+          disabled={disabled}
+        >
+          {value
+            ? options.find((option) => option.value === value)?.label
+            : placeholder}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command>
+          <CommandInput
+            placeholder="Search..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {search.length < minSearchLength ? (
+              <CommandEmpty>
+                Type at least {minSearchLength} characters to search.
+              </CommandEmpty>
+            ) : displayedOptions.length === 0 ? (
+              <CommandEmpty>No results found.</CommandEmpty>
+            ) : null}
+            <CommandGroup>
+              {displayedOptions.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    onChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {filteredOptions.length > 100 && (
+              <CommandItem disabled>
+                More results available. Refine your search.
+              </CommandItem>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function CreateResumeForm() {
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [dialCodes, setDialCodes] = useState<DialCode[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [selectedExperienceCountries, setSelectedExperienceCountries] =
+    useState<string[]>([]);
+  const [selectedEducationCountries, setSelectedEducationCountries] = useState<
+    string[]
+  >([]);
   const [skillSearch, setSkillSearch] = useState("");
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -176,9 +310,6 @@ export default function CreateResumeForm() {
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
-  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
-  const [isLoadingCities, setIsLoadingCities] = useState(false);
-  const [isLoadingDialCodes, setIsLoadingDialCodes] = useState(false);
   const [certificationInput, setCertificationInput] = useState("");
   const [languageInput, setLanguageInput] = useState("");
 
@@ -287,62 +418,65 @@ export default function CreateResumeForm() {
     },
   });
 
-  // Fetch countries on component mount
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setIsLoadingCountries(true);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries"
-        );
-        const data = await response.json();
-        if (!data.error) {
-          setCountries(data.data);
-          if (data.data.length > 0) {
-            setSelectedCountry(data.data[0].country);
-            form.setValue("country", data.data[0].country);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-      } finally {
-        setIsLoadingCountries(false);
-      }
-    };
-    fetchCountries();
-  }, [form]);
+  // Fetch countries
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
+    Country[]
+  >({
+    queryKey: ["countries"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries"
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch countries");
+      return data.data as Country[];
+    },
+  });
 
-  // Fetch dial codes on component mount
-  useEffect(() => {
-    const fetchDialCodes = async () => {
-      setIsLoadingDialCodes(true);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/codes"
-        );
-        const data = await response.json();
-        if (!data.error) {
-          setDialCodes(data.data);
-          if (data.data.length > 0) {
-            const defaultDialCode = data.data[0].dial_code;
-            form.setValue("phoneNumber", defaultDialCode);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching dial codes:", error);
-      } finally {
-        setIsLoadingDialCodes(false);
-      }
-    };
-    fetchDialCodes();
-  }, [form]);
+  // Fetch dial codes
+  const { data: dialCodesData, isLoading: isLoadingDialCodes } = useQuery<
+    DialCode[]
+  >({
+    queryKey: ["dialCodes"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/codes"
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch dial codes");
+      return data.data as DialCode[];
+    },
+  });
 
-  // Fetch cities when country is selected
-  useEffect(() => {
-    const fetchCities = async () => {
-      if (!selectedCountry) return;
-      setIsLoadingCities(true);
-      try {
+  // Fetch cities for Personal Information
+  const { data: citiesData, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ["cities", selectedCountry],
+    queryFn: async () => {
+      if (!selectedCountry) return [];
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ country: selectedCountry }),
+        }
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch cities");
+      return data.data as string[];
+    },
+    enabled: !!selectedCountry,
+  });
+
+  // Fetch cities for each experience entry
+  const experienceCitiesQueries = experienceFields.map((_, index) => {
+    const country = selectedExperienceCountries[index] || "";
+    return useQuery<string[]>({
+      queryKey: ["cities", `experience-${index}`, country],
+      queryFn: async () => {
+        if (!country) return [];
         const response = await fetch(
           "https://countriesnow.space/api/v0.1/countries/cities",
           {
@@ -350,27 +484,62 @@ export default function CreateResumeForm() {
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ country: selectedCountry }),
+            body: JSON.stringify({ country }),
           }
         );
         const data = await response.json();
-        if (!data.error) {
-          setCities(data.data);
-          form.setValue("city", "");
-        }
-      } catch (error) {
-        console.error("Error fetching cities:", error);
-      } finally {
-        setIsLoadingCities(false);
-      }
-    };
-    fetchCities();
-  }, [selectedCountry, form]);
+        if (data.error) throw new Error("Failed to fetch cities");
+        return data.data as string[];
+      },
+      enabled: !!country,
+    });
+  });
+
+  // Fetch cities for each education entry
+  const educationCitiesQueries = educationFields.map((_, index) => {
+    const country = selectedEducationCountries[index] || "";
+    return useQuery<string[]>({
+      queryKey: ["cities", `education-${index}`, country],
+      queryFn: async () => {
+        if (!country) return [];
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/cities",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ country }),
+          }
+        );
+        const data = await response.json();
+        if (data.error) throw new Error("Failed to fetch cities");
+        return data.data as string[];
+      },
+      enabled: !!country,
+    });
+  });
+
+  // Handle country data side effects
+  useEffect(() => {
+    if (countriesData && countriesData.length > 0 && !selectedCountry) {
+      setSelectedCountry(countriesData[0].country);
+      form.setValue("country", countriesData[0].country);
+    }
+  }, [countriesData, form, selectedCountry]);
+
+  // Handle dial codes data side effects
+  useEffect(() => {
+    if (dialCodesData && dialCodesData.length > 0) {
+      const defaultDialCode = dialCodesData[0].dial_code;
+      form.setValue("phoneNumber", defaultDialCode);
+    }
+  }, [dialCodesData, form]);
 
   // Update phone number with dial code when country changes
   useEffect(() => {
-    if (selectedCountry && dialCodes.length > 0) {
-      const selectedDialCode = dialCodes.find(
+    if (selectedCountry && dialCodesData?.length) {
+      const selectedDialCode = dialCodesData.find(
         (dc) => dc.name === selectedCountry
       )?.dial_code;
       if (selectedDialCode) {
@@ -379,7 +548,21 @@ export default function CreateResumeForm() {
         form.setValue("phoneNumber", selectedDialCode + phoneWithoutDial);
       }
     }
-  }, [selectedCountry, dialCodes, form]);
+  }, [selectedCountry, dialCodesData, form]);
+
+  // Sync experience countries state with form data
+  useEffect(() => {
+    setSelectedExperienceCountries(
+      experienceFields.map((field) => field.country || "")
+    );
+  }, [experienceFields]);
+
+  // Sync education countries state with form data
+  useEffect(() => {
+    setSelectedEducationCountries(
+      educationFields.map((field) => field.country || "")
+    );
+  }, [educationFields]);
 
   // Filter skills based on search
   useEffect(() => {
@@ -398,6 +581,29 @@ export default function CreateResumeForm() {
 
     return () => clearTimeout(timer);
   }, [skillSearch, selectedSkills]);
+
+  const countryOptions = useMemo(
+    () =>
+      countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
+    [countriesData]
+  );
+
+  const cityOptions = useMemo(
+    () => citiesData?.map((c) => ({ value: c, label: c })) || [],
+    [citiesData]
+  );
+
+  const experienceCityOptions = useMemo(() => {
+    return experienceCitiesQueries.map(
+      (query) => query.data?.map((c) => ({ value: c, label: c })) || []
+    );
+  }, [experienceCitiesQueries]);
+
+  const educationCityOptions = useMemo(() => {
+    return educationCitiesQueries.map(
+      (query) => query.data?.map((c) => ({ value: c, label: c })) || []
+    );
+  }, [educationCitiesQueries]);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -746,7 +952,7 @@ export default function CreateResumeForm() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <FormLabel className="text-blue-600 font-medium">
-                      About Us*
+                      About Me
                     </FormLabel>
                     <Button
                       type="button"
@@ -779,6 +985,10 @@ export default function CreateResumeForm() {
                             onChange={field.onChange}
                           />
                         </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Word count: {field.value.trim().split(/\s+/).length}
+                          /200
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -854,36 +1064,21 @@ export default function CreateResumeForm() {
                     <FormItem>
                       <FormLabel>Country*</FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={(value: string) => {
+                        <Combobox
+                          options={countryOptions}
+                          value={field.value || ""}
+                          onChange={(value) => {
                             field.onChange(value);
                             setSelectedCountry(value);
                           }}
-                          value={field.value}
+                          placeholder={
+                            isLoadingCountries
+                              ? "Loading countries..."
+                              : "Select Country"
+                          }
+                          minSearchLength={0}
                           disabled={isLoadingCountries}
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                isLoadingCountries
-                                  ? "Loading countries..."
-                                  : "Select Country"
-                              }
-                            />
-                          </SelectTrigger>
-                          {!isLoadingCountries && (
-                            <SelectContent>
-                              {countries.map((country) => (
-                                <SelectItem
-                                  key={country.country}
-                                  value={country.country}
-                                >
-                                  {country.country}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          )}
-                        </Select>
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -897,32 +1092,20 @@ export default function CreateResumeForm() {
                     <FormItem>
                       <FormLabel>City*</FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
+                        <Combobox
+                          options={cityOptions}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          placeholder={
+                            !selectedCountry
+                              ? "Select country first"
+                              : isLoadingCities
+                              ? "Loading cities..."
+                              : "Select City"
+                          }
+                          minSearchLength={2}
                           disabled={isLoadingCities || !selectedCountry}
-                        >
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                !selectedCountry
-                                  ? "Select country first"
-                                  : isLoadingCities
-                                  ? "Loading cities..."
-                                  : "Select City"
-                              }
-                            />
-                          </SelectTrigger>
-                          {!isLoadingCities && selectedCountry && (
-                            <SelectContent>
-                              {cities.map((city) => (
-                                <SelectItem key={city} value={city}>
-                                  {city}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          )}
-                        </Select>
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -974,7 +1157,7 @@ export default function CreateResumeForm() {
                               ? "Loading..."
                               : selectedCountry
                               ? `${
-                                  dialCodes.find(
+                                  dialCodesData?.find(
                                     (dc) => dc.name === selectedCountry
                                   )?.dial_code || ""
                                 } Enter phone number`
@@ -982,7 +1165,7 @@ export default function CreateResumeForm() {
                           }
                           {...field}
                           onChange={(e) => {
-                            const selectedDialCode = dialCodes.find(
+                            const selectedDialCode = dialCodesData?.find(
                               (dc) => dc.name === selectedCountry
                             )?.dial_code;
                             let value = e.target.value;
@@ -1129,7 +1312,7 @@ export default function CreateResumeForm() {
           {/* Experience */}
           <Card>
             <CardHeader>
-              <CardTitle>Experience</CardTitle>
+              <CardTitle>Experience (Optional)</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Highlight your work journey and key achievements.
               </p>
@@ -1177,24 +1360,25 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Country" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {countries.map((country) => (
-                                  <SelectItem
-                                    key={country.country}
-                                    value={country.country}
-                                  >
-                                    {country.country}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Combobox
+                              options={countryOptions}
+                              value={field.value || ""}
+                              onChange={(value) => {
+                                field.onChange(value);
+                                setSelectedExperienceCountries((prev) => {
+                                  const newCountries = [...prev];
+                                  newCountries[index] = value;
+                                  return newCountries;
+                                });
+                              }}
+                              placeholder={
+                                isLoadingCountries
+                                  ? "Loading countries..."
+                                  : "Select Country"
+                              }
+                              minSearchLength={0}
+                              disabled={isLoadingCountries}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1207,7 +1391,23 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Berlin" {...field} />
+                            <Combobox
+                              options={experienceCityOptions[index] || []}
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              placeholder={
+                                !selectedExperienceCountries[index]
+                                  ? "Select country first"
+                                  : experienceCitiesQueries[index]?.isLoading
+                                  ? "Loading cities..."
+                                  : "Select City"
+                              }
+                              minSearchLength={2}
+                              disabled={
+                                experienceCitiesQueries[index]?.isLoading ||
+                                !selectedExperienceCountries[index]
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1225,12 +1425,17 @@ export default function CreateResumeForm() {
                                 onCheckedChange={(checked: boolean) => {
                                   field.onChange(checked);
                                   if (checked) {
-                                    form.setValue(`experiences.${index}.endDate`, "");
+                                    form.setValue(
+                                      `experiences.${index}.endDate`,
+                                      ""
+                                    );
                                   }
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">Currently Working</FormLabel>
+                            <FormLabel className="font-normal">
+                              Currently Working
+                            </FormLabel>
                           </FormItem>
                         )}
                       />
@@ -1257,7 +1462,9 @@ export default function CreateResumeForm() {
                               <Input
                                 type="date"
                                 {...field}
-                                disabled={form.watch(`experiences.${index}.currentlyWorking`)}
+                                disabled={form.watch(
+                                  `experiences.${index}.currentlyWorking`
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1282,16 +1489,14 @@ export default function CreateResumeForm() {
                       </FormItem>
                     )}
                   />
-                  {experienceFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeExperience(index)}
-                    >
-                      Remove Experience
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeExperience(index)}
+                  >
+                    Remove Experience
+                  </Button>
                 </div>
               ))}
               <Button
@@ -1405,24 +1610,25 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Country" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {countries.map((country) => (
-                                  <SelectItem
-                                    key={country.country}
-                                    value={country.country}
-                                  >
-                                    {country.country}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <Combobox
+                              options={countryOptions}
+                              value={field.value || ""}
+                              onChange={(value) => {
+                                field.onChange(value);
+                                setSelectedEducationCountries((prev) => {
+                                  const newCountries = [...prev];
+                                  newCountries[index] = value;
+                                  return newCountries;
+                                });
+                              }}
+                              placeholder={
+                                isLoadingCountries
+                                  ? "Loading countries..."
+                                  : "Select Country"
+                              }
+                              minSearchLength={0}
+                              disabled={isLoadingCountries}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1435,7 +1641,23 @@ export default function CreateResumeForm() {
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Boston" {...field} />
+                            <Combobox
+                              options={educationCityOptions[index] || []}
+                              value={field.value || ""}
+                              onChange={field.onChange}
+                              placeholder={
+                                !selectedEducationCountries[index]
+                                  ? "Select country first"
+                                  : educationCitiesQueries[index]?.isLoading
+                                  ? "Loading cities..."
+                                  : "Select City"
+                              }
+                              minSearchLength={2}
+                              disabled={
+                                educationCitiesQueries[index]?.isLoading ||
+                                !selectedEducationCountries[index]
+                              }
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1453,12 +1675,17 @@ export default function CreateResumeForm() {
                                 onCheckedChange={(checked: boolean) => {
                                   field.onChange(checked);
                                   if (checked) {
-                                    form.setValue(`educationList.${index}.graduationDate`, "");
+                                    form.setValue(
+                                      `educationList.${index}.graduationDate`,
+                                      ""
+                                    );
                                   }
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">Currently Studying</FormLabel>
+                            <FormLabel className="font-normal">
+                              Currently Studying
+                            </FormLabel>
                           </FormItem>
                         )}
                       />
@@ -1485,7 +1712,9 @@ export default function CreateResumeForm() {
                               <Input
                                 type="date"
                                 {...field}
-                                disabled={form.watch(`educationList.${index}.currentlyStudying`)}
+                                disabled={form.watch(
+                                  `educationList.${index}.currentlyStudying`
+                                )}
                               />
                             </FormControl>
                             <FormMessage />
@@ -1631,7 +1860,7 @@ export default function CreateResumeForm() {
           {/* Awards and Honours */}
           <Card>
             <CardHeader>
-              <CardTitle>Awards and Honours</CardTitle>
+              <CardTitle>Awards and Honours (Optional)</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Tell employers what you are in a few impactful sentences.
               </p>
@@ -1704,16 +1933,14 @@ export default function CreateResumeForm() {
                       )}
                     />
                   </div>
-                  {awardFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => removeAward(index)}
-                    >
-                      Remove Award
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => removeAward(index)}
+                  >
+                    Remove Award
+                  </Button>
                 </div>
               ))}
               <Button
