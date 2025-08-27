@@ -12,11 +12,10 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Elivator Pitch",
+  title: "Elevator Pitch",
   description: "Shape Your Future with the Right Elevator Pitch",
-    icons: {
-    icon: "/assets/fav.ico", 
- 
+  icons: {
+    icon: "/assets/fav.ico",
   },
 };
 

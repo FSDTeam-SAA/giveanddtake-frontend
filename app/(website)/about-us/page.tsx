@@ -1,5 +1,11 @@
 import PageHeaders from "@/components/shared/PageHeaders";
+import { Metadata } from "next";
 import Image from "next/image";
+
+export const metadata: Metadata = {
+  title: "About | Elevator Pitch",
+  description: "Learn more about Elevator Pitch",
+};
 
 export default function AboutUsPage() {
   return (
@@ -22,7 +28,6 @@ export default function AboutUsPage() {
               </h2>
               <p className="text-base font-normal text-[#545454] leading-relaxed">
                 To amplify the voices of millions of jobseekers globally and get
-                
                 everyone their desired jobs.
               </p>
             </div>
@@ -32,9 +37,8 @@ export default function AboutUsPage() {
               </h2>
               <p className="text-base font-normal text-[#545454] leading-relaxed">
                 To provide jobseekers and professionals globally with a platform
-                to be
-                
-                seen and heard by leading employers, beyond a paper resume.
+                to be seen and heard by leading employers, beyond a paper
+                resume.
               </p>
             </div>
           </div>

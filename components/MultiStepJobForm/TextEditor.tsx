@@ -52,7 +52,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   // Synchronize editor content with value prop changes
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, false); // false prevents emitting an update event
+      editor.commands.setContent(value, { emitUpdate: false }); // prevents emitting an update event
     }
   }, [editor, value]);
 
