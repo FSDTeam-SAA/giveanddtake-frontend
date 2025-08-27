@@ -63,6 +63,8 @@ export default function RegisterPage() {
     address: "",
     role: "candidate", // Default role
   });
+  const [firstName, setFirstName] = useState("");
+  const [surname, setSurname] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -152,7 +154,13 @@ export default function RegisterPage() {
       return;
     }
 
-    registerMutation.mutate(formData);
+    // Combine first name and surname into the name field
+    const fullFormData = {
+      ...formData,
+      name: `${firstName} ${surname}`,
+    };
+
+    registerMutation.mutate(fullFormData);
   };
 
   const handleInputChange = (field: keyof RegisterData, value: string) => {
@@ -201,14 +209,29 @@ export default function RegisterPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="firstName">First Name</Label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
-                  id="name"
-                  placeholder="Enter Full Name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  id="firstName"
+                  placeholder="Enter First Name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="surname">Surname</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="surname"
+                  placeholder="Enter Surname"
+                  value={surname}
+                  onChange={(e) => setSurname(e.target.value)}
                   className="pl-10"
                   required
                 />
@@ -447,7 +470,7 @@ export default function RegisterPage() {
             </Button>
 
             <div className="text-center">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm font-bold text-gray-600">
                 Already have an account?{" "}
               </span>
               <Link

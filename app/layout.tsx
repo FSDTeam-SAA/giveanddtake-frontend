@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
+import { DynamicTitle } from "@/components/DynamicTitle";
 
-const inter = Inter({
+const roboto = Roboto({
+  weight: ["100", "300", "400", "500", "700", "900"],
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-roboto",
   display: "swap",
 });
 
@@ -21,12 +23,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={roboto.variable}>
       <body className="font-sans">
+        <DynamicTitle />
         <ReactQueryProvider>{children}</ReactQueryProvider>
         <Script
           src="https://www.paypal.com/sdk/js?client-id=AXmwL-mntKGqTAb6_DaY5o6qh5R0UTxuMkwDJsgUlHW72W-x5t4SZsgSNi9XOfbGYoxlAHiXlSsjnB_L&currency=USD&intent=capture&disable-funding=paylater,venmo"
