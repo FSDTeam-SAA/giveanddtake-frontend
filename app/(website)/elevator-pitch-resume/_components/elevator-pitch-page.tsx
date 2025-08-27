@@ -91,7 +91,6 @@ export default function ElevatorPitchAndResume() {
           recruiter ? (
             <div className="lg:space-y-16 space-y-6">
               <EditableRecruiterAccount recruiter={recruiter} />
-              <CreatedJobs />
               <RecruiterElevator recruiter={recruiter} />
             </div>
           ) : (
