@@ -1,8 +1,12 @@
+
 "use client";
+
 import { useState, useEffect } from "react";
+import { useForm, useFieldArray, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -11,16 +15,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Info, Check } from "lucide-react";
+import { Plus, Search, Info, Check, ChevronsUpDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import TextEditor from "./TextEditor";
 import JobPreview from "./JobPreview";
 import CustomCalendar from "./CustomCalendar";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
+// Interfaces
 interface ApplicationRequirement {
   id: string;
   label: string;
@@ -29,7 +56,7 @@ interface ApplicationRequirement {
 
 interface CustomQuestion {
   id: string;
-  question: string;
+  question?: string; // Optional to match schema
 }
 
 interface JobCategory {
@@ -43,23 +70,77 @@ interface Country {
   cities: string[];
 }
 
-interface FormData {
-  jobTitle: string;
-  department: string;
-  country: string;
-  region: string;
-  vacancy: string;
-  employmentType: string;
-  experience: string;
-  category: string;
-  categoryId: string;
-  compensation: string;
-  expirationDate: string;
-  companyUrl: string;
-  jobDescription: string;
-  publishDate: string;
+interface Option {
+  value: string;
+  label: string;
 }
 
+interface JobPreviewProps {
+  formData: JobFormData;
+  companyUrl: string | undefined;
+  applicationRequirements: ApplicationRequirement[];
+  customQuestions: CustomQuestion[];
+  selectedDate: Date;
+  publishNow: boolean;
+  onBackToEdit: () => void;
+}
+
+// Zod Schema
+const jobSchema = z.object({
+  jobTitle: z.string().min(1, "Job title is required"),
+  department: z.string().optional(),
+  country: z.string().min(1, "Country is required"),
+  region: z.string().min(1, "City is required"),
+  vacancy: z.string().min(1, "Vacancy is required"),
+  employmentType: z.enum([
+    "full-time",
+    "part-time",
+    "internship",
+    "contract",
+    "temporary",
+    "freelance",
+    "volunteer",
+  ], { message: "Employment type is required" }),
+  experience: z.enum(["entry", "mid", "senior", "executive"], {
+    message: "Experience level is required",
+  }),
+  locationType: z.enum(["onsite", "remote", "hybrid"], {
+    message: "Location type is required",
+  }),
+  careerStage: z.enum(["New Entry", "Experienced Professional", "Career Returner"], {
+    message: "Career stage is required",
+  }),
+  categoryId: z.string().min(1, "Job category is required"),
+  compensation: z.string().optional(),
+  expirationDate: z.string().min(1, "Expiration date is required"),
+  companyUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  jobDescription: z
+    .string()
+    .max(2000, "Job description cannot exceed 2000 characters"),
+  publishDate: z.string().optional(),
+  applicationRequirements: z
+    .array(
+      z.object({
+        id: z.string(),
+        label: z.string(),
+        required: z.boolean(),
+      })
+    )
+    .optional(),
+  customQuestions: z
+    .array(
+      z.object({
+        id: z.string(),
+        question: z.string().optional(),
+      })
+    )
+    .optional(),
+  userId: z.string().optional(),
+});
+
+type JobFormData = z.infer<typeof jobSchema>;
+
+// API Functions
 async function fetchJobCategories() {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/category/job-category`,
@@ -92,57 +173,145 @@ async function postJob(data: any) {
   return response.json();
 }
 
+// Combobox Component
+function Combobox({
+  options,
+  value,
+  onChange,
+  placeholder,
+  minSearchLength = 0,
+  disabled = false,
+}: {
+  options: Option[];
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  minSearchLength?: number;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredOptions = options
+    .filter((option) => option.label.toLowerCase().includes(search.toLowerCase()))
+    .slice(0, 100);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between h-12"
+          disabled={disabled}
+        >
+          {value ? options.find((option) => option.value === value)?.label : placeholder}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full p-0">
+        <Command>
+          <CommandInput
+            placeholder="Search..."
+            value={search}
+            onValueChange={setSearch}
+          />
+          <CommandList>
+            {search.length < minSearchLength ? (
+              <CommandEmpty>
+                Type at least {minSearchLength} characters to search.
+              </CommandEmpty>
+            ) : filteredOptions.length === 0 ? (
+              <CommandEmpty>No results found.</CommandEmpty>
+            ) : null}
+            <CommandGroup>
+              {filteredOptions.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    onChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+            {filteredOptions.length > 100 && (
+              <CommandItem disabled>
+                More results available. Refine your search.
+              </CommandItem>
+            )}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export default function MultiStepJobForm() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
-  // const companyId = "687b65e9153a2f59d4b57ba8";
-  const session = useSession();
-  const userId = session.data?.user?.id;
-  const router = useRouter();
-  const [formData, setFormData] = useState<FormData>({
-    jobTitle: "",
-    department: "",
-    country: "",
-    region: "",
-    employmentType: "",
-    experience: "",
-    vacancy: "",
-    category: "",
-    categoryId: "",
-    compensation: "",
-    expirationDate: "",
-    companyUrl: "",
-    jobDescription: ``,
-    publishDate: "",
+  const [publishNow, setPublishNow] = useState(true); // Default to publish now
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+
+  // Initialize form with react-hook-form
+  const form = useForm<JobFormData>({
+    resolver: zodResolver(jobSchema),
+    defaultValues: {
+      jobTitle: "",
+      department: "",
+      country: "",
+      region: "",
+      vacancy: "1",
+      employmentType: undefined,
+      experience: undefined,
+      locationType: undefined,
+      careerStage: undefined,
+      categoryId: "",
+      compensation: "",
+      expirationDate: "30", // Default to 30 days
+      companyUrl: "",
+      jobDescription: "",
+      publishDate: new Date().toISOString(), // Default to current date
+      applicationRequirements: [
+        { id: "address", label: "Address", required: false },
+        { id: "resume", label: "Resume", required: true },
+        { id: "coverLetter", label: "Cover Letter", required: true },
+        { id: "reference", label: "Reference", required: true },
+        { id: "website", label: "Website", required: true },
+        { id: "startDate", label: "Start Date", required: true },
+        { id: "name", label: "Name", required: true },
+        { id: "email", label: "Email", required: true },
+        { id: "phone", label: "Phone", required: true },
+        { id: "visa", label: "Valid visa for this job location?", required: true },
+      ],
+      customQuestions: [{ id: "1", question: "" }],
+      userId,
+    },
   });
 
-  const [applicationRequirements, setApplicationRequirements] = useState<
-    ApplicationRequirement[]
-  >([
-    { id: "address", label: "Address", required: false },
-    { id: "resume", label: "Resume", required: true },
-    { id: "coverLetter", label: "Cover Letter", required: true },
-    { id: "reference", label: "Reference", required: true },
-    { id: "website", label: "Website", required: true },
-    { id: "startDate", label: "Start Date", required: true },
-    { id: "name", label: "Name", required: true },
-    { id: "email", label: "Email", required: true },
-    { id: "phone", label: "Phone", required: true },
-    { id: "visa", label: "Valid visa for this job location?", required: true },
-  ]);
+  // Manage dynamic fields
+  const { fields: applicationRequirements, update: updateRequirement } = useFieldArray({
+    control: form.control,
+    name: "applicationRequirements",
+  });
 
-  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([
-    { id: "1", question: "" },
-  ]);
-
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(
-    new Date()
-  );
-  const [publishNow, setPublishNow] = useState(false);
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [cities, setCities] = useState<string[]>([]);
-  const [isLoadingCountries, setIsLoadingCountries] = useState(false);
-  const [isLoadingCities, setIsLoadingCities] = useState(false);
+  const { fields: customQuestions, append: appendCustomQuestion } = useFieldArray({
+    control: form.control,
+    name: "customQuestions",
+  });
 
   // Fetch job categories
   const {
@@ -154,66 +323,49 @@ export default function MultiStepJobForm() {
     queryFn: fetchJobCategories,
   });
 
-  // Fetch countries on component mount
-  useEffect(() => {
-    const fetchCountries = async () => {
-      setIsLoadingCountries(true);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries"
-        );
-        const data = await response.json();
-        if (!data.error) {
-          setCountries(data.data);
+  // Fetch countries
+  const { data: countries, isLoading: isLoadingCountries } = useQuery<Country[]>({
+    queryKey: ["countries"],
+    queryFn: async () => {
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch countries");
+      return data.data as Country[];
+    },
+  });
+
+  // Fetch cities based on selected country
+  const { data: cities, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ["cities", selectedCountry],
+    queryFn: async () => {
+      if (!selectedCountry) return [];
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ country: selectedCountry }),
         }
-      } catch (error) {
-        console.error("Error fetching countries:", error);
-        toast.error("Failed to load countries");
-      } finally {
-        setIsLoadingCountries(false);
-      }
-    };
-    fetchCountries();
-  }, []);
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch cities");
+      return data.data as string[];
+    },
+    enabled: !!selectedCountry,
+  });
 
-  // Fetch cities when country is selected
+  // Set default country when countries are loaded
   useEffect(() => {
-    const fetchCities = async () => {
-      if (!formData.country) return;
-      setIsLoadingCities(true);
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ country: formData.country }),
-          }
-        );
-        const data = await response.json();
-        if (!data.error) {
-          setCities(data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching cities:", error);
-        toast.error("Failed to load cities");
-      } finally {
-        setIsLoadingCities(false);
-      }
-    };
-    fetchCities();
-  }, [formData.country]);
+    if (countries && countries.length > 0 && !form.getValues("country")) {
+      const defaultCountry = countries[0].country;
+      form.setValue("country", defaultCountry);
+      setSelectedCountry(defaultCountry);
+    }
+  }, [countries, form]);
 
-  const steps = [
-    { number: 1, title: "Job Details", active: currentStep >= 1 },
-    { number: 2, title: "Job Description", active: currentStep >= 2 },
-    { number: 3, title: "Application Requirements", active: currentStep >= 3 },
-    { number: 4, title: "Custom Questions", active: currentStep >= 4 },
-    { number: 5, title: "Finish", active: currentStep >= 5 },
-  ];
-
+  // Publish job mutation
   const { mutate: publishJob, isPending } = useMutation({
     mutationFn: postJob,
     onSuccess: () => {
@@ -226,68 +378,51 @@ export default function MultiStepJobForm() {
     },
   });
 
+  // Navigation handlers
   const handleNext = () => {
-    if (currentStep === 1) {
-      if (
-        !formData.jobTitle ||
-        !formData.country ||
-        !formData.region ||
-        !formData.employmentType ||
-        !formData.experience ||
-        !formData.categoryId
-      ) {
-        toast.error("Please fill in all required fields.");
-        return;
+    form.trigger().then((isValid) => {
+      if (isValid) {
+        if (currentStep < 5) {
+          setCurrentStep(currentStep + 1);
+        }
+      } else {
+        const errors = form.formState.errors;
+        const firstError = Object.values(errors)[0];
+        toast.error(firstError?.message || "Please fill in all required fields.");
       }
-    }
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
-    }
+    });
   };
 
   const handleCancel = () => {
     setCurrentStep(Math.max(1, currentStep - 1));
   };
 
-  const toggleRequirement = (id: string) => {
-    setApplicationRequirements((prev) =>
-      prev.map((req) =>
-        req.id === id ? { ...req, required: !req.required } : req
-      )
-    );
-  };
-
-  const addCustomQuestion = () => {
-    const newQuestion: CustomQuestion = {
-      id: Date.now().toString(),
-      question: "",
-    };
-    setCustomQuestions((prev) => [...prev, newQuestion]);
-  };
-
-  const updateCustomQuestion = (id: string, newQuestionText: string) => {
-    setCustomQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, question: newQuestionText } : q))
-    );
-  };
-
   const handlePreviewClick = () => {
-    setShowPreview(true);
+    form.trigger().then((isValid) => {
+      if (isValid) {
+        setShowPreview(true);
+      } else {
+        const errors = form.formState.errors;
+        const firstError = Object.values(errors)[0];
+        toast.error(firstError?.message || "Please fill in all required fields.");
+      }
+    });
   };
 
   const handleBackToEdit = () => {
     setShowPreview(false);
   };
 
-  const handlePublish = () => {
-    const responsibilities = formData.jobDescription
+  // Publish job handler
+  const handlePublish = (data: JobFormData) => {
+    const responsibilities = data.jobDescription
       .split("\n")
       .filter((line) => line.startsWith("* "))
       .map((line) => line.replace("* ", "").trim())
       .filter((line) => line);
 
     const educationExperience =
-      formData.jobDescription
+      data.jobDescription
         .split("Must-Have")[1]
         ?.split("Nice-to-Have")[0]
         ?.split("\n")
@@ -296,7 +431,7 @@ export default function MultiStepJobForm() {
         .filter((line) => line) || [];
 
     const benefits =
-      formData.jobDescription
+      data.jobDescription
         .split("Why Join Us?")[1]
         ?.split("How to Apply")[0]
         ?.split("\n")
@@ -312,61 +447,53 @@ export default function MultiStepJobForm() {
     };
 
     const expirationDays =
-      formData.expirationDate === "custom"
+      data.expirationDate === "custom"
         ? 90
-        : parseInt(formData.expirationDate) || 30;
+        : parseInt(data.expirationDate, 10) || 30;
 
     const publishDateObj = publishNow
       ? new Date()
-      : new Date(
-          formData.publishDate ||
-            (selectedDate?.toISOString() ?? new Date().toISOString())
-        );
+      : new Date(data.publishDate || new Date().toISOString());
 
     const deadlineDate = new Date(publishDateObj);
     deadlineDate.setDate(deadlineDate.getDate() + expirationDays);
 
     const postData = {
-      userId,
-      title: formData.jobTitle,
-      description: formData.jobDescription,
-      salaryRange: formData.compensation || "$0 - $0",
-      location: `${formData.country}, ${formData.region}`,
-      shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
-      companyUrl: formData.companyUrl,
+      userId: data.userId || userId || "", // Ensure userId is a string
+      title: data.jobTitle,
+      description: data.jobDescription,
+      salaryRange: data.compensation || "$0 - $0",
+      location: `${data.country}, ${data.region}`,
+      shift: data.employmentType === "full-time" ? "Day" : "Flexible",
+      companyUrl: data.companyUrl || undefined,
       responsibilities,
       educationExperience,
       benefits,
-      vacancy: formData.vacancy,
-      experience: experienceMap[formData.experience] || 0,
+      vacancy: parseInt(data.vacancy, 10) || 1, // Convert to number
+      experience: experienceMap[data.experience] || 0,
+      locationType: data.locationType,
+      careerStage: data.careerStage,
       deadline: deadlineDate.toISOString(),
       publishDate: publishDateObj.toISOString(),
-      status: "active",
-      jobCategoryId: formData.categoryId,
-      employement_Type: formData.employmentType,
-      compensation: formData.compensation ? "Monthly" : "Negotiable",
+      status: "active" as const,
+      jobCategoryId: data.categoryId,
+      employement_Type: data.employmentType,
+      compensation: data.compensation ? "Monthly" : "Negotiable",
       archivedJob: false,
-      applicationRequirement: applicationRequirements
-        .filter((req) => req.required)
-        .map((req) => ({ requirement: `${req.label} required` })),
-      customQuestion: customQuestions
-        .filter((q) => q.question)
-        .map((q) => ({ question: q.question })),
+      applicationRequirement:
+        data.applicationRequirements
+          ?.filter((req) => req.required)
+          .map((req) => ({ requirement: `${req.label} required` })) || [],
+      customQuestion:
+        data.customQuestions
+          ?.filter((q) => q.question)
+          .map((q) => ({ question: q.question! })) || [], // Non-null assertion since filtered
     };
 
     publishJob(postData);
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    if (date) {
-      setFormData((prev) => ({
-        ...prev,
-        publishDate: date.toISOString(),
-      }));
-    }
-  };
-
+  // Step Indicator Component
   const renderStepIndicator = () => (
     <>
       <div className="flex items-center justify-center mb-4 md:mb-8 overflow-x-auto">
@@ -405,6 +532,15 @@ export default function MultiStepJobForm() {
     </>
   );
 
+  const steps = [
+    { number: 1, title: "Job Details", active: currentStep >= 1 },
+    { number: 2, title: "Job Description", active: currentStep >= 2 },
+    { number: 3, title: "Application Requirements", active: currentStep >= 3 },
+    { number: 4, title: "Custom Questions", active: currentStep >= 4 },
+    { number: 5, title: "Finish", active: currentStep >= 5 },
+  ];
+
+  // Job Details Step
   const renderJobDetails = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
@@ -412,324 +548,353 @@ export default function MultiStepJobForm() {
           Job Details
         </h2>
         <div className="space-y-4 md:space-y-6">
-          {/* Job Title */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="jobTitle"
-            >
-              Job Title<span className="text-red-500 ml-1">*</span>
-            </Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="jobTitle"
-                className="pl-10 border-gray-300 h-12 rounded-lg focus-visible:ring-2"
-                placeholder="e.g. Software Engineer"
-                value={formData.jobTitle}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, jobTitle: e.target.value }))
-                }
-              />
-            </div>
-          </div>
-
-          {/* Department */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-[#2A2A2A]"
-              htmlFor="department"
-            >
-              Department
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, department: value }))
-              }
-            >
-              <SelectTrigger className="h-12 border-gray-300 rounded-lg focus:ring-2">
-                <SelectValue placeholder="Select department" />
-              </SelectTrigger>
-              <SelectContent className="rounded-lg shadow-lg">
-                <SelectItem value="engineering">Engineering</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="sales">Sales</SelectItem>
-                <SelectItem value="hr">Human Resources</SelectItem>
-                <SelectItem value="finance">Finance</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Location - Country & City */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="country"
-              >
-                Country<span className="text-red-500 ml-1">*</span>
-              </Label>
-              <Select
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    country: value,
-                    region: "",
-                  }))
-                }
-                disabled={isLoadingCountries}
-              >
-                <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                  <SelectValue
-                    placeholder={
-                      isLoadingCountries
-                        ? "Loading countries..."
-                        : "Select country"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent className="rounded-lg shadow-lg">
-                  {isLoadingCountries ? (
-                    <SelectItem value="loading">Loading...</SelectItem>
-                  ) : (
-                    countries.map((country) => (
-                      <SelectItem key={country.country} value={country.country}>
-                        {country.country}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label
-                className="text-sm font-medium text-gray-700"
-                htmlFor="region"
-              >
-                City<span className="text-red-500 ml-1">*</span>
-              </Label>
-              <Select
-                onValueChange={(value) =>
-                  setFormData((prev) => ({ ...prev, region: value }))
-                }
-                disabled={isLoadingCities || !formData.country}
-              >
-                <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                  <SelectValue
-                    placeholder={
-                      isLoadingCities ? "Loading cities..." : "Select city"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent className="rounded-lg shadow-lg">
-                  {isLoadingCities ? (
-                    <SelectItem value="loading">Loading...</SelectItem>
-                  ) : (
-                    cities.map((city) => (
-                      <SelectItem key={city} value={city}>
-                        {city}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Employment Type */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="employmentType"
-            >
-              Employment Type<span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, employmentType: value }))
-              }
-            >
-              <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                <SelectValue placeholder="Select employment type" />
-              </SelectTrigger>
-              <SelectContent className="rounded-lg shadow-lg">
-                <SelectItem value="full-time">Full-time</SelectItem>
-                <SelectItem value="part-time">Part-time</SelectItem>
-                <SelectItem value="internship">Internship</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* vacancy */}
-
-          <div>
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="vacancy"
-            >
-              Vacancy<span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Input
-              id="vacancy"
-              className="border-gray-300 h-12 rounded-lg focus-visible:ring-2"
-              placeholder="e.g. 5"
-              value={formData.vacancy}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, vacancy: e.target.value }))
-              }
-            />
-          </div>
-
-          {/* Experience Level */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="experience"
-            >
-              Experience Level<span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, experience: value }))
-              }
-            >
-              <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                <SelectValue placeholder="Select experience level" />
-              </SelectTrigger>
-              <SelectContent className="rounded-lg shadow-lg">
-                <SelectItem value="entry">Entry Level (0-2 years)</SelectItem>
-                <SelectItem value="mid">Mid Level (3-5 years)</SelectItem>
-                <SelectItem value="senior">Senior Level (5+ years)</SelectItem>
-                <SelectItem value="executive">Executive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Job Category */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="category"
-            >
-              Job Category<span className="text-red-500 ml-1">*</span>
-            </Label>
-            <Select
-              onValueChange={(value) => {
-                const selectedCategory = jobCategories?.data.find(
-                  (cat: JobCategory) => cat._id === value
-                );
-                setFormData((prev) => ({
-                  ...prev,
-                  category: selectedCategory?.name || "",
-                  categoryId: value,
-                }));
-              }}
-            >
-              <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                <SelectValue
-                  placeholder={
-                    categoriesLoading
-                      ? "Loading categories..."
-                      : "Select category"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className="rounded-lg shadow-lg">
-                {categoriesLoading ? (
-                  <SelectItem value="loading">Loading...</SelectItem>
-                ) : categoriesError ? (
-                  <SelectItem value="error">
-                    Error loading categories
-                  </SelectItem>
-                ) : (
-                  jobCategories?.data.map((category: JobCategory) => (
-                    <SelectItem key={category._id} value={category._id}>
-                      {category.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-            {categoriesError && (
-              <p className="text-sm text-red-500">Failed to load categories</p>
+          <FormField
+            control={form.control}
+            name="jobTitle"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Job Title<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      className="pl-10 border-gray-300 h-12 rounded-lg focus-visible:ring-2"
+                      placeholder="e.g. Software Engineer"
+                      {...field}
+                    />
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </div>
-
-          {/* Compensation */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="compensation"
-            >
-              Compensation (Optional)
-            </Label>
-            <Input
-              id="compensation"
-              className="h-12 border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500"
-              placeholder="e.g. $80,000 - $100,000 per year"
-              value={formData.compensation}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  compensation: e.target.value,
-                }))
-              }
+          />
+          <FormField
+            control={form.control}
+            name="department"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-[#2A2A2A]">
+                  Department
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="engineering">Engineering</SelectItem>
+                      <SelectItem value="marketing">Marketing</SelectItem>
+                      <SelectItem value="sales">Sales</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Country<span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={(countries || []).map((country) => ({
+                        value: country.country,
+                        label: country.country,
+                      }))}
+                      value={field.value || ""}
+                      onChange={(value) => {
+                        field.onChange(value);
+                        setSelectedCountry(value);
+                        form.setValue("region", "");
+                      }}
+                      placeholder={isLoadingCountries ? "Loading..." : "Select Country"}
+                      minSearchLength={0}
+                      disabled={isLoadingCountries}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="region"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    City<span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={(cities || []).map((city) => ({
+                        value: city,
+                        label: city,
+                      }))}
+                      value={field.value || ""}
+                      onChange={field.onChange}
+                      placeholder={
+                        !selectedCountry
+                          ? "Select country first"
+                          : isLoadingCities
+                          ? "Loading..."
+                          : "Select City"
+                      }
+                      minSearchLength={2}
+                      disabled={isLoadingCities || !selectedCountry}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
-
-          {/* Company URL */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="companyUrl"
-            >
-              Company Website URL (Optional)
-            </Label>
-            <Input
-              id="companyUrl"
-              type="url"
-              className="h-12 border-gray-300 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-500"
-              placeholder="e.g. https://yourcompany.com"
-              value={formData.companyUrl}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  companyUrl: e.target.value,
-                }))
-              }
-            />
-          </div>
-
-          {/* Expiration Date */}
-          <div className="space-y-2">
-            <Label
-              className="text-sm font-medium text-gray-700"
-              htmlFor="expirationDate"
-            >
-              Job Posting Expiration Date
-              <span className="text-gray-500 ml-1">
-                (Posting can be reopened)
-              </span>
-            </Label>
-            <Select
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, expirationDate: value }))
-              }
-            >
-              <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                <SelectValue placeholder="Select expiration date" />
-              </SelectTrigger>
-              <SelectContent className="rounded-lg shadow-lg">
-                <SelectItem value="30">30 days</SelectItem>
-                <SelectItem value="60">60 days</SelectItem>
-                <SelectItem value="90">90 days</SelectItem>
-                <SelectItem value="custom">Custom date</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <FormField
+            control={form.control}
+            name="employmentType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Employment Type<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select employment type" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="full-time">Full-time</SelectItem>
+                      <SelectItem value="part-time">Part-time</SelectItem>
+                      <SelectItem value="internship">Internship</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                      <SelectItem value="temporary">Temporary</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                      <SelectItem value="volunteer">Volunteer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="vacancy"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Vacancy<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    className="border-gray-300 h-12 rounded-lg focus-visible:ring-2"
+                    placeholder="e.g. 5"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="experience"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Experience Level<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="entry">Entry Level (0-2 years)</SelectItem>
+                      <SelectItem value="mid">Mid Level (3-5 years)</SelectItem>
+                      <SelectItem value="senior">Senior Level (5+ years)</SelectItem>
+                      <SelectItem value="executive">Executive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="locationType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Location Type<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select location type" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="onsite">Onsite</SelectItem>
+                      <SelectItem value="remote">Remote</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="careerStage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Career Stage<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select career stage" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="New Entry">New Entry</SelectItem>
+                      <SelectItem value="Experienced Professional">
+                        Experienced Professional
+                      </SelectItem>
+                      <SelectItem value="Career Returner">Career Returner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="categoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Job Category<span className="text-red-500 ml-1">*</span>
+                </FormLabel>
+                <FormControl>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      form.setValue("categoryId", value);
+                    }}
+                    value={field.value}
+                  >
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue
+                        placeholder={
+                          categoriesLoading ? "Loading categories..." : "Select category"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      {categoriesLoading ? (
+                        <SelectItem value="loading">Loading...</SelectItem>
+                      ) : categoriesError ? (
+                        <SelectItem value="error">Error loading categories</SelectItem>
+                      ) : (
+                        jobCategories?.data.map((category: JobCategory) => (
+                          <SelectItem key={category._id} value={category._id}>
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                {categoriesError && (
+                  <p className="text-sm text-red-500">Failed to load categories</p>
+                )}
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="compensation"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Compensation (Optional)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    className="h-12 border-gray-300 rounded-lg focus-visible:ring-2"
+                    placeholder="e.g. $80,000 - $100,000 per year"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="companyUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Company Website URL (Optional)
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    type="url"
+                    className="h-12 border-gray-300 rounded-lg focus-visible:ring-2"
+                    placeholder="e.g. https://yourcompany.com"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="expirationDate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Job Posting Expiration Date
+                  <span className="text-gray-500 ml-1">
+                    (Posting can be reopened)
+                  </span>
+                </FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className="h-12 border-gray-300 rounded-lg">
+                      <SelectValue placeholder="Select expiration date" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-lg shadow-lg">
+                      <SelectItem value="30">30 days</SelectItem>
+                      <SelectItem value="60">60 days</SelectItem>
+                      <SelectItem value="90">90 days</SelectItem>
+                      <SelectItem value="custom">Custom date</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
-
-        {/* Action Buttons */}
         <div className="flex justify-end gap-4 md:gap-7 mt-6 md:mt-8">
           <Button
             variant="outline"
@@ -749,32 +914,38 @@ export default function MultiStepJobForm() {
     </Card>
   );
 
+  // Job Description Step
   const renderJobDescription = () => (
     <div className="bg-white p-10 rounded-md">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 ">
-        {/* Left Column: Job Description Editor */}
+      <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <Card className="lg:col-span-2 border-none shadow-none">
           <CardContent className="p-4 md:p-6">
             <h2 className="text-lg md:text-xl font-semibold text-[#000000] mb-4 md:mb-6">
               Job Description
             </h2>
             <div className="space-y-4">
-              <TextEditor
-                value={formData.jobDescription}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, jobDescription: value }))
-                }
+              <FormField
+                control={form.control}
+                name="jobDescription"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-gray-700">
+                      Job Description<span className="text-red-500 ml-1">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <TextEditor value={field.value} onChange={field.onChange} />
+                    </FormControl>
+                    <p className="text-sm text-gray-600">
+                      Character count: {field.value.length}/2000
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-sm text-gray-600">
-                Character count: {formData.jobDescription.length}/2000
-              </p>
             </div>
           </CardContent>
         </Card>
-
-        {/* Right Column: Tips and Publish Schedule */}
         <div className="lg:col-span-1 space-y-4 md:space-y-6">
-          {/* TIP Section */}
           <Card className="border-none shadow-none">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-start space-x-2 mb-3 md:mb-4">
@@ -787,20 +958,12 @@ export default function MultiStepJobForm() {
                 requirements for job boards, consider the following guidelines:
               </p>
               <ul className="list-disc list-inside text-sm md:text-base text-[#000000] space-y-1 md:space-y-2">
-                <li>
-                  Job descriptions should be clear, well-written, and
-                  informative
-                </li>
-                <li>
-                  Job descriptions with 700-2,000 characters get the most
-                  interaction
-                </li>
+                <li>Job descriptions should be clear, well-written, and informative</li>
+                <li>Job descriptions with 700-2000 characters get the most interaction</li>
                 <li>Do not use discriminatory language</li>
                 <li>Do not post offensive or inappropriate content</li>
                 <li>Be honest about the job requirement details</li>
-                <li>
-                  Help the candidate understand the expectations for this role
-                </li>
+                <li>Help the candidate understand the expectations for this role</li>
               </ul>
               <p className="text-sm md:text-base text-[#000000] mt-3 md:mt-4">
                 For more tips on writing good job descriptions,{" "}
@@ -810,8 +973,6 @@ export default function MultiStepJobForm() {
               </p>
             </CardContent>
           </Card>
-
-          {/* Publish Schedule Section */}
           <Card className="border-none shadow-none">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
@@ -824,23 +985,33 @@ export default function MultiStepJobForm() {
                   className="data-[state=checked]:bg-[#2B7FD0]"
                 />
               </div>
-
               {!publishNow && (
                 <>
                   <h3 className="text-sm md:text-base font-semibold mb-3 md:mb-4">
                     Schedule Publish
                   </h3>
                   <div className="border rounded-lg p-3">
-                    <CustomCalendar
-                      selectedDate={selectedDate}
-                      onDateSelect={handleDateSelect}
+                    <FormField
+                      control={form.control}
+                      name="publishDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <CustomCalendar
+                              selectedDate={field.value ? new Date(field.value) : undefined}
+                              onDateSelect={(date) => field.onChange(date?.toISOString())}
+                            />
+                          </FormControl>
+                          {field.value && (
+                            <p className="text-sm text-gray-600 mt-2">
+                              Selected date: {new Date(field.value).toLocaleDateString()}
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                  {selectedDate && (
-                    <p className="text-sm text-gray-600 mt-2">
-                      Selected date: {selectedDate.toLocaleDateString()}
-                    </p>
-                  )}
                 </>
               )}
             </CardContent>
@@ -865,6 +1036,7 @@ export default function MultiStepJobForm() {
     </div>
   );
 
+  // Application Requirements Step
   const renderApplicationRequirements = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
@@ -877,7 +1049,7 @@ export default function MultiStepJobForm() {
           What personal info would you like to gather about each applicant?
         </p>
         <div className="space-y-3 md:space-y-4">
-          {applicationRequirements.map((requirement) => (
+          {applicationRequirements.map((requirement, index) => (
             <div
               key={requirement.id}
               className="flex items-center justify-between py-2 border-b pb-6 md:pb-10"
@@ -898,7 +1070,9 @@ export default function MultiStepJobForm() {
                       ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
                       : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
                   }`}
-                  onClick={() => toggleRequirement(requirement.id)}
+                  onClick={() =>
+                    updateRequirement(index, { ...requirement, required: false })
+                  }
                 >
                   Optional
                 </Button>
@@ -909,7 +1083,9 @@ export default function MultiStepJobForm() {
                       ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
                       : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
                   }`}
-                  onClick={() => toggleRequirement(requirement.id)}
+                  onClick={() =>
+                    updateRequirement(index, { ...requirement, required: true })
+                  }
                 >
                   Required
                 </Button>
@@ -936,6 +1112,7 @@ export default function MultiStepJobForm() {
     </Card>
   );
 
+  // Custom Questions Step
   const renderCustomQuestions = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
@@ -953,30 +1130,35 @@ export default function MultiStepJobForm() {
           </Button>
         </div>
         <p className="text-base md:text-xl text-[#808080] font-medium mt-[40px] md:mt-[80px] mb-[15px] md:mb-[30px]">
-          Would you require visa sponsorship for this role within the next two
-          years?
+          Would you require visa sponsorship for this role within the next two years?
         </p>
         <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
           {customQuestions.map((question, index) => (
-            <div key={question.id} className="space-y-2">
-              <Label className="text-base md:text-xl font-medium text-[#2B7FD0]">
-                Ask a question
-              </Label>
-              <textarea
-                name={`customQuestion-${question.id}`}
-                placeholder="Write Here"
-                className="flex min-h-[60px] md:min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={question.question}
-                onChange={(e) =>
-                  updateCustomQuestion(question.id, e.target.value)
-                }
-              />
-            </div>
+            <FormField
+              key={question.id}
+              control={form.control}
+              name={`customQuestions.${index}.question`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base md:text-xl font-medium text-[#2B7FD0]">
+                    Ask a question
+                  </FormLabel>
+                  <FormControl>
+                    <textarea
+                      placeholder="Write Here"
+                      className="flex min-h-[60px] md:min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           ))}
         </div>
         <Button
           variant="outline"
-          onClick={addCustomQuestion}
+          onClick={() => appendCustomQuestion({ id: Date.now().toString(), question: "" })}
           className="border-none mb-4 md:mb-6 text-[#2B7FD0] flex items-center justify-center text-base md:text-xl font-medium hover:text-[#2B7FD0] hover:bg-transparent"
         >
           <div className="w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center mr-2 bg-[#2B7FD0]">
@@ -1003,6 +1185,7 @@ export default function MultiStepJobForm() {
     </Card>
   );
 
+  // Finish Step
   const renderFinish = () => (
     <div className="flex justify-center items-center min-h-[40vh] md:min-h-[50vh]">
       <Card className="w-full max-w-md md:max-w-2xl border-none shadow-none">
@@ -1021,7 +1204,7 @@ export default function MultiStepJobForm() {
               </Button>
               <Button
                 className="w-full sm:w-[200px] md:w-[267px] h-10 md:h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
-                onClick={handlePublish}
+                onClick={form.handleSubmit(handlePublish)}
                 disabled={isPending}
               >
                 {isPending ? "Publishing..." : "Publish Your Post"}
@@ -1033,31 +1216,38 @@ export default function MultiStepJobForm() {
     </div>
   );
 
+  // Render
   return (
-    <div className="min-h-screen bg-[#E6E6E6] py-4 md:py-8">
-      {showPreview ? (
-        <JobPreview
-          formData={formData}
-          companyUrl={formData.companyUrl}
-          applicationRequirements={applicationRequirements}
-          customQuestions={customQuestions}
-          selectedDate={selectedDate}
-          publishNow={publishNow}
-          onBackToEdit={handleBackToEdit}
-        />
-      ) : (
-        <div className="container mx-auto px-2 sm:px-4">
-          <h1 className="text-2xl md:text-[48px] text-[#131313] font-bold text-center mb-4 md:mb-8">
-            Create Job Posting
-          </h1>
-          {renderStepIndicator()}
-          {currentStep === 1 && renderJobDetails()}
-          {currentStep === 2 && renderJobDescription()}
-          {currentStep === 3 && renderApplicationRequirements()}
-          {currentStep === 4 && renderCustomQuestions()}
-          {currentStep === 5 && renderFinish()}
-        </div>
-      )}
-    </div>
+    <FormProvider {...form}>
+      <div className="min-h-screen bg-[#E6E6E6] py-4 md:py-8">
+        {showPreview ? (
+          <JobPreview
+            formData={form.getValues()}
+            companyUrl={form.getValues("companyUrl") || undefined}
+            applicationRequirements={form.getValues("applicationRequirements") || []}
+            customQuestions={form.getValues("customQuestions") || []}
+            selectedDate={
+              form.getValues("publishDate")
+                ? new Date(form.getValues("publishDate"))
+                : new Date()
+            }
+            publishNow={publishNow}
+            onBackToEdit={handleBackToEdit}
+          />
+        ) : (
+          <div className="container mx-auto px-2 sm:px-4">
+            <h1 className="text-2xl md:text-[48px] text-[#131313] font-bold text-center mb-4 md:mb-8">
+              Create Job Posting
+            </h1>
+            {renderStepIndicator()}
+            {currentStep === 1 && renderJobDetails()}
+            {currentStep === 2 && renderJobDescription()}
+            {currentStep === 3 && renderApplicationRequirements()}
+            {currentStep === 4 && renderCustomQuestions()}
+            {currentStep === 5 && renderFinish()}
+          </div>
+        )}
+      </div>
+    </FormProvider>
   );
 }
