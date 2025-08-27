@@ -6,96 +6,84 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function ScrollingInfoBar() {
-  const items = [
+  // Group data by role
+  const roles = [
     {
-      text: "30-Second free Elevator Pitch (pay to upgrade)",
       role: "candidate",
-      showButton: false,
+      buttonText: "Candidate Access",
+      texts: [
+        "Amplify your Profile!",
+        "Record 30-Second Free Elevator Video Pitch",
+        "Apply to Jobs",
+        "Start your dream job!",
+      ],
     },
     {
-      text: "Amplify your profile",
-      role: "candidate",
-      showButton: false,
-    },
-    {
-      text: "Pitch to recruiters",
-      role: "candidate",
-      showButton: false,
-    },
-    {
-      text: "Get a job!",
-      role: "candidate",
-      showButton: true,
-    },
-    {
-      text: "Hear the human behind the profile",
       role: "recruiter",
-      showButton: false,
+      buttonText: "Recruiter Access",
+      texts: [
+        "Hear the person behind the Resume",
+        "Post job adverts",
+        "Screen candidates online!",
+        "Provide instant candidate feedback!",
+        "Free job posts until 2026!",
+      ],
     },
     {
-      text: "Screen candidates online",
-      role: "recruiter",
-      showButton: false,
-    },
-    {
-      text: "One-click candidate feedback",
-      role: "recruiter",
-      showButton: false,
-    },
-    {
-      text: "Improve your brand",
       role: "company",
-      showButton: false,
-    },
-    {
-      text: "30-Second free Elevator Pitch (pay to upgrade)",
-      role: "recruiter",
-      showButton: true,
+      buttonText: "Companies Access",
+      texts: [
+        "Pitch your company to the world",
+        "Post job adverts",
+        "Screen candidates online!",
+        "Provide instant candidate feedback!",
+        "Free posts until 2026!",
+      ],
     },
   ];
 
-  // Duplicate items to create a seamless loop
-  const duplicatedItems = [...items, ...items];
+  // Build the scrolling sequence: button + texts for each role
+  const sequence = roles.flatMap((group) => [
+    { type: "button", role: group.role, text: group.buttonText },
+    ...group.texts.map((t) => ({ type: "text", role: group.role, text: t })),
+  ]);
 
-  const roleButtonText: Record<string, string> = {
-    company: "Sign Up as Recruiters & Companies",
-    recruiter: "Sign Up as Recruiters & Companies",
-    candidate: "Sign Up as Candidates",
-  };
+  // Duplicate the whole sequence to make it loop seamlessly
+  const duplicatedItems = [...sequence, ...sequence];
 
   return (
     <div className="bg-primary text-white py-3 px-4 md:px-6 overflow-hidden relative">
       <motion.div
         className="flex items-center gap-8 whitespace-nowrap"
-        animate={{ x: ["0%", "-100%"] }}
+        animate={{ x: ["0%", "-50%"] }} // scroll only half because we duplicated
         transition={{
           x: {
-            repeat: Number.POSITIVE_INFINITY,
+            repeat: Infinity,
             repeatType: "loop",
-            duration: 40, // slowed down a bit for readability
+            duration: 40,
             ease: "linear",
           },
         }}
+        style={{ width: "max-content" }}
       >
         {duplicatedItems.map((item, index) => (
           <div key={index} className="flex items-center gap-4">
-            <span className="flex items-center gap-2 text-sm">
-              <span className="h-2 w-2 rounded-full bg-white" />
-              {item.text}
-            </span>
-
-            {/* Role-based signup button */}
-            {item.showButton && (
+            {item.type === "button" ? (
               <Button
                 asChild
                 variant="secondary"
                 className="bg-white text-v0-blue-500 hover:bg-gray-100 text-sm h-auto py-1.5 px-3"
               >
                 <Link href={`/register?role=${item.role}`}>
-                  {roleButtonText[item.role]}
+                  {item.text}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+            ) : (
+              <span className="flex items-center gap-2 text-sm">
+                <span className="h-2 w-2 rounded-full bg-white" />
+                {item.text}
+              </span>
             )}
           </div>
         ))}

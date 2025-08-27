@@ -51,7 +51,7 @@ export default function AllUsersPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "https://giveandtake-backend.onrender.com/api/v1/fetch/all/users"
+        `${process.env.NEXT_PUBLIC_BASE_URL}/fetch/all/users`
       );
       const result: SearchResult = await response.json();
 

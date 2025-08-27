@@ -19,107 +19,94 @@ export function HowItWorksSection() {
     }
   };
 
-  console.log(token);
   return (
     <section className="w-full py-10 md:py-16 bg-gray-50">
       <div className="container px-4 md:px-6">
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px] text-[#000000]">
-          How It Works in three simple steps
+          How It Works
         </h2>
-        <div className="w-[590px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
-        {/* <div className="md:text-xl">
-          <ol className="list-decimal list-inside space-y-1 text-[#707070] font-medium justify-start mt-[32px]">
-            <li>
-              Record or upload your video elevator pitch (60 seconds free or
-              upgrade!)
-            </li>
-            <li>Add a link to your video elevator pitch in your CV/resume</li>
-            <li>Search and apply for jobs on our site</li>
-          </ol>
-        </div> */}
+        <div className="w-[180px] md:w-[240px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
+
         <div className="grid gap-8 md:grid-cols-3 mt-12">
+          {/* Candidates Card */}
           <Card
-            className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[300px]" // Fixed height
+            className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[350px] w-full rounded-2xl" // For circle: use rounded-full and equal width & height
             onClick={handleCreateAccountClick}
           >
             <CardHeader className="pb-4">
               <Image
                 src="/assets/user.png"
-                alt="UserPlus"
+                alt="Candidates"
                 width={1000}
                 height={1000}
                 className="h-[83px] w-[83px]"
               />
             </CardHeader>
-            <CardContent className="space-y-2 flex flex-col justify-between flex-1">
-              {" "}
-              {/* Flex to fill height */}
-              <div>
-                <CardTitle className="text-xl font-semibold">
-                  Create Account
-                </CardTitle>
-                <p className="text-gray-500">
-                  Sign up in seconds and build your profile to start your job
-                  search journey.
-                </p>
-              </div>
+            <CardContent className="flex flex-col justify-between flex-1 space-y-2">
+              <CardTitle className="text-xl font-semibold">
+                Candidates
+              </CardTitle>
+              <ul className="text-gray-500 text-sm space-y-1 text-left list-disc list-inside">
+                <li>
+                  Gain an edge over 220 million jobseekers, create your elevator
+                  video pitch today!
+                </li>
+                <li>Let employers meet the real you in 30 seconds</li>
+                <li>Make a lasting impression from the first hello!</li>
+                <li>Apply for jobs and edit your profile with the EVP app</li>
+              </ul>
             </CardContent>
           </Card>
-          <Link href="/alljobs">
-            <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]">
-              {" "}
-              {/* Fixed height */}
-              <CardHeader className="pb-4">
-                <Image
-                  src="/assets/explor.png"
-                  alt="UserPlus"
-                  width={1000}
-                  height={1000}
-                  className="h-[83px] w-[83px]"
-                />
-              </CardHeader>
-              <CardContent className="space-y-2 flex flex-col justify-between flex-1">
-                {" "}
-                {/* Flex to fill height */}
-                <div>
-                  <CardTitle className="text-xl font-semibold">
-                    Explore Our Jobs
-                  </CardTitle>
-                  <p className="text-gray-500">
-                    Explore thousands of job listings.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/elevator-pitch-resume">
-            <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]">
-              {" "}
-              {/* Fixed height */}
-              <CardHeader className="pb-4">
-                <Image
-                  src="/assets/chair.png"
-                  alt="UserPlus"
-                  width={1000}
-                  height={1000}
-                  className="h-[83px] w-[83px]"
-                />
-              </CardHeader>
-              <CardContent className="space-y-2 flex flex-col justify-between flex-1">
-                {" "}
-                {/* Flex to fill height */}
-                <div>
-                  <CardTitle className="text-xl font-semibold">
-                    Get A Job
-                  </CardTitle>
-                  <p className="text-gray-500">
-                    Apply with ease, follow recruiters, and land your next
-                    opportunity.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+
+          {/* Recruiters Card */}
+          <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[350px] w-full rounded-2xl">
+            <CardHeader className="pb-4">
+              <Image
+                src="/assets/explor.png"
+                alt="Recruiters"
+                width={1000}
+                height={1000}
+                className="h-[83px] w-[83px]"
+              />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-between flex-1 space-y-2">
+              <CardTitle className="text-xl font-semibold">
+                Recruiters
+              </CardTitle>
+              <ul className="text-gray-500 text-sm space-y-1 text-left list-disc list-inside">
+                <li>Post job adverts</li>
+                <li>View job applicant elevator pitches</li>
+                <li>Screen applicants’ elevator pitches in 30 seconds</li>
+                <li>Schedule job adverts</li>
+                <li>Click to feedback to job applicants</li>
+                <li>Post jobs with the EVP app</li>
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Company Card */}
+          <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[350px] w-full rounded-2xl">
+            <CardHeader className="pb-4">
+              <Image
+                src="/assets/chair.png"
+                alt="Company"
+                width={1000}
+                height={1000}
+                className="h-[83px] w-[83px]"
+              />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-between flex-1 space-y-2">
+              <CardTitle className="text-xl font-semibold">Companies</CardTitle>
+              <ul className="text-gray-500 text-sm space-y-1 text-left list-disc list-inside">
+                <li>
+                  Amplify your company brand with a powerful elevator pitch
+                </li>
+                <li>Directly screen experienced candidates online</li>
+                <li>Hire strong talent for your business to thrive</li>
+                <li>Listen to a pool of powerful job candidates on EVP</li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
