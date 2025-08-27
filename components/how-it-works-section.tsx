@@ -25,7 +25,7 @@ export function HowItWorksSection() {
         <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-[40px] text-[#000000]">
           How It Works
         </h2>
-        <div className="w-[590px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
+        <div className="w-[180px] md:w-[240px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
 
         <div className="grid gap-8 md:grid-cols-3 mt-12">
           {/* Candidates Card */}
