@@ -247,7 +247,7 @@ export function SiteHeader() {
         </nav>
 
         {/* Right Section: Action Buttons & Avatar or Login */}
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 md:gap-4 md:ml-7">
           {status === "authenticated" ? (
             <>
               <Link href="/notifications">

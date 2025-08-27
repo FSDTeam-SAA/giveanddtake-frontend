@@ -28,6 +28,7 @@ import {
 import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { useSession } from "next-auth/react";
+import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -52,13 +53,13 @@ interface SocialLink {
 
 interface Honor {
   id: string;
-  _id?: string; // Backend ID for existing honors
+  _id?: string;
   title: string;
   issuer: string;
   programeDate: string;
   description: string;
-  isNew?: boolean; // Track if this is a new honor
-  isDeleted?: boolean; // Track if this honor should be deleted
+  isNew?: boolean;
+  isDeleted?: boolean;
 }
 
 function EditCompanyPage({ companyId }: EditCompanyPageProps) {
@@ -66,6 +67,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [companyData, setCompanyData] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
@@ -97,8 +99,8 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     },
   });
 
-  const sesison = useSession();
-  const token = sesison?.data?.accessToken || "";
+  const session = useSession();
+  const token = session?.data?.accessToken || "";
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -265,6 +267,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       formData.append("clogo", logoFile);
     }
 
+    if (bannerFile) {
+      formData.append("banner", bannerFile);
+    }
+
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyData.data.companies[0]._id}`,
       {
@@ -366,8 +372,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       const allHonors = [...processedHonors, ...deletedHonors];
 
-      console.log("Processed honors for backend:", allHonors);
-
       const formData = {
         ...data,
         links: slinks,
@@ -399,7 +403,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     );
   }
 
-  console.log("companyData", honors);
   return (
     <div className="">
       <div className="container mx-auto px-2">
@@ -432,8 +435,25 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   variant="dark"
                 />
               </div>
+              <div className="space-y-2 ">
+                <Label className="text-sm font-medium text-gray-900">
+                  Company Banner
+                </Label>
+                <div className="aspect-[4/1]">
+                  <FileUpload
+                    onFileSelect={setBannerFile}
+                    defaultUrl={companyData.data.companies[0].banner}
+                    accept="image/*"
+                    className="h-full"
+                  >
+                    <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
+                      Company Banner
+                    </div>
+                  </FileUpload>
+                </div>
+              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label className="text-sm font-medium text-gray-900">
                     Company Logo
@@ -446,13 +466,13 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       className="h-full"
                     >
                       <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
-                        photo/Company logo
+                        Company Logo
                       </div>
                     </FileUpload>
                   </div>
                 </div>
 
-                <div className="md:col-span-3 space-y-2">
+                <div className="md:col-span-2 space-y-2">
                   <FormField
                     control={form.control}
                     name="aboutUs"
@@ -462,10 +482,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           About Us*
                         </FormLabel>
                         <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Write your description here (400 words)"
-                            className="min-h-[140px] resize-none"
+                          <TextEditor
+                            value={field.value}
+                            onChange={field.onChange}
                           />
                         </FormControl>
                         <FormMessage />
@@ -582,36 +601,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     )}
                   />
                 </div>
-
-                {/* <FormField
-                  control={form.control}
-                  name="industry"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-900">
-                        Industry*
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value || undefined}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Industry" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="technology">Technology</SelectItem>
-                          <SelectItem value="healthcare">Healthcare</SelectItem>
-                          <SelectItem value="finance">Finance</SelectItem>
-                          <SelectItem value="education">Education</SelectItem>
-                          <SelectItem value="retail">Retail</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
               </div>
 
               <div className="space-y-4">

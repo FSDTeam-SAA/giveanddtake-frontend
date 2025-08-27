@@ -1,5 +1,4 @@
 "use client";
-
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +6,14 @@ import Image from "next/image";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 
 export function HeroSection() {
   const session = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const initialJobTitle = searchParams.get("title") || "";
   const initialLocation = searchParams.get("location") || "";
-
   const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle);
   const [locationInput, setLocationInput] = useState(initialLocation);
 
@@ -25,56 +23,191 @@ export function HeroSection() {
   }, [searchParams]);
 
   const handleSearch = () => {
-    const currentParams = new URLSearchParams(); // Start with a fresh URLSearchParams for the redirect
+    const currentParams = new URLSearchParams();
     if (jobTitleInput) {
       currentParams.set("title", jobTitleInput);
     }
     if (locationInput) {
       currentParams.set("location", locationInput);
     }
-    currentParams.set("page", "1"); // Always reset to page 1 on new search
-    router.push(`/alljobs?${currentParams.toString()}`); // Redirect to /alljobs with query parameters
+    currentParams.set("page", "1");
+    router.push(`/alljobs?${currentParams.toString()}`);
   };
 
-  const videos = [
-    {
-      src: "https://www.w3schools.com/html/mov_bbb.mp4",
-      alt: "Big Buck Bunny video",
+  const bubbleVariants = {
+    float: {
+      y: [0, -5, 0],
+      transition: {
+        duration: 3,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: [0.4, 0.0, 0.2, 1] as const,
+      },
     },
-    {
-      src: "https://www.w3schools.com/html/movie.mp4",
-      alt: "Sample movie video",
+    floatSlow: {
+      y: [0, -5, 0],
+      transition: {
+        duration: 4,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: [0.4, 0.0, 0.2, 1] as const,
+      },
     },
-    {
-      src: "/placeholder.svg?height=500&width=700",
-      alt: "Job search video placeholder",
+    floatFast: {
+      y: [0, -4, 0],
+      transition: {
+        duration: 2.5,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: [0.4, 0.0, 0.2, 1] as const,
+      },
     },
-  ];
+  };
 
   return (
     <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden">
-      {/* Background abstract shapes - more subtle and blue */}
-      <Image
-        src="/assets/hero.png"
-        alt="Abstract blue circle"
-        width={200}
-        height={200}
-        className="absolute top-[320px] hidden md:block left-[50%] lg:left-[550px] -translate-x-1/2 -translate-y-1/2 lg:ml-[40px] border border-[#9EC7DC] rounded-full p-2 w-[30px] h-[30px] md:w-[40px] md:h-[40px] lg:w-[50px] lg:h-[50px]"
-      />
-      <Image
-        src="/assets/hero.png"
-        alt="Abstract blue circle"
-        width={150}
-        height={150}
-        className="absolute top-[55%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px] border border-[#9EC7DC] rounded-full p-2  w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
-      />
-      <Image
-        src="/assets/hero.png"
-        alt="Abstract blue circle"
-        width={100}
-        height={100}
-        className="absolute hidden md:block bottom-[200px] md:bottom-[300px] left-[60%] lg:left-[690px] border border-[#9EC7DC] rounded-full p-2 w-[30px] h-[30px] md:w-[50px] md:h-[50px] lg:w-[100px] lg:h-[100px]"
-      />
+      {/* Top left area bubbles */}
+      <motion.div
+        variants={bubbleVariants}
+        animate="float"
+        className="absolute top-[10%] left-[5%] hidden md:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={60}
+          height={60}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[25px] h-[25px] md:w-[35px] md:h-[35px] lg:w-[45px] lg:h-[45px] opacity-70"
+        />
+      </motion.div>
+
+      {/* Top right area bubbles */}
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatSlow"
+        className="absolute top-[15%] right-[10%] hidden lg:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={80}
+          height={80}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80"
+        />
+      </motion.div>
+
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatFast"
+        className="absolute top-[25%] right-[25%] hidden md:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={40}
+          height={40}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[20px] h-[20px] md:w-[30px] md:h-[30px] opacity-60"
+        />
+      </motion.div>
+
+      {/* Center right area bubbles (replacing the commented image) */}
+      <motion.div
+        variants={bubbleVariants}
+        animate="float"
+        className="absolute top-[40%] right-[15%] hidden md:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={100}
+          height={100}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[50px] h-[50px] md:w-[70px] md:h-[70px] lg:w-[90px] lg:h-[90px]"
+        />
+      </motion.div>
+
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatSlow"
+        className="absolute top-[55%] right-[8%] hidden lg:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={60}
+          height={60}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[35px] h-[35px] lg:w-[50px] lg:h-[50px] opacity-75"
+        />
+      </motion.div>
+
+      {/* Original bubbles with enhanced animations */}
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatFast"
+        className="absolute top-[320px] hidden md:block left-[50%] lg:left-[550px] -translate-x-1/2 -translate-y-1/2 lg:ml-[40px]"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={200}
+          height={200}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[30px] h-[30px] md:w-[40px] md:h-[40px] lg:w-[50px] lg:h-[50px]"
+        />
+      </motion.div>
+
+      {/* <motion.div
+        variants={bubbleVariants}
+        animate="float"
+        className="absolute top-[55%] hidden lg:block left-[30%] lg:left-[400px] lg:ml-[80px] -mt-[40px]"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={150}
+          height={150}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] md:w-[60px] md:h-[60px] lg:w-[80px] lg:h-[80px]"
+        />
+      </motion.div> */}
+
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatSlow"
+        className="absolute hidden md:block bottom-[200px] md:bottom-[300px] left-[60%] lg:left-[690px]"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={100}
+          height={100}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[30px] h-[30px] md:w-[50px] md:h-[50px] lg:w-[100px] lg:h-[100px]"
+        />
+      </motion.div>
+
+      {/* Bottom area bubbles */}
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatFast"
+        className="absolute bottom-[10%] left-[15%] hidden md:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={50}
+          height={50}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[25px] h-[25px] md:w-[35px] md:h-[35px] opacity-65"
+        />
+      </motion.div>
+
+      <motion.div
+        variants={bubbleVariants}
+        animate="float"
+        className="absolute bottom-[15%] right-[30%] hidden lg:block"
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={70}
+          height={70}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[55px] lg:h-[55px] opacity-70"
+        />
+      </motion.div>
+
       <div className="container px-0 md:px-6 grid lg:grid-cols-2 gap-8 items-center relative z-10">
         <div className="flex flex-col text-center lg:text-left">
           <h1 className="text-2xl font-bold leading-[120%] sm:text-3xl md:text-[40px] text-[#2B7FD0]">
@@ -85,7 +218,7 @@ export function HeroSection() {
             Unlock your full potential and begin creating the life you truly
             deserve — one meaningful opportunity at a time.
           </p>
-          {session.status === "authenticated" && (
+          {session?.status === "authenticated" && (
             <div className="w-full lg:max-w-[396px] mt-8 md:mt-[48px] mx-auto lg:mx-0">
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200">
@@ -148,16 +281,6 @@ export function HeroSection() {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="p-2 md:p-4">
-          <Image
-            src="/assets/evp-bluebg1.jpg"
-            alt="EVP Logo"
-            width={600}
-            height={400}
-            className="w-full max-w-[500px] md:max-w-[600px] h-auto rounded-3xl shadow-xl mx-auto"
-          />
         </div>
       </div>
     </section>

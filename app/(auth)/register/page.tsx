@@ -405,7 +405,7 @@ export default function RegisterPage() {
                     )
                   }
                   className={cn(
-                    "w-full px-4 py-2 border rounded-md transition-colors scale-y-95",
+                    "w-full px-4 py-2 border rounded-md transition-colors scale-y-95 font-bold",
                     selectedRole === option.value
                       ? "bg-primary text-white border-blue-600"
                       : "bg-transparent border-gray-300 hover:bg-gray-100"
@@ -434,7 +434,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              className="w-full"
+              className="w-full font-bold text-md"
               disabled={registerMutation.isPending}
             >
               {registerMutation.isPending
