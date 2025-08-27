@@ -23,7 +23,7 @@ export default function AboutUsPage() {
         <div className="flex flex-col md:flex-row items-center justify-between mb-16 gap-y-5">
           <div className="flex-1 space-y-10 text-center md:text-left">
             <div>
-              <h2 className="text-3xl md:text-[40px] font-bold text-[#131313] mb-3">
+              <h2 className="text-3xl md:text-[40px] font-semibold text-[#131313] mb-3">
                 Our Vision
               </h2>
               <p className="text-base font-normal text-[#545454] leading-relaxed">
