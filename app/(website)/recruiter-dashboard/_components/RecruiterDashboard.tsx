@@ -133,6 +133,7 @@ interface Company {
   userId: string;
   aboutUs: string;
   cname: string;
+  clogo: string;
   country: string;
   city: string;
   zipcode: string;
@@ -545,7 +546,7 @@ export default function RecruiterDashboard() {
               <div className="flex flex-col gap-6">
                 <div className="flex items-start space-x-3">
                   <Image
-                    src="/assets/Layer_2_1_.png"
+                    src={recruiterAccount?.data?.companyId.clogo ?? "/placeholder.png"}
                     alt="Company Logo"
                     width={1000}
                     height={1000}
@@ -553,10 +554,10 @@ export default function RecruiterDashboard() {
                   />
                   <div>
                     <p className="font-medium text-[22px] text-[#000000]">
-                      Company Name
+                      {recruiterAccount?.data?.firstName} {recruiterAccount?.data?.lastName}
                     </p>
                     <p className="text-[18px] text-[#707070]">
-                      TechNova Solutions
+                      {recruiterAccount?.data?.companyId.cname}
                     </p>
                   </div>
                 </div>
