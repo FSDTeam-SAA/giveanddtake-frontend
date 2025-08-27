@@ -1,76 +1,125 @@
 "use client"
 
 import React from "react"
-
-import type { ReactElement } from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQuery } from "@tanstack/react-query"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { X, Copy, Check, Plus, Upload } from "lucide-react"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import TextEditor from "@/components/MultiStepJobForm/TextEditor"
+import Image from "next/image"
+import { toast } from "sonner"
 
 // Resume schema for validation
 const resumeSchema = z.object({
-  firstName: z.string().min(1, "First name must be at least 1 character"),
-  lastName: z.string().min(1, "Last name must be at least 1 character"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
   title: z.string().optional(),
   city: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().optional(),
-  aboutUs: z.string().min(1, "About section is required"),
+  aboutUs: z
+    .string()
+    .min(1, "About section is required")
+    .refine(
+      (value) => {
+        const wordCount = value.trim().split(/\s+/).length
+        return wordCount <= 200
+      },
+      {
+        message: "About section cannot exceed 200 words",
+      }
+    ),
   skills: z.array(z.string()).min(1, "At least one skill is required"),
   sLink: z
     .array(
       z.object({
-        label: z.string(),
-        url: z.string().url("Invalid URL"),
-      }),
+        label: z.string().min(1, "Platform name is required"),
+        url: z.string().url("Invalid URL").or(z.string().length(0)),
+      })
     )
     .optional(),
-  experiences: z.array(
-    z.object({
-      company: z.string().min(1, "Company is required"), // Changed from employer
-      duration: z.string().optional(), // Added duration field
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
-      currentlyWorking: z.boolean().optional(), // Added currently working field
-      country: z.string().optional(),
-      city: z.string().optional(),
-      zip: z.string().optional(),
-      jobTitle: z.string().optional(),
-      jobDescription: z.string().optional(),
-      jobCategory: z.string().optional(),
-    }),
-  ),
-  educationList: z.array(
-    z.object({
-      institution: z.string().min(1, "Institution is required"),
-      degree: z.string().min(1, "Degree is required"),
-      fieldOfStudy: z.string().optional(),
-      year: z.string().min(1, "Year is required"), // Changed from graduationYear
-    }),
-  ),
-  awardsAndHonors: z.array(
-    z.object({
-      title: z.string().min(1, "Award title is required"),
-      programName: z.string().optional(),
-      year: z.string().min(1, "Year is required"), // Changed from programeDate
-      description: z.string().optional(),
-    }),
-  ),
+  experiences: z
+    .array(
+      z
+        .object({
+          company: z.string().optional(),
+          jobTitle: z.string().optional(),
+          duration: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          currentlyWorking: z.boolean().optional().default(false),
+          country: z.string().optional(),
+          city: z.string().optional(),
+          zip: z.string().optional(),
+          jobDescription: z.string().optional(),
+          jobCategory: z.string().optional(),
+        })
+        .refine(
+          (data) =>
+            !data.company ||
+            !data.jobTitle ||
+            data.currentlyWorking ||
+            (!data.currentlyWorking && data.endDate),
+          {
+            message: "End date is required unless currently working",
+            path: ["endDate"],
+          }
+        )
+    )
+    .optional(),
+  educationList: z
+    .array(
+      z
+        .object({
+          institution: z.string().min(1, "Institution name is required"),
+          degree: z.string().min(1, "Degree is required"),
+          fieldOfStudy: z.string().optional(),
+          startDate: z.string().optional(),
+          graduationDate: z.string().optional(),
+          currentlyStudying: z.boolean().optional().default(false),
+          city: z.string().optional(),
+          country: z.string().optional(),
+        })
+        .refine(
+          (data) =>
+            data.currentlyStudying ||
+            (!data.currentlyStudying && data.graduationDate),
+          {
+            message: "Graduation date is required unless currently studying",
+            path: ["graduationDate"],
+          }
+        )
+    ),
+  awardsAndHonors: z
+    .array(
+      z.object({
+        title: z.string().optional(),
+        programName: z.string().optional(),
+        year: z.string().optional(),
+        description: z.string().optional(),
+      })
+    )
+    .optional(),
 })
 
 type ResumeFormData = z.infer<typeof resumeSchema>
+
+interface Country {
+  country: string
+  cities: string[]
+}
 
 interface UpdateResumeFormProps {
   resume: any
@@ -83,43 +132,122 @@ const skillsList = [
   "JavaScript",
   "TypeScript",
   "React",
+  "Next.js",
   "Node.js",
   "Python",
   "Java",
   "C++",
   "HTML",
   "CSS",
-  "Angular",
+  "Tailwind CSS",
+  "Bootstrap",
   "Vue.js",
+  "Angular",
   "Express.js",
   "MongoDB",
   "PostgreSQL",
   "MySQL",
-  "Git",
+  "Redis",
   "Docker",
   "Kubernetes",
   "AWS",
-  "Azure",
-  "Google Cloud",
-  "Machine Learning",
-  "Data Analysis",
+  "Git",
+  "GitHub",
+  "GitLab",
+  "Figma",
+  "Adobe Photoshop",
+  "Adobe Illustrator",
   "Project Management",
   "Agile",
   "Scrum",
   "Leadership",
   "Communication",
   "Problem Solving",
+  "Team Work",
+  "Critical Thinking",
+  "Web Design",
+  "UI/UX Design",
 ]
 
-export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateResumeFormProps): ReactElement {
+export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateResumeFormProps): React.ReactElement {
   const [selectedSkills, setSelectedSkills] = useState<string[]>(resume.resume?.skills || [])
   const [skillSearch, setSkillSearch] = useState("")
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [copyUrlSuccess, setCopyUrlSuccess] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState<string>(resume.resume?.country || "")
+  const [selectedExpCountries, setSelectedExpCountries] = useState<string[]>(
+    resume.experiences?.map((exp: any) => exp.country || "") || []
+  )
+  const [selectedEduCountries, setSelectedEduCountries] = useState<string[]>(
+    resume.education?.map((edu: any) => edu.country || "") || []
+  )
 
-  const filteredSkills = skillsList.filter(
-    (skill) => skill.toLowerCase().includes(skillSearch.toLowerCase()) && !selectedSkills.includes(skill),
+  // Fetch countries
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<Country[]>({
+    queryKey: ["countries"],
+    queryFn: async () => {
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries")
+      const data = await response.json()
+      if (data.error) throw new Error("Failed to fetch countries")
+      return data.data as Country[]
+    },
+  })
+
+  // Fetch cities for Personal Information
+  const { data: citiesData, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ["cities", selectedCountry],
+    queryFn: async () => {
+      if (!selectedCountry) return []
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country: selectedCountry }),
+      })
+      const data = await response.json()
+      if (data.error) throw new Error("Failed to fetch cities")
+      return data.data as string[]
+    },
+    enabled: !!selectedCountry,
+  })
+
+  // Fetch cities for each experience entry
+  const experienceCitiesQueries = selectedExpCountries.map((country, index) =>
+    useQuery<string[]>({
+      queryKey: ["cities", `experience-${index}`, country],
+      queryFn: async () => {
+        if (!country) return []
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country }),
+        })
+        const data = await response.json()
+        if (data.error) throw new Error("Failed to fetch cities")
+        return data.data as string[]
+      },
+      enabled: !!country,
+    })
+  )
+
+  // Fetch cities for each education entry
+  const educationCitiesQueries = selectedEduCountries.map((country, index) =>
+    useQuery<string[]>({
+      queryKey: ["cities", `education-${index}`, country],
+      queryFn: async () => {
+        if (!country) return []
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country }),
+        })
+        const data = await response.json()
+        if (data.error) throw new Error("Failed to fetch cities")
+        return data.data as string[]
+      },
+      enabled: !!country,
+    })
   )
 
   const form = useForm<ResumeFormData>({
@@ -136,7 +264,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
       aboutUs: resume.resume?.aboutUs || "",
       skills: Array.isArray(resume.resume?.skills) ? resume.resume.skills : [],
       sLink: (() => {
-        // Ensure sLink is always an array with 5 elements
         const defaultLinks = [
           { label: "website", url: "" },
           { label: "linkedin", url: "" },
@@ -144,8 +271,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
           { label: "upwork", url: "" },
           { label: "other", url: "" },
         ]
-
-        // Check for sLink in resume.resume.sLink (correct API structure)
         if (Array.isArray(resume.resume?.sLink) && resume.resume.sLink.length > 0) {
           return resume.resume.sLink
             .map((link: { label: string; url: string }, index: number) => ({
@@ -154,26 +279,23 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
             }))
             .concat(defaultLinks.slice(resume.resume.sLink.length))
         }
-
-        // Fallback: check for legacy website field
         if (resume.resume?.website) {
           defaultLinks[0].url = resume.resume.website
         }
-
         return defaultLinks
       })(),
       experiences: (() => {
         if (Array.isArray(resume.experiences) && resume.experiences.length > 0) {
           return resume.experiences.map((exp: any) => ({
             company: exp.company || exp.employer || "",
+            jobTitle: exp.jobTitle || exp.position || "",
             duration: exp.duration || "",
             startDate: exp.startDate ? exp.startDate.split("T")[0] : "",
             endDate: exp.endDate ? exp.endDate.split("T")[0] : "",
-            currentlyWorking: exp.currentlyWorking || false, // Added currentlyWorking field
+            currentlyWorking: exp.currentlyWorking || false,
             country: exp.country || "",
             city: exp.city || "",
             zip: exp.zip || "",
-            jobTitle: exp.jobTitle || "",
             jobDescription: exp.jobDescription || "",
             jobCategory: exp.jobCategory || "",
           }))
@@ -197,26 +319,46 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
       educationList: (() => {
         if (Array.isArray(resume.education) && resume.education.length > 0) {
           return resume.education.map((edu: any) => ({
-            institution: edu.instituteName || "",
+            institution: edu.instituteName || edu.institution || "",
             degree: edu.degree || "",
             fieldOfStudy: edu.fieldOfStudy || "",
-            year: edu.year || (edu.graduationDate ? new Date(edu.graduationDate).getFullYear().toString() : ""),
+            startDate: edu.startDate ? edu.startDate.split("T")[0] : "",
+            graduationDate: edu.graduationDate ? edu.graduationDate.split("T")[0] : "",
+            currentlyStudying: edu.currentlyStudying || false,
+            city: edu.city || "",
+            country: edu.country || "",
           }))
         }
-        return [{ degree: "", institution: "", year: "", fieldOfStudy: "" }]
+        return [
+          {
+            institution: "",
+            degree: "",
+            fieldOfStudy: "",
+            startDate: "",
+            graduationDate: "",
+            currentlyStudying: false,
+            city: "",
+            country: "",
+          },
+        ]
       })(),
       awardsAndHonors: (() => {
         if (Array.isArray(resume.awardsAndHonors) && resume.awardsAndHonors.length > 0) {
           return resume.awardsAndHonors.map((award: any) => ({
             title: award.title || "",
             programName: award.programName || "",
-            year:
-              award.year ||
-              (award.createdAt ? new Date(award.createdAt).getFullYear().toString() : award.programeDate || ""),
+            year: award.year || (award.createdAt ? new Date(award.createdAt).getFullYear().toString() : award.programeDate || ""),
             description: award.description || "",
           }))
         }
-        return [{ title: "", programName: "", year: "", description: "" }]
+        return [
+          {
+            title: "",
+            programName: "",
+            year: "",
+            description: "",
+          },
+        ]
       })(),
     },
   })
@@ -248,11 +390,25 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
     name: "awardsAndHonors",
   })
 
+  const {
+    fields: sLinkFields,
+    append: appendSLink,
+    remove: removeSLink,
+  } = useFieldArray({
+    control: form.control,
+    name: "sLink",
+  })
+
+  const filteredSkills = skillsList.filter(
+    (skill) => skill.toLowerCase().includes(skillSearch.toLowerCase()) && !selectedSkills.includes(skill)
+  )
+
   const addSkill = (skill: string) => {
     if (!selectedSkills.includes(skill)) {
       const newSkills = [...selectedSkills, skill]
       setSelectedSkills(newSkills)
       form.setValue("skills", newSkills)
+      setSkillSearch("")
     }
   }
 
@@ -262,13 +418,25 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
     form.setValue("skills", newSkills)
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
       setPhotoFile(file)
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
-      const previewUrl = URL.createObjectURL(file)
-      setPhotoPreview(previewUrl)
+  const handleCopyUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(form.getValues("aboutUs"))
+      setCopyUrlSuccess(true)
+      setTimeout(() => setCopyUrlSuccess(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy text:", err)
     }
   }
 
@@ -278,27 +446,31 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
     }
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
     return cleanup
   }, [photoPreview])
 
+  // Sync experience countries state with form data
+  useEffect(() => {
+    setSelectedExpCountries(experienceFields.map((field) => field.country || ""))
+  }, [experienceFields])
+
+  // Sync education countries state with form data
+  useEffect(() => {
+    setSelectedEduCountries(educationFields.map((field) => field.country || ""))
+  }, [educationFields])
+
   const onSubmit = async (data: ResumeFormData) => {
-    console.log("Form submission started")
     try {
       setIsSubmitting(true)
-
-      // Validate all fields
       const isValid = await form.trigger()
       if (!isValid) {
-        console.error("Form validation failed")
+        const firstError = Object.values(form.formState.errors)[0]
+        toast.error(firstError.message || "Please fill in all required fields")
         return
       }
 
-      console.log("Form data is valid:", data)
-
-      // Create FormData
       const formData = new FormData()
-
       const resumeObject = {
         type: "candidate",
         firstName: data.firstName,
@@ -314,35 +486,28 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
         sLink: data.sLink || [],
       }
 
-      // Add resume object as JSON string
       formData.append("resume", JSON.stringify(resumeObject))
-
-      // Add arrays as direct JSON strings (not nested in resume)
       formData.append("experiences", JSON.stringify(data.experiences))
       formData.append("educationList", JSON.stringify(data.educationList))
       formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors))
 
-      // Add photo if exists
       if (photoFile) {
         formData.append("photo", photoFile)
       }
 
-      // Log FormData contents for debugging
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value)
-      }
-
       await onUpdate(formData)
+      toast.success("Resume updated successfully!")
     } catch (error) {
       console.error("Error in form submission:", error)
+      toast.error("Failed to update resume. Please try again.")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-6 space-y-8">
+      <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Update Resume</h1>
         <Button variant="outline" onClick={onCancel}>
           Cancel
@@ -350,34 +515,99 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Photo Upload */}
-
+        <form
+          onSubmit={form.handleSubmit(onSubmit, (errors) => {
+            const firstError = Object.values(errors)[0]
+            if (firstError) {
+              toast.error(firstError.message || "Please fill in all required fields")
+            }
+          })}
+          className="space-y-8"
+        >
           {Object.keys(form.formState.errors).length > 0 && (
             <div className="text-red-500">
               <pre>{JSON.stringify(form.formState.errors, null, 2)}</pre>
             </div>
           )}
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Photo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4">
-                {(photoPreview || resume.resume.photo) && (
-                  <img
-                    src={photoPreview || resume.resume.photo || "/placeholder.svg"}
-                    alt={photoPreview ? "Selected photo preview" : "Current photo"}
-                    className="w-20 h-20 rounded-lg object-cover"
+
+          {/* About Section */}
+          <Card className="border-2 border-blue-500">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-8">
+                {/* Photo Upload */}
+                <div className="flex-shrink-0">
+                  <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
+                    Photo
+                  </FormLabel>
+                  <div
+                    className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
+                    onClick={() => document.getElementById("photo-upload")?.click()}
+                  >
+                    {(photoPreview || resume.resume.photo) ? (
+                      <Image
+                        src={photoPreview || resume.resume.photo || "/placeholder.svg"}
+                        alt={photoPreview ? "Selected photo preview" : "Current photo"}
+                        width={100}
+                        height={100}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <Upload className="h-8 w-8 text-gray-400" />
+                    )}
+                  </div>
+                  <Input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
                   />
-                )}
-                <div>
-                  <Input type="file" accept="image/*" onChange={handlePhotoChange} className="mb-2" />
-                  <p className="text-sm text-muted-foreground">
-                    {photoPreview
-                      ? "New photo selected - will be updated on save"
-                      : "Upload a new photo to replace the current one"}
-                  </p>
+                </div>
+
+                {/* About Us Text Area */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel className="text-blue-600 font-medium">
+                      About Me
+                    </FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyUrl}
+                      className="text-blue-600 hover:text-blue-700"
+                    >
+                      {copyUrlSuccess ? (
+                        <>
+                          <Check className="h-4 w-4 mr-1" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy Text
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="aboutUs"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <TextEditor
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <p className="text-sm text-muted-foreground">
+                          Word count: {field.value.trim().split(/\s+/).length}/200
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -385,10 +615,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
           {/* Personal Information */}
           <Card>
-            <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -397,7 +624,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                     <FormItem>
                       <FormLabel>Title</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger>
                             <SelectValue placeholder="Select title" />
                           </SelectTrigger>
@@ -406,7 +633,6 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                             <SelectItem value="mrs">Mrs.</SelectItem>
                             <SelectItem value="ms">Ms.</SelectItem>
                             <SelectItem value="dr">Dr.</SelectItem>
-                            <SelectItem value="Md">Md.</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -450,7 +676,26 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                     <FormItem>
                       <FormLabel>Country</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Country" {...field} />
+                        <Select
+                          onValueChange={(value) => {
+                            field.onChange(value)
+                            setSelectedCountry(value)
+                            form.setValue("city", "") // Reset city when country changes
+                          }}
+                          value={field.value}
+                          disabled={isLoadingCountries}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={isLoadingCountries ? "Loading countries..." : "Select Country"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {countriesData?.map((country) => (
+                              <SelectItem key={country.country} value={country.country}>
+                                {country.country}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -464,7 +709,30 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                     <FormItem>
                       <FormLabel>City</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter City" {...field} />
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={isLoadingCities || !selectedCountry}
+                        >
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={
+                                !selectedCountry
+                                  ? "Select country first"
+                                  : isLoadingCities
+                                  ? "Loading cities..."
+                                  : "Select City"
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {citiesData?.map((city) => (
+                              <SelectItem key={city} value={city}>
+                                {city}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -512,134 +780,66 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.0.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Website URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.0.label", "website")
-                            field.onChange(e.target.value)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.1.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your LinkedIn URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.1.label", "linkedin")
-                            field.onChange(e.target.value)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.2.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Twitter URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Twitter URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.2.label", "twitter")
-                            field.onChange(e.target.value)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.3.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Upwork URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Upwork URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.3.label", "upwork")
-                            field.onChange(e.target.value)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sLink.4.url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Other Business URL</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter Your Other Business URL"
-                          value={field.value || ""}
-                          onChange={(e) => {
-                            form.setValue("sLink.4.label", "other")
-                            field.onChange(e.target.value)
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
-            </CardContent>
-          </Card>
 
-          {/* About Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>About</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="aboutUs"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>About Yourself*</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Tell us about yourself..." className="min-h-[100px]" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Social Links */}
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium">Social Links</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {sLinkFields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-4">
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`sLink.${index}.label`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Platform</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g. GitHub, Portfolio" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name={`sLink.${index}.url`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>URL</FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://example.com/..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="mt-6"
+                        onClick={() => removeSLink(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() => appendSLink({ label: "", url: "" })}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Social Link
+                  </Button>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
 
@@ -647,6 +847,9 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
           <Card>
             <CardHeader>
               <CardTitle>Skills</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Showcase your strengths and what sets you apart.
+              </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -664,10 +867,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                           key={skill}
                           type="button"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                          onClick={() => {
-                            addSkill(skill)
-                            setSkillSearch("")
-                          }}
+                          onClick={() => addSkill(skill)}
                         >
                           {skill}
                         </button>
@@ -694,7 +894,10 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
           {/* Experience */}
           <Card>
             <CardHeader>
-              <CardTitle>Experience</CardTitle>
+              <CardTitle>Experience (Optional)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Highlight your work journey and key achievements.
+              </p>
             </CardHeader>
             <CardContent>
               {experienceFields.map((field, index) => (
@@ -705,7 +908,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                       name={`experiences.${index}.company`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Company</FormLabel>
+                          <FormLabel>Company Name</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. IBM" {...field} />
                           </FormControl>
@@ -719,9 +922,88 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                       name={`experiences.${index}.jobTitle`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Position</FormLabel>
+                          <FormLabel>Job Title</FormLabel>
                           <FormControl>
                             <Input placeholder="e.g. Software Engineer" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`experiences.${index}.country`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value)
+                                const newCountries = [...selectedExpCountries]
+                                newCountries[index] = value
+                                setSelectedExpCountries(newCountries)
+                                form.setValue(`experiences.${index}.city`, "") // Reset city
+                              }}
+                              value={field.value}
+                              disabled={isLoadingCountries}
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={
+                                    isLoadingCountries ? "Loading countries..." : "Select Country"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {countriesData?.map((country) => (
+                                  <SelectItem key={country.country} value={country.country}>
+                                    {country.country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`experiences.${index}.city`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={
+                                experienceCitiesQueries[index]?.isLoading ||
+                                !selectedExpCountries[index]
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={
+                                    !selectedExpCountries[index]
+                                      ? "Select country first"
+                                      : experienceCitiesQueries[index]?.isLoading
+                                      ? "Loading cities..."
+                                      : "Select City"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {experienceCitiesQueries[index]?.data?.map((city) => (
+                                  <SelectItem key={city} value={city}>
+                                    {city}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -773,7 +1055,7 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                             />
                           </FormControl>
                           <div className="space-y-1 leading-none">
-                            <FormLabel>Currently working here</FormLabel>
+                            <FormLabel>Currently Working</FormLabel>
                           </div>
                         </FormItem>
                       )}
@@ -782,47 +1064,15 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                     <FormField
                       control={form.control}
                       name={`experiences.${index}.endDate`}
-                      render={({ field }) => {
-                        const currentlyWorking = form.watch(`experiences.${index}.currentlyWorking`)
-                        return (
-                          <FormItem>
-                            <FormLabel>End Date</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
-                                disabled={currentlyWorking}
-                                value={currentlyWorking ? "" : field.value}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )
-                      }}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.country`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Country</FormLabel>
+                          <FormLabel>End Date</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Germany" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name={`experiences.${index}.city`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. Berlin" {...field} />
+                            <Input
+                              type="date"
+                              {...field}
+                              disabled={form.watch(`experiences.${index}.currentlyWorking`)}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -845,7 +1095,12 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                   />
 
                   {experienceFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeExperience(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeExperience(index)}
+                    >
                       Remove Experience
                     </Button>
                   )}
@@ -854,17 +1109,37 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => appendExperience({ jobTitle: "", company: "", duration: "", currentlyWorking: false })}
+                onClick={() => {
+                  appendExperience({
+                    company: "",
+                    jobTitle: "",
+                    duration: "",
+                    startDate: "",
+                    endDate: "",
+                    currentlyWorking: false,
+                    country: "",
+                    city: "",
+                    zip: "",
+                    jobDescription: "",
+                    jobCategory: "",
+                  })
+                  setSelectedExpCountries([...selectedExpCountries, ""])
+                }}
+                className="flex items-center gap-2"
               >
+                <Plus className="h-4 w-4" />
                 Add Experience
               </Button>
             </CardContent>
           </Card>
 
           {/* Education */}
-          <Card>
+          <Card className="border-2 border-blue-500">
             <CardHeader>
               <CardTitle>Education</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Showcase your academic background and qualifications.
+              </p>
             </CardHeader>
             <CardContent>
               {educationFields.map((field, index) => (
@@ -891,7 +1166,17 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                         <FormItem>
                           <FormLabel>Degree</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g. Bachelor's Degree" {...field} />
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a degree" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="bachelor">Bachelor's Degree</SelectItem>
+                                <SelectItem value="master">Master's Degree</SelectItem>
+                                <SelectItem value="phd">PhD</SelectItem>
+                                <SelectItem value="associate">Associate Degree</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -914,27 +1199,146 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
                     <FormField
                       control={form.control}
-                      name={`educationList.${index}.year`}
+                      name={`educationList.${index}.country`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Year</FormLabel>
+                          <FormLabel>Country</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              placeholder="e.g. 2020"
-                              {...field}
-                            />
+                            <Select
+                              onValueChange={(value) => {
+                                field.onChange(value)
+                                const newCountries = [...selectedEduCountries]
+                                newCountries[index] = value
+                                setSelectedEduCountries(newCountries)
+                                form.setValue(`educationList.${index}.city`, "") // Reset city
+                              }}
+                              value={field.value}
+                              disabled={isLoadingCountries}
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={
+                                    isLoadingCountries ? "Loading countries..." : "Select Country"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {countriesData?.map((country) => (
+                                  <SelectItem key={country.country} value={country.country}>
+                                    {country.country}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    <FormField
+                      control={form.control}
+                      name={`educationList.${index}.city`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              disabled={
+                                educationCitiesQueries[index]?.isLoading ||
+                                !selectedEduCountries[index]
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={
+                                    !selectedEduCountries[index]
+                                      ? "Select country first"
+                                      : educationCitiesQueries[index]?.isLoading
+                                      ? "Loading cities..."
+                                      : "Select City"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {educationCitiesQueries[index]?.data?.map((city) => (
+                                  <SelectItem key={city} value={city}>
+                                    {city}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.currentlyStudying`}
+                        render={({ field }) => (
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked)
+                                  if (checked) {
+                                    form.setValue(`educationList.${index}.graduationDate`, "")
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">Currently Studying</FormLabel>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.startDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.graduationDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Graduation Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="date"
+                                {...field}
+                                disabled={form.watch(`educationList.${index}.currentlyStudying`)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
 
                   {educationFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeEducation(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeEducation(index)}
+                    >
                       Remove Education
                     </Button>
                   )}
@@ -945,12 +1349,19 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                 variant="outline"
                 onClick={() =>
                   appendEducation({
-                    degree: "",
                     institution: "",
-                    year: "",
+                    degree: "",
+                    fieldOfStudy: "",
+                    startDate: "",
+                    graduationDate: "",
+                    currentlyStudying: false,
+                    city: "",
+                    country: "",
                   })
                 }
+                className="flex items-center gap-2"
               >
+                <Plus className="h-4 w-4" />
                 Add Education
               </Button>
             </CardContent>
@@ -959,12 +1370,15 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
           {/* Awards and Honours */}
           <Card>
             <CardHeader>
-              <CardTitle>Awards and Honours</CardTitle>
+              <CardTitle>Awards and Honours (Optional)</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Tell employers what you are in a few impactful sentences.
+              </p>
             </CardHeader>
             <CardContent>
               {awardFields.map((field, index) => (
                 <div key={field.id} className="space-y-4 p-4 border rounded-lg mb-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
                       name={`awardsAndHonors.${index}.title`}
@@ -972,56 +1386,86 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
                         <FormItem>
                           <FormLabel>Award Title</FormLabel>
                           <FormControl>
-                            <Input placeholder="Award title" {...field} />
+                            <Input placeholder="Write here" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name={`awardsAndHonors.${index}.programName`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Program Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Write here" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`awardsAndHonors.${index}.year`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Program Date</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1900"
+                                max={new Date().getFullYear()}
+                                placeholder="e.g. 2023"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                     <FormField
                       control={form.control}
-                      name={`awardsAndHonors.${index}.year`}
+                      name={`awardsAndHonors.${index}.description`}
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Year Received</FormLabel>
+                          <FormLabel>Award Short Description</FormLabel>
                           <FormControl>
-                            <Input
-                              type="number"
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              placeholder="e.g. 2023"
-                              {...field}
-                            />
+                            <Textarea placeholder="Write here" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name={`awardsAndHonors.${index}.description`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Award description" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   {awardFields.length > 1 && (
-                    <Button type="button" variant="destructive" size="sm" onClick={() => removeAward(index)}>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => removeAward(index)}
+                    >
                       Remove Award
                     </Button>
                   )}
                 </div>
               ))}
-              <Button type="button" variant="outline" onClick={() => appendAward({ title: "", year: "" })}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() =>
+                  appendAward({
+                    title: "",
+                    programName: "",
+                    year: "",
+                    description: "",
+                  })
+                }
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
                 Add Award
               </Button>
             </CardContent>
@@ -1029,10 +1473,45 @@ export default function UpdateResumeForm({ resume, onCancel, onUpdate }: UpdateR
 
           {/* Submit Button */}
           <div className="flex gap-4">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Resume"}
+            <Button
+              type="submit"
+              className="bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Updating...
+                </div>
+              ) : (
+                "Update Resume"
+              )}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="py-6 text-lg font-medium"
+            >
               Cancel
             </Button>
           </div>

@@ -40,13 +40,7 @@ export default function CreatedJobs() {
       </div>
     );
   }
-  // if (isError) {
-  //   return (
-  //     <div className="flex justify-center items-center text-red-400">
-  //       Error: {error.message}
-  //     </div>
-  //   );
-  // }
+
 
   if (!recruitersJobs?.length) {
     return (
@@ -72,12 +66,6 @@ export default function CreatedJobs() {
                 <h3 className="lg:text-lg text-base font-semibold capitalize">
                   {job.title}
                 </h3>
-              </div>
-              <div className="lg:w-8 w-5 lg:h-8 h-5 rounded-full flex justify-center items-center bg-[#2042E3]">
-                <Heart
-                  className="lg:w-5 w-3 lg:h-5 h-3 stroke-none"
-                  fill="white"
-                />
               </div>
             </div>
             <div
