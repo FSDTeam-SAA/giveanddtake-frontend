@@ -23,7 +23,7 @@ function Page() {
       >
         <div className="container mx-auto px-4 text-white">
           <h1 className="text-4xl font-bold mb-4">Browse Jobs</h1>
-          <p className="text-lg mb-6 max-w-3xl">
+          <p className="text-lg mb-6 max-w-2xl">
             Browse our curated job openings across industries and locations. Use
             smart filters to find roles that match your skills, experience, and
             career goals—your next opportunity starts here.

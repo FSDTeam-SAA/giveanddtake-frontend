@@ -8,6 +8,7 @@ import JobDetails from "./job-details";
 import JobCard from "@/components/shared/card/job-card";
 import { Pagination } from "@/components/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Search } from "lucide-react";
 
 interface Job {
   _id: string;
@@ -179,36 +180,42 @@ export default function JobsListing() {
   return (
     <div className="container mx-auto px-4">
       {/* Filters */}
-      <div className="bg-[#E9ECFC] p-6 mb-12 w-full">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
-          <div className="flex gap-4 w-full">
-            <div className="relative flex-1 w-full">
-              <input
-                type="text"
-                placeholder="Keywords; Title, Skill, Location, Category"
-                className="pl-10 p-2 border rounded w-full"
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)} // Make editable
-              />
-            </div>
-            <div className="relative flex-1 w-full">
-              <input
-                type="text"
-                placeholder="Location"
-                className="pl-10 p-2 border rounded w-full"
-                value={localLocationFilter}
-                onChange={(e) => setLocalLocationFilter(e.target.value)} // Make editable
-              />
-            </div>
-          </div>
-          <button
-            onClick={handleFilter} // Re-added onClick handler
-            className="bg-primary hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
-          >
-            Filter
-          </button>
-        </div>
+    <div className="bg-[#E9ECFC] p-6 mb-12 w-full rounded-md">
+  <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
+    <div className="flex gap-4 w-full">
+      {/* Keywords input */}
+      <div className="relative flex-1 w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Keywords; Title, Skill, Location, Category"
+          className="pl-10 p-2 border rounded w-full"
+          value={localSearchTerm}
+          onChange={(e) => setLocalSearchTerm(e.target.value)} // Make editable
+        />
       </div>
+
+      {/* Location input */}
+      <div className="relative flex-1 w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+        <input
+          type="text"
+          placeholder="Location"
+          className="pl-10 p-2 border rounded w-full"
+          value={localLocationFilter}
+          onChange={(e) => setLocalLocationFilter(e.target.value)} // Make editable
+        />
+      </div>
+    </div>
+
+    <button
+      onClick={handleFilter} // Re-added onClick handler
+      className="bg-primary hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
+    >
+      Filter
+    </button>
+  </div>
+</div>
       {recommended.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested jobs for you</h2>
