@@ -102,7 +102,7 @@ export function Pagination({
                 key={`page-${pageNumber}`}
                 variant={pageNumber === currentPage ? "default" : "outline"}
                 size="icon"
-                className={`h-9 w-9 mx-0.5 rounded-md ${pageNumber === currentPage ? "bg-[#2B7FD0] hover:bg-black/90 text-white" : "border border-gray-200"
+                className={`h-9 w-9 mx-0.5 rounded-md ${pageNumber === currentPage ? "bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white" : "border border-gray-200"
                   }`}
                 onClick={() => onPageChange(pageNumber as number)}
                 disabled={isLoading}
