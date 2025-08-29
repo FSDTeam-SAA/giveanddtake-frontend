@@ -7,11 +7,12 @@ import { Globe, Linkedin, Twitter, LinkIcon } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { VideoPlayer } from "@/components/company/video-player";
 
 interface SocialLink {
   label: string;
   _id: string;
-  url?: string; // Added optional URL field for social links
+  url?: string;
 }
 
 interface RecruiterData {
@@ -19,7 +20,7 @@ interface RecruiterData {
   userId: string;
   bio: string;
   photo?: string;
-  banner?: string; // Added banner to interface
+  banner?: string;
   title: string;
   firstName: string;
   lastName: string;
@@ -35,6 +36,28 @@ interface RecruiterData {
   __v: number;
 }
 
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ApiResponse {
+  success: boolean;
+  total: number;
+  data: PitchData[];
+}
+
 interface MydataProps {
   userId: string;
 }
@@ -44,8 +67,11 @@ export default function Recruiters({ userId }: MydataProps) {
   const token = session?.accessToken;
 
   const [recruiterData, setRecruiterData] = useState<RecruiterData | null>(null);
+  const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pitchLoading, setPitchLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pitchError, setPitchError] = useState<string | null>(null);
 
   const iconMap: Record<string, React.ElementType> = {
     website: Globe,
@@ -84,10 +110,52 @@ export default function Recruiters({ userId }: MydataProps) {
       }
     };
 
+    const fetchPitchData = async () => {
+      if (!session?.user?.id || !token) {
+        setPitchLoading(false);
+        return;
+      }
+
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const response = await fetch(
+          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=recruiter`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch pitch data");
+        }
+
+        const apiResponse: ApiResponse = await response.json();
+
+        // Find the pitch that matches the current user's ID
+        const userPitch = apiResponse.data.find(
+          (pitch) => pitch.userId._id === session.user?.id
+        );
+
+        if (userPitch) {
+          setPitchData(userPitch);
+        } else {
+          setPitchError("No pitch found for current user");
+        }
+      } catch (err) {
+        setPitchError(err instanceof Error ? err.message : "An error occurred");
+      } finally {
+        setPitchLoading(false);
+      }
+    };
+
     if (token && userId) {
       fetchRecruiterData();
+      fetchPitchData();
     }
-  }, [token, userId]);
+  }, [token, userId, session]);
 
   if (loading) {
     return (
@@ -126,7 +194,7 @@ export default function Recruiters({ userId }: MydataProps) {
       {/* Banner */}
       <div className="relative w-full h-[300px]">
         <Image
-          src={recruiterData.banner || "/placeholder-banner.jpg"} // Fallback banner
+          src={recruiterData.banner || "/placeholder-banner.jpg"}
           alt={`${recruiterData.firstName} ${recruiterData.lastName} Banner`}
           fill
           className="object-cover"
@@ -163,7 +231,7 @@ export default function Recruiters({ userId }: MydataProps) {
                 return (
                   <Link
                     key={link._id}
-                    href={link.url || `#${link.label.toLowerCase()}`} // Use actual URL if available
+                    href={link.url || `#${link.label.toLowerCase()}`}
                     className="text-blue-500 hover:text-blue-700 border border-[#9EC7DC] p-2 rounded transition-colors"
                     title={link.label}
                     aria-label={`Visit ${link.label} profile`}
@@ -223,6 +291,27 @@ export default function Recruiters({ userId }: MydataProps) {
         </div>
       </div>
 
+      {/* Elevator Pitch */}
+      <div className="lg:pb-12 pb-5">
+        <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
+          Elevator Pitch
+        </h2>
+        <div className="rounded-lg">
+          {pitchData ? (
+            <VideoPlayer
+              pitchId={pitchData._id}
+              className="w-full h-[600px] mx-auto"
+            />
+          ) : pitchLoading ? (
+            <div>Loading pitch...</div>
+          ) : pitchError ? (
+            <div className="text-red-500">Error: {pitchError}</div>
+          ) : (
+            <div>No pitch available</div>
+          )}
+        </div>
+      </div>
+
       <div className="border-t border-gray-300 mt-6" />
 
       {/* About */}
@@ -270,7 +359,7 @@ export default function Recruiters({ userId }: MydataProps) {
       </section>
 
       {/* Awards & Honours */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow">
+      <section className="mt-6 bg-white p-6 rounded-lg shadow mb-24">
         <h2 className="text-xl font-semibold">Awards & Honours</h2>
         <div className="mt-2">
           <p className="text-gray-700 font-medium">Best UX Design Award</p>

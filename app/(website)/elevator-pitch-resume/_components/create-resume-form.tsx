@@ -30,7 +30,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, X, Copy, Check, Plus, ChevronsUpDown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { createResume } from "@/lib/api-service";
+import { createResume, uploadElevatorPitch } from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -48,6 +48,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { FileUpload } from "@/components/company/file-upload";
 
 // Dummy skills data
 const DUMMY_SKILLS = [
@@ -305,13 +306,12 @@ export default function CreateResumeForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [certificationInput, setCertificationInput] = useState("");
   const [languageInput, setLanguageInput] = useState("");
+  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
 
   const { data: session } = useSession();
 
@@ -617,14 +617,15 @@ export default function CreateResumeForm() {
     }
   };
 
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-    }
-  };
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: uploadElevatorPitch,
+    onSuccess: () => {
+      toast.success("Elevator pitch uploaded successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+    },
+  });
 
   const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -748,28 +749,14 @@ export default function CreateResumeForm() {
       formData.append("banner", bannerFile);
     }
 
-    if (videoFile && session?.user?.id) {
+    if (elevatorPitchFile && session?.user?.id) {
       try {
-        const videoFormData = new FormData();
-        videoFormData.append("videoFile", videoFile);
-
-        const videoResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/video?userId=${session.user.id}`,
-          {
-            method: "POST",
-            body: videoFormData,
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-            },
-          }
-        );
-
-        if (!videoResponse.ok) {
-          throw new Error("Failed to upload video");
-        }
+        await uploadElevatorPitchMutation.mutateAsync({
+          videoFile: elevatorPitchFile,
+          userId: session.user.id,
+        });
       } catch (error) {
-        console.error("Video upload failed:", error);
-        toast.error("Failed to upload video. Please try again.");
+        // Error toast is handled in mutation onError
         return;
       }
     }
@@ -793,59 +780,23 @@ export default function CreateResumeForm() {
         >
           {/* Upload Your Elevator Pitch */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Upload Your Elevator Pitch</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Upload a 60-second elevator video pitch introducing your
-                  agency and what makes you stand out from the rest.
-                </p>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle className="text-lg font-medium">
+                    Upload Your Elevator Pitch (Optional)
+                  </CardTitle>
+                </div>
               </div>
-              <Button
-                type="button"
-                className="bg-primary hover:bg-blue-700 text-white"
-                onClick={() => document.getElementById("video-upload")?.click()}
-              >
-                Upload/Change Elevator Pitch
-              </Button>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-gray-900 text-white">
-                {videoPreview ? (
-                  <div className="space-y-4">
-                    <video
-                      src={videoPreview}
-                      controls
-                      className="mx-auto max-w-md rounded-lg"
-                    />
-                    <p className="text-sm text-green-400">
-                      Video uploaded: {videoFile?.name}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="mx-auto h-12 w-12 mb-4" />
-                    <p className="text-lg mb-2">Drop your files here</p>
-                    <p className="text-sm mb-4">or</p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="bg-gray-700 hover:bg-gray-600 text-white"
-                      onClick={() =>
-                        document.getElementById("video-upload")?.click()
-                      }
-                    >
-                      Choose File
-                    </Button>
-                  </>
-                )}
-                <Input
-                  id="video-upload"
-                  type="file"
+              <div className="rounded-lg text-center bg-gray-900 text-white">
+                <FileUpload
+                  onFileSelect={setElevatorPitchFile}
                   accept="video/*"
-                  className="hidden"
-                  onChange={handleVideoUpload}
-                />
+                  maxSize={100 * 1024 * 1024}
+                  variant="dark"
+                ></FileUpload>
               </div>
             </CardContent>
           </Card>

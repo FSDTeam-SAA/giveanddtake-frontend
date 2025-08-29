@@ -1,3 +1,4 @@
+
 "use client";
 
 import type React from "react";
@@ -12,21 +13,12 @@ import {
   Briefcase,
   AwardIcon,
   SquarePen,
-  Edit,
-  Trash2,
-  Download,
 } from "lucide-react";
 import { Globe, Linkedin, Twitter, LinkIcon } from "lucide-react";
 import { FaUpwork } from "react-icons/fa6";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  deleteElevatorPitchVideo,
-  updateElevatorPitchVideo,
-  uploadElevatorPitch,
-} from "@/lib/api-service";
-import { FileUpload } from "@/components/company/file-upload";
 import { VideoPlayer } from "@/components/company/video-player";
 
 interface ResumeResponse {
@@ -137,20 +129,17 @@ interface ApiResponse {
 }
 
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
-  const [isEditingPitch, setIsEditingPitch] = useState(false);
-  const [pitchVideo, setPitchVideo] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const token = session?.accessToken;
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [pitchError, setPitchError] = useState<string | null>(null);
+  const [pitchLoading, setPitchLoading] = useState(true);
 
   useEffect(() => {
     const fetchPitchData = async () => {
-      if (!session?.user?.id) {
-        setLoading(false);
+      if (!session?.user?.id || !token) {
+        setPitchLoading(false);
         return;
       }
 
@@ -178,12 +167,12 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
         if (userPitch) {
           setPitchData(userPitch);
         } else {
-          setError("No pitch found for current user");
+          setPitchError("No pitch found for current user");
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
+        setPitchError(err instanceof Error ? err.message : "An error occurred");
       } finally {
-        setLoading(false);
+        setPitchLoading(false);
       }
     };
 
@@ -206,64 +195,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
       year: "numeric",
       month: "short",
     });
-  };
-
-  const handlePitchUpload = async () => {
-    if (!pitchVideo || !userId) {
-      console.error("Missing video file or user ID");
-      return;
-    }
-
-    setIsUploading(true);
-    try {
-      if (resume?.elevatorPitch?.[0]?.video) {
-        await updateElevatorPitchVideo({
-          videoFile: pitchVideo,
-          userId,
-        });
-      } else {
-        await uploadElevatorPitch({
-          videoFile: pitchVideo,
-          userId,
-        });
-      }
-      setIsEditingPitch(false);
-      setPitchVideo(null);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error uploading elevator pitch:", error);
-      alert("Failed to upload video. Please try again.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handlePitchDelete = async () => {
-    if (!userId) {
-      console.error("Missing user ID");
-      return;
-    }
-
-    if (!confirm("Are you sure you want to delete your elevator pitch video?")) {
-      return;
-    }
-
-    try {
-      await deleteElevatorPitchVideo(userId);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error deleting elevator pitch:", error);
-      alert("Failed to delete video. Please try again.");
-    }
-  };
-
-  const handlePitchDownload = () => {
-    if (resume?.elevatorPitch?.[0]?.video?.hlsUrl) {
-      const link = document.createElement("a");
-      link.href = resume.elevatorPitch[0].video.hlsUrl;
-      link.download = "elevator-pitch-video.m3u8";
-      link.click();
-    }
   };
 
   const iconMap: Record<string, React.ElementType> = {
@@ -390,93 +321,26 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </div>
 
-            <Card className="mb-8">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-800">
-                      Your Elevator Pitch
-                    </h2>
-                    <p className="text-gray-600 text-sm mt-1">
-                      Get a quick glimpse of my work and creative process through this video portfolio.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsEditingPitch(!isEditingPitch)}
-                      className="text-gray-600 hover:text-gray-800"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    {pitchData && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handlePitchDelete}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {pitchData && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handlePitchDownload}
-                        className="text-gray-600 hover:text-gray-800"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {isEditingPitch ? (
-                  <div className="space-y-4">
-                    <FileUpload
-                      accept="video/*"
-                      maxSize={50 * 1024 * 1024} // 50MB
-                      onFileSelect={(file) => setPitchVideo(file)}
-                    />
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setIsEditingPitch(false);
-                          setPitchVideo(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handlePitchUpload}
-                        disabled={!pitchVideo || isUploading}
-                        className="bg-primary hover:bg-blue-700"
-                      >
-                        {isUploading ? "Uploading..." : "Upload Video"}
-                      </Button>
-                    </div>
-                  </div>
+            {/* Elevator Pitch */}
+            <div className="lg:pb-12 pb-5">
+              <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
+                Elevator Pitch
+              </h2>
+              <div className="rounded-lg">
+                {pitchData ? (
+                  <VideoPlayer
+                    pitchId={pitchData._id}
+                    className="w-full h-[600px] mx-auto"
+                  />
+                ) : pitchLoading ? (
+                  <div>Loading pitch...</div>
+                ) : pitchError ? (
+                  <div className="text-red-500">Error: {pitchError}</div>
                 ) : (
-                  <div className="rounded-lg">
-                    {pitchData ? (
-                      <VideoPlayer
-                        pitchId={pitchData._id}
-                        className="w-full h-[600px] mx-auto"
-                      />
-                    ) : loading ? (
-                      <div>Loading pitch...</div>
-                    ) : error ? (
-                      <div className="text-red-500">Error: {error}</div>
-                    ) : (
-                      <div>No pitch available</div>
-                    )}
-                  </div>
+                  <div>No pitch available</div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">

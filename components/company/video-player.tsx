@@ -21,7 +21,6 @@ export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
 
     const hlsUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/stream/${pitchId}`;
     console.log("Loading HLS from:", hlsUrl);
-   
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -51,6 +50,8 @@ export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
       <video
         ref={videoRef}
         controls
+        autoPlay
+        muted
         className="w-full h-full rounded-lg"
         poster="/placeholder.svg?height=300&width=500"
       >
