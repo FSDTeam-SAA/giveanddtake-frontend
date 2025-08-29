@@ -62,9 +62,9 @@ export function HeroSection() {
   };
 
   return (
-    <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden">
+    <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden min-h-[70vh]">
       {/* Top left area bubbles */}
-      <motion.div
+      {/* <motion.div
         variants={bubbleVariants}
         animate="float"
         className="absolute top-[10%] left-[5%] hidden md:block"
@@ -74,9 +74,9 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={60}
           height={60}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[25px] h-[25px] md:w-[35px] md:h-[35px] lg:w-[45px] lg:h-[45px] opacity-70"
+          className="hidden border border-[#9EC7DC] rounded-full p-2 w-[25px] h-[25px] md:w-[35px] md:h-[35px] lg:w-[45px] lg:h-[45px] opacity-70"
         />
-      </motion.div>
+      </motion.div> */}
 
       {/* Top right area bubbles */}
       <motion.div
@@ -180,7 +180,7 @@ export function HeroSection() {
       </motion.div>
 
       {/* Bottom area bubbles */}
-      <motion.div
+      {/* <motion.div
         variants={bubbleVariants}
         animate="floatFast"
         className="absolute bottom-[10%] left-[15%] hidden md:block"
@@ -192,7 +192,7 @@ export function HeroSection() {
           height={50}
           className="border border-[#9EC7DC] rounded-full p-2 w-[25px] h-[25px] md:w-[35px] md:h-[35px] opacity-65"
         />
-      </motion.div>
+      </motion.div> */}
 
       <motion.div
         variants={bubbleVariants}
