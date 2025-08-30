@@ -253,8 +253,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                         {plainDescription}
                       </p>
                     </div>
-                  
-                      {/* <div className="flex gap-2">
+
+                    {/* <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -271,7 +271,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                           Archive Job
                         </Button>
                       </div> */}
-                 
                   </CardContent>
                 </Card>
               );
@@ -304,9 +303,10 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* About Us */}
       <div>
         <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
-        <p className="text-gray-700 leading-relaxed text-sm">
-          {company.aboutUs}
-        </p>
+        <div
+          className="prose prose-sm text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: company.aboutUs }}
+        />
       </div>
 
       {/* Company Details */}
