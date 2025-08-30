@@ -221,7 +221,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
         <Card className="border-0">
           <CardContent className="p-0">
             <div className="mb-2 lg:mb-0 flex items-center justify-center relative">
-              <div className="absolute right-0">
+              <div className="absolute right-0 mt-[70px]">
                 <Button
                   onClick={onEdit}
                   className="bg-[#3b82f6] hover:bg-[#3b82f6]"

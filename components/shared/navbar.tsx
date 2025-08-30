@@ -15,7 +15,6 @@ import {
   MessageCircle,
   Menu,
   ChevronDown,
-  ArrowRight,
   LogOut,
   LayoutDashboard,
   Video,
@@ -139,7 +138,7 @@ export function SiteHeader() {
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
           <Link
             href="/"
-            className={`transition-colors ${
+            className={`transition-colors focus:outline-none ${
               isActive("/") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
@@ -147,7 +146,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/alljobs"
-            className={`transition-colors ${
+            className={`transition-colors focus:outline-none ${
               isActive("/alljobs") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
@@ -157,7 +156,7 @@ export function SiteHeader() {
           {token && (
             <Link
               href="/elevator-pitch-resume"
-              className={`transition-colors ${
+              className={`transition-colors focus:outline-none ${
                 isActive("/elevator-pitch-resume")
                   ? "text-[#2B7FD0]"
                   : "hover:text-[#2B7FD0]"
@@ -169,17 +168,17 @@ export function SiteHeader() {
 
           <Link
             href="/blog"
-            className={`transition-colors ${
+            className={`transition-colors focus:outline-none ${
               isActive("/blog") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
             Blog
           </Link>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className={`h-auto p-0 text-sm font-medium transition-colors ${
+                className={`h-auto p-0 text-sm font-medium transition-colors focus:outline-none ${
                   pathname.startsWith("/help")
                     ? "text-[#2B7FD0]"
                     : "hover:text-[#2B7FD0]"
@@ -190,28 +189,29 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem
-                className={isActive("/faq") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${isActive("/faq") ? "text-[#2B7FD0]" : ""}`}
               >
-                <Link href="/faq">FAQ</Link>
+                <Link href="/faq" className="w-full px-2 py-1.5 block">
+                  FAQ
+                </Link>
               </DropdownMenuItem>
-              {/* <DropdownMenuItem
-                className={isActive("/support") ? "text-[#2B7FD0]" : ""}
-              >
-                <Link href="/support">Support</Link>
-              </DropdownMenuItem> */}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className={isActive("/contact-us") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${
+                  isActive("/contact-us") ? "text-[#2B7FD0]" : ""
+                }`}
               >
-                <Link href="/contact-us">Contact Us</Link>
+                <Link href="/contact-us" className="w-full px-2 py-1.5 block">
+                  Contact Us
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className={`h-auto p-0 text-sm font-medium transition-colors ${
+                className={`h-auto p-0 text-sm font-medium transition-colors focus:outline-none ${
                   pathname.startsWith("/more")
                     ? "text-[#2B7FD0]"
                     : "hover:text-[#2B7FD0]"
@@ -222,35 +222,57 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem
-                className={isActive("/about-us") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${
+                  isActive("/about-us") ? "text-[#2B7FD0]" : ""
+                }`}
               >
-                <Link href="/about-us">About Us</Link>
+                <Link href="/about-us" className="w-full px-2 py-1.5 block">
+                  About Us
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={isActive("/careers") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${
+                  isActive("/careers") ? "text-[#2B7FD0]" : ""
+                }`}
               >
-                <Link href="/careers">Careers</Link>
+                <Link href="/careers" className="w-full px-2 py-1.5 block">
+                  Careers
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className={isActive("/privacy-policy") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${
+                  isActive("/privacy-policy") ? "text-[#2B7FD0]" : ""
+                }`}
               >
-                <Link href="/privacy-policy">Privacy Policy</Link>
+                <Link
+                  href="/privacy-policy"
+                  className="w-full px-2 py-1.5 block"
+                >
+                  Privacy Policy
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className={isActive("/terms-condition") ? "text-[#2B7FD0]" : ""}
+                className={`p-0 ${
+                  isActive("/terms-condition") ? "text-[#2B7FD0]" : ""
+                }`}
               >
-                <Link href="/terms-condition">Terms and Conditions</Link>
+                <Link
+                  href="/terms-condition"
+                  className="w-full px-2 py-1.5 block"
+                >
+                  Terms and Conditions
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
 
-        {/* Right Section: Action Buttons & Avatar or Login */}
+        {/* Right Section: Action Buttons & Avatar or Login (hidden on mobile when authenticated) */}
         <div className="flex items-center gap-2 md:gap-4 md:ml-7">
           {status === "authenticated" ? (
             <>
-              <Link href="/notifications">
+              <Link href="/notifications" className="hidden lg:block">
                 <Button
                   size="icon"
                   className="rounded-full bg-blue-500 text-white hover:bg-primary"
@@ -259,7 +281,7 @@ export function SiteHeader() {
                   <span className="sr-only">Notifications</span>
                 </Button>
               </Link>
-              <Link href="/messages">
+              <Link href="/messages" className="hidden lg:block">
                 <Button
                   size="icon"
                   className="rounded-full bg-blue-500 text-white hover:bg-primary"
@@ -268,128 +290,136 @@ export function SiteHeader() {
                   <span className="sr-only">Messages</span>
                 </Button>
               </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Avatar className="h-10 w-10 cursor-pointer">
-                    <AvatarImage
-                      src={userAvatar || "/placeholder.svg?height=32&width=32"}
-                      alt="User Avatar"
-                    />
-                    <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
-                  </Avatar>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="end">
-                  {(userRole === "recruiter" || userRole === "company") && (
-                    <>
-                      {links.dashboard && (
-                        <DropdownMenuItem
-                          className={
-                            isActive(links.dashboard) ? "text-[#2B7FD0]" : ""
-                          }
-                        >
-                          <Link
-                            href={links.dashboard}
-                            className="flex items-center"
-                          >
-                            <LayoutDashboard className="mr-2 h-4 w-4" />{" "}
-                            Dashboard
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-
-                      {links.elevatorPitch && (
-                        <DropdownMenuItem
-                          className={
-                            isActive(links.elevatorPitch)
-                              ? "text-[#2B7FD0]"
-                              : ""
-                          }
-                        >
-                          <Link
-                            href={links.elevatorPitch}
-                            className="flex items-center"
-                          >
-                            <Video className="mr-2 h-4 w-4" /> Elevator Pitch
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-
-                      {links.settings && (
-                        <DropdownMenuItem
-                          className={
-                            isActive(links.settings) ? "text-[#2B7FD0]" : ""
-                          }
-                        >
-                          <Link
-                            href={links.settings}
-                            className="flex items-center"
-                          >
-                            <Settings className="mr-2 h-4 w-4" /> Settings
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
-
-                      {/* ✅ My Plan menu item */}
-                      <DropdownMenuItem>
-                        <Link
-                          href={
-                            userRole === "recruiter"
-                              ? "/recruiter-pricing"
-                              : "/company-pricing"
-                          }
-                          className="flex items-center"
-                        >
-                          <CreditCard className="mr-2 h-4 w-4" /> My Plan
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
-
-                  {userRole === "candidate" && (
-                    <>
-                      <DropdownMenuItem
-                        className={
-                          isActive(getProfileLink()) ? "text-[#2B7FD0]" : ""
+              <div className="hidden lg:block">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="h-10 w-10 cursor-pointer">
+                      <AvatarImage
+                        src={
+                          userAvatar || "/placeholder.svg?height=32&width=32"
                         }
-                      >
-                        <Link
-                          href={getProfileLink()}
-                          className="flex items-center"
-                        >
-                          <UserPen className="mr-2 h-4 w-4" /> Profile
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className={
-                          isActive("/bookmarks") ? "text-[#2B7FD0]" : ""
-                        }
-                      >
-                        <Link href="/bookmarks" className="flex items-center">
-                          <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
-                        </Link>
-                      </DropdownMenuItem>
-                      {/* ✅ My Plan menu item */}
-                      <DropdownMenuItem>
-                        <Link
-                          href="/user-pricing"
-                          className="flex items-center"
-                        >
-                          <CreditCard className="mr-2 h-4 w-4" /> My Plan
-                        </Link>
-                      </DropdownMenuItem>
-                    </>
-                  )}
+                        alt="User Avatar"
+                      />
+                      <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
 
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
-                    <LogOut className="mr-2 h-4 w-4" /> Log Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                  <DropdownMenuContent align="end">
+                    {(userRole === "recruiter" || userRole === "company") && (
+                      <>
+                        {links.dashboard && (
+                          <DropdownMenuItem
+                            className={`p-0 ${
+                              isActive(links.dashboard) ? "text-[#2B7FD0]" : ""
+                            }`}
+                          >
+                            <Link
+                              href={links.dashboard}
+                              className="flex items-center w-full px-2 py-1.5"
+                            >
+                              <LayoutDashboard className="mr-2 h-4 w-4" />{" "}
+                              Dashboard
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+
+                        {links.elevatorPitch && (
+                          <DropdownMenuItem
+                            className={`p-0 ${
+                              isActive(links.elevatorPitch)
+                                ? "text-[#2B7FD0]"
+                                : ""
+                            }`}
+                          >
+                            <Link
+                              href={links.elevatorPitch}
+                              className="flex items-center w-full px-2 py-1.5"
+                            >
+                              <Video className="mr-2 h-4 w-4" /> Elevator Pitch
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+
+                        {links.settings && (
+                          <DropdownMenuItem
+                            className={`p-0 ${
+                              isActive(links.settings) ? "text-[#2B7FD0]" : ""
+                            }`}
+                          >
+                            <Link
+                              href={links.settings}
+                              className="flex items-center w-full px-2 py-1.5"
+                            >
+                              <Settings className="mr-2 h-4 w-4" /> Settings
+                            </Link>
+                          </DropdownMenuItem>
+                        )}
+
+                        <DropdownMenuItem className="p-0">
+                          <Link
+                            href={
+                              userRole === "recruiter"
+                                ? "/recruiter-pricing"
+                                : "/company-pricing"
+                            }
+                            className="flex items-center w-full px-2 py-1.5"
+                          >
+                            <CreditCard className="mr-2 h-4 w-4" /> My Plan
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
+                    {userRole === "candidate" && (
+                      <>
+                        <DropdownMenuItem
+                          className={`p-0 ${
+                            isActive(getProfileLink()) ? "text-[#2B7FD0]" : ""
+                          }`}
+                        >
+                          <Link
+                            href={getProfileLink()}
+                            className="flex items-center w-full px-2 py-1.5"
+                          >
+                            <UserPen className="mr-2 h-4 w-4" /> Profile
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className={`p-0 ${
+                            isActive("/bookmarks") ? "text-[#2B7FD0]" : ""
+                          }`}
+                        >
+                          <Link
+                            href="/bookmarks"
+                            className="flex items-center w-full px-2 py-1.5"
+                          >
+                            <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="p-0">
+                          <Link
+                            href="/user-pricing"
+                            className="flex items-center w-full px-2 py-1.5"
+                          >
+                            <CreditCard className="mr-2 h-4 w-4" /> My Plan
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => signOut()}
+                      className="cursor-pointer"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" /> Log Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
           ) : (
-            <Link href="/login">
+            <Link href="/login" className="hidden lg:block">
               <Button
                 className={`bg-blue-500 hover:bg-primary text-white ${
                   isActive("/login") ? "bg-[#2B7FD0]" : ""
@@ -408,21 +438,49 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="left" className="w-[250px] sm:w-[300px]">
               <Link
-                href="#"
+                href="/"
                 className="flex items-center gap-2 font-bold text-lg mb-6"
               >
-                <div className="w-8 h-8 bg-blue-500 rounded-md" />
-                YOUR LOGO
+                <Image
+                  src={"/assets/evp-logo.jpg"}
+                  alt="Logo"
+                  width={500}
+                  height={500}
+                  className="h-[38px] w-[100px]"
+                />
               </Link>
 
               <div className="mb-6 md:hidden">
                 <GlobalSearch />
               </div>
 
+              {status === "authenticated" && (
+                <div className="flex items-center gap-2 mb-6">
+                  <Link href="/notifications" className="flex-1">
+                    <Button
+                      size="sm"
+                      className="w-full bg-blue-500 text-white hover:bg-primary"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </Button>
+                  </Link>
+                  <Link href="/messages" className="flex-1">
+                    <Button
+                      size="sm"
+                      className="w-full bg-blue-500 text-white hover:bg-primary"
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" />
+                      Messages
+                    </Button>
+                  </Link>
+                </div>
+              )}
+
               <nav className="grid gap-4 text-sm font-medium">
                 <Link
                   href="/"
-                  className={`transition-colors ${
+                  className={`transition-colors focus:outline-none ${
                     isActive("/") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
                   }`}
                 >
@@ -430,7 +488,7 @@ export function SiteHeader() {
                 </Link>
                 <Link
                   href="/alljobs"
-                  className={`transition-colors ${
+                  className={`transition-colors focus:outline-none ${
                     isActive("/alljobs")
                       ? "text-[#2B7FD0]"
                       : "hover:text-[#2B7FD0]"
@@ -441,7 +499,7 @@ export function SiteHeader() {
                 {(userRole === "candidate" || userRole === "recruiter") && (
                   <Link
                     href="/elevator-pitch-resume"
-                    className={`transition-colors ${
+                    className={`transition-colors focus:outline-none ${
                       isActive("/elevator-pitch-resume")
                         ? "text-[#2B7FD0]"
                         : "hover:text-[#2B7FD0]"
@@ -452,7 +510,7 @@ export function SiteHeader() {
                 )}
                 <Link
                   href="/blog"
-                  className={`transition-colors ${
+                  className={`transition-colors focus:outline-none ${
                     isActive("/blog")
                       ? "text-[#2B7FD0]"
                       : "hover:text-[#2B7FD0]"
@@ -460,27 +518,95 @@ export function SiteHeader() {
                 >
                   Blog
                 </Link>
-                <Link
-                  href="/faq"
-                  className={`transition-colors ${
-                    isActive("/faq") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
-                  }`}
-                >
-                  Help & Info
-                </Link>
-                <Link
-                  href="/about-us"
-                  className={`transition-colors ${
-                    isActive("/about-us")
-                      ? "text-[#2B7FD0]"
-                      : "hover:text-[#2B7FD0]"
-                  }`}
-                >
-                  More
-                </Link>
-                <Button className="w-full bg-blue-500 hover:bg-primary text-white">
-                  Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-900">Help & Info</div>
+                  <div className="pl-4 space-y-2">
+                    <Link
+                      href="/faq"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/faq")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      FAQ
+                    </Link>
+                    <Link
+                      href="/contact-us"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/contact-us")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Contact Us
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="font-medium text-gray-900">More</div>
+                  <div className="pl-4 space-y-2">
+                    <Link
+                      href="/about-us"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/about-us")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      About Us
+                    </Link>
+                    <Link
+                      href="/careers"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/careers")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Careers
+                    </Link>
+                    <Link
+                      href="/privacy-policy"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/privacy-policy")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Privacy Policy
+                    </Link>
+                    <Link
+                      href="/terms-condition"
+                      className={`block transition-colors focus:outline-none ${
+                        isActive("/terms-condition")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Terms and Conditions
+                    </Link>
+                  </div>
+                </div>
+
+                {status === "authenticated" ? (
+                  <Button
+                    onClick={() => signOut()}
+                    variant="outline"
+                    className="w-full mt-4"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                ) : (
+                  <Link href="/login">
+                    <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
+                      Login
+                    </Button>
+                  </Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
