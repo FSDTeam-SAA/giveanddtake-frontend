@@ -1,14 +1,30 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { User, Lock, Calendar, LogOut, Camera, Menu, X } from "lucide-react";
+import { User, Lock, Calendar, LogOut, Camera, Menu } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+
+async function fetchUserData(token: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch user data");
+  }
+  return response.json();
+}
 
 async function updateAvatar({ token, file }: { token: string; file: File }) {
   const formData = new FormData();
@@ -34,18 +50,26 @@ async function updateAvatar({ token, file }: { token: string; file: File }) {
 export function ProfileSidebar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-
+  const token = session?.accessToken || "";
   const role = session?.user?.role;
   const [isOpen, setIsOpen] = useState(false);
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch user data
+  const { data: userData, isLoading: isUserDataLoading } = useQuery({
+    queryKey: ["userData", token],
+    queryFn: () => fetchUserData(token),
+    enabled: !!token, // Only fetch if token exists
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
   // Mutation for updating avatar
   const avatarMutation = useMutation({
     mutationFn: updateAvatar,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["userData", session?.accessToken],
+        queryKey: ["userData", token],
       });
       toast.success("Avatar updated successfully!");
     },
@@ -69,17 +93,15 @@ export function ProfileSidebar() {
   );
 
   // Handle loading state with skeleton loader
-  if (status === "loading") {
+  if (status === "loading" || isUserDataLoading) {
     return (
       <div className="hidden lg:block w-80 lg:w-64 bg-white min-h-screen p-6 border-r border-gray-100">
         <div className="animate-pulse">
-          {/* Avatar skeleton */}
           <div className="flex flex-col items-center mb-8">
             <div className="h-24 w-24 bg-gray-200 rounded-full mb-4"></div>
             <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-40"></div>
           </div>
-          {/* Menu items skeleton */}
           <div className="space-y-2 px-6">
             {[...Array(4)].map((_, index) => (
               <div key={index} className="flex items-center gap-3 px-4 py-3">
@@ -88,7 +110,6 @@ export function ProfileSidebar() {
               </div>
             ))}
           </div>
-          {/* Logout button skeleton */}
           <div className="p-6 border-t border-gray-100 mt-16">
             <div className="h-10 bg-gray-200 rounded w-full"></div>
           </div>
@@ -108,7 +129,7 @@ export function ProfileSidebar() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      avatarMutation.mutate({ token: session?.accessToken || "", file });
+      avatarMutation.mutate({ token, file });
     }
   };
 
@@ -118,7 +139,9 @@ export function ProfileSidebar() {
         <div className="relative mb-4">
           <Avatar className="h-24 w-24">
             <AvatarImage
-              src={session?.user?.image || "https://via.placeholder.com/150"}
+              src={
+                userData?.data?.avatar?.url || "https://via.placeholder.com/150"
+              }
               alt={session?.user?.name || "User Avatar"}
             />
             <AvatarFallback className="text-xl bg-gray-200">
@@ -192,7 +215,6 @@ export function ProfileSidebar() {
 
   return (
     <>
-      {/* Mobile Menu Button */}
       <div className="lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild className="top-24">
@@ -218,7 +240,6 @@ export function ProfileSidebar() {
         </Sheet>
       </div>
 
-      {/* Desktop Sidebar */}
       <div className="hidden lg:block w-80 lg:w-64 bg-white border-r border-gray-100">
         <SidebarContent />
       </div>
