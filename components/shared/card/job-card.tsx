@@ -48,12 +48,23 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return "1 day ago";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return `${Math.ceil(diffDays / 30)} months ago`;
+    if (diffMinutes < 60)
+      return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    if (diffDays === 1) return `1 day ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+    if (diffDays < 30)
+      return `${Math.ceil(diffDays / 7)} week${
+        Math.ceil(diffDays / 7) === 1 ? "" : "s"
+      } ago`;
+    return `${Math.ceil(diffDays / 30)} month${
+      Math.ceil(diffDays / 30) === 1 ? "" : "s"
+    } ago`;
   };
 
   const handleClick = (e: React.MouseEvent) => {
@@ -178,6 +189,20 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                 <h3 className="font-semibold text-lg text-gray-800">
                   {job.title}
                 </h3>
+                <div>
+                  {job.companyId ? (
+                    <Link
+                      href={`/companies-profile/${job.companyId._id || "#"}`}
+                      className="text-primary text-[14px] font-normal hover:underline"
+                    >
+                      {job.companyId.cname || "Unknown Company"}
+                    </Link>
+                  ) : (
+                    <span className="text-muted-foreground text-[16px] font-normal">
+                      Unknown Company
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2">
                 <Link href={`/job-application?id=${job._id}`}>
@@ -188,9 +213,6 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                     Apply
                   </Button>
                 </Link>
-                <Button className="bg-primary hover:bg-blue-700 text-white text-sm">
-                  {job.employement_Type || "Not Specified"}
-                </Button>
               </div>
             </div>
             <div className="py-4">
@@ -201,28 +223,22 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                 }}
               />
             </div>
-            <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-              <div className="bg-[#E9ECFC] p-2 rounded-lg">
-                {job.companyId ? (
-                  <Link
-                    href={`/companies-profile/${job.companyId._id || "#"}`}
-                    className="text-[#707070] text-[16px] font-normal"
-                  >
-                    {job.companyId.cname || "Unknown Company"}
-                  </Link>
-                ) : (
-                  <span className="text-[#707070] text-[16px] font-normal">
-                    Unknown Company
-                  </span>
-                )}
+            <div className="flex flex-wrap justify-between items-center gap-6 text-sm text-gray-600">
+              <div className="flex flex-wrap justify-between gap-6">
+                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  {job.salaryRange}
+                </div>
+                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  {job.location}
+                </div>
+                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg capitalize">
+                  {job.employement_Type || "Not Specified"}
+                </div>
               </div>
-              <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                <DollarSign className="h-4 w-4 mr-1" />
-                {job.salaryRange}
-              </div>
-              <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                <MapPin className="h-4 w-4 mr-1" />
-                {job.location}
+              <div className="text-[#059c05] text-sm text-bold">
+                {formatDate(job.createdAt)}
               </div>
             </div>
           </div>

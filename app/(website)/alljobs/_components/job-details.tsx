@@ -53,6 +53,20 @@ interface JobDetailsResponse {
   data: JobDetailsData;
 }
 
+interface Bookmark {
+  jobId: string;
+  bookmarked: boolean;
+}
+
+interface BookmarkResponse {
+  success: boolean;
+  message: string;
+  data: {
+    bookmarks: Bookmark[];
+    meta: Record<string, any>;
+  };
+}
+
 interface JobDetailsProps {
   jobId: string;
   onBack?: () => void;
@@ -61,9 +75,10 @@ interface JobDetailsProps {
 export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id;
-  const token = (session?.user as any)?.accessToken;
+  const token = session?.accessToken;
   const queryClient = useQueryClient();
 
+  // Fetch job details
   const {
     data: jobData,
     isLoading,
@@ -89,34 +104,70 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     enabled: !!jobId && jobId !== "undefined",
   });
 
-  const saveJobMutation = useMutation({
+  // Fetch bookmark status
+  const { data: bookmarkData, isLoading: isBookmarkLoading } = useQuery<BookmarkResponse>({
+    queryKey: ["bookmark", jobId, userId],
+    queryFn: async () => {
+      if (!userId || !token) {
+        return { success: false, message: "User not authenticated", data: { bookmarks: [], meta: {} } };
+      }
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/user/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to fetch bookmark status");
+      }
+      return response.json();
+    },
+    enabled: !!userId && !!token && !!jobId && jobId !== "undefined",
+  });
+
+  // Determine if the current job is bookmarked
+  const bookmarked = bookmarkData?.data?.bookmarks?.some(
+    (bookmark: Bookmark) => bookmark.jobId === jobId && bookmark.bookmarked
+  ) ?? false;
+
+  console.log("Bookmark status for job", jobId, ":", { bookmarked });
+
+  // Toggle bookmark mutation
+  const toggleBookmarkMutation = useMutation({
     mutationFn: async ({
       jobId,
       userId,
+      bookmarked,
     }: {
       jobId: string;
       userId: string;
+      bookmarked: boolean;
     }) => {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/update`,
         {
-          method: "POST",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ jobId, userId }),
+          body: JSON.stringify({ jobId, userId, bookmarked: !bookmarked }),
         }
       );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save job");
+        throw new Error(errorData.message || `Failed to ${bookmarked ? "unsave" : "save"} job`);
       }
       return response.json();
     },
     onSuccess: () => {
-      toast.success("Job saved successfully!");
+      toast.success(`Job ${bookmarked ? "unsaved" : "saved"} successfully!`);
+      queryClient.invalidateQueries({ queryKey: ["bookmark", jobId, userId] });
       queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
     },
     onError: (error) => {
@@ -124,7 +175,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     },
   });
 
-  const handleSaveJob = () => {
+  const handleToggleBookmark = () => {
     if (sessionStatus === "loading") {
       toast.loading("Checking authentication...");
       return;
@@ -133,7 +184,11 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       toast.error("Please log in to save this job.");
       return;
     }
-    saveJobMutation.mutate({ jobId: jobData?.data._id!, userId });
+    toggleBookmarkMutation.mutate({
+      jobId: jobData?.data._id!,
+      userId,
+      bookmarked,
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -290,10 +345,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <DollarSign className="h-4 w-4 mr-1" />
                   {job.salaryRange}
                 </div>
-                <div className="flex items-center">
-                  <Button className="bg-[#E9ECFC] hover:bg-blue-300 text-[#2042E3] text-sm">
-                    {job.employement_Type || "Not Specified"}
-                  </Button>
+                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg capitalize">
+                  {job.employement_Type || "Not Specified"}
                 </div>
               </div>
             </div>
@@ -317,14 +370,21 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex gap-3 p-4">
               <Button
                 variant="outline"
-                onClick={handleSaveJob}
+                onClick={handleToggleBookmark}
                 disabled={
-                  saveJobMutation.isPending ||
+                  toggleBookmarkMutation.isPending ||
                   sessionStatus === "loading" ||
+                  isBookmarkLoading ||
                   !userId
                 }
               >
-                {saveJobMutation.isPending ? "Saving..." : "Save Job"}
+                {toggleBookmarkMutation.isPending
+                  ? bookmarked
+                    ? "Unsaving..."
+                    : "Saving..."
+                  : bookmarked
+                  ? "Unsave Job"
+                  : "Save Job"}
               </Button>
               <Link href={`/job-application?id=${job._id}`}>
                 <Button className="bg-primary hover:bg-blue-700">

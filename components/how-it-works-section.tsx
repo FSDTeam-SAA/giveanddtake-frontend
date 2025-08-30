@@ -27,7 +27,7 @@ export function HowItWorksSection() {
         </h2>
         <div className="w-[180px] md:w-[240px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
 
-        <div className="grid gap-8 md:grid-cols-3 mt-12">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mt-12">
           {/* Candidates Card */}
           <Card
             className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-[350px] w-full rounded-2xl" // For circle: use rounded-full and equal width & height
