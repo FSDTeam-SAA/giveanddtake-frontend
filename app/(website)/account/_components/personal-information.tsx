@@ -19,7 +19,7 @@ import { useRouter } from "next/navigation";
 
 async function fetchUserData(token: string) {
   const response = await fetch(
-    "https://giveandtake-backend.onrender.com/api/v1/user/single",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -34,7 +34,7 @@ async function fetchUserData(token: string) {
 
 async function updateUserData({ token, data }: { token: string; data: any }) {
   const response = await fetch(
-    "https://giveandtake-backend.onrender.com/api/v1/user/update",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/update`,
     {
       method: "PATCH",
       headers: {
@@ -52,7 +52,7 @@ async function updateUserData({ token, data }: { token: string; data: any }) {
 
 async function deactivateAccount(token: string) {
   const response = await fetch(
-    "https://giveandtake-backend.onrender.com/api/v1/user/deactivate",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/deactivate`,
     {
       method: "PATCH",
       headers: {
