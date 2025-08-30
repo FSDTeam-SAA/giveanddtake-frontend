@@ -1,38 +1,39 @@
-"use client"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import Image from "next/image"
-import { useSession } from "next-auth/react"
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { motion, Variants } from "framer-motion"
+"use client";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
+import { useSession } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, Variants } from "framer-motion";
+import { Search } from "lucide-react";
 
 export function HeroSection() {
-  const session = useSession()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialJobTitle = searchParams.get("title") || ""
-  const initialLocation = searchParams.get("location") || ""
-  const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle)
-  const [locationInput, setLocationInput] = useState(initialLocation)
+  const session = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialJobTitle = searchParams.get("title") || "";
+  const initialLocation = searchParams.get("location") || "";
+  const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle);
+  const [locationInput, setLocationInput] = useState(initialLocation);
 
   useEffect(() => {
-    setJobTitleInput(searchParams.get("title") || "")
-    setLocationInput(searchParams.get("location") || "")
-  }, [searchParams])
+    setJobTitleInput(searchParams.get("title") || "");
+    setLocationInput(searchParams.get("location") || "");
+  }, [searchParams]);
 
   const handleSearch = () => {
-    const currentParams = new URLSearchParams()
+    const currentParams = new URLSearchParams();
     if (jobTitleInput) {
-      currentParams.set("title", jobTitleInput)
+      currentParams.set("title", jobTitleInput);
     }
     if (locationInput) {
-      currentParams.set("location", locationInput)
+      currentParams.set("location", locationInput);
     }
-    currentParams.set("page", "1")
-    router.push(`/alljobs?${currentParams.toString()}`)
-  }
+    currentParams.set("page", "1");
+    router.push(`/alljobs?${currentParams.toString()}`);
+  };
 
   const bubbleVariants: Variants = {
     float: {
@@ -65,7 +66,7 @@ export function HeroSection() {
         ease: [0.4, 0.0, 0.2, 1] as const,
       },
     },
-  }
+  };
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -76,7 +77,7 @@ export function HeroSection() {
         delayChildren: 0.1,
       },
     },
-  }
+  };
 
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
@@ -88,7 +89,7 @@ export function HeroSection() {
         ease: [0.4, 0.0, 0.2, 1] as [number, number, number, number],
       },
     },
-  }
+  };
 
   const formVariants: Variants = {
     hidden: { opacity: 0, y: 20, scale: 0.95 },
@@ -102,7 +103,7 @@ export function HeroSection() {
         delay: 0.4,
       },
     },
-  }
+  };
 
   const badgeVariants: Variants = {
     hidden: { opacity: 0, scale: 0.8 },
@@ -114,10 +115,10 @@ export function HeroSection() {
         ease: [0.4, 0.0, 0.2, 1] as [number, number, number, number],
       },
     },
-  }
+  };
 
   return (
-    <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden min-h-[70vh]">
+    <section className="container relative w-full px-4 py-8 md:py-12 lg:py-24 overflow-hidden md:min-h-[70vh]">
       <div
         className="absolute inset-0 bg-gradient-to-br from-blue-50/30 via-transparent to-blue-100/20 pointer-events-none"
         suppressHydrationWarning={true}
@@ -264,15 +265,16 @@ export function HeroSection() {
             variants={itemVariants}
             className="text-2xl font-bold leading-[120%] sm:text-3xl md:text-[40px] text-[#2B7FD0]"
           >
-            Shape Your Future <br className="hidden sm:block" /> with the Right Elevator Pitch
+            Shape Your Future <br className="hidden sm:block" /> with the Right
+            Elevator Pitch
           </motion.h1>
 
           <motion.p
             variants={itemVariants}
             className="text-sm md:text-[16px] font-normal leading-[150%] text-[#595959] max-w-[355px] mx-auto lg:mx-0 mt-6 md:mt-[48px]"
           >
-            Unlock your full potential and begin creating the life you truly deserve — one meaningful opportunity at a
-            time.
+            Unlock your full potential and begin creating the life you truly
+            deserve — one meaningful opportunity at a time.
           </motion.p>
 
           {session?.status === "authenticated" && (
@@ -288,6 +290,7 @@ export function HeroSection() {
                   transition={{ duration: 0.2 }}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300"
                 >
+                  {/* Job Title Input */}
                   <div className="space-y-1 text-start">
                     <Label
                       htmlFor="job-title"
@@ -295,14 +298,19 @@ export function HeroSection() {
                     >
                       Job Title
                     </Label>
-                    <input
-                      id="job-title"
-                      placeholder="Input Job type"
-                      className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
-                      value={jobTitleInput}
-                      onChange={(e) => setJobTitleInput(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        id="job-title"
+                        placeholder="Input Job type"
+                        className="w-full pl-8 border-none h-[28px] px-0 !focus:outline-none !focus:ring-0 outline-none"
+                        value={jobTitleInput}
+                        onChange={(e) => setJobTitleInput(e.target.value)}
+                      />
+                    </div>
                   </div>
+
+                  {/* Location Input */}
                   <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200 text-start">
                     <Label
                       htmlFor="location"
@@ -310,17 +318,26 @@ export function HeroSection() {
                     >
                       Location
                     </Label>
-                    <input
-                      id="location"
-                      placeholder="Search Location"
-                      className="w-full border-none h-[24px] px-0 !focus:outline-none !focus:ring-0 outline-none"
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                    />
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <input
+                        id="location"
+                        placeholder="Search Location"
+                        className="w-full pl-8 border-none h-[28px] px-0 !focus:outline-none !focus:ring-0 outline-none"
+                        value={locationInput}
+                        onChange={(e) => setLocationInput(e.target.value)}
+                      />
+                    </div>
                   </div>
                 </motion.div>
+
+                {/* Search Button */}
                 <div className="flex items-start justify-start">
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} transition={{ duration: 0.2 }}>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Button
                       onClick={handleSearch}
                       className="w-full sm:w-[160px] bg-[#2B7FD0] hover:bg-[#2B7FD0]/80 h-[51px] text-white rounded-[8px] mt-2 sm:mt-6 transition-all duration-300"
@@ -345,12 +362,11 @@ export function HeroSection() {
                   },
                 }}
                 className="flex flex-wrap gap-2 items-center justify-center lg:justify-start text-xs sm:text-sm mt-6 md:mt-[48px]"
-              >
-              </motion.div>
+              ></motion.div>
             </motion.div>
           )}
         </div>
       </motion.div>
     </section>
-  )
+  );
 }

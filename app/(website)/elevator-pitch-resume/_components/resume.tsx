@@ -1,4 +1,3 @@
-
 "use client";
 
 import type React from "react";
@@ -132,52 +131,49 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const token = session?.accessToken;
-  const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [pitchError, setPitchError] = useState<string | null>(null);
-  const [pitchLoading, setPitchLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchPitchData = async () => {
-      if (!session?.user?.id || !token) {
-        setPitchLoading(false);
-        return;
-      }
+  // useEffect(() => {
+  //   const fetchPitchData = async () => {
+  //     if (!session?.user?.id || !token) {
+  //       setPitchLoading(false);
+  //       return;
+  //     }
 
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-        const response = await fetch(
-          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=candidate`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+  //     try {
+  //       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  //       const response = await fetch(
+  //         `${baseUrl}/elevator-pitch/all/elevator-pitches?type=candidate`,
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${token}`,
+  //             "Content-Type": "application/json",
+  //           },
+  //         }
+  //       );
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch pitch data");
-        }
+  //       if (!response.ok) {
+  //         throw new Error("Failed to fetch pitch data");
+  //       }
 
-        const apiResponse: ApiResponse = await response.json();
-        const userPitch = apiResponse.data.find(
-          (pitch) => pitch.userId._id === session.user?.id
-        );
+  //       const apiResponse: ApiResponse = await response.json();
+  //       const userPitch = apiResponse.data.find(
+  //         (pitch) => pitch.userId._id === session.user?.id
+  //       );
 
-        if (userPitch) {
-          setPitchData(userPitch);
-        } else {
-          setPitchError("No pitch found for current user");
-        }
-      } catch (err) {
-        setPitchError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setPitchLoading(false);
-      }
-    };
+  //       if (userPitch) {
+  //         setPitchData(userPitch);
+  //       } else {
+  //         setPitchError("No pitch found for current user");
+  //       }
+  //     } catch (err) {
+  //       setPitchError(err instanceof Error ? err.message : "An error occurred");
+  //     } finally {
+  //       setPitchLoading(false);
+  //     }
+  //   };
 
-    fetchPitchData();
-  }, [session, token]);
+  //   fetchPitchData();
+  // }, [session, token]);
 
   if (!resume || !resume.resume) {
     return (
@@ -262,7 +258,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   <div className="flex gap-3 items-center mt-2">
                     {resume.resume.sLink?.map((linkObj) => {
                       const { label, url, _id } = linkObj;
-                      const Icon = iconMap[label.toLowerCase()] || iconMap.other;
+                      const Icon =
+                        iconMap[label.toLowerCase()] || iconMap.other;
 
                       if (!url) return null;
 
@@ -298,7 +295,9 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </div>
                     <div>
                       <p className="font-semibold text-base">Phone</p>
-                      <p className="text-gray-600">{resume.resume.phoneNumber}</p>
+                      <p className="text-gray-600">
+                        {resume.resume.phoneNumber}
+                      </p>
                     </div>
                     <div>
                       <p className="font-semibold text-base">Email</p>
@@ -309,7 +308,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         <p className="font-semibold text-base">Links</p>
                         {resume.resume.sLink.map((link) => (
                           <p key={link._id} className="text-blue-600">
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
                               {link.label}
                             </a>
                           </p>
@@ -327,15 +330,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 Elevator Pitch
               </h2>
               <div className="rounded-lg">
-                {pitchData ? (
+                {resume.elevatorPitch[0] ? (
                   <VideoPlayer
-                    pitchId={pitchData._id}
+                    pitchId={resume.elevatorPitch[0]._id}
                     className="w-full h-[600px] mx-auto"
                   />
-                ) : pitchLoading ? (
-                  <div>Loading pitch...</div>
-                ) : pitchError ? (
-                  <div className="text-red-500">Error: {pitchError}</div>
                 ) : (
                   <div>No pitch available</div>
                 )}
@@ -424,7 +423,9 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
                       </p>
                       {exp.jobDescription && (
-                        <p className="text-gray-600 text-sm">{exp.jobDescription}</p>
+                        <p className="text-gray-600 text-sm">
+                          {exp.jobDescription}
+                        </p>
                       )}
                     </div>
                     <p className="text-gray-600 text-sm flex items-center gap-2">
@@ -460,7 +461,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       </h4>
                       <p className="text-sm">{edu.instituteName}</p>
                       <p className="text-gray-500 text-sm">
-                        {formatDate(edu.startDate)} - {formatDate(edu.graduationDate)}
+                        {formatDate(edu.startDate)} -{" "}
+                        {formatDate(edu.graduationDate)}
                       </p>
                     </div>
                     <p className="text-gray-600 text-sm flex items-center gap-2">
@@ -496,7 +498,9 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         {formatDate(award.programeDate)}
                       </p>
                       {award.description && (
-                        <p className="text-gray-600 text-sm">{award.description}</p>
+                        <p className="text-gray-600 text-sm">
+                          {award.description}
+                        </p>
                       )}
                     </div>
                   </div>

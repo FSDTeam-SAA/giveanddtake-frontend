@@ -126,7 +126,7 @@ export function FileUpload({
 
     return (
       children || (
-        <>
+        <div>
           <Upload
             className={cn(
               "mx-auto h-12 w-12 mb-4",
@@ -147,7 +147,7 @@ export function FileUpload({
           >
             Choose File
           </Button>
-        </>
+        </div>
       )
     );
   };
