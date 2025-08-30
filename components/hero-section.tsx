@@ -258,7 +258,7 @@ export function HeroSection() {
         suppressHydrationWarning={true}
       >
         <div
-          className="flex flex-col text-center lg:text-left"
+          className="flex flex-col text-left"
           suppressHydrationWarning={true}
         >
           <motion.h1
@@ -271,7 +271,7 @@ export function HeroSection() {
 
           <motion.p
             variants={itemVariants}
-            className="text-sm md:text-[16px] font-normal leading-[150%] text-[#595959] max-w-[355px] mx-auto lg:mx-0 mt-6 md:mt-[48px]"
+            className="text-sm md:text-[16px] font-normal leading-[150%] text-[#595959] max-w-[355px] lg:mx-0 mt-6 md:mt-[48px]"
           >
             Unlock your full potential and begin creating the life you truly
             deserve — one meaningful opportunity at a time.

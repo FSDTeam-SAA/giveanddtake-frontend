@@ -97,9 +97,9 @@ export default function BlogListingPage() {
             <Link href={`/blog/${blog._id}`}>
               <Card
                 key={blog._id}
-                className="w-full max-w-sm shadow-none border-none overflow-hidden transition-all "
+                className="w-full shadow-none border-none overflow-hidden transition-all "
               >
-                <div className="relative w-full  h-[277px]">
+                <div className=" w-full  h-[277px]">
                   <Image
                     src={blog.image}
                     alt={blog.title}

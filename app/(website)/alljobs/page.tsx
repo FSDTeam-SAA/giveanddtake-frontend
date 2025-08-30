@@ -1,5 +1,3 @@
-
-
 import React, { Suspense } from "react";
 import JobsListing from "./_components/jobs-listing";
 import {
@@ -16,7 +14,8 @@ function Page() {
     <div>
       <div
         style={{
-          backgroundImage: "url('/assets/alljobs.jpg')",
+          backgroundImage:
+            "linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)), url('/assets/alljobs.jpg')",
           backgroundPosition: "bottom center",
         }}
         className="bg-cover bg-center py-16"
