@@ -28,6 +28,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  avatar: { url: string }
 }
 
 interface resumeId {
@@ -261,7 +262,7 @@ export default function JobApplicantsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarImage src={application.userId.avatar.url} />
                         <AvatarFallback className="bg-gray-200 text-gray-700">
                           {getInitials(application.userId.name)}
                         </AvatarFallback>
