@@ -433,7 +433,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 {companyData.data.companies[0].elevatorPitch && (
                   <VideoPlayer
                     pitchId={companyData.data?.companies[0].elevatorPitch._id}
-                    className="w-full h-[600px] mx-auto"
+                    className="w-full mx-auto"
                   />
                 )}
               </div>
