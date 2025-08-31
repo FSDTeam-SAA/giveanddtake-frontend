@@ -172,7 +172,7 @@ export function SiteHeader() {
               isActive("/blog") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
-            Blog
+            Blogs
           </Link>
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -516,7 +516,7 @@ export function SiteHeader() {
                       : "hover:text-[#2B7FD0]"
                   }`}
                 >
-                  Blog
+                  Blogs
                 </Link>
 
                 <div className="space-y-2">
