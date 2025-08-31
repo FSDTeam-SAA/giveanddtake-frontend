@@ -39,7 +39,9 @@ export function Footer() {
     }
   };
 
-  const handleRecruiterPostJobClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleRecruiterPostJobClick = (
+    e: React.MouseEvent<HTMLAnchorElement>
+  ) => {
     e.preventDefault();
     if (!token) {
       router.push("/login");
@@ -50,7 +52,9 @@ export function Footer() {
     }
   };
 
-  const handleCompanyPostJobClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleCompanyPostJobClick = (
+    e: React.MouseEvent<HTMLAnchorElement>
+  ) => {
     e.preventDefault();
     if (!token) {
       router.push("/login");
@@ -108,7 +112,6 @@ export function Footer() {
               Browse Jobs
             </Link>
 
-
             {/* <Link href="/alljobs" className="text-white/80 hover:underline">
               Apply for Jobs
             </Link> */}
@@ -126,7 +129,6 @@ export function Footer() {
             >
               Saved Jobs
             </Link> */}
-
           </nav>
         </div>
 
@@ -138,7 +140,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-             Elevator Pitch
+            Elevator Pitch
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
@@ -159,7 +161,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-             Elevator Pitch
+            Elevator Pitch
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link

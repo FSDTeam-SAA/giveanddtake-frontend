@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+} from "@/components/ui/alert-dialog";
 import { Eye, EyeOff, User, Mail, Phone, Lock } from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
@@ -82,6 +92,12 @@ export default function RegisterPage() {
     hasLowerCase: false,
   });
 
+  // NEW: confirmation dialog state
+  const [showRoleConfirm, setShowRoleConfirm] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<RegisterData | null>(
+    null
+  );
+
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
     onSuccess: () => {
@@ -128,39 +144,12 @@ export default function RegisterPage() {
     const validation = {
       minLength: password.length >= 10,
       hasNumber: /\d/.test(password),
-      hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(password),
       hasUpperCase: /[A-Z]/.test(password),
       hasLowerCase: /[a-z]/.test(password),
     };
     setPasswordValidation(validation);
     return Object.values(validation).every(Boolean);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (formData.password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
-    if (!validatePassword(formData.password)) {
-      alert("Password does not meet the requirements");
-      return;
-    }
-
-    if (!agreeToTerms) {
-      alert("Please agree to the terms and conditions");
-      return;
-    }
-
-    // Combine first name and surname into the name field
-    const fullFormData = {
-      ...formData,
-      name: `${firstName} ${surname}`,
-    };
-
-    registerMutation.mutate(fullFormData);
   };
 
   const handleInputChange = (field: keyof RegisterData, value: string) => {
@@ -192,11 +181,58 @@ export default function RegisterPage() {
     }));
   };
 
+  // Derived text for the primary CTA
+  const primaryCtaText = useMemo(() => {
+    if (registerMutation.isPending) return "Creating Account...";
+    if (selectedRole === "candidate") return "Sign up as a Candidate";
+    if (selectedRole === "recruiter") return "Sign up as a Recruiter";
+    return "Sign up as a Company";
+  }, [registerMutation.isPending, selectedRole]);
+
+  const validateBeforeSubmit = () => {
+    if (formData.password !== confirmPassword) {
+      alert("Passwords do not match");
+      return false;
+    }
+
+    if (!validatePassword(formData.password)) {
+      alert("Password does not meet the requirements");
+      return false;
+    }
+
+    if (!agreeToTerms) {
+      alert("Please agree to the terms and conditions");
+      return false;
+    }
+    return true;
+  };
+
+  const actuallySubmit = (data: RegisterData) => {
+    registerMutation.mutate(data);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateBeforeSubmit()) return;
+
+    // Combine first name and surname into the name field
+    const fullFormData: RegisterData = {
+      ...formData,
+      name: `${firstName} ${surname}`.trim(),
+    };
+
+    // Show the role confirmation dialog first
+    setPendingFormData(fullFormData);
+    setShowRoleConfirm(true);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Suspense fallback={<div>Loading role...</div>}>
         <RoleSelector setRole={setSelectedRole} />
       </Suspense>
+
       <Card className="w-full max-w-xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
@@ -412,33 +448,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex gap-2">
-              {[
-                { value: "recruiter", label: "Sign up as a Recruiter" },
-                { value: "company", label: "Sign up as a Company" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() =>
-                    setSelectedRole((prev) =>
-                      prev === option.value
-                        ? "candidate"
-                        : (option.value as "recruiter" | "company")
-                    )
-                  }
-                  className={cn(
-                    "w-full px-4 py-2 border rounded-md transition-colors scale-y-95 font-bold",
-                    selectedRole === option.value
-                      ? "bg-primary text-white border-blue-600"
-                      : "bg-transparent border-gray-300 hover:bg-gray-100"
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="terms"
@@ -455,19 +464,54 @@ export default function RegisterPage() {
               </Label>
             </div>
 
+            {/* Primary submit button comes FIRST */}
             <Button
               type="submit"
               className="w-full font-bold text-md"
               disabled={registerMutation.isPending}
             >
-              {registerMutation.isPending
-                ? "Creating Account..."
-                : selectedRole === "candidate"
-                ? "Sign up as a Candidate"
-                : selectedRole === "recruiter"
-                ? "Sign up as a Recruiter"
-                : "Sign up as a Company"}
+              {primaryCtaText}
             </Button>
+
+            {/* Secondary role choices moved BELOW the primary CTA */}
+            <div className="pt-2">
+              <p className="text-xs text-gray-500 mb-2 text-center">
+                Prefer a different role?
+              </p>
+              <div className="flex gap-2">
+                {[
+                  { value: "recruiter", label: "Sign up as a Recruiter" },
+                  { value: "company", label: "Sign up as a Company" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() =>
+                      setSelectedRole((prev) =>
+                        prev === option.value
+                          ? "candidate"
+                          : (option.value as "recruiter" | "company")
+                      )
+                    }
+                    className={cn(
+                      "w-full px-4 py-2 border rounded-md transition-colors scale-y-95 font-bold",
+                      selectedRole === option.value
+                        ? "bg-primary text-white border-blue-600"
+                        : "bg-transparent border-gray-300 hover:bg-gray-100"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {selectedRole !== "candidate" && (
+                <p className="text-[11px] text-gray-500 mt-2 text-center">
+                  Currently selected:{" "}
+                  <span className="font-semibold">{selectedRole}</span>. Submit
+                  to continue.
+                </p>
+              )}
+            </div>
 
             <div className="text-center">
               <span className="text-sm font-bold text-gray-600">
@@ -480,45 +524,65 @@ export default function RegisterPage() {
                 Sign In Here
               </Link>
             </div>
-
-            <div className="flex justify-center space-x-4 pt-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-transparent"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full bg-transparent"
-              >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
-                </svg>
-              </Button>
-            </div>
           </form>
         </CardContent>
       </Card>
+
+      {/* Confirmation dialog for role choice */}
+      <AlertDialog open={showRoleConfirm} onOpenChange={setShowRoleConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm your sign‑up role</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to create an account as{" "}
+              <span className="font-semibold">
+                {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
+              </span>
+              . You can change this now if it’s not what you intended.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-md bg-gray-50 p-3 text-sm">
+            <div>
+              Name:{" "}
+              <span className="font-medium">
+                {`${firstName} ${surname}`.trim() || "—"}
+              </span>
+            </div>
+            <div>
+              Email:{" "}
+              <span className="font-medium">{formData.email || "—"}</span>
+            </div>
+            <div>
+              Country:{" "}
+              <span className="font-medium">{formData.address || "—"}</span>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline" type="button">
+                Go back
+              </Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                type="button"
+                onClick={() => {
+                  if (pendingFormData) {
+                    const payload: RegisterData = {
+                      ...pendingFormData,
+                      role: selectedRole,
+                    };
+                    actuallySubmit(payload);
+                  }
+                  setShowRoleConfirm(false);
+                }}
+              >
+                Confirm & Continue
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
