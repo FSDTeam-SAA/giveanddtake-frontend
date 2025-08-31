@@ -173,7 +173,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className=" border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className=" border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[40px] lg:h-[40px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -245,7 +245,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[90px] lg:h-[90px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -263,7 +263,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[70px] lg:h-[70px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -281,7 +281,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[100px] lg:h-[100px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -299,7 +299,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[40px] lg:h-[40px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 

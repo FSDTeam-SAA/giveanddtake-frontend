@@ -480,7 +480,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Job Location</CardTitle>
               </CardHeader>
@@ -493,7 +493,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
                 <JobMap location={job.location} />
               </CardContent>
-            </Card>
+            </Card> */}
             {job.applicationRequirement &&
               job.applicationRequirement.length > 0 && (
                 <Card>
