@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Mail, Phone } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { use } from "react";
 import Image from "next/image";
 
 export function Footer() {
   const { data: session } = useSession();
   const token = session?.accessToken;
+  const role = session?.user?.role;
   const router = useRouter();
+
+  console.log(role, "rrrrrrrrrrrrr");
 
   const handleCreateAccountClick = () => {
     if (!token) {
@@ -20,6 +22,7 @@ export function Footer() {
       router.push("/elevator-pitch-resume");
     }
   };
+
   const handleCreateRecruiterAccountClick = () => {
     if (!token) {
       router.push("/login");
@@ -27,6 +30,7 @@ export function Footer() {
       router.push("/recruiter-dashboard");
     }
   };
+
   const handleCreateCompanyAccountClick = () => {
     if (!token) {
       router.push("/login");
@@ -34,6 +38,29 @@ export function Footer() {
       router.push("/create-company");
     }
   };
+
+  const handleRecruiterPostJobClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (!token) {
+      router.push("/login");
+    } else if (role !== "recruiter") {
+      router.push("/login"); // Redirect to login if user is not a recruiter
+    } else {
+      router.push("/add-job");
+    }
+  };
+
+  const handleCompanyPostJobClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    if (!token) {
+      router.push("/login");
+    } else if (role !== "company") {
+      router.push("/login"); // Redirect to login if user is not a company
+    } else {
+      router.push("/create-company");
+    }
+  };
+
   return (
     <footer className="bg-primary text-white py-12 md:py-16 lg:py-20">
       <div className="container px-4 md:px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -81,6 +108,7 @@ export function Footer() {
               Browse Jobs
             </Link>
 
+
             {/* <Link href="/alljobs" className="text-white/80 hover:underline">
               Apply for Jobs
             </Link> */}
@@ -98,10 +126,11 @@ export function Footer() {
             >
               Saved Jobs
             </Link> */}
+
           </nav>
         </div>
 
-        {/* Column 3: For Recruiter */}
+        {/* Column 3: For Recruiters */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold">For Recruiters</h3>
           <Button
@@ -113,40 +142,16 @@ export function Footer() {
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
-              href="/add-job" // Required by Next.js type definitions
-              onClick={(e) => {
-                e.preventDefault(); // stop default Link navigation
-                if (!token) {
-                  router.push("/login");
-                } else {
-                  router.push("/add-job");
-                }
-              }}
+              href="/add-job"
+              onClick={handleRecruiterPostJobClick}
               className="text-white/80 hover:underline"
             >
               Post a Job
             </Link>
-            {/* <Link
-              href="/recruiter-dashboard" // Required by Next.js type definitions
-              onClick={(e) => {
-                e.preventDefault(); // stop default Link navigation
-                if (!token) {
-                  router.push("/login");
-                } else {
-                  router.push("/recruiter-dashboard");
-                }
-              }}
-              className="text-white/80 hover:underline"
-            >
-              Recruiter Dashboard
-            </Link> */}
-            {/* <Link href="#" className="text-white/80 hover:underline">
-              Company Dashboard
-            </Link> */}
           </nav>
         </div>
 
-        {/* Column 4: For Company */}
+        {/* Column 4: For Companies */}
         <div className="flex flex-col gap-4">
           <h3 className="text-lg font-semibold">For Companies</h3>
           <Button
@@ -158,36 +163,12 @@ export function Footer() {
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
-              href="/create-company" // Required by Next.js type definitions
-              onClick={(e) => {
-                e.preventDefault(); // stop default Link navigation
-                if (!token) {
-                  router.push("/login");
-                } else {
-                  router.push("/create-company");
-                }
-              }}
+              href="/add-job"
+              onClick={handleCompanyPostJobClick}
               className="text-white/80 hover:underline"
             >
               Post a Job
             </Link>
-            {/* <Link href="#" className="text-white/80 hover:underline">
-              Pitch services and events
-            </Link> */}
-            {/* <Link
-              href="/company-profile" // Required by Next.js type definitions
-              onClick={(e) => {
-                e.preventDefault(); // stop default Link navigation
-                if (!token) {
-                  router.push("/login");
-                } else {
-                  router.push("/company-profile");
-                }
-              }}
-              className="text-white/80 hover:underline"
-            >
-              Company Dashboard
-            </Link> */}
           </nav>
         </div>
       </div>

@@ -1,88 +1,62 @@
+"use client"
 
-"use client";
-
-import { useState, useEffect } from "react";
-import { useForm, useFieldArray, FormProvider } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Info, Check, ChevronsUpDown } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "sonner";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
-import TextEditor from "./TextEditor";
-import JobPreview from "./JobPreview";
-import CustomCalendar from "./CustomCalendar";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react"
+import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/components/ui/card"
+import { Plus, Search, Info, Check, ChevronsUpDown } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { cn } from "@/lib/utils"
+import TextEditor from "./TextEditor"
+import type React from "react"
+import CustomCalendar from "./CustomCalendar"
+// import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 // Interfaces
 interface ApplicationRequirement {
-  id: string;
-  label: string;
-  required: boolean;
+  id: string
+  label: string
+  required: boolean
 }
 
 interface CustomQuestion {
-  id: string;
-  question?: string; // Optional to match schema
+  id: string
+  question: string // Made required to match expected usage
 }
 
 interface JobCategory {
-  _id: string;
-  name: string;
-  categoryIcon: string;
+  _id: string
+  name: string
+  categoryIcon: string
 }
 
 interface Country {
-  country: string;
-  cities: string[];
+  country: string
+  cities: string[]
 }
 
 interface Option {
-  value: string;
-  label: string;
+  value: string
+  label: string
 }
 
 interface JobPreviewProps {
-  formData: JobFormData;
-  companyUrl: string | undefined;
-  applicationRequirements: ApplicationRequirement[];
-  customQuestions: CustomQuestion[];
-  selectedDate: Date;
-  publishNow: boolean;
-  onBackToEdit: () => void;
+  formData: JobFormData & { category?: string } // Added optional category
+  companyUrl: string // Made required since we'll provide default
+  applicationRequirements: ApplicationRequirement[]
+  customQuestions: CustomQuestion[]
+  selectedDate: Date
+  publishNow: boolean
+  onBackToEdit: () => void
 }
 
 // Zod Schema
@@ -92,15 +66,9 @@ const jobSchema = z.object({
   country: z.string().min(1, "Country is required"),
   region: z.string().min(1, "City is required"),
   vacancy: z.string().min(1, "Vacancy is required"),
-  employmentType: z.enum([
-    "full-time",
-    "part-time",
-    "internship",
-    "contract",
-    "temporary",
-    "freelance",
-    "volunteer",
-  ], { message: "Employment type is required" }),
+  employmentType: z.enum(["full-time", "part-time", "internship", "contract", "temporary", "freelance", "volunteer"], {
+    message: "Employment type is required",
+  }),
   experience: z.enum(["entry", "mid", "senior", "executive"], {
     message: "Experience level is required",
   }),
@@ -114,9 +82,7 @@ const jobSchema = z.object({
   compensation: z.string().optional(),
   expirationDate: z.string().min(1, "Expiration date is required"),
   companyUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
-  jobDescription: z
-    .string()
-    .max(2000, "Job description cannot exceed 2000 characters"),
+  jobDescription: z.string().max(2000, "Job description cannot exceed 2000 characters"),
   publishDate: z.string().optional(),
   applicationRequirements: z
     .array(
@@ -124,37 +90,34 @@ const jobSchema = z.object({
         id: z.string(),
         label: z.string(),
         required: z.boolean(),
-      })
+      }),
     )
     .optional(),
   customQuestions: z
     .array(
       z.object({
         id: z.string(),
-        question: z.string().optional(),
-      })
+        question: z.string().min(1, "Question is required"),
+      }),
     )
     .optional(),
   userId: z.string().optional(),
-});
+})
 
-type JobFormData = z.infer<typeof jobSchema>;
+type JobFormData = z.infer<typeof jobSchema>
 
 // API Functions
 async function fetchJobCategories() {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/category/job-category`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/category/job-category`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
   if (!response.ok) {
-    throw new Error("Failed to fetch job categories");
+    throw new Error("Failed to fetch job categories")
   }
-  return response.json();
+  return response.json()
 }
 
 async function postJob(data: any) {
@@ -164,13 +127,13 @@ async function postJob(data: any) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-  });
+  })
 
   if (!response.ok) {
-    throw new Error("Failed to publish job");
+    throw new Error("Failed to publish job")
   }
 
-  return response.json();
+  return response.json()
 }
 
 // Combobox Component
@@ -182,19 +145,19 @@ function Combobox({
   minSearchLength = 0,
   disabled = false,
 }: {
-  options: Option[];
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  minSearchLength?: number;
-  disabled?: boolean;
+  options: Option[]
+  value: string
+  onChange: (value: string) => void
+  placeholder: string
+  minSearchLength?: number
+  disabled?: boolean
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
 
   const filteredOptions = options
     .filter((option) => option.label.toLowerCase().includes(search.toLowerCase()))
-    .slice(0, 100);
+    .slice(0, 100)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -203,7 +166,7 @@ function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-12"
+          className="w-full justify-between h-12 bg-transparent"
           disabled={disabled}
         >
           {value ? options.find((option) => option.value === value)?.label : placeholder}
@@ -212,16 +175,10 @@ function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-full p-0">
         <Command>
-          <CommandInput
-            placeholder="Search..."
-            value={search}
-            onValueChange={setSearch}
-          />
+          <CommandInput placeholder="Search..." value={search} onValueChange={setSearch} />
           <CommandList>
             {search.length < minSearchLength ? (
-              <CommandEmpty>
-                Type at least {minSearchLength} characters to search.
-              </CommandEmpty>
+              <CommandEmpty>Type at least {minSearchLength} characters to search.</CommandEmpty>
             ) : filteredOptions.length === 0 ? (
               <CommandEmpty>No results found.</CommandEmpty>
             ) : null}
@@ -231,40 +188,150 @@ function Combobox({
                   key={option.value}
                   value={option.value}
                   onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
+                    onChange(currentValue === value ? "" : currentValue)
+                    setOpen(false)
                   }}
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
+                  <Check className={cn("mr-2 h-4 w-4", value === option.value ? "opacity-100" : "opacity-0")} />
                   {option.label}
                 </CommandItem>
               ))}
             </CommandGroup>
             {filteredOptions.length > 100 && (
-              <CommandItem disabled>
-                More results available. Refine your search.
-              </CommandItem>
+              <CommandItem disabled>More results available. Refine your search.</CommandItem>
             )}
           </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
-  );
+  )
+}
+
+const JobPreview: React.FC<JobPreviewProps> = ({
+  formData,
+  companyUrl,
+  applicationRequirements,
+  customQuestions,
+  selectedDate,
+  publishNow,
+  onBackToEdit,
+}) => {
+  const getDisplayDate = () => {
+    try {
+      if (publishNow) {
+        return new Date().toLocaleDateString()
+      }
+      return selectedDate ? selectedDate.toLocaleDateString() : new Date().toLocaleDateString()
+    } catch (error) {
+      return new Date().toLocaleDateString()
+    }
+  }
+
+  const validCustomQuestions = customQuestions.filter((q) => q.question && q.question.trim() !== "")
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 md:p-6">
+      <div className="space-y-4 md:space-y-6">
+        <div>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">{formData.jobTitle}</h2>
+          <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+            <span>{formData.country}</span>
+            <span>•</span>
+            <span>{formData.region}</span>
+            <span>•</span>
+            <span className="capitalize">{formData.employmentType}</span>
+            <span>•</span>
+            <span className="capitalize">{formData.experience}</span>
+          </div>
+        </div>
+
+        {formData.compensation && (
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">Compensation</h3>
+            <p className="text-gray-700">{formData.compensation}</p>
+          </div>
+        )}
+
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-2">Job Description</h3>
+          <div className="text-gray-700 whitespace-pre-wrap">{formData.jobDescription}</div>
+        </div>
+
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-2">Application Requirements</h3>
+          <ul className="space-y-1">
+            {applicationRequirements
+              .filter((req) => req.required)
+              .map((req) => (
+                <li key={req.id} className="flex items-center text-sm text-gray-700">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  {req.label}
+                </li>
+              ))}
+          </ul>
+        </div>
+
+        {validCustomQuestions.length > 0 && (
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">Additional Questions</h3>
+            <ul className="space-y-2">
+              {validCustomQuestions.map((question, index) => (
+                <li key={question.id} className="text-sm text-gray-700">
+                  {index + 1}. {question.question}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-sm text-gray-600">
+            <span>Publish Date: {getDisplayDate()}</span>
+            {companyUrl && (
+              <a
+                href={companyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                Company Website
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <Button type="button" variant="outline" onClick={onBackToEdit} className="flex-1 h-12 bg-transparent">
+          Back to Edit
+        </Button>
+        <Button type="submit" className="flex-1 h-12 bg-blue-600 hover:bg-blue-700">
+          Publish Job
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export default function MultiStepJobForm() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-  const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [showPreview, setShowPreview] = useState(false);
-  const [publishNow, setPublishNow] = useState(true); // Default to publish now
-  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  // const { data: session } = useSession()
+  // const userId = session?.user?.id
+  const userId = "default-user-id" // Fallback user ID
+  const router = useRouter()
+  const [currentStep, setCurrentStep] = useState(1)
+  const [showPreview, setShowPreview] = useState(false)
+  const [publishNow, setPublishNow] = useState(true) // Default to publish now
+  const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+
+  const [jobCategories, setJobCategories] = useState<any>(null)
+  const [categoriesLoading, setCategoriesLoading] = useState(false)
+  const [categoriesError, setCategoriesError] = useState<string | null>(null)
+  const [countries, setCountries] = useState<Country[]>([])
+  const [isLoadingCountries, setIsLoadingCountries] = useState(false)
+  const [cities, setCities] = useState<string[]>([])
+  const [isLoadingCities, setIsLoadingCities] = useState(false)
+  const [isPending, setIsPending] = useState(false)
 
   // Initialize form with react-hook-form
   const form = useForm<JobFormData>({
@@ -300,163 +367,176 @@ export default function MultiStepJobForm() {
       customQuestions: [{ id: "1", question: "" }],
       userId,
     },
-  });
+  })
 
   // Manage dynamic fields
   const { fields: applicationRequirements, update: updateRequirement } = useFieldArray({
     control: form.control,
     name: "applicationRequirements",
-  });
+  })
 
   const { fields: customQuestions, append: appendCustomQuestion } = useFieldArray({
     control: form.control,
     name: "customQuestions",
-  });
+  })
 
-  // Fetch job categories
-  const {
-    data: jobCategories,
-    isLoading: categoriesLoading,
-    error: categoriesError,
-  } = useQuery({
-    queryKey: ["jobCategories"],
-    queryFn: fetchJobCategories,
-  });
+  useEffect(() => {
+    const loadJobCategories = async () => {
+      setCategoriesLoading(true)
+      setCategoriesError(null)
+      try {
+        const data = await fetchJobCategories()
+        setJobCategories(data)
+      } catch (error) {
+        setCategoriesError(error instanceof Error ? error.message : "Failed to load categories")
+      } finally {
+        setCategoriesLoading(false)
+      }
+    }
+    loadJobCategories()
+  }, [])
 
-  // Fetch countries
-  const { data: countries, isLoading: isLoadingCountries } = useQuery<Country[]>({
-    queryKey: ["countries"],
-    queryFn: async () => {
-      const response = await fetch("https://countriesnow.space/api/v0.1/countries");
-      const data = await response.json();
-      if (data.error) throw new Error("Failed to fetch countries");
-      return data.data as Country[];
-    },
-  });
+  useEffect(() => {
+    const loadCountries = async () => {
+      setIsLoadingCountries(true)
+      try {
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries")
+        const data = await response.json()
+        if (data.error) throw new Error("Failed to fetch countries")
+        setCountries(data.data as Country[])
+      } catch (error) {
+        console.error("Error loading countries:", error)
+      } finally {
+        setIsLoadingCountries(false)
+      }
+    }
+    loadCountries()
+  }, [])
 
-  // Fetch cities based on selected country
-  const { data: cities, isLoading: isLoadingCities } = useQuery<string[]>({
-    queryKey: ["cities", selectedCountry],
-    queryFn: async () => {
-      if (!selectedCountry) return [];
-      const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
-        {
+  useEffect(() => {
+    const loadCities = async () => {
+      if (!selectedCountry) {
+        setCities([])
+        return
+      }
+
+      setIsLoadingCities(true)
+      try {
+        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ country: selectedCountry }),
-        }
-      );
-      const data = await response.json();
-      if (data.error) throw new Error("Failed to fetch cities");
-      return data.data as string[];
-    },
-    enabled: !!selectedCountry,
-  });
+        })
+        const data = await response.json()
+        if (data.error) throw new Error("Failed to fetch cities")
+        setCities(data.data as string[])
+      } catch (error) {
+        console.error("Error loading cities:", error)
+        setCities([])
+      } finally {
+        setIsLoadingCities(false)
+      }
+    }
+    loadCities()
+  }, [selectedCountry])
 
   // Set default country when countries are loaded
   useEffect(() => {
     if (countries && countries.length > 0 && !form.getValues("country")) {
-      const defaultCountry = countries[0].country;
-      form.setValue("country", defaultCountry);
-      setSelectedCountry(defaultCountry);
+      const defaultCountry = countries[0].country
+      form.setValue("country", defaultCountry)
+      setSelectedCountry(defaultCountry)
     }
-  }, [countries, form]);
+  }, [countries, form])
 
-  // Publish job mutation
-  const { mutate: publishJob, isPending } = useMutation({
-    mutationFn: postJob,
-    onSuccess: () => {
-      toast.success("Job published successfully!");
-      router.push("/jobs-success");
-    },
-    onError: (error) => {
-      console.error("Error posting job:", error);
-      toast.error("An error occurred while publishing the job.");
-    },
-  });
+  const publishJob = async (data: any) => {
+    setIsPending(true)
+    try {
+      await postJob(data)
+      toast.success("Job published successfully!")
+      router.push("/jobs-success")
+    } catch (error) {
+      console.error("Error posting job:", error)
+      toast.error("An error occurred while publishing the job.")
+    } finally {
+      setIsPending(false)
+    }
+  }
 
   // Navigation handlers
   const handleNext = () => {
     form.trigger().then((isValid) => {
       if (isValid) {
         if (currentStep < 5) {
-          setCurrentStep(currentStep + 1);
+          setCurrentStep(currentStep + 1)
         }
       } else {
-        const errors = form.formState.errors;
-        const firstError = Object.values(errors)[0];
-        toast.error(firstError?.message || "Please fill in all required fields.");
+        const errors = form.formState.errors
+        const firstError = Object.values(errors)[0]
+        toast.error(firstError?.message || "Please fill in all required fields.")
       }
-    });
-  };
+    })
+  }
 
   const handleCancel = () => {
-    setCurrentStep(Math.max(1, currentStep - 1));
-  };
+    setCurrentStep(Math.max(1, currentStep - 1))
+  }
 
   const handlePreviewClick = () => {
     form.trigger().then((isValid) => {
       if (isValid) {
-        setShowPreview(true);
+        setShowPreview(true)
       } else {
-        const errors = form.formState.errors;
-        const firstError = Object.values(errors)[0];
-        toast.error(firstError?.message || "Please fill in all required fields.");
+        const errors = form.formState.errors
+        const firstError = Object.values(errors)[0]
+        toast.error(firstError?.message || "Please fill in all required fields.")
       }
-    });
-  };
+    })
+  }
 
   const handleBackToEdit = () => {
-    setShowPreview(false);
-  };
+    setShowPreview(false)
+  }
 
   // Publish job handler
   const handlePublish = (data: JobFormData) => {
     const responsibilities = data.jobDescription
       .split("\n")
       .filter((line) => line.startsWith("* "))
-      .map((line) => line.replace("* ", "").trim())
-      .filter((line) => line);
+      .map((line) => line.substring(2))
 
-    const educationExperience =
-      data.jobDescription
-        .split("Must-Have")[1]
-        ?.split("Nice-to-Have")[0]
-        ?.split("\n")
-        .filter((line) => line.startsWith("* "))
-        .map((line) => line.replace("* ", "").trim())
-        .filter((line) => line) || [];
+    const requirements = data.jobDescription
+      .split("\n")
+      .filter((line) => line.startsWith("- "))
+      .map((line) => line.substring(2))
 
-    const benefits =
-      data.jobDescription
-        .split("Why Join Us?")[1]
-        ?.split("How to Apply")[0]
-        ?.split("\n")
-        .filter((line) => line.startsWith("* "))
-        .map((line) => line.replace("* ", "").trim())
-        .filter((line) => line) || [];
+    const getExpirationDate = () => {
+      try {
+        const days = Number.parseInt(data.expirationDate) || 30
+        const expDate = new Date()
+        expDate.setDate(expDate.getDate() + days)
+        return expDate.toISOString()
+      } catch (error) {
+        const expDate = new Date()
+        expDate.setDate(expDate.getDate() + 30)
+        return expDate.toISOString()
+      }
+    }
 
-    const experienceMap: Record<string, number> = {
-      entry: 0,
-      mid: 3,
-      senior: 5,
-      executive: 10,
-    };
+    const getPublishDate = () => {
+      try {
+        if (publishNow) {
+          return new Date().toISOString()
+        }
+        return selectedDate ? selectedDate.toISOString() : new Date().toISOString()
+      } catch (error) {
+        return new Date().toISOString()
+      }
+    }
 
-    const expirationDays =
-      data.expirationDate === "custom"
-        ? 90
-        : parseInt(data.expirationDate, 10) || 30;
-
-    const publishDateObj = publishNow
-      ? new Date()
-      : new Date(data.publishDate || new Date().toISOString());
-
-    const deadlineDate = new Date(publishDateObj);
-    deadlineDate.setDate(deadlineDate.getDate() + expirationDays);
+    const selectedCategory = jobCategories?.data.find((cat: JobCategory) => cat._id === data.categoryId)
 
     const postData = {
       userId: data.userId || userId || "", // Ensure userId is a string
@@ -467,14 +547,14 @@ export default function MultiStepJobForm() {
       shift: data.employmentType === "full-time" ? "Day" : "Flexible",
       companyUrl: data.companyUrl || undefined,
       responsibilities,
-      educationExperience,
-      benefits,
-      vacancy: parseInt(data.vacancy, 10) || 1, // Convert to number
-      experience: experienceMap[data.experience] || 0,
+      educationExperience: requirements,
+      benefits: [],
+      vacancy: Number.parseInt(data.vacancy, 10) || 1, // Convert to number
+      experience: 0,
       locationType: data.locationType,
       careerStage: data.careerStage,
-      deadline: deadlineDate.toISOString(),
-      publishDate: publishDateObj.toISOString(),
+      deadline: getExpirationDate(),
+      publishDate: getPublishDate(),
       status: "active" as const,
       jobCategoryId: data.categoryId,
       employement_Type: data.employmentType,
@@ -484,14 +564,11 @@ export default function MultiStepJobForm() {
         data.applicationRequirements
           ?.filter((req) => req.required)
           .map((req) => ({ requirement: `${req.label} required` })) || [],
-      customQuestion:
-        data.customQuestions
-          ?.filter((q) => q.question)
-          .map((q) => ({ question: q.question! })) || [], // Non-null assertion since filtered
-    };
+      customQuestion: data.customQuestions?.filter((q) => q.question).map((q) => ({ question: q.question! })) || [], // Non-null assertion since filtered
+    }
 
-    publishJob(postData);
-  };
+    publishJob(postData)
+  }
 
   // Step Indicator Component
   const renderStepIndicator = () => (
@@ -503,16 +580,12 @@ export default function MultiStepJobForm() {
               <div className="flex flex-col items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    step.active
-                      ? "bg-[#2B7FD0] text-white"
-                      : "bg-gray-200 text-gray-600"
+                    step.active ? "bg-[#2B7FD0] text-white" : "bg-gray-200 text-gray-600"
                   }`}
                 >
                   {step.number}
                 </div>
-                <span className="text-sm md:text-xl mt-2 text-[#000000] font-normal">
-                  {step.title}
-                </span>
+                <span className="hidden lg:block text-sm md:text-xl mt-2 text-[#000000] font-normal">{step.title}</span>
               </div>
               {index < steps.length - 1 && (
                 <div
@@ -525,12 +598,11 @@ export default function MultiStepJobForm() {
           ))}
         </div>
       </div>
-      <p className="text-base md:text-xl text-[#000000] mb-6 font-medium text-center">
-        Please update the candidate at every stage of their application journey
-        with a simple click!
+      <p className="hidden md:block text-base md:text-xl text-[#000000] mb-6 font-medium text-center">
+        Please update the candidate at every stage of their application journey with a simple click!
       </p>
     </>
-  );
+  )
 
   const steps = [
     { number: 1, title: "Job Details", active: currentStep >= 1 },
@@ -538,15 +610,13 @@ export default function MultiStepJobForm() {
     { number: 3, title: "Application Requirements", active: currentStep >= 3 },
     { number: 4, title: "Custom Questions", active: currentStep >= 4 },
     { number: 5, title: "Finish", active: currentStep >= 5 },
-  ];
+  ]
 
   // Job Details Step
   const renderJobDetails = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
-        <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 md:mb-6">
-          Job Details
-        </h2>
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4 md:mb-6">Job Details</h2>
         <div className="space-y-4 md:space-y-6">
           <FormField
             control={form.control}
@@ -575,9 +645,7 @@ export default function MultiStepJobForm() {
             name="department"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-[#2A2A2A]">
-                  Department
-                </FormLabel>
+                <FormLabel className="text-sm font-medium text-[#2A2A2A]">Department</FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <SelectTrigger className="h-12 border-gray-300 rounded-lg">
@@ -613,9 +681,9 @@ export default function MultiStepJobForm() {
                       }))}
                       value={field.value || ""}
                       onChange={(value) => {
-                        field.onChange(value);
-                        setSelectedCountry(value);
-                        form.setValue("region", "");
+                        field.onChange(value)
+                        setSelectedCountry(value)
+                        form.setValue("region", "")
                       }}
                       placeholder={isLoadingCountries ? "Loading..." : "Select Country"}
                       minSearchLength={0}
@@ -643,11 +711,7 @@ export default function MultiStepJobForm() {
                       value={field.value || ""}
                       onChange={field.onChange}
                       placeholder={
-                        !selectedCountry
-                          ? "Select country first"
-                          : isLoadingCities
-                          ? "Loading..."
-                          : "Select City"
+                        !selectedCountry ? "Select country first" : isLoadingCities ? "Loading..." : "Select City"
                       }
                       minSearchLength={2}
                       disabled={isLoadingCities || !selectedCountry}
@@ -771,9 +835,7 @@ export default function MultiStepJobForm() {
                     </SelectTrigger>
                     <SelectContent className="rounded-lg shadow-lg">
                       <SelectItem value="New Entry">New Entry</SelectItem>
-                      <SelectItem value="Experienced Professional">
-                        Experienced Professional
-                      </SelectItem>
+                      <SelectItem value="Experienced Professional">Experienced Professional</SelectItem>
                       <SelectItem value="Career Returner">Career Returner</SelectItem>
                     </SelectContent>
                   </Select>
@@ -793,17 +855,13 @@ export default function MultiStepJobForm() {
                 <FormControl>
                   <Select
                     onValueChange={(value) => {
-                      field.onChange(value);
-                      form.setValue("categoryId", value);
+                      field.onChange(value)
+                      form.setValue("categoryId", value)
                     }}
                     value={field.value}
                   >
                     <SelectTrigger className="h-12 border-gray-300 rounded-lg">
-                      <SelectValue
-                        placeholder={
-                          categoriesLoading ? "Loading categories..." : "Select category"
-                        }
-                      />
+                      <SelectValue placeholder={categoriesLoading ? "Loading categories..." : "Select category"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-lg shadow-lg">
                       {categoriesLoading ? (
@@ -820,9 +878,7 @@ export default function MultiStepJobForm() {
                     </SelectContent>
                   </Select>
                 </FormControl>
-                {categoriesError && (
-                  <p className="text-sm text-red-500">Failed to load categories</p>
-                )}
+                {categoriesError && <p className="text-sm text-red-500">Failed to load categories</p>}
                 <FormMessage />
               </FormItem>
             )}
@@ -832,9 +888,7 @@ export default function MultiStepJobForm() {
             name="compensation"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Compensation (Optional)
-                </FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">Compensation (Optional)</FormLabel>
                 <FormControl>
                   <Input
                     className="h-12 border-gray-300 rounded-lg focus-visible:ring-2"
@@ -851,9 +905,7 @@ export default function MultiStepJobForm() {
             name="companyUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Company Website URL (Optional)
-                </FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">Company Website URL (Optional)</FormLabel>
                 <FormControl>
                   <Input
                     type="url"
@@ -873,9 +925,7 @@ export default function MultiStepJobForm() {
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-700">
                   Job Posting Expiration Date
-                  <span className="text-gray-500 ml-1">
-                    (Posting can be reopened)
-                  </span>
+                  <span className="text-gray-500 ml-1">(Posting can be reopened)</span>
                 </FormLabel>
                 <FormControl>
                   <Select onValueChange={field.onChange} value={field.value}>
@@ -895,10 +945,10 @@ export default function MultiStepJobForm() {
             )}
           />
         </div>
-        <div className="flex justify-end gap-4 md:gap-7 mt-6 md:mt-8">
+        <div className="flex gap-3 md:gap-4 w-full justify-center mt-4">
           <Button
             variant="outline"
-            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 bg-transparent"
             onClick={handleCancel}
           >
             Cancel
@@ -912,7 +962,7 @@ export default function MultiStepJobForm() {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 
   // Job Description Step
   const renderJobDescription = () => (
@@ -920,9 +970,7 @@ export default function MultiStepJobForm() {
       <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <Card className="lg:col-span-2 border-none shadow-none">
           <CardContent className="p-4 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold text-[#000000] mb-4 md:mb-6">
-              Job Description
-            </h2>
+            <h2 className="text-lg md:text-xl font-semibold text-[#000000] mb-4 md:mb-6">Job Description</h2>
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -935,9 +983,7 @@ export default function MultiStepJobForm() {
                     <FormControl>
                       <TextEditor value={field.value} onChange={field.onChange} />
                     </FormControl>
-                    <p className="text-sm text-gray-600">
-                      Character count: {field.value.length}/2000
-                    </p>
+                    <p className="text-sm text-gray-600">Character count: {field.value.length}/2000</p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -953,9 +999,8 @@ export default function MultiStepJobForm() {
                 <h3 className="text-base font-semibold text-[#9EC7DC]">TIP</h3>
               </div>
               <p className="text-sm md:text-base text-[#000000] mb-3 md:mb-4">
-                Job boards will often reject jobs that do not have quality job
-                descriptions. To ensure that your job description matches the
-                requirements for job boards, consider the following guidelines:
+                Job boards will often reject jobs that do not have quality job descriptions. To ensure that your job
+                description matches the requirements for job boards, consider the following guidelines:
               </p>
               <ul className="list-disc list-inside text-sm md:text-base text-[#000000] space-y-1 md:space-y-2">
                 <li>Job descriptions should be clear, well-written, and informative</li>
@@ -976,9 +1021,7 @@ export default function MultiStepJobForm() {
           <Card className="border-none shadow-none">
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
-                <h3 className="text-sm md:text-base font-semibold text-[#000000]">
-                  Publish Now
-                </h3>
+                <h3 className="text-sm md:text-base font-semibold text-[#000000]">Publish Now</h3>
                 <Switch
                   checked={publishNow}
                   onCheckedChange={setPublishNow}
@@ -987,9 +1030,7 @@ export default function MultiStepJobForm() {
               </div>
               {!publishNow && (
                 <>
-                  <h3 className="text-sm md:text-base font-semibold mb-3 md:mb-4">
-                    Schedule Publish
-                  </h3>
+                  <h3 className="text-sm md:text-base font-semibold mb-3 md:mb-4">Schedule Publish</h3>
                   <div className="border rounded-lg p-3">
                     <FormField
                       control={form.control}
@@ -1020,47 +1061,37 @@ export default function MultiStepJobForm() {
       </div>
       <div className="flex justify-end gap-4 md:gap-7 mt-4 md:mt-6">
         <Button
-          className="border border-[#2B7FD0] hover:bg-transparent text-[#2B7FD0]"
+          className="border border-[#2B7FD0] hover:bg-transparent text-[#2B7FD0] bg-transparent"
           variant="outline"
           onClick={handleCancel}
         >
           Cancel
         </Button>
-        <Button
-          className="bg-[#2B7FD0] h-[40px] hover:bg-[#2B7FD0]/85"
-          onClick={handleNext}
-        >
+        <Button className="bg-[#2B7FD0] h-[40px] hover:bg-[#2B7FD0]/85" onClick={handleNext}>
           Next
         </Button>
       </div>
     </div>
-  );
+  )
 
   // Application Requirements Step
   const renderApplicationRequirements = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-center mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-semibold text-[#000000]">
-            Application Requirement
-          </h2>
+          <h2 className="text-lg md:text-xl font-semibold text-[#000000]">Application Requirement</h2>
         </div>
         <p className="text-base md:text-xl text-[#000000] mb-4 md:mb-6">
           What personal info would you like to gather about each applicant?
         </p>
         <div className="space-y-3 md:space-y-4">
           {applicationRequirements.map((requirement, index) => (
-            <div
-              key={requirement.id}
-              className="flex items-center justify-between py-2 border-b pb-6 md:pb-10"
-            >
+            <div key={requirement.id} className="flex items-center justify-between py-2 border-b pb-6 md:pb-10">
               <div className="flex items-center space-x-2 md:space-x-3">
                 <div className="w-[18px] h-[18px] md:w-[22px] md:h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center">
                   <Check className="text-white w-3 h-3 md:w-4 md:h-4" />
                 </div>
-                <span className="text-base md:text-xl text-[#000000] font-normal">
-                  {requirement.label}
-                </span>
+                <span className="text-base md:text-xl text-[#000000] font-normal">{requirement.label}</span>
               </div>
               <div className="flex space-x-1 md:space-x-2">
                 <Button
@@ -1070,9 +1101,7 @@ export default function MultiStepJobForm() {
                       ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
                       : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
                   }`}
-                  onClick={() =>
-                    updateRequirement(index, { ...requirement, required: false })
-                  }
+                  onClick={() => updateRequirement(index, { ...requirement, required: false })}
                 >
                   Optional
                 </Button>
@@ -1083,9 +1112,7 @@ export default function MultiStepJobForm() {
                       ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
                       : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
                   }`}
-                  onClick={() =>
-                    updateRequirement(index, { ...requirement, required: true })
-                  }
+                  onClick={() => updateRequirement(index, { ...requirement, required: true })}
                 >
                   Required
                 </Button>
@@ -1096,7 +1123,7 @@ export default function MultiStepJobForm() {
         <div className="flex justify-end gap-4 md:gap-7 mt-4 md:mt-6">
           <Button
             variant="outline"
-            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 bg-transparent"
             onClick={handleCancel}
           >
             Cancel
@@ -1110,18 +1137,16 @@ export default function MultiStepJobForm() {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 
   // Custom Questions Step
   const renderCustomQuestions = () => (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-4 md:p-6">
         <div className="flex justify-between items-center mb-3 md:mb-4">
-          <h2 className="text-lg md:text-xl font-semibold text-[#000000]">
-            Add Custom Questions
-          </h2>
+          <h2 className="text-lg md:text-xl font-semibold text-[#000000]">Add Custom Questions</h2>
           <Button
-            className="border border-[#2B7FD0] h-[40px] md:h-[50px] px-[16px] md:px-[32px] rounded-[8px] hover:bg-transparent text-[#2B7FD0] text-sm md:text-base font-medium hover:text-[#2B7FD0]"
+            className="border border-[#2B7FD0] h-[40px] md:h-[50px] px-[16px] md:px-[32px] rounded-[8px] hover:bg-transparent text-[#2B7FD0] text-sm md:text-base font-medium hover:text-[#2B7FD0] bg-transparent"
             variant="outline"
             size="sm"
             onClick={handleNext}
@@ -1140,9 +1165,7 @@ export default function MultiStepJobForm() {
               name={`customQuestions.${index}.question`}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base md:text-xl font-medium text-[#2B7FD0]">
-                    Ask a question
-                  </FormLabel>
+                  <FormLabel className="text-base md:text-xl font-medium text-[#2B7FD0]">Ask a question</FormLabel>
                   <FormControl>
                     <textarea
                       placeholder="Write Here"
@@ -1169,7 +1192,7 @@ export default function MultiStepJobForm() {
         <div className="flex justify-end gap-4 md:gap-7">
           <Button
             variant="outline"
-            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            className="h-11 px-4 md:px-6 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 bg-transparent"
             onClick={handleCancel}
           >
             Cancel
@@ -1183,7 +1206,7 @@ export default function MultiStepJobForm() {
         </div>
       </CardContent>
     </Card>
-  );
+  )
 
   // Finish Step
   const renderFinish = () => (
@@ -1197,7 +1220,7 @@ export default function MultiStepJobForm() {
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 w-full justify-center">
               <Button
                 variant="outline"
-                className="w-full sm:w-[200px] md:w-[267px] h-10 md:h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0]"
+                className="w-full sm:w-[200px] md:w-[267px] h-10 md:h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent"
                 onClick={handlePreviewClick}
               >
                 Preview Your Post
@@ -1214,40 +1237,62 @@ export default function MultiStepJobForm() {
         </CardContent>
       </Card>
     </div>
-  );
+  )
 
   // Render
+  if (showPreview) {
+    const formData = form.getValues()
+    const safeCompanyUrl = formData.companyUrl || ""
+    const safeCustomQuestions = (formData.customQuestions || [])
+      .filter((q) => q.question && q.question.trim() !== "")
+      .map((q) => ({ ...q, question: q.question || "" }))
+
+    return (
+      <div className="min-h-screen bg-gray-50 py-4 md:py-8">
+        <div className="container mx-auto px-2 sm:px-4 max-w-4xl">
+          <div className="mb-4 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Job Preview</h1>
+            <p className="text-gray-600">Review your job posting before publishing</p>
+          </div>
+
+          <form onSubmit={form.handleSubmit(handlePublish)}>
+            <JobPreview
+              formData={formData}
+              companyUrl={safeCompanyUrl}
+              applicationRequirements={formData.applicationRequirements || []}
+              customQuestions={safeCustomQuestions}
+              selectedDate={selectedDate ?? new Date()}
+              publishNow={publishNow}
+              onBackToEdit={handleBackToEdit}
+            />
+          </form>
+        </div>
+      </div>
+    )
+  }
+
+  const onSubmit = (data: JobFormData) => {
+    handlePublish(data)
+  }
+
   return (
-    <FormProvider {...form}>
-      <div className="min-h-screen bg-[#E6E6E6] py-4 md:py-8">
-        {showPreview ? (
-          <JobPreview
-            formData={form.getValues()}
-            companyUrl={form.getValues("companyUrl") || undefined}
-            applicationRequirements={form.getValues("applicationRequirements") || []}
-            customQuestions={form.getValues("customQuestions") || []}
-            selectedDate={
-              form.getValues("publishDate")
-                ? new Date(form.getValues("publishDate"))
-                : new Date()
-            }
-            publishNow={publishNow}
-            onBackToEdit={handleBackToEdit}
-          />
-        ) : (
-          <div className="container mx-auto px-2 sm:px-4">
-            <h1 className="text-2xl md:text-[48px] text-[#131313] font-bold text-center mb-4 md:mb-8">
-              Create Job Posting
-            </h1>
+    <div className="min-h-screen bg-gray-50 py-4 sm:py-8">
+      <div className="container mx-auto px-2 sm:px-4">
+        <h1 className="text-2xl md:text-[48px] text-[#131313] font-bold text-center mb-4 md:mb-8">
+          Create Job Posting
+        </h1>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {renderStepIndicator()}
             {currentStep === 1 && renderJobDetails()}
             {currentStep === 2 && renderJobDescription()}
             {currentStep === 3 && renderApplicationRequirements()}
             {currentStep === 4 && renderCustomQuestions()}
             {currentStep === 5 && renderFinish()}
-          </div>
-        )}
+          </form>
+        </Form>
       </div>
-    </FormProvider>
-  );
+    </div>
+  )
 }

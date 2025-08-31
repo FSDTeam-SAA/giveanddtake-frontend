@@ -49,8 +49,11 @@ export const faqData = [
   },
   {
     question: "What is the minimum age for using the site?",
-    answer:
-      "16 years and above for Members, 18 years and above for recruiters.",
+    answer: `16 years and above for Members, 18 years and above for recruiters. 
+You must be at least 16 years old to use Elevator Video Pitch. In regions where the law requires you to be older than 16 to use our services without parental consent, the minimum age is the age at which such parental consent is not required.
+
+(i) To verify each user's age, we need to add a field for Date of Birth on the Users and Recruiters sign up page where they select their month and year of birth from a calendar (mm/yyyy). If a user enters a year which suggests they’re younger than 16, we would need to display a message: 
+“Sorry we're unable to register you today, we look forward to welcoming you when you reach the minimum age of 16.”`
   },
   {
     question: "How do I change my password?",
