@@ -65,8 +65,9 @@ interface MydataProps {
 export default function Recruiters({ userId }: MydataProps) {
   const { data: session } = useSession();
   const token = session?.accessToken;
-
-  const [recruiterData, setRecruiterData] = useState<RecruiterData | null>(null);
+  const [recruiterData, setRecruiterData] = useState<RecruiterData | null>(
+    null
+  );
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [loading, setLoading] = useState(true);
   const [pitchLoading, setPitchLoading] = useState(true);
@@ -151,10 +152,8 @@ export default function Recruiters({ userId }: MydataProps) {
       }
     };
 
-    if (token && userId) {
-      fetchRecruiterData();
-      fetchPitchData();
-    }
+    fetchRecruiterData();
+    fetchPitchData();
   }, [token, userId, session]);
 
   if (loading) {
@@ -182,11 +181,15 @@ export default function Recruiters({ userId }: MydataProps) {
   }
 
   if (error) {
-    return <div className="container mx-auto p-6 text-red-500">Error: {error}</div>;
+    return (
+      <div className="container mx-auto p-6 text-red-500">Error: {error}</div>
+    );
   }
 
   if (!recruiterData) {
-    return <div className="container mx-auto p-6">No recruiter data found.</div>;
+    return (
+      <div className="container mx-auto p-6">No recruiter data found.</div>
+    );
   }
 
   return (
@@ -259,8 +262,8 @@ export default function Recruiters({ userId }: MydataProps) {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
             <p className="text-gray-700">
-              <strong>Location:</strong> {recruiterData.city}, {recruiterData.country},{" "}
-              {recruiterData.zipCode}
+              <strong>Location:</strong> {recruiterData.city},{" "}
+              {recruiterData.country}, {recruiterData.zipCode}
             </p>
             <p className="text-gray-700">
               <strong>Phone:</strong> {recruiterData.phoneNumber}
@@ -276,9 +279,15 @@ export default function Recruiters({ userId }: MydataProps) {
             </p>
             <p className="text-gray-700">
               <strong>Website:</strong>{" "}
-              {recruiterData.sLink.find((link) => link.label.toLowerCase() === "website")?.url ? (
+              {recruiterData.sLink.find(
+                (link) => link.label.toLowerCase() === "website"
+              )?.url ? (
                 <a
-                  href={recruiterData.sLink.find((link) => link.label.toLowerCase() === "website")?.url}
+                  href={
+                    recruiterData.sLink.find(
+                      (link) => link.label.toLowerCase() === "website"
+                    )?.url
+                  }
                   className="text-blue-500 hover:underline"
                 >
                   Visit Website
@@ -327,7 +336,12 @@ export default function Recruiters({ userId }: MydataProps) {
       <section className="mt-6 bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold">Skills</h2>
         <div className="flex flex-wrap gap-2 mt-2">
-          {["UX/UI Design", "Prototyping", "User Testing", "Design Systems"].map((skill) => (
+          {[
+            "UX/UI Design",
+            "Prototyping",
+            "User Testing",
+            "Design Systems",
+          ].map((skill) => (
             <span
               key={skill}
               className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
@@ -363,7 +377,9 @@ export default function Recruiters({ userId }: MydataProps) {
         <h2 className="text-xl font-semibold">Awards & Honours</h2>
         <div className="mt-2">
           <p className="text-gray-700 font-medium">Best UX Design Award</p>
-          <p className="text-gray-600">For outstanding user-centric design, 2023</p>
+          <p className="text-gray-600">
+            For outstanding user-centric design, 2023
+          </p>
         </div>
       </section>
     </div>

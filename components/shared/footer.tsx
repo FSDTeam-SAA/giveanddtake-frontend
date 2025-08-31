@@ -101,15 +101,32 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Create Elevator Pitch
+            Elevator Pitch
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link href="/alljobs" className="text-white/80 hover:underline">
               Browse Jobs
             </Link>
-            <Link href="/alljobs" className="text-white/80 hover:underline">
+
+
+            {/* <Link href="/alljobs" className="text-white/80 hover:underline">
               Apply for Jobs
-            </Link>
+            </Link> */}
+            {/* <Link
+              href="/bookmarks" // Required by Next.js type definitions
+              onClick={(e) => {
+                e.preventDefault(); // stop default Link navigation
+                if (!token) {
+                  router.push("/login");
+                } else {
+                  router.push("/bookmarks");
+                }
+              }}
+              className="text-white/80 hover:underline"
+            >
+              Saved Jobs
+            </Link> */}
+
           </nav>
         </div>
 
@@ -121,7 +138,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Create Elevator Pitch
+             Elevator Pitch
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
@@ -142,7 +159,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Create Elevator Pitch
+             Elevator Pitch
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link

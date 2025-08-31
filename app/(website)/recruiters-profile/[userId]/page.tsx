@@ -2,16 +2,17 @@ import React from "react";
 import Recruiters from "../_components/recruiters";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     userId: string;
-  };
+  }>;
 }
 
-function Page({ params }: PageProps) {
+async function Page({ params }: PageProps) {
+  const { userId } = await params; // ✅ await params here
 
   return (
     <div>
-      <Recruiters userId={params.userId} />
+      <Recruiters userId={userId} />
     </div>
   );
 }
