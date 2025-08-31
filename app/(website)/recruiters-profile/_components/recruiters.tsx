@@ -309,7 +309,7 @@ export default function Recruiters({ userId }: MydataProps) {
           {pitchData ? (
             <VideoPlayer
               pitchId={pitchData._id}
-              className="w-full h-[600px] mx-auto"
+              className="w-full mx-auto"
             />
           ) : pitchLoading ? (
             <div>Loading pitch...</div>

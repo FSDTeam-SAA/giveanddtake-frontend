@@ -434,7 +434,7 @@ export default function EditableCompanyProfile({
         <div className="bg-gray-100 rounded-lg p-6">
           <VideoPlayer
             pitchId="687623daea00f0d9b621c53e"
-            className="w-full max-w-2xl mx-auto"
+            className="w-full mx-auto"
           />
         </div>
       </div>

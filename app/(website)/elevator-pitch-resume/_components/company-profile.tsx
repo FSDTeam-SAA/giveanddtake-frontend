@@ -286,10 +286,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         </h2>
         <div className=" rounded-lg ">
           {pitchData ? (
-            <VideoPlayer
-              pitchId={pitchData._id}
-              className="w-full h-[600px] mx-auto"
-            />
+            <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
           ) : loading ? (
             <div>Loading pitch...</div>
           ) : error ? (

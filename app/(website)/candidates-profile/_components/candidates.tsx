@@ -196,11 +196,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   // ✅ Fetch resume API
   const fetchResume = async (): Promise<ResumeResponse> => {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      }
+      `${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${userId}`
     );
     if (!res.ok) throw new Error("Failed to fetch resume");
     return res.json();
@@ -214,7 +210,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   } = useQuery<ResumeResponse>({
     queryKey: ["my-resume"],
     queryFn: fetchResume,
-    enabled: !!session?.user,
+    enabled: !!userId,
   });
 
   // ✅ Show skeleton loader while loading or fetching
@@ -344,10 +340,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             <div className="space-y-8">
               {experiences?.length ? (
                 experiences.map((exp) => (
-                  <div
-                    key={exp._id}
-                    className="flex gap-4 items-start"
-                  >
+                  <div key={exp._id} className="flex gap-4 items-start">
                     <div className="">
                       <Briefcase className="text-blue-600 w-8 h-8" />
                     </div>

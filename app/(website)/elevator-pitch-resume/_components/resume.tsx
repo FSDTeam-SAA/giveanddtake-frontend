@@ -333,7 +333,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 {resume.elevatorPitch[0] ? (
                   <VideoPlayer
                     pitchId={resume.elevatorPitch[0]._id}
-                    className="w-full h-[600px] mx-auto"
+                    className="w-full mx-auto"
                   />
                 ) : (
                   <div>No pitch available</div>
