@@ -167,7 +167,7 @@ export function SiteHeader() {
           )}
 
           <Link
-            href="/blog"
+            href="/blogs"
             className={`transition-colors focus:outline-none ${
               isActive("/blog") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
