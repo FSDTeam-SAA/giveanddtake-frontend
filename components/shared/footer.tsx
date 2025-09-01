@@ -60,6 +60,8 @@ export function Footer() {
       router.push("/login");
     } else if (role !== "company") {
       router.push("/login"); // Redirect to login if user is not a company
+    } else if (role == "company") {
+      router.push("/add-job"); // Redirect to login if user is not a company
     } else {
       router.push("/create-company");
     }
