@@ -55,12 +55,10 @@ export default function CompanyProfilePage() {
     enabled: !!userId,
   });
 
-  // console.log(companyData?.companies[0]._id);
-
   const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
-    queryKey: ["company-jobs", companyData?.companies[0]._id],
-    queryFn: () => fetchCompanyJobs(companyData?.companies[0]._id),
-    enabled: !!companyData?.companies[0]._id, // ensures query runs only when companyId exists
+    queryKey: ["company-jobs", companyData?.companies[0]?._id],
+    queryFn: () => fetchCompanyJobs(companyData?.companies[0]?._id),
+    enabled: !!companyData?.companies[0]?._id,
   });
 
   if (isLoadingCompany) {
@@ -110,10 +108,21 @@ export default function CompanyProfilePage() {
   }
 
   return (
-    <div className="container mx-auto p-6 bg-white space-y-10">
+    <div className="container mx-auto">
+      {/* Banner */}
+      <div>
+        <Image
+          src={company.banner || "/company-cover.jpg"}
+          alt={`${company.cname} banner`}
+          width={1200}
+          height={200}
+          className="w-full h-48 object-cover rounded-lg"
+        />
+      </div>
+
       {/* Header Section */}
-      <div className="bg-gray-100 rounded-lg p-6">
-        <div className="flex items-start gap-6">
+      <div className="px-4 md:px-6 lg:px-24 mt-[-30px]">
+        <div className="">
           <div className="w-[170px] h-[170px] flex-shrink-0">
             <Image
               src={
@@ -131,7 +140,6 @@ export default function CompanyProfilePage() {
             <h1 className="text-2xl font-bold mb-2 text-gray-900">
               {company.cname}
             </h1>
-            <p className="text-gray-600 text-sm mb-4">{company.industry}</p>
             <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
@@ -147,24 +155,29 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             <div className="flex gap-4">
-              {links.map((link: string, index: number) => (
+              {links.slice(0, 3).map((link, index) => (
                 <SocialIcon key={index} url={link} />
               ))}
+            </div>
+            <div className="mt-4">
+              <Button variant="outline" size="sm">
+                Follow
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Company Jobs */}
-      <div>
+      <div className="my-12">
         <h2 className="text-xl font-semibold mb-6 text-gray-900">
           Company Jobs
         </h2>
         {isLoadingJobs ? (
           <div className="text-center py-10">Loading jobs...</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {jobs?.data.map((job) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {jobs?.data?.map((job) => (
               <JobCard
                 key={job._id}
                 job={job}
@@ -181,7 +194,7 @@ export default function CompanyProfilePage() {
         <h2 className="text-xl font-semibold mb-6 text-gray-900">
           Elevator Pitch
         </h2>
-        <div className=" rounded-lg p-6">
+        <div className="rounded-lg p-6 bg-gray-50">
           <VideoPlayer
             pitchId={companyData?.companies[0]?.elevatorPitch?._id}
             className="w-full mx-auto"
@@ -190,111 +203,152 @@ export default function CompanyProfilePage() {
       </div>
 
       {/* About Us */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
-        <div
-          className="text-gray-700 leading-relaxed text-sm"
-          dangerouslySetInnerHTML={{ __html: company.aboutUs || "" }}
-        />
-      </div>
-
-      {/* Company Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Website</h3>
-            <a
-              href={links[0]}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              {links[0] || "Not provided"}
-            </a>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Industry</h3>
-            <p className="text-gray-700 text-sm">{company.industry}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Company size</h3>
-            <p className="text-gray-700 text-sm">
-              {company.employeesId?.length || 0} employees
-            </p>
+      <div className="space-y-12 pb-24 pt-8 max-w-6xl mx-auto">
+        <div>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
+          <div className="text-gray-700 leading-relaxed text-sm">
+            <div
+              className="text-gray-700 mt-2 prose"
+              dangerouslySetInnerHTML={{ __html: company.aboutUs }}
+            />
           </div>
         </div>
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-3 text-gray-900">Specialties</h3>
-            <div className="flex flex-wrap gap-2">
-              {services.map((service: string, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  {service}
+
+        {/* Company Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-900">Website</h3>
+              <a
+                href="https://www.buzzdesignagency.com/"
+                className="text-blue-600 hover:underline text-sm"
+              >
+                https://www.buzzdesignagency.com/
+              </a>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-900">Industry</h3>
+              <p className="text-gray-700 text-sm">Design Services</p>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-2 text-gray-900">Company size</h3>
+              <p className="text-gray-700 text-sm">51-200 employees</p>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-semibold mb-3 text-gray-900">Specialties</h3>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  Web Design
                 </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  UI/UX Design
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  User Interface Design
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Product Design
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Visual Design
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Art Direction
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Interaction Design
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Branding
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Mobile Apps
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Front-end Development
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Design System
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Animation
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Video Production
+                </Badge>
+                <Badge variant="secondary" className="text-xs">
+                  Style Guide
+                </Badge>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3 text-gray-900">Locations</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 text-sm">Dubai, AE</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-blue-600 text-xs"
+                  >
+                    Get Direction
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 text-sm">Dubai, AE</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-blue-600 text-xs"
+                  >
+                    Get Direction
+                  </Button>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 text-sm">Dubai, AE</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 h-auto text-blue-600 text-xs"
+                  >
+                    Get Direction
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Awards and Honors */}
+        {honors.length > 0 && (
+          <div>
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">
+              Awards and Honors
+            </h2>
+            <div className="space-y-4">
+              {honors.map((honor) => (
+                <Card key={honor._id}>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-gray-900">
+                      {honor.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      {honor.programeName || honor.issuer}
+                    </p>
+                    <p className="text-sm text-gray-500 mb-2">
+                      <Calendar className="inline h-4 w-4 mr-1" />
+                      {new Date(honor.programeDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-700">{honor.description}</p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
-          <div>
-            <h3 className="font-semibold mb-3 text-gray-900">Locations</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 text-sm">Dubai, AE</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-blue-600 text-xs"
-                >
-                  Get Direction
-                </Button>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 text-sm">Dubai, AE</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-blue-600 text-xs"
-                >
-                  Get Direction
-                </Button>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 text-sm">Dubai, AE</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-blue-600 text-xs"
-                >
-                  Get Direction
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Awards and Honors */}
-      {honors.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">
-            Awards and Honors
-          </h2>
-          <div className="space-y-4">
-            {honors.map((honor: Honor) => (
-              <Card key={honor._id}>
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-gray-900">{honor.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {honor.programeName}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-2">
-                    <Calendar className="inline h-4 w-4 mr-1" />
-                    {new Date(honor.programeDate).toLocaleDateString()}
-                  </p>
-                  <p className="text-sm text-gray-700">{honor.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
