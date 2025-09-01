@@ -455,20 +455,20 @@ export function SiteHeader() {
               </div>
 
               {status === "authenticated" && (
-                <div className="flex items-center gap-2 mb-6">
-                  <Link href="/notifications" className="flex-1">
+                <div className="space-y-2">
+                  <Link href="/notifications" className="pb-2 ">
                     <Button
                       size="sm"
-                      className="w-full bg-blue-500 text-white hover:bg-primary"
+                      className="w-full bg-blue-500 text-white hover:bg-primary my-5"
                     >
                       <Bell className="h-4 w-4 mr-2" />
                       Notifications
                     </Button>
                   </Link>
-                  <Link href="/messages" className="flex-1">
+                  <Link href="/messages">
                     <Button
                       size="sm"
-                      className="w-full bg-blue-500 text-white hover:bg-primary"
+                      className="w-full bg-blue-500 text-white hover:bg-primary mb-5"
                     >
                       <MessageCircle className="h-4 w-4 mr-2" />
                       Messages

@@ -1907,7 +1907,7 @@ export default function CreateResumeForm() {
                 }
                 className="flex items-center gap-2"
               >
-                Add Award
+                add award
               </Button>
             </CardContent>
           </Card>
