@@ -1,8 +1,7 @@
 "use client";
-import { useState, useEffect } from "react";
-import type React from "react";
 
-import { useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Search,
   User,
@@ -11,7 +10,6 @@ import {
   ArrowLeft,
   Filter,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+/**
+ * Wrapper component that provides the required Suspense boundary
+ * around any hook that reads router state (e.g., useSearchParams()).
+ */
+export default function SearchResultsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="animate-spin h-8 w-8 border-2 border-[#4B98DE] border-t-transparent rounded-full" />
+        </div>
+      }
+    >
+      <SearchResultsInner />
+    </Suspense>
+  );
+}
 
 interface SearchUser {
   _id: string;
@@ -40,10 +56,18 @@ interface SearchResult {
   data: SearchUser[];
 }
 
-export default function SearchResultsPage() {
+/**
+ * All the original page logic lives here. This component is rendered
+ * inside the Suspense boundary so useSearchParams() is safe.
+ */
+function SearchResultsInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [query, setQuery] = useState(searchParams.get("q") || "");
+
+  // keep `query` in sync with the URL's `?q=` when it changes
+  const initialQuery = useMemo(() => searchParams.get("q") || "", [searchParams]);
+  const [query, setQuery] = useState(initialQuery);
+
   const [results, setResults] = useState<SearchUser[]>([]);
   const [filteredResults, setFilteredResults] = useState<SearchUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,9 +75,19 @@ export default function SearchResultsPage() {
   const [locationFilter, setLocationFilter] = useState<string>("all");
   const [availableLocations, setAvailableLocations] = useState<string[]>([]);
 
+  // If the URL param changes (e.g., via navigation), reflect it in state
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
   useEffect(() => {
     if (query) {
       searchUsers(query);
+    } else {
+      // if query is cleared, reset lists
+      setResults([]);
+      setFilteredResults([]);
+      setAvailableLocations([]);
     }
   }, [query]);
 
@@ -70,36 +104,41 @@ export default function SearchResultsPage() {
       const result: SearchResult = await response.json();
 
       if (result.success) {
-        // Enhanced search with multiple criteria
-        const filteredResults = result.data.filter((user) => {
-          const searchTerm = searchQuery.toLowerCase();
+        const searchTerm = searchQuery.toLowerCase();
+        const filtered = result.data.filter((user) => {
+          const nameLower = user.name.toLowerCase();
+          const roleLower = user.role.toLowerCase();
+          const addressLower = user.address.toLowerCase();
+
           return (
-            user.name.toLowerCase().includes(searchTerm) ||
-            user.role.toLowerCase().includes(searchTerm) ||
-            user.address.toLowerCase().includes(searchTerm) ||
+            nameLower.includes(searchTerm) ||
+            roleLower.includes(searchTerm) ||
+            addressLower.includes(searchTerm) ||
             user.phoneNum.includes(searchTerm) ||
-            user.name
-              .toLowerCase()
-              .split(" ")
-              .some((word) => word.startsWith(searchTerm)) ||
-            user.address
-              .toLowerCase()
-              .split(" ")
-              .some((word) => word.startsWith(searchTerm))
+            nameLower.split(" ").some((word) => word.startsWith(searchTerm)) ||
+            addressLower.split(" ").some((word) => word.startsWith(searchTerm))
           );
         });
 
-        setResults(filteredResults);
+        setResults(filtered);
 
-        // Extract unique locations for filter
-        const locations = [
-          ...new Set(filteredResults.map((user) => user.address)),
-        ];
+        // unique locations from filtered results
+        const locations = Array.from(
+          new Set(
+            filtered
+              .map((u) => u.address?.trim())
+              .filter((addr): addr is string => Boolean(addr))
+          )
+        );
         setAvailableLocations(locations);
+      } else {
+        setResults([]);
+        setAvailableLocations([]);
       }
     } catch (error) {
       console.error("Search error:", error);
       setResults([]);
+      setAvailableLocations([]);
     } finally {
       setIsLoading(false);
     }
@@ -130,10 +169,15 @@ export default function SearchResultsPage() {
     router.push(profileUrl);
   };
 
-  const handleNewSearch = (e: React.FormEvent) => {
+  const handleNewSearch: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
-    if (query.trim()) {
-      searchUsers(query.trim());
+    const trimmed = query.trim();
+    if (trimmed) {
+      // optionally keep the URL in sync
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+      params.set("q", trimmed);
+      router.push(`/search-results?${params.toString()}`);
+      searchUsers(trimmed);
     }
   };
 
@@ -150,9 +194,8 @@ export default function SearchResultsPage() {
     }
   };
 
-  const getRoleLabel = (role: string) => {
-    return role.charAt(0).toUpperCase() + role.slice(1);
-  };
+  const getRoleLabel = (role: string) =>
+    role.charAt(0).toUpperCase() + role.slice(1);
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
@@ -188,7 +231,7 @@ export default function SearchResultsPage() {
           {/* Search Form */}
           <form onSubmit={handleNewSearch} className="flex gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="text"
                 placeholder="Search people, companies..."
@@ -252,7 +295,7 @@ export default function SearchResultsPage() {
         {/* Results Grid */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin h-8 w-8 border-2 border-[#4B98DE] border-t-transparent rounded-full"></div>
+            <div className="animate-spin h-8 w-8 border-2 border-[#4B98DE] border-t-transparent rounded-full" />
           </div>
         ) : filteredResults.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
