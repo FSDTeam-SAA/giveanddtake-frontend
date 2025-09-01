@@ -239,7 +239,6 @@ export function SiteHeader() {
                   Careers
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className={`p-0 ${
                   isActive("/privacy-policy") ? "text-[#2B7FD0]" : ""
@@ -494,7 +493,7 @@ export function SiteHeader() {
                       : "hover:text-[#2B7FD0]"
                   }`}
                 >
-                  All Jobs
+                  Jobs
                 </Link>
                 {(userRole === "candidate" || userRole === "recruiter") && (
                   <Link

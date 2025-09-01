@@ -1,14 +1,15 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import DOMPurify from "dompurify";
+import * as React from "react";
 
 interface JobRequest {
   id: string;
@@ -18,8 +19,12 @@ interface JobRequest {
   date: string;
   jobTitle: string;
   jobDescription: string;
-  avatar?: { url: string }; // avatar is an object
+  avatar?: { url: string };
+  adminApprove: boolean; // from API
+  jobApprove?: "approved" | "rejected" | "pending";
 }
+
+type AdminFilter = "all" | "approved" | "not-approved";
 
 async function fetchJobRequests(token: string): Promise<JobRequest[]> {
   const response = await fetch(
@@ -29,6 +34,7 @@ async function fetchJobRequests(token: string): Promise<JobRequest[]> {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     }
   );
 
@@ -36,72 +42,67 @@ async function fetchJobRequests(token: string): Promise<JobRequest[]> {
     throw new Error("Failed to fetch job requests");
   }
 
-  const data = await response.json();
-  return data.data.map((item: any) => ({
+  const json = await response.json();
+
+  return (json?.data ?? []).map((item: any) => ({
     id: item._id,
-    name: item.userId.name,
-    role: item.userId.role,
-    company: item.userId.company || "N/A",
-    date: item.createdAt,
-    jobTitle: item.title,
-    jobDescription: item.description,
-    avatar: item.userId.avatar,
+    name: item?.userId?.name ?? "Unknown",
+    role: item?.userId?.role ?? "Unknown",
+    company: item?.userId?.company || "N/A",
+    date: item?.createdAt ?? item?.publishDate ?? new Date().toISOString(),
+    jobTitle: item?.title ?? "Untitled",
+    jobDescription: item?.description ?? "",
+    avatar: item?.userId?.avatar,
+    adminApprove: Boolean(item?.adminApprove),
+    jobApprove: item?.jobApprove ?? "pending",
   }));
 }
 
-async function approveJobRequest(token: string, id: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
-    {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jobApprove: "approved", // 👈 sending in body
-      }),
-    }
+function JobRequestSkeletonRow() {
+  return (
+    <tr className="border-b">
+      <td className="p-3">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div>
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-20 mt-1" />
+          </div>
+        </div>
+      </td>
+      <td className="p-3">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="p-3">
+        <Skeleton className="h-4 w-56" />
+      </td>
+      <td className="p-3">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="p-3">
+        <Skeleton className="h-6 w-24" />
+      </td>
+      <td className="p-3">
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-20" />
+        </div>
+      </td>
+    </tr>
   );
-
-  if (!response.ok) {
-    throw new Error("Failed to approve job request");
-  }
-
-  return response.json();
 }
-
-async function rejectJobRequest(token: string, id: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
-    {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        jobApprove: "rejected", // 👈 send status in body
-      }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to reject job request");
-  }
-
-  return response.json();
-}
-
 
 export default function ManagePage() {
   const { data: session, status } = useSession();
   const token = session?.accessToken as string;
-  const queryClient = useQueryClient();
   const router = useRouter();
 
+  // UI state for filtering & pagination
+  const [adminFilter, setAdminFilter] = React.useState<AdminFilter>("all");
+  const [page, setPage] = React.useState(1);
+  const [pageSize, setPageSize] = React.useState(10);
+
   const {
-    data: jobRequests = [],
+    data: allJobRequests = [],
     isLoading,
     isError,
     error,
@@ -111,23 +112,30 @@ export default function ManagePage() {
     enabled: !!token && status === "authenticated",
   });
 
-  const handleApprove = async (id: string) => {
-    try {
-      await approveJobRequest(token, id);
-      queryClient.invalidateQueries({ queryKey: ["jobRequests", token] });
-    } catch (err) {
-      console.error("Failed to approve job request:", err);
+  // Filter by adminApprove
+  const filtered = React.useMemo(() => {
+    switch (adminFilter) {
+      case "approved":
+        return allJobRequests.filter((j) => j.adminApprove === true);
+      case "not-approved":
+        return allJobRequests.filter((j) => j.adminApprove === false);
+      default:
+        return allJobRequests;
     }
-  };
+  }, [allJobRequests, adminFilter]);
 
-  const handleReject = async (id: string) => {
-    try {
-      await rejectJobRequest(token, id);
-      queryClient.invalidateQueries({ queryKey: ["jobRequests", token] });
-    } catch (err) {
-      console.error("Failed to reject job request:", err);
-    }
-  };
+  // Pagination
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const paged = React.useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
+  React.useEffect(() => {
+    setPage(1); // reset page on filter/pageSize changes
+  }, [adminFilter, pageSize]);
 
   const handleJobDetails = (id: string) => {
     router.push(`/single-job/${id}`);
@@ -137,11 +145,25 @@ export default function ManagePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <JobRequestSkeleton key={i} />
-          ))}
-        </div>
+        <Card className="p-0 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 text-left">
+              <tr>
+                <th className="p-3">Recruiter</th>
+                <th className="p-3">Role</th>
+                <th className="p-3">Job Title & Description</th>
+                <th className="p-3">Created</th>
+                <th className="p-3">Admin Approved</th>
+                <th className="p-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(5)].map((_, i) => (
+                <JobRequestSkeletonRow key={i} />
+              ))}
+            </tbody>
+          </table>
+        </Card>
       </div>
     );
   }
@@ -151,15 +173,7 @@ export default function ManagePage() {
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
         <div className="text-center py-12 text-red-500">
-          Error: {error.message}
-          <Button
-            onClick={() =>
-              queryClient.refetchQueries({ queryKey: ["jobRequests", token] })
-            }
-            className="mt-4"
-          >
-            Retry
-          </Button>
+          Error: {(error as Error).message}
         </div>
       </div>
     );
@@ -178,130 +192,186 @@ export default function ManagePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-[40px] font-bold mb-8">Manage Job Post Requests</h1>
+      <h1 className="text-[40px] font-bold mb-6">Manage Job Post Requests</h1>
 
-      <div className="space-y-4">
-        {jobRequests.map((request) => (
-          <Card key={request.id} className="p-4 animate-fade-in">
-            <CardContent className="p-0">
-              <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
-                <div className="md:col-span-2">
-                  <div className="flex gap-4 items-start">
-                    <Avatar className="h-[70px] w-[70px]">
-                      {request.avatar ? (
+      {/* Controls */}
+      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Admin filter:</span>
+          <select
+            value={adminFilter}
+            onChange={(e) => setAdminFilter(e.target.value as AdminFilter)}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="all">All</option>
+            <option value="approved">Approved</option>
+            <option value="not-approved">Not approved</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Rows per page:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => setPageSize(Number(e.target.value))}
+            className="border rounded-md px-3 py-2 text-sm"
+          >
+            {[5, 10, 20, 50].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Table */}
+      <Card className="p-0 overflow-x-auto">
+        <table className="w-full text-sm table-fixed">
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 w-[25%]">Recruiter</th>
+              <th className="p-3 w-[35%]">Job Title & Description</th>
+              <th className="p-3 w-[15%]">Created</th>
+              <th className="p-3 w-[15%]">Admin Approved</th>
+              <th className="p-3 w-[10%]">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {paged.map((request) => (
+              <tr key={request.id} className="border-b align-top">
+                {/* Recruiter */}
+                <td className="p-3 w-[25%]">
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-10 w-10">
+                      {request.avatar?.url ? (
                         <AvatarImage
                           src={request.avatar.url}
                           alt={request.name}
                         />
                       ) : (
                         <AvatarFallback>
-                          {request?.name?.charAt(0)}
+                          {request?.name?.charAt(0) ?? "?"}
                         </AvatarFallback>
                       )}
                     </Avatar>
-
                     <div>
-                      <h3 className="font-semibold text-lg">{request.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {request.role}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {format(new Date(request.date), "MMMM d, yyyy")}
-                      </p>
+                      <div className="font-medium line-clamp-1">
+                        {request.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {request.company}
+                      </div>
                     </div>
                   </div>
-                </div>
+                </td>
 
-                <div className="md:col-span-3">
-                  <div className="flex flex-col gap-4">
-                    <div className="mt-3">
-                      <p className="text-sm">
-                        <span className="font-medium">Job Title:</span>{" "}
-                        {request.jobTitle}
-                      </p>
-                      <p
-                        className="text-sm line-clamp-2"
-                        dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(request.jobDescription),
-                        }}
-                      />
-                    </div>
+                {/* Job Title & Description */}
+                <td className="p-3 w-[35%]">
+                  <div className="font-medium line-clamp-1">
+                    {request.jobTitle}
                   </div>
-                </div>
+                  <div
+                    className="text-xs text-muted-foreground line-clamp-1"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(request.jobDescription),
+                    }}
+                  />
+                </td>
 
-                <div className="md:col-span-3">
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 h-full items-start sm:items-center">
-                    <Button
-                      onClick={() => handleApprove(request.id)}
-                      variant="outline"
-                      className="border-green-600 text-green-600 hover:bg-green-50"
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(request.id)}
-                      variant="outline"
-                      className="border-red-600 text-red-600 hover:bg-red-50"
-                    >
-                      Reject
-                    </Button>
-                    <Button
-                      onClick={() => handleJobDetails(request.id)}
-                      variant="outline"
-                      className="border-blue-600 text-blue-600 hover:bg-blue-50"
-                    >
-                      Details
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {/* Created */}
+                <td className="p-3 w-[15%]">
+                  {format(new Date(request.date), "MMM d, yyyy")}
+                </td>
 
-        {jobRequests.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No job requests found.</p>
-          </div>
-        )}
+                {/* Admin Approved */}
+                <td className="p-3 w-[15%]">
+                  {request.adminApprove ? (
+                    <span className="inline-flex items-center rounded-full border border-green-600/40 text-green-700 bg-green-50 px-2 py-1 text-[11px] font-medium">
+                      Approved
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center rounded-full border border-amber-600/40 text-amber-700 bg-amber-50 px-2 py-1 text-[11px] font-medium">
+                      Not approved
+                    </span>
+                  )}
+                </td>
+
+                {/* Actions */}
+                <td className="p-3 w-[10%]">
+                  <Button
+                    onClick={() => handleJobDetails(request.id)}
+                    variant="outline"
+                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
+                  >
+                    Details
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Pagination controls with numbered page buttons */}
+      <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="text-sm text-muted-foreground">
+          Showing{" "}
+          <span className="font-medium">
+            {total === 0 ? 0 : (currentPage - 1) * pageSize + 1}
+          </span>{" "}
+          to{" "}
+          <span className="font-medium">
+            {Math.min(currentPage * pageSize, total)}
+          </span>{" "}
+          of <span className="font-medium">{total}</span> jobs
+        </div>
+
+        <div className="flex items-center flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setPage(1)}
+            disabled={currentPage === 1}
+          >
+            First
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+          >
+            Prev
+          </Button>
+
+          {/* numbered buttons */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+            <Button
+              key={n}
+              variant={n === currentPage ? "default" : "outline"}
+              onClick={() => setPage(n)}
+              className={n === currentPage ? "" : "hover:bg-muted/60"}
+            >
+              {n}
+            </Button>
+          ))}
+
+          <Button
+            variant="outline"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setPage(totalPages)}
+            disabled={currentPage === totalPages}
+          >
+            Last
+          </Button>
+        </div>
       </div>
     </div>
-  );
-}
-
-function JobRequestSkeleton() {
-  return (
-    <Card className="p-4 animate-fade-in">
-      <CardContent className="p-0">
-        <div className="grid grid-cols-1 md:grid-cols-8 gap-4">
-          <div className="md:col-span-2">
-            <div className="flex gap-4 items-start">
-              <Skeleton className="h-[89px] w-[89px] rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-[120px]" />
-                <Skeleton className="h-3 w-[80px]" />
-                <Skeleton className="h-3 w-[100px]" />
-                <Skeleton className="h-3 w-[70px]" />
-              </div>
-            </div>
-          </div>
-
-          <div className="md:col-span-3">
-            <div className="space-y-2 mt-3">
-              <Skeleton className="h-4 w-[200px]" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </div>
-
-          <div className="md:col-span-3">
-            <div className="flex gap-2 h-full items-center">
-              <Skeleton className="h-10 w-[80px]" />
-              <Skeleton className="h-10 w-[80px]" />
-              <Skeleton className="h-10 w-[80px]" />
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 }
