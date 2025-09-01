@@ -1,22 +1,16 @@
-"use client";
+"use client"
 
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import {
-  Bold,
-  Italic,
-  List,
-  ListOrdered,
-  Quote,
-  Code,
-  Minus,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import type React from "react"
+
+import { useEditor, EditorContent } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import { Bold, Italic, List, ListOrdered, Quote, Code, Minus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useEffect } from "react"
 
 interface TextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
+  value: string
+  onChange: (value: string) => void
 }
 
 const TextEditor = ({ value, onChange }: TextEditorProps) => {
@@ -38,7 +32,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      onChange(editor.getHTML())
     },
     editorProps: {
       attributes: {
@@ -47,24 +41,24 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       },
     },
     immediatelyRender: false,
-  });
+  })
 
   // Synchronize editor content with value prop changes
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, { emitUpdate: false }); // prevents emitting an update event
+      editor.commands.setContent(value, { emitUpdate: false }) // prevents emitting an update event
     }
-  }, [editor, value]);
+  }, [editor, value])
 
   if (!editor) {
-    return null;
+    return null
   }
 
   // Prevent form submission on toolbar button clicks
   const handleButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
+    e.preventDefault()
+    e.stopPropagation()
+  }
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -100,13 +94,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
         <Button
           type="button"
           onMouseDown={handleButtonClick}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
-          }
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
           className="p-2 h-auto"
-          variant={
-            editor.isActive("heading", { level: 1 }) ? "secondary" : "ghost"
-          }
+          variant={editor.isActive("heading", { level: 1 }) ? "secondary" : "ghost"}
           size="sm"
         >
           H1
@@ -114,13 +104,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
         <Button
           type="button"
           onMouseDown={handleButtonClick}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           className="p-2 h-auto"
-          variant={
-            editor.isActive("heading", { level: 2 }) ? "secondary" : "ghost"
-          }
+          variant={editor.isActive("heading", { level: 2 }) ? "secondary" : "ghost"}
           size="sm"
         >
           H2
@@ -128,13 +114,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
         <Button
           type="button"
           onMouseDown={handleButtonClick}
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run()
-          }
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           className="p-2 h-auto"
-          variant={
-            editor.isActive("heading", { level: 3 }) ? "secondary" : "ghost"
-          }
+          variant={editor.isActive("heading", { level: 3 }) ? "secondary" : "ghost"}
           size="sm"
         >
           H3
@@ -204,7 +186,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       {/* Editor Content */}
       <EditorContent editor={editor} />
     </div>
-  );
-};
+  )
+}
 
-export default TextEditor;
+export default TextEditor

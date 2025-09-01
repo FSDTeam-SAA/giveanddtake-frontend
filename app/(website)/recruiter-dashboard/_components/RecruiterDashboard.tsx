@@ -596,7 +596,7 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Elevator Pitch Section */}
-        <section className="mb-10">
+        {/* <section className="mb-10">
           <h2 className="text-[32px] text-[#4D4D4D] font-semibold mb-4 text-center">
             Your Elevator Pitch
           </h2>
@@ -615,7 +615,7 @@ export default function RecruiterDashboard() {
               </Button>
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Your Jobs Section */}
         <section className="mb-10">
