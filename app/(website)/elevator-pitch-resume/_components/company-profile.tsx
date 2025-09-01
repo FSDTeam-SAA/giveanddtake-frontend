@@ -60,6 +60,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     queryFn: fetchCompanyJobs,
   });
 
+  console.log("JJJJJJJJJJJJ",jobs)
+
   useEffect(() => {
     const fetchPitchData = async () => {
       if (!session?.user?.id) {

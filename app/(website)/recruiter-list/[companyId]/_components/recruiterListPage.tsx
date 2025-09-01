@@ -161,13 +161,18 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       // Return context with the previous data for rollback on error
       return { previousData };
     },
-    onError: (err, employeeId, context) => {
+    onError: (
+      err,
+      employeeId,
+      context
+    ) => {
       // Rollback to the previous data on error
+      const ctx = context as { previousData?: ApiResponse } | undefined;
       queryClient.setQueryData(
         ["employees", companyId, currentPage],
-        context?.previousData
+        ctx?.previousData
       );
-      console.error("Error deleting employee:", err.message);
+      console.error("Error deleting employee:", err instanceof Error ? err.message : err);
     },
     onSuccess: () => {
       // Invalidate the query to refetch the updated data
