@@ -35,7 +35,7 @@ export const faqData = [
   {
     question: "How can I receive a refund for my subscriptions?",
     answer:
-      "If you terminate your monthly subscription within 3 days, a 75% refund will be issued (minus bank and conversion fees). For yearly subscriptions, terminate within 30 days to receive a 75% refund (minus fees).",
+      "We have deliberately set our subscription fees low to ensure millions of jobseekers across the globe find a job fast. 30 Seconds is sufficient time to articulate your skills to recruiters so please consider staying on a free plan to avoid undue service charges to your pockets in the event you subscribe and then require a refund. Please reach out to us via our contact page to discuss your refund request.",
   },
   {
     question: "Do all recruiters get to view my elevator video pitch?",
@@ -49,11 +49,10 @@ export const faqData = [
   },
   {
     question: "What is the minimum age for using the site?",
-    answer: `16 years and above for Members, 18 years and above for recruiters. 
+    answer: `
 You must be at least 16 years old to use Elevator Video Pitch. In regions where the law requires you to be older than 16 to use our services without parental consent, the minimum age is the age at which such parental consent is not required.
 
-(i) To verify each user's age, we need to add a field for Date of Birth on the Users and Recruiters sign up page where they select their month and year of birth from a calendar (mm/yyyy). If a user enters a year which suggests they’re younger than 16, we would need to display a message: 
-“Sorry we're unable to register you today, we look forward to welcoming you when you reach the minimum age of 16.”`
+ `,
   },
   {
     question: "How do I change my password?",
@@ -85,10 +84,6 @@ You must be at least 16 years old to use Elevator Video Pitch. In regions where 
   {
     question: "Where can I view my messages?",
     answer: "In your messages panel.",
-  },
-  {
-    question: "Where can I adjust my notifications receiving frequency?",
-    answer: "From the Navbar, After you log in.",
   },
 ];
 

@@ -11,7 +11,7 @@ import { fetchCompanyDetails } from "@/lib/api-service";
 import { MapPin, Users, Calendar } from "lucide-react";
 import Image from "next/image";
 import JobCard from "@/components/shared/card/job-card";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
 
 interface Honor {
@@ -41,11 +41,16 @@ const fetchCompanyJobs = async (companyId: string) => {
     throw new Error("Failed to fetch company jobs");
   }
 
-  return res.json();
+  return res.json(); // { success, message, data: Job[] }
 };
 
 export default function CompanyProfilePage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  // NEW: pagination state (6 per page)
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const PAGE_SIZE = 6;
+
   const params = useParams();
   const userId = params.userId as string;
 
@@ -55,11 +60,30 @@ export default function CompanyProfilePage() {
     enabled: !!userId,
   });
 
-  const { data: jobs = [], isLoading: isLoadingJobs } = useQuery({
-    queryKey: ["company-jobs", companyData?.companies[0]?._id],
-    queryFn: () => fetchCompanyJobs(companyData?.companies[0]?._id),
-    enabled: !!companyData?.companies[0]?._id,
-  });
+  const { data: jobs = { data: [] as any[] }, isLoading: isLoadingJobs } =
+    useQuery({
+      queryKey: ["company-jobs", companyData?.companies[0]?._id],
+      queryFn: () => fetchCompanyJobs(companyData?.companies[0]?._id),
+      enabled: !!companyData?.companies[0]?._id,
+    });
+
+  // NEW: derive only admin-approved jobs
+  const approvedJobs = useMemo(() => {
+    return (jobs?.data ?? []).filter((j: any) => j?.adminApprove === true);
+  }, [jobs]);
+
+  // NEW: pagination derivations
+  const totalPages = Math.max(1, Math.ceil(approvedJobs.length / PAGE_SIZE));
+  const visibleJobs = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return approvedJobs.slice(start, start + PAGE_SIZE);
+  }, [approvedJobs, currentPage]);
+
+  // Reset to page 1 if the job list changes and current page is now out of bounds
+  // (e.g., after filtering or refetch)
+  if (currentPage > totalPages) {
+    setTimeout(() => setCurrentPage(1), 0);
+  }
 
   if (isLoadingCompany) {
     return (
@@ -173,19 +197,67 @@ export default function CompanyProfilePage() {
         <h2 className="text-xl font-semibold mb-6 text-gray-900">
           Company Jobs
         </h2>
+
         {isLoadingJobs ? (
           <div className="text-center py-10">Loading jobs...</div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {jobs?.data?.map((job) => (
-              <JobCard
-                key={job._id}
-                job={job}
-                onSelect={() => setSelectedJobId(job._id)}
-                variant="list"
-              />
-            ))}
+        ) : approvedJobs.length === 0 ? (
+          <div className="text-center py-10 text-gray-600">
+            No approved jobs available.
           </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {visibleJobs.map((job: any) => (
+                <JobCard
+                  key={job._id}
+                  job={job}
+                  onSelect={() => setSelectedJobId(job._id)}
+                  variant="list"
+                />
+              ))}
+            </div>
+
+            {/* NEW: Pagination (only if more than one page) */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </Button>
+
+                {/* Numbered page buttons */}
+                {Array.from({ length: totalPages }).map((_, idx) => {
+                  const pageNum = idx + 1;
+                  const isActive = pageNum === currentPage;
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

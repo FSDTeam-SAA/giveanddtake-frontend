@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,9 +23,8 @@ async function fetchUserData(token: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
     }
   );
   if (!response.ok) throw new Error("Failed to fetch user data");
@@ -48,7 +47,7 @@ async function updateUserData({ token, data }: { token: string; data: any }) {
   return response.json();
 }
 
-async function deactivateAccount(token: string) {
+async function deleteAccount(token: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/user/deactivate`,
     {
@@ -56,7 +55,8 @@ async function deactivateAccount(token: string) {
       headers: { Authorization: `Bearer ${token}` },
     }
   );
-  if (!response.ok) throw new Error("Failed to deactivate account");
+  if (!response.ok) throw new Error("Failed to delete account");
+
   return response.json();
 }
 
@@ -75,26 +75,29 @@ async function verifyPassword(email: string, password: string) {
   return json; // expects shape with { success: boolean, ... }
 }
 
-/** Final destructive call */
-async function deleteAccount(token: string) {
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/user/delete`,
-    {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  if (!response.ok) throw new Error("Failed to delete account");
-  return response.json();
+/* ----------------------------- Utilities ------------------------------ */
+
+function splitName(full?: string): { firstName: string; surname: string } {
+  const safe = (full || "").trim().replace(/\s+/g, " ");
+  if (!safe) return { firstName: "", surname: "" };
+  const parts = safe.split(" ");
+  if (parts.length === 1) return { firstName: parts[0], surname: "" };
+  return {
+    firstName: parts.slice(0, -1).join(" "),
+    surname: parts.slice(-1)[0],
+  };
+}
+
+function mergeName(firstName: string, surname: string): string {
+  return [firstName?.trim(), surname?.trim()].filter(Boolean).join(" ");
 }
 
 /* ------------------------- Component starts here ------------------------ */
 
 export function PersonalInformation() {
   const [isEditing, setIsEditing] = useState(false);
-  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false);
 
-  // delete modal now asks for password
+  // delete modal asks for password
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
 
@@ -112,9 +115,15 @@ export function PersonalInformation() {
     enabled: !!token,
   });
 
-  // Controlled form state
+  // Controlled form state (split name into first/surname)
+  const initialNames = useMemo(
+    () => splitName(data?.data?.name),
+    [data?.data?.name]
+  );
+
   const [formData, setFormData] = useState({
-    name: data?.data?.name || "",
+    firstName: initialNames.firstName || "",
+    surname: initialNames.surname || "",
     email: data?.data?.email || "",
     phone: data?.data?.phoneNum || "",
     country: data?.data?.address || "",
@@ -125,8 +134,10 @@ export function PersonalInformation() {
 
   useEffect(() => {
     if (data?.data) {
+      const split = splitName(data.data.name);
       setFormData({
-        name: data.data.name || "",
+        firstName: split.firstName,
+        surname: split.surname,
         email: data.data.email || "",
         phone: data.data.phoneNum || "",
         country: data.data.address || "",
@@ -148,27 +159,6 @@ export function PersonalInformation() {
     onError: (error: any) => toast.error(`Failed to update: ${error.message}`),
   });
 
-  // Deactivate mutation
-  const deactivateMutation = useMutation({
-    mutationFn: deactivateAccount,
-    onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["userData", token] });
-      toast.success("Account deactivated successfully!");
-      setIsDeactivateModalOpen(false);
-      try {
-        await signOut({ redirect: false });
-        router.push("/login");
-      } catch (error) {
-        toast.error("Failed to log out: " + (error as Error).message);
-      }
-    },
-    onError: (error: any) => {
-      toast.error(`Failed to deactivate account: ${error.message}`);
-      setIsDeactivateModalOpen(false);
-    },
-  });
-
-  // Delete flow mutation (verify password -> delete)
   const deleteFlowMutation = useMutation({
     mutationFn: async ({
       email,
@@ -177,16 +167,16 @@ export function PersonalInformation() {
       email: string;
       password: string;
     }) => {
-      // Step 1: verify credentials
       const verify = await verifyPassword(email, password);
       if (!verify?.success) {
         throw new Error("Password verification failed");
       }
-      // Step 2: delete account with current session token
       return await deleteAccount(token);
     },
     onSuccess: async () => {
-      toast.success("Your account has been scheduled for deletion.");
+      toast.success(
+        "Your account is now marked for deletion. You can still log in within 30 days to restore it."
+      );
       setIsDeleteModalOpen(false);
       setDeletePassword("");
       try {
@@ -206,20 +196,17 @@ export function PersonalInformation() {
   };
 
   const handleSave = () => {
+    const mergedName = mergeName(formData.firstName, formData.surname);
     updateMutation.mutate({
       token,
       data: {
-        name: formData.name,
-        email: formData.email,
+        name: mergedName,
+        // Email cannot be changed; do not send email if back-end treats it as immutable
         phoneNum: formData.phone,
         address: formData.country,
       },
     });
   };
-
-  const handleDeactivate = () => setIsDeactivateModalOpen(true);
-
-  const confirmDeactivate = () => deactivateMutation.mutate(token);
 
   const handleDelete = () => setIsDeleteModalOpen(true);
 
@@ -277,22 +264,38 @@ export function PersonalInformation() {
           className="bg-primary hover:bg-blue-700 text-white px-4 py-2 text-sm"
         >
           <Edit2 className="h-4 w-4 mr-2" />
-          Edit
+          {isEditing ? "Cancel" : "Edit"}
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <Label
-            htmlFor="name"
+            htmlFor="firstName"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            Name
+            First name
           </Label>
           <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
+            id="firstName"
+            value={formData.firstName}
+            onChange={(e) => handleInputChange("firstName", e.target.value)}
+            disabled={!isEditing}
+            className="bg-gray-50 border-gray-200"
+          />
+        </div>
+
+        <div>
+          <Label
+            htmlFor="surname"
+            className="text-sm font-medium text-gray-700 mb-2 block"
+          >
+            Surname
+          </Label>
+          <Input
+            id="surname"
+            value={formData.surname}
+            onChange={(e) => handleInputChange("surname", e.target.value)}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
           />
@@ -309,8 +312,7 @@ export function PersonalInformation() {
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
-            disabled={!isEditing}
+            disabled /* Email is not editable */
             className="bg-gray-50 border-gray-200"
           />
         </div>
@@ -346,8 +348,6 @@ export function PersonalInformation() {
             className="bg-gray-50 border-gray-200"
           />
         </div>
-
-      
       </div>
 
       {isEditing && (
@@ -362,63 +362,25 @@ export function PersonalInformation() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-12 pt-8 border-t border-gray-200">
-        <Button
-          variant="outline"
-          onClick={handleDeactivate}
-          className="px-8 py-2 w-full border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent h-[51px]"
-          disabled={deactivateMutation.isPending}
-        >
-          {deactivateMutation.isPending
-            ? "Deactivating..."
-            : "Deactivate Account"}
-        </Button>
-
-        <div>
-          <Button
-            onClick={handleDelete}
-            className="bg-red-600 hover:bg-red-700 w-full text-white px-8 py-2 h-[51px]"
-          >
-            Delete Account
-          </Button>
-          <p className="text-xs text-red-600 mt-2 text-center">
-            We're sorry to see you leave! Your account and its data will be
-            permanently deleted in the next 30 days. Please consider
-            deactivating your account first and then delete it after a break.
-          </p>
+      <div className="t-12 mt-8 border-t border-gray-200">
+        <div className="grid grid-cols-1 mt-8 gap-4 w-[80%] lg:w-[55%] mx-auto">
+          <div>
+            <Button
+              onClick={handleDelete}
+              className="bg-red-600 hover:bg-red-700 w-full text-white px-8 py-2 h-[51px]"
+              disabled={deleteFlowMutation.isPending}
+            >
+              {deleteFlowMutation.isPending ? "Deleting..." : "Delete Account"}
+            </Button>
+            <p className="text-xs text-red-600 mt-2 text-center">
+              Deleting your account starts a 30-day grace period. If you change
+              your mind, you can log in again within 30 days to restore your
+              account. After 30 days, your account and its data will be
+              permanently deleted.
+            </p>
+          </div>
         </div>
       </div>
-
-      {/* Deactivation Confirmation Modal */}
-      <Dialog
-        open={isDeactivateModalOpen}
-        onOpenChange={setIsDeactivateModalOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Account Deactivation</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to deactivate your account? You will be
-              logged out, and your account will be disabled until reactivated.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeactivateModalOpen(false)}
-            >
-              No
-            </Button>
-            <Button
-              onClick={confirmDeactivate}
-              className="bg-red-600 hover:bg-red-700 text-white"
-              disabled={deactivateMutation.isPending}
-            >
-              {deactivateMutation.isPending ? "Working..." : "Yes"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Confirmation Modal (with password prompt) */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
@@ -427,7 +389,7 @@ export function PersonalInformation() {
             <DialogTitle>Confirm Account Deletion</DialogTitle>
             <DialogDescription>
               Please confirm your identity to permanently delete your account.
-              This action cannot be undone.
+              You can still log back in within 30 days to restore it.
             </DialogDescription>
           </DialogHeader>
 

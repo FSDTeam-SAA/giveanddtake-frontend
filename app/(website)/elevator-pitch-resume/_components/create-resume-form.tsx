@@ -1812,9 +1812,9 @@ export default function CreateResumeForm() {
           <Card>
             <CardHeader>
               <CardTitle>Awards and Honours (Optional)</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              {/* <p className="text-sm text-muted-foreground">
                 Tell employers what you are in a few impactful sentences.
-              </p>
+              </p> */}
             </CardHeader>
             <CardContent>
               {awardFields.map((field, index) => (

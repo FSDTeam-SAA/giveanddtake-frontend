@@ -156,7 +156,7 @@ export default function AboutUsPage() {
               About Us
             </h2>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Elevator Video Pitches was initially conceived in 2016 at a time
+              Elevator Video Pitch was initially conceived in 2016 at a time
               of high employment amidst a ‘skills shortage’ which has abated.
             </p>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
