@@ -118,6 +118,7 @@ const recruiterSchema = z.object({
       })
     )
     .optional(),
+  companyId: z.string().min(1, "Company selection is required"),
   userId: z.string().optional(),
 });
 
@@ -252,6 +253,7 @@ export default function CreateRecruiterAccountForm() {
         { label: "LinkedIn", link: "https://www.linkedin.com/" },
         { label: "X", link: "https://x.com/" },
       ],
+      companyId: "",
       userId: userId || "",
     },
   });
@@ -317,11 +319,11 @@ export default function CreateRecruiterAccountForm() {
     }
   }, [countries, form]);
 
-  // useEffect(() => {
-  //   if (selectedCompany) {
-  //     form.setValue("companyId", selectedCompany);
-  //   }
-  // }, [selectedCompany, form]);
+  useEffect(() => {
+    if (selectedCompany) {
+      form.setValue("companyId", selectedCompany);
+    }
+  }, [selectedCompany, form]);
 
   useEffect(() => {
     if (userId) {
@@ -831,7 +833,7 @@ export default function CreateRecruiterAccountForm() {
                 />
               </div>
 
-              {/* <div className="space-y-4">
+              <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   View your company
                 </h3>
@@ -851,7 +853,7 @@ export default function CreateRecruiterAccountForm() {
                     </FormItem>
                   )}
                 />
-              </div> */}
+              </div>
 
               <Card>
                 <CardHeader>

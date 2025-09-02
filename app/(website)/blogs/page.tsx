@@ -94,7 +94,7 @@ export default function BlogListingPage() {
        
 
           return (
-            <Link href={`/blog/${blog._id}`}>
+            <Link href={`/blogs/${blog._id}`}>
               <Card
                 key={blog._id}
                 className="w-full shadow-none border-none overflow-hidden transition-all "

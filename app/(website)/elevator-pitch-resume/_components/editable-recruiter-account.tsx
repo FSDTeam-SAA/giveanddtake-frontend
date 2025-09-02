@@ -722,7 +722,7 @@ export default function EditableRecruiterAccount({
                   </TooltipProvider>
 
                   <div className=" pt-2">
-                    <p className="text-[20px] mb-4">
+                    <p className="text-[14px] md:text-[20px] mb-4">
                       {"Try It Free — Post Your First Job at No Cost!"}
                     </p>
                     <Link
