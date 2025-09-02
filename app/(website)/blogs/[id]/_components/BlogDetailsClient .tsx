@@ -139,7 +139,7 @@ export function BlogDetailsClient({ id }: { id: string }) {
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-      <div className="py-24">
+      <div className="py-6 md:py-24">
         <PageHeaders
           title={blogPost.title}
         />

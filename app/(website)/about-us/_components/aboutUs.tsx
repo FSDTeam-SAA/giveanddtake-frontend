@@ -151,7 +151,7 @@ export default function AboutUsPage() {
 
         <div className="relative z-10">
           {/* About Section */}
-          <div className="mb-16 space-y-6 max-w-2xl">
+          <div className="mb-6 space-y-2 max-w-2xl">
             <h2 className="text-3xl md:text-[40px] font-semibold text-[#131313] mb-3">
               About Us
             </h2>
@@ -167,8 +167,8 @@ export default function AboutUsPage() {
           </div>
 
           {/* Vision & Mission */}
-          <div className="flex flex-col md:flex-row items-start justify-between mb-16 gap-y-10">
-            <div className="flex-1 space-y-10 text-left">
+          <div className="flex flex-col md:flex-row items-start justify-between mb-6 gap-y-10">
+            <div className="flex-1 space-y-6 text-left">
               <div>
                 <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-3">
                   Our Vision
@@ -192,7 +192,7 @@ export default function AboutUsPage() {
           </div>
 
           {/* What We Offer */}
-          <div className="mb-10 max-w-3xl">
+          <div className="mb-6 max-w-3xl">
             <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-3">
               What We Offer
             </h2>

@@ -97,6 +97,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   });
   // ----------------------------------------------------------------------
 
+  console.log("JJJJJJJJJJJJ",jobs)
+
   useEffect(() => {
     const fetchPitchData = async () => {
       if (!session?.user?.id) {

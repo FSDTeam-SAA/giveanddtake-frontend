@@ -69,6 +69,13 @@ export function ProfileSidebar() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ✅ Always call hooks before any early return
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
   // Fetch user data
   const { data: userData, isLoading: isUserDataLoading } = useQuery({
     queryKey: ["userData", token],
@@ -161,13 +168,6 @@ export function ProfileSidebar() {
     setPreviewUrl(url);
     setConfirmOpen(true);
   };
-
-  // Clean up preview URL when dialog closes or component unmounts
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
 
   const confirmUpload = () => {
     if (!selectedFile) return;
