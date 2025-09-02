@@ -268,7 +268,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             ))}
           </div>
           <div className="mt-4">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white">
               Follow
             </Button>
           </div>
