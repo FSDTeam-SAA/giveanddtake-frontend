@@ -9,6 +9,7 @@ import {
   UserCheck,
   ArrowLeft,
   Filter,
+  MapPin,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -200,21 +201,21 @@ function SearchResultsInner() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case "candidate":
-        return "bg-green-100 text-green-800";
+        return " text-green-800";
       case "recruiter":
-        return "bg-blue-100 text-blue-800";
+        return "text-blue-800";
       case "company":
-        return "bg-purple-100 text-purple-800";
+        return "btext-purple-800";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "text-gray-800";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="container mx-auto px-2">
       {/* Header */}
       <div className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+        <div className=" px-4 py-4">
           <div className="flex items-center gap-4 mb-4">
             <Button
               variant="ghost"
@@ -247,7 +248,7 @@ function SearchResultsInner() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      <div className="py-6">
         {/* Filters and Results Count */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -319,16 +320,15 @@ function SearchResultsInner() {
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-gray-900 truncate">
                         {user.name}
                       </h3>
-                      {getRoleIcon(user.role)}
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="flex gap-4">
                       <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
+                        className={`text-base font-medium ${getRoleBadgeColor(
                           user.role
                         )}`}
                       >
@@ -336,13 +336,8 @@ function SearchResultsInner() {
                       </span>
 
                       <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <span>📍</span>
+                        <MapPin className="h-4 w-4 text-[#4B98DE]" />
                         {user.address}
-                      </p>
-
-                      <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <span>📞</span>
-                        {user.phoneNum}
                       </p>
                     </div>
                   </div>

@@ -195,7 +195,6 @@ export function SiteHeader() {
                   FAQ
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className={`p-0 ${
                   isActive("/contact-us") ? "text-[#2B7FD0]" : ""
@@ -408,7 +407,11 @@ export function SiteHeader() {
 
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => signOut()}
+                      onClick={() =>
+                        signOut({
+                          callbackUrl: "/", // force redirect here
+                        })
+                      }
                       className="cursor-pointer"
                     >
                       <LogOut className="mr-2 h-4 w-4" /> Log Out
@@ -592,7 +595,11 @@ export function SiteHeader() {
 
                 {status === "authenticated" ? (
                   <Button
-                    onClick={() => signOut()}
+                    onClick={() =>
+                      signOut({
+                        callbackUrl: "/", // force redirect here
+                      })
+                    }
                     variant="outline"
                     className="w-full mt-4"
                   >

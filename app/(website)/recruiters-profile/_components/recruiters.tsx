@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/company/video-player";
+import { SocialIcon } from "@/components/company/social-icon";
 
 interface SocialLink {
   label: string;
@@ -229,20 +230,12 @@ export default function Recruiters({ userId }: MydataProps) {
             </h1>
             <p className="text-lg text-gray-600">{recruiterData.title}</p>
             <div className="flex space-x-2 mt-2">
-              {recruiterData.sLink.map((link) => {
-                const Icon = iconMap[link.label.toLowerCase()] || iconMap.other;
-                return (
-                  <Link
-                    key={link._id}
-                    href={link.url || `#${link.label.toLowerCase()}`}
-                    className="text-blue-500 hover:text-blue-700 border border-[#9EC7DC] p-2 rounded transition-colors"
-                    title={link.label}
-                    aria-label={`Visit ${link.label} profile`}
-                  >
-                    <Icon size={20} />
-                  </Link>
-                );
-              })}
+              {recruiterData.sLink.map((link) => (
+                <SocialIcon
+                  key={link._id}
+                  url={link.url || `#${link.label.toLowerCase()}`}
+                />
+              ))}
             </div>
           </div>
           <div>
@@ -307,10 +300,7 @@ export default function Recruiters({ userId }: MydataProps) {
         </h2>
         <div className="rounded-lg">
           {pitchData ? (
-            <VideoPlayer
-              pitchId={pitchData._id}
-              className="w-full mx-auto"
-            />
+            <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
           ) : pitchLoading ? (
             <div>Loading pitch...</div>
           ) : pitchError ? (
