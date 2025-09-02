@@ -140,12 +140,12 @@ export default function CompanyProfilePage() {
           alt={`${company.cname} banner`}
           width={1200}
           height={200}
-          className="w-full h-48 object-cover rounded-lg"
+          className="w-full h-[200px] object-cover rounded-b-lg"
         />
       </div>
 
       {/* Header Section */}
-      <div className="px-4 md:px-6 lg:px-24 mt-[-30px]">
+      <div className="px-4 md:px-6 lg:pl-10 mt-[-30px]">
         <div className="">
           <div className="w-[170px] h-[170px] flex-shrink-0">
             <Image

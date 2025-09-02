@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo, forwardRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -32,10 +32,23 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
-import { Eye, EyeOff, User, Mail, Phone, Lock } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Phone,
+  Lock,
+} from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+
+// ➜ NEW: react-datepicker
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 interface Country {
   name: string;
@@ -43,11 +56,10 @@ interface Country {
   dial_code: string;
 }
 
-// Define the valid roles to check against
 type ValidRole = "candidate" | "recruiter" | "company";
 const VALID_ROLES: ValidRole[] = ["candidate", "recruiter", "company"];
 
-// Child component to handle useSearchParams
+// Handles reading ?role=candidate|recruiter|company
 function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
   const searchParams = useSearchParams();
   const roleFromUrl = searchParams.get("role") as ValidRole | null;
@@ -60,8 +72,29 @@ function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
     setRole(initialRole);
   }, [initialRole, setRole]);
 
-  return null; // This component only handles logic, no UI
+  return null;
 }
+
+// Custom input for DatePicker to match shadcn Button look & feel
+const DateButton = forwardRef<
+  HTMLButtonElement,
+  { value?: string; onClick?: () => void }
+>(({ value, onClick }, ref) => (
+  <Button
+    type="button"
+    variant="outline"
+    onClick={onClick}
+    ref={ref}
+    className={cn(
+      "w-full justify-start text-left font-normal h-11",
+      !value && "text-muted-foreground"
+    )}
+  >
+    <CalendarIcon className="mr-2 h-4 w-4" />
+    {value || <span>Select your date</span>}
+  </Button>
+));
+DateButton.displayName = "DateButton";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -71,8 +104,12 @@ export default function RegisterPage() {
     password: "",
     phoneNum: "",
     address: "",
-    role: "candidate", // Default role
+    role: "candidate",
   });
+
+  // DOB via react-datepicker
+  const [dob, setDob] = useState<Date | null>(null);
+
   const [firstName, setFirstName] = useState("");
   const [surname, setSurname] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -92,11 +129,11 @@ export default function RegisterPage() {
     hasLowerCase: false,
   });
 
-  // NEW: confirmation dialog state
   const [showRoleConfirm, setShowRoleConfirm] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<RegisterData | null>(
     null
   );
+  const [showUnderAgeDialog, setShowUnderAgeDialog] = useState(false);
 
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
@@ -163,16 +200,12 @@ export default function RegisterPage() {
       }
     }
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === "password") {
-      validatePassword(value);
-    }
+    if (field === "password") validatePassword(value);
   };
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
-    const selectedCountryData = countries.find(
-      (country) => country.name === value
-    );
+    const selectedCountryData = countries.find((c) => c.name === value);
     const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
     setFormData((prev) => ({
       ...prev,
@@ -181,7 +214,42 @@ export default function RegisterPage() {
     }));
   };
 
-  // Derived text for the primary CTA
+  // ---- Age helpers ----
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
+
+  // Cutoff = today - 16 years (must be born on/before this)
+  const cutoff = useMemo(() => {
+    const d = new Date(today);
+    d.setFullYear(d.getFullYear() - 16);
+    return d;
+  }, [today]);
+
+  const oldestAllowed = useMemo(() => {
+    const d = new Date(today);
+    d.setFullYear(d.getFullYear() - 100);
+    return d;
+  }, [today]);
+
+  const dobISO = useMemo(
+    () =>
+      dob
+        ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate()))
+            .toISOString()
+            .slice(0, 10)
+        : "",
+    [dob]
+  );
+
+  const isUnder16 = useMemo(() => (dob ? dob > cutoff : false), [dob, cutoff]);
+
+  useEffect(() => {
+    if (dob && isUnder16) setShowUnderAgeDialog(true);
+  }, [dob, isUnder16]);
+
   const primaryCtaText = useMemo(() => {
     if (registerMutation.isPending) return "Creating Account...";
     if (selectedRole === "candidate") return "Sign up as a Candidate";
@@ -189,17 +257,27 @@ export default function RegisterPage() {
     return "Sign up as a Company";
   }, [registerMutation.isPending, selectedRole]);
 
+  const needsDob = selectedRole === "candidate" || selectedRole === "recruiter";
+
   const validateBeforeSubmit = () => {
+    if (needsDob) {
+      if (!dob) {
+        alert("Please select your Date of Birth.");
+        return false;
+      }
+      if (isUnder16) {
+        setShowUnderAgeDialog(true);
+        return false;
+      }
+    }
     if (formData.password !== confirmPassword) {
       alert("Passwords do not match");
       return false;
     }
-
     if (!validatePassword(formData.password)) {
       alert("Password does not meet the requirements");
       return false;
     }
-
     if (!agreeToTerms) {
       alert("Please agree to the terms and conditions");
       return false;
@@ -208,21 +286,20 @@ export default function RegisterPage() {
   };
 
   const actuallySubmit = (data: RegisterData) => {
-    registerMutation.mutate(data);
+    const payload = {
+      ...data,
+      dateOfBirth: dobISO || undefined,
+    } as unknown as RegisterData;
+    registerMutation.mutate(payload);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateBeforeSubmit()) return;
-
-    // Combine first name and surname into the name field
     const fullFormData: RegisterData = {
       ...formData,
       name: `${firstName} ${surname}`.trim(),
     };
-
-    // Show the role confirmation dialog first
     setPendingFormData(fullFormData);
     setShowRoleConfirm(true);
   };
@@ -242,12 +319,14 @@ export default function RegisterPage() {
             Sign-up and pitch your way into a new role
           </CardDescription>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* First name */}
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="firstName"
                   placeholder="Enter First Name"
@@ -259,10 +338,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Surname */}
             <div className="space-y-2">
               <Label htmlFor="surname">Surname</Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="surname"
                   placeholder="Enter Surname"
@@ -274,10 +354,11 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
@@ -290,6 +371,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Country */}
             <div className="space-y-2">
               <Label htmlFor="address">Country</Label>
               <Select
@@ -320,10 +402,11 @@ export default function RegisterPage() {
               </Select>
             </div>
 
+            {/* Phone */}
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="phone"
                   placeholder="Enter Phone Number"
@@ -337,10 +420,44 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* DOB (react-datepicker) for Candidate & Recruiter */}
+            {(selectedRole === "candidate" || selectedRole === "recruiter") && (
+              <div className="space-y-2">
+                <Label className="mr-5">Date of Birth</Label>
+
+                <DatePicker
+                  selected={dob}
+                  onChange={(date) => setDob(date)}
+                  // Ensure selection between [oldestAllowed, cutoff]
+                  minDate={oldestAllowed}
+                  maxDate={new Date()}
+                  // Nice UX: dropdowns for quick navigation
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  // Format used for the value passed into the custom input
+                  dateFormat="PPP"
+                  // Close on single selection
+                  shouldCloseOnSelect
+                  // Make the popup attach to the button
+                  popperPlacement="bottom-start"
+                  // Custom input to match your Button styling
+                  customInput={<DateButton />}
+                />
+
+                {dob && isUnder16 && (
+                  <p className="text-sm text-destructive">
+                    You must be at least 16 years old to register.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Password */}
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
@@ -354,8 +471,8 @@ export default function RegisterPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -367,7 +484,7 @@ export default function RegisterPage() {
 
               {formData.password && (
                 <div className="mt-3 space-y-1">
-                  <p className="text-sm font-medium text-red-600 mb-2">
+                  <p className="text-sm font-medium text-red-600 mb-1">
                     Passwords should be:
                   </p>
                   <div className="space-y-1 text-sm">
@@ -378,7 +495,7 @@ export default function RegisterPage() {
                           : "text-red-600"
                       )}
                     >
-                      A minimum of '10 characters'
+                      A minimum of 10 characters
                     </p>
                     <p
                       className={cn(
@@ -421,10 +538,11 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* Confirm password */}
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
@@ -436,8 +554,8 @@ export default function RegisterPage() {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowConfirmPassword((s) => !s)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -448,23 +566,25 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            {/* Terms */}
+            <div className="flex items-center gap-2">
               <Checkbox
                 id="terms"
                 checked={agreeToTerms}
-                onCheckedChange={(checked) =>
-                  setAgreeToTerms(checked as boolean)
-                }
+                onCheckedChange={(checked) => setAgreeToTerms(!!checked)}
               />
               <Label htmlFor="terms" className="text-sm">
                 I agree to the{" "}
-                <Link href="/terms" className="text-blue-600 hover:underline">
-                  Terms & Conditions
+                <Link
+                  href="/terms"
+                  className="text-primary underline-offset-4 hover:underline"
+                >
+                  Terms &amp; Conditions
                 </Link>
               </Label>
             </div>
 
-            {/* Primary submit button comes FIRST */}
+            {/* Primary submit */}
             <Button
               type="submit"
               className="w-full font-bold text-md"
@@ -473,9 +593,9 @@ export default function RegisterPage() {
               {primaryCtaText}
             </Button>
 
-            {/* Secondary role choices moved BELOW the primary CTA */}
+            {/* Secondary role toggles */}
             <div className="pt-2">
-              <p className="text-xs text-gray-500 mb-2 text-center">
+              <p className="text-xs text-muted-foreground mb-2 text-center">
                 Prefer a different role?
               </p>
               <div className="flex gap-2">
@@ -494,10 +614,10 @@ export default function RegisterPage() {
                       )
                     }
                     className={cn(
-                      "w-full px-4 py-2 border rounded-md transition-colors scale-y-95 font-bold",
+                      "w-full px-4 py-2 border rounded-md transition-colors font-bold",
                       selectedRole === option.value
-                        ? "bg-primary text-white border-blue-600"
-                        : "bg-transparent border-gray-300 hover:bg-gray-100"
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-background border-input hover:bg-accent"
                     )}
                   >
                     {option.label}
@@ -505,7 +625,7 @@ export default function RegisterPage() {
                 ))}
               </div>
               {selectedRole !== "candidate" && (
-                <p className="text-[11px] text-gray-500 mt-2 text-center">
+                <p className="text-[11px] text-muted-foreground mt-2 text-center">
                   Currently selected:{" "}
                   <span className="font-semibold">{selectedRole}</span>. Submit
                   to continue.
@@ -513,13 +633,14 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* Login link */}
             <div className="text-center">
-              <span className="text-sm font-bold text-gray-600">
+              <span className="text-sm font-semibold text-muted-foreground">
                 Already have an account?{" "}
               </span>
               <Link
                 href="/login"
-                className="text-sm text-blue-600 hover:underline"
+                className="text-sm text-primary underline-offset-4 hover:underline"
               >
                 Sign In Here
               </Link>
@@ -528,20 +649,20 @@ export default function RegisterPage() {
         </CardContent>
       </Card>
 
-      {/* Confirmation dialog for role choice */}
+      {/* Role confirmation */}
       <AlertDialog open={showRoleConfirm} onOpenChange={setShowRoleConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm your sign‑up role</AlertDialogTitle>
+            <AlertDialogTitle>Confirm your sign-up role</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to create an account as{" "}a {" "}
+              You are about to create an account as{" "}
               <span className="font-semibold">
                 {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
               </span>
-              . You can change this now if it’s not what you intended.
+              .
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="rounded-md bg-gray-50 p-3 text-sm">
+          <div className="rounded-md bg-muted p-3 text-sm space-y-1">
             <div>
               Name:{" "}
               <span className="font-medium">
@@ -556,11 +677,28 @@ export default function RegisterPage() {
               Country:{" "}
               <span className="font-medium">{formData.address || "—"}</span>
             </div>
+            {(selectedRole === "candidate" || selectedRole === "recruiter") && (
+              <div>
+                DOB:{" "}
+                <span className="font-medium">
+                  {dob ? format(dob, "PPP") : "—"}
+                </span>
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-              <Button variant="outline" type="button">
-                Go back
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => {
+                  // reset selection so the secondary role buttons are unselected
+                  setSelectedRole("candidate");
+                  // close the dialog
+                  setShowRoleConfirm(false);
+                }}
+              >
+                Chnage role
               </Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
@@ -572,13 +710,50 @@ export default function RegisterPage() {
                       ...pendingFormData,
                       role: selectedRole,
                     };
+                    if (
+                      (selectedRole === "candidate" ||
+                        selectedRole === "recruiter") &&
+                      isUnder16
+                    ) {
+                      setShowRoleConfirm(false);
+                      setShowUnderAgeDialog(true);
+                      return;
+                    }
                     actuallySubmit(payload);
                   }
                   setShowRoleConfirm(false);
                 }}
               >
-                Confirm & Continue
+                Confirm &amp; Continue
               </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Under-16 dialog */}
+      <AlertDialog
+        open={showUnderAgeDialog}
+        onOpenChange={setShowUnderAgeDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Age Requirement</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span>
+                Sorry we&apos;re unable to register you today. We look forward
+                to welcoming you when you reach the minimum age of 16.
+              </span>
+              <br />
+              <span className="text-xs text-muted-foreground">
+                If you selected the wrong date, please adjust your Date of Birth
+                above.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction asChild>
+              <Button type="button">OK</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
