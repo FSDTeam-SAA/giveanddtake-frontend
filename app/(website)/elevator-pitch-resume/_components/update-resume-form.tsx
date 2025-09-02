@@ -54,7 +54,7 @@ const resumeSchema = z.object({
         message: "About section cannot exceed 200 words",
       }
     ),
-  skills: z.array(z.string()).min(1, "At least one skill is required"),
+  skills: z.array(z.string()),
   sLink: z
     .array(
       z.object({

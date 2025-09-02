@@ -55,7 +55,7 @@ export function SiteHeader() {
           const result = await response.json();
           if (result.success) {
             setUserAvatar(result.data.avatar.url || "");
-            setUserName(result.data.name || "CN");
+            setUserName(result.data.name || "U");
           } else {
             console.error("Failed to fetch user data:", result.message);
           }
@@ -292,13 +292,10 @@ export function SiteHeader() {
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="h-10 w-10 cursor-pointer">
-                      <AvatarImage
-                        src={
-                          userAvatar || "/placeholder.svg?height=32&width=32"
-                        }
-                        alt="User Avatar"
-                      />
-                      <AvatarFallback>{userName[0] || "CN"}</AvatarFallback>
+                      <AvatarImage src={userAvatar} alt="User Avatar" />
+                      <AvatarFallback className="font-semibold">
+                        {userName[0]}
+                      </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
 

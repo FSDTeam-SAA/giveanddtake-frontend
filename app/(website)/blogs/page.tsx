@@ -17,7 +17,6 @@ interface Blog {
   createdAt: string;
   updatedAt: string;
   __v: number;
-
 }
 
 interface ApiResponse {
@@ -81,7 +80,7 @@ export default function BlogListingPage() {
     <div className="container mx-auto px-4 py-8">
       <PageHeaders
         title="Blogs"
-        description=""
+        description="Insights, ideas and updates on topics that matter most."
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.data.map((blog) => {
@@ -90,8 +89,6 @@ export default function BlogListingPage() {
             month: "short",
             day: "numeric",
           }).format(new Date(blog.createdAt));
-
-       
 
           return (
             <Link href={`/blogs/${blog._id}`}>
@@ -119,13 +116,16 @@ export default function BlogListingPage() {
                   <div
                     className="text-gray-600 dark:text-gray-300 prose"
                     dangerouslySetInnerHTML={{
-                      __html:
-                        blog.description
-                          ? `${blog.description.split(' ').slice(0, 10).join(' ')}${blog.description.split(' ').length > 10 ? '...' : ''}`
-                          : "No description available."
+                      __html: blog.description
+                        ? `${blog.description
+                            .split(" ")
+                            .slice(0, 10)
+                            .join(" ")}${
+                            blog.description.split(" ").length > 10 ? "..." : ""
+                          }`
+                        : "No description available.",
                     }}
                   />
-
                 </CardContent>
                 <CardFooter className="py-4 pt-0 px-0">
                   <Link

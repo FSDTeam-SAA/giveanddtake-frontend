@@ -123,13 +123,15 @@ export function HeroSection() {
         suppressHydrationWarning={true}
       />
 
-      <motion.div
+      {/* === Decorative bubbles (DESKTOP/TABLET ONLY) === */}
+      {/* All bubbles below are hidden on mobile with `hidden md:block` so they don't sit behind text. */}
+      {/* <motion.div
         variants={bubbleVariants}
         animate="floatSlow"
         initial={{ opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.2 }}
-        className="absolute top-[8%] left-[2%] block"
+        className="absolute top-[8%] left-[2%] hidden md:block"
         suppressHydrationWarning={true}
       >
         <Image
@@ -139,7 +141,7 @@ export function HeroSection() {
           height={80}
           className="border border-[#9EC7DC] rounded-full p-2 w-[20px] h-[20px] lg:w-[40px] lg:h-[40px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
-      </motion.div>
+      </motion.div> */}
 
       <motion.div
         variants={bubbleVariants}
@@ -155,7 +157,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[60px] h-[60px] lg:w-[100px] lg:h-[100px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className=" border border-[#9EC7DC] rounded-full p-2 w-[60px] h-[60px] lg:w-[100px] lg:h-[100px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -165,7 +167,7 @@ export function HeroSection() {
         initial={{ opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 0.6 }}
-        className="absolute top-[10%] right-[15%] block"
+        className="absolute top-[10%] right:[15%] hidden md:block"
         suppressHydrationWarning={true}
       >
         <Image
@@ -191,7 +193,7 @@ export function HeroSection() {
           alt="Abstract blue circle"
           width={80}
           height={80}
-          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
+          className=" border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[60px] lg:h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
         />
       </motion.div>
 
@@ -201,7 +203,7 @@ export function HeroSection() {
         initial={{ opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 1.0 }}
-        className="absolute top-[55%] left-[20%] block"
+        className="absolute top-[55%] left-[20%] hidden md:block"
         suppressHydrationWarning={true}
       >
         <Image
@@ -219,7 +221,7 @@ export function HeroSection() {
         initial={{ opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 1.2 }}
-        className="absolute top-[35%] right-[25%] block"
+        className="absolute top-[35%] right-[25%] hidden md:block"
         suppressHydrationWarning={true}
       >
         <Image
@@ -291,7 +293,7 @@ export function HeroSection() {
         initial={{ opacity: 0, scale: 0 }}
         whileInView={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.8, delay: 2.0 }}
-        className="absolute bottom-[15%] right-[5%] block"
+        className="absolute bottom-[15%] right-[5%] hidden md:block"
         suppressHydrationWarning={true}
       >
         <Image
@@ -303,6 +305,25 @@ export function HeroSection() {
         />
       </motion.div>
 
+      <motion.div
+        variants={bubbleVariants}
+        animate="floatFast"
+        initial={{ opacity: 0, scale: 0 }}
+        whileInView={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, delay: 2.0 }}
+        className="absolute bottom-[35%] right-[30%] hidden md:block"
+        suppressHydrationWarning={true}
+      >
+        <Image
+          src="/assets/hero.png"
+          alt="Abstract blue circle"
+          width={80}
+          height={80}
+          className="border border-[#9EC7DC] rounded-full p-2 w-[40px] h-[40px] lg:w-[40px] lg:h-[40px] opacity-80 hover:scale-110 transition-transform duration-300"
+        />
+      </motion.div>
+
+      {/* === Content === */}
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -418,6 +439,139 @@ export function HeroSection() {
               ></motion.div>
             </motion.div>
           )}
+
+          {/* === Mobile-only decorative bubble strip BELOW the text === */}
+          {/* Gives dedicated space so bubbles never sit behind text on small screens. */}
+          <div className="md:hidden w-full mt-2 sm:mt-2">
+            <div className="relative h-32 sm:h-36 rounded-xl overflow-hidden">
+              {/* soft glows */}
+              <div className="absolute -top-6 left-10 w-24 h-24 bg-blue-200/40 blur-2xl rounded-full" />
+              <div className="absolute -bottom-8 right-8 w-28 h-28 bg-cyan-200/40 blur-2xl rounded-full" />
+
+              {/* bubble row (mobile only) */}
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.2 }}
+                variants={{
+                  hidden: { opacity: 0 },
+                  visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.08 },
+                  },
+                }}
+                className="absolute inset-0"
+              >
+                {/* 1 */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="float"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.05 }}
+                  className="absolute left-[4%] bottom-2"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={40}
+                    height={40}
+                    className="border border-[#9EC7DC] rounded-full p-1 w-[26px] h-[26px] opacity-80"
+                  />
+                </motion.div>
+
+                {/* 2 */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="floatSlow"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, delay: 0.12 }}
+                  className="absolute left-[20%] bottom-1"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={52}
+                    height={52}
+                    className="border border-[#9EC7DC] rounded-full p-1.5 w-[34px] h-[34px] opacity-80"
+                  />
+                </motion.div>
+
+                {/* 3 (centerpiece) */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="float"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.75, delay: 0.18 }}
+                  className="absolute left-1/2 -translate-x-1/2 bottom-0"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={70}
+                    height={70}
+                    className="border border-[#9EC7DC] rounded-full p-2 w-[48px] h-[48px] opacity-80"
+                  />
+                </motion.div>
+
+                {/* 4 */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="floatFast"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: 0.24 }}
+                  className="absolute left-[64%] bottom-2"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={48}
+                    height={48}
+                    className="border border-[#9EC7DC] rounded-full p-1 w-[30px] h-[30px] opacity-80"
+                  />
+                </motion.div>
+
+                {/* 5 */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="floatSlow"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.7, delay: 0.3 }}
+                  className="absolute left-[78%] bottom-3"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={56}
+                    height={56}
+                    className="border border-[#9EC7DC] rounded-full p-1.5 w-[36px] h-[36px] opacity-80"
+                  />
+                </motion.div>
+
+                {/* 6 (small accent) */}
+                <motion.div
+                  variants={bubbleVariants}
+                  animate="floatFast"
+                  initial={{ opacity: 0, scale: 0 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.55, delay: 0.36 }}
+                  className="absolute right-[4%] bottom-2"
+                >
+                  <Image
+                    src="/assets/hero.png"
+                    alt="Decorative"
+                    width={36}
+                    height={36}
+                    className="border border-[#9EC7DC] rounded-full p-1 w-[22px] h-[22px] opacity-80"
+                  />
+                </motion.div>
+              </motion.div>
+            </div>
+          </div>
         </div>
       </motion.div>
     </section>

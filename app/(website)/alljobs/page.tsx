@@ -1,4 +1,5 @@
 import React, { Suspense } from "react";
+import { Metadata } from "next";
 import JobsListing from "./_components/jobs-listing";
 import {
   Breadcrumb,
@@ -8,6 +9,12 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+
+export const metadata: Metadata = {
+  title: "Jobs | Elevator Pitch",
+  description:
+    "Browse curated job openings across industries and locations. Use smart filters to find roles that match your skills, experience, and career goals.",
+};
 
 function Page() {
   return (
@@ -47,7 +54,6 @@ function Page() {
       </div>
 
       <div className="container mx-auto py-8">
-        {/* Add fallback so Next.js can skip rendering until client */}
         <Suspense fallback={<div>Loading jobs...</div>}>
           <JobsListing />
         </Suspense>

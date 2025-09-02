@@ -28,7 +28,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
-  avatar: { url: string }
+  avatar: { url: string };
 }
 
 interface resumeId {
@@ -199,10 +199,8 @@ export default function JobApplicantsPage() {
         </Button>
         <h1 className="text-3xl font-bold text-gray-900">Applicant List</h1>
         <p className="text-gray-600 mt-2">
-          Please view the job applications journey for our members by updating
-          each candidate correctly at every stage of the recruitment process. To
-          update applicants, click on the relevant button or select a status
-          from the dropdown.
+          Please help all applicants by updating each candidate at every stage
+          of the recruitment process. To update applicants, click on the correct button, which will trigger a response to the applicant.
         </p>
       </div>
 
@@ -305,14 +303,15 @@ export default function JobApplicantsPage() {
                           <SelectValue placeholder="Change Status" />
                         </SelectTrigger>
                         <SelectContent>
-                          {["pending", "shortlisted", "rejected"].map(
-                            (status) => (
-                              <SelectItem key={status} value={status}>
-                                {status.charAt(0).toUpperCase() +
-                                  status.slice(1)}
-                              </SelectItem>
-                            )
-                          )}
+                          {[
+                            "Application Received",
+                            "shortlisted",
+                            "unsuccessful",
+                          ].map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status.charAt(0).toUpperCase() + status.slice(1)}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
