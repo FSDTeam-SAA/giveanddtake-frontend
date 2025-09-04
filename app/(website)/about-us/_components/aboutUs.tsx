@@ -156,13 +156,18 @@ export default function AboutUsPage() {
               About Us
             </h2>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Elevator Video Pitch was initially conceived in 2016 at a time
-              of high employment amidst a ‘skills shortage’ which has abated.
+              Elevator Video Pitch was initially conceived in 2016 at a time of
+              high employment amidst a skills shortage, which has now abated.
             </p>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Today, millions of knowledgeable, highly skilled and competent
-              professionals, graduates, school leavers have tried unsuccessfully
-              for years to find a job. We see you, we hear you, we care.
+              Today, over 220 million knowledgeable, skilled and willing
+              professionals, graduates, and school leavers are open to work with
+              many posting written unheard pleas for help to find a job, an
+              apprenticeship, internship or a trainee opportunity, having tried
+              to enter or re-enter the job market for a long time.
+            </p>
+            <p className="text-base font-normal text-[#545454] leading-relaxed">
+              At EVP, we see you, we hear you, we care.
             </p>
           </div>
 
@@ -175,7 +180,7 @@ export default function AboutUsPage() {
                 </h2>
                 <p className="text-base text-[#545454] leading-relaxed">
                   To amplify the voices of millions of jobseekers globally and
-                  get everyone their desired jobs.
+                  enable everyone to pitch themselves into their desired role.
                 </p>
               </div>
               <div>
@@ -197,28 +202,27 @@ export default function AboutUsPage() {
               What We Offer
             </h2>
             <p className="text-base text-[#545454] leading-relaxed">
-              We offer the opportunity for each candidate to pitch yourself to
-              companies, and for companies and recruiters to pitch their
-              corporate culture to you. After all, it’s often said that job
-              interviews are two-way meetings between a candidate and a company!
+              We offer the opportunity for each candidate, i.e., including technologists, doctors, tradesmen, pilots, project managers, event planners, administrators, chefs, etc.  to pitch yourself to companies, and for cross-sector companies to pitch their corporate culture to candidates. After all, it’s often said that interviews are two-way meetings between a candidate and the hiring company!
             </p>
           </div>
 
           {/* Unique Business Content */}
-          <div className="mb-10 max-w-4xl">
+          <div className="mb-10 max-w-4xl space-y-2">
             <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-4">
               Unique Business Content
             </h2>
+            <p className="text-base text-[#545454] leading-relaxed">Our platform is the first global portal where job candidates can:</p>
             <ul className="list-disc list-inside text-base text-[#545454] leading-relaxed space-y-2 text-justify">
-              <li>Our platform is the first global portal where you can:</li>
-              <li>Upload your elevator video pitch for free (in most cases).</li>
-              <li>Apply for jobs seamlessly.</li>
+              <li>Upload your free 30-second candidate elevator video pitch (pay to upgrade).</li>
               <li>
-                Receive timely feedback, positive or constructive, through our
-                intuitive EVP dashboard.
+                Apply for jobs seamlessly.
+              </li>
+              <li>
+                Receive timely application status updates through our intuitive recruiters & companies  one-click feedback  dashboard.
               </li>
               <li>Stay confident—your dream job is on its way!</li>
             </ul>
+            <p className="text-base text-[#545454] leading-relaxed">Do stay confident as you’re only one pitch away from your dream job!</p>
           </div>
         </div>
       </div>
