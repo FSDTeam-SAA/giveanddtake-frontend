@@ -1,83 +1,83 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Info, Check, X } from "lucide-react"
-import Link from "next/link"
-import CustomCalendar from "./CustomCalendar"
-import { useMutation } from "@tanstack/react-query"
-import { toast } from "sonner"
-import { useSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
-import DOMPurify from "dompurify"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Info, Check, X } from "lucide-react";
+import Link from "next/link";
+import CustomCalendar from "./CustomCalendar";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import DOMPurify from "dompurify";
+
 interface ApplicationRequirement {
-  id: string
-  label: string
-  required: boolean
+  id: string;
+  label: string;
+  required: boolean;
 }
 
 interface CustomQuestion {
-  id: string
-  question: string
+  id: string;
+  question: string;
 }
 
 interface JobPostData {
-  userId: string | undefined
-  companyId: string
-  title: string
-  description: string
-  salaryRange: string
-  location: string
-  shift: string
-  companyUrl: string | undefined
-  responsibilities: string[]
-  educationExperience: string[]
-  benefits: string[]
-  experience: number
-  deadline: string
-  publishDate: string
-  status: string
-  jobCategoryId: string
-  employmentType: string
-  compensation: string
-  archivedJob: boolean
-  applicationRequirement: { requirement: string }[]
-  customQuestion: { question: string }[]
-  careerStage: string
-  locationType: string
-  
+  userId: string | undefined;
+  companyId: string;
+  title: string;
+  description: string;
+  salaryRange: string;
+  location: string;
+  shift: string;
+  companyUrl: string | undefined;
+  responsibilities: string[];
+  educationExperience: string[];
+  benefits: string[];
+  experience: number;
+  deadline: string;
+  publishDate: string;
+  status: string;
+  jobCategoryId: string;
+  employmentType: string;
+  compensation: string;
+  archivedJob: boolean;
+  applicationRequirement: { requirement: string }[];
+  customQuestion: { question: string }[];
+  careerStage: string;
+  locationType: string;
 }
 
 interface JobPreviewProps {
   formData: {
-    jobTitle: string
-    department?: string
-    country: string
-    region: string
-    employmentType: string
-    experience: string
-    category: string
-    categoryId: string
-    compensation?: string
-    expirationDate: string
-    jobDescription: string
-    publishDate?: string
-    companyUrl?: string
-    careerStage: string
-    locationType: string
-  }
-  applicationRequirements: ApplicationRequirement[]
-  customQuestions: CustomQuestion[]
-  selectedDate: Date
-  publishNow: boolean
-  companyUrl: string
-  vacancy?: number 
-  onBackToEdit: () => void
+    jobTitle: string;
+    department?: string;
+    country: string;
+    region: string;
+    employmentType: string;
+    experience: string;
+    category: string;
+    categoryId: string;
+    compensation?: string;
+    expirationDate: string;
+    jobDescription: string;
+    publishDate?: string;
+    companyUrl?: string;
+    careerStage: string;
+    locationType: string;
+  };
+  applicationRequirements: ApplicationRequirement[];
+  customQuestions: CustomQuestion[];
+  selectedDate: Date;
+  publishNow: boolean;
+  companyUrl: string | undefined;
+  vacancy?: number;
+  onBackToEdit: () => void;
 }
 
 async function postJob(data: JobPostData, retries = 2): Promise<any> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
     const response = await fetch(`${baseUrl}/jobs`, {
       method: "POST",
@@ -85,21 +85,21 @@ async function postJob(data: JobPostData, retries = 2): Promise<any> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(data),
-    })
+    });
 
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(`Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"}`)
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"}`);
     }
 
-    return response.json()
+    return response.json();
   } catch (error) {
     if (retries > 0) {
-      console.warn(`Retrying job post... (${retries} attempts left)`)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      return postJob(data, retries - 1)
+      console.warn(`Retrying job post... (${retries} attempts left)`);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      return postJob(data, retries - 1);
     }
-    throw error
+    throw error instanceof Error ? error : new Error("An unexpected error occurred");
   }
 }
 
@@ -112,77 +112,76 @@ export default function JobPreview({
   publishNow,
   onBackToEdit,
 }: JobPreviewProps) {
-  const companyId = "687b65e9153a2f59d4b57ba8" // TODO: Replace with dynamic value
-  const { data: session } = useSession()
-  const userId = session?.user?.id
-  const router = useRouter()
+  const companyId = "687b65e9153a2f59d4b57ba8"; // TODO: Replace with dynamic value
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const router = useRouter();
 
   const { mutate: publishJob, isPending } = useMutation({
     mutationFn: postJob,
     onSuccess: () => {
-      toast.success("Job published successfully!")
-      router.push("/jobs")
+      toast.success("Job published successfully!");
+      router.push("/jobs");
     },
     onError: (error: Error) => {
-      console.error("Error posting job:", error)
-      toast.error(error.message || "An error occurred while publishing the job.")
+      console.error("Error posting job:", error);
+      toast.error(error.message || "An error occurred while publishing the job.");
     },
-  })
+  });
 
   const handlePublish = () => {
     if (!userId) {
-      toast.error("User not authenticated. Please log in.")
-      return
+      toast.error("User not authenticated. Please log in.");
+      return;
     }
 
     const responsibilities = formData.jobDescription
       .split("\n")
       .filter((line) => line.startsWith("* "))
       .map((line) => DOMPurify.sanitize(line.replace("* ", "").trim()))
-      .filter((line) => line)
+      .filter((line) => line);
 
     const educationExperience = formData.jobDescription
       .split("\n")
       .filter((line) => line.startsWith("- "))
       .map((line) => DOMPurify.sanitize(line.replace("- ", "").trim()))
-      .filter((line) => line)
+      .filter((line) => line);
 
-    const benefits: string[] = []
+    const benefits: string[] = [];
     const experienceYears: Record<string, number> = {
       entry: 0,
       mid: 3,
       senior: 5,
       executive: 10,
-    }
+    };
 
-    const experience = experienceYears[formData.experience] || 0
+    const experience = experienceYears[formData.experience.toLowerCase()] || 0;
 
     const getDeadline = () => {
-      const days = Number.parseInt(formData.expirationDate) || 30
-      const deadline = new Date()
-      deadline.setDate(deadline.getDate() + days)
-      return deadline.toISOString()
-    }
+      const days = Number.parseInt(formData.expirationDate) || 30;
+      const deadline = new Date();
+      deadline.setDate(deadline.getDate() + days);
+      return deadline.toISOString();
+    };
 
     const postData: JobPostData = {
       userId,
       companyId,
-      title: DOMPurify.sanitize(formData.jobTitle),
-      description: DOMPurify.sanitize(formData.jobDescription),
-      salaryRange: formData.compensation ? DOMPurify.sanitize(formData.compensation) : "Negotiable",
-      location: DOMPurify.sanitize(`${formData.country}, ${formData.region}`),
+      title: DOMPurify.sanitize(formData.jobTitle || ""),
+      description: DOMPurify.sanitize(formData.jobDescription || ""),
+      salaryRange: DOMPurify.sanitize(formData.compensation || "Negotiable"),
+      location: DOMPurify.sanitize(`${formData.country || "N/A"}, ${formData.region || "N/A"}`),
       shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
-      companyUrl: formData.companyUrl ? DOMPurify.sanitize(formData.companyUrl) : undefined,
+      companyUrl: companyUrl ? DOMPurify.sanitize(companyUrl) : undefined,
       responsibilities,
       educationExperience,
       benefits,
-      // vacancy: Number.parseInt(formData.vacancy) || 1,
       experience,
       deadline: getDeadline(),
-      publishDate: publishNow ? new Date().toISOString() : formData.publishDate || selectedDate.toISOString(),
+      publishDate: publishNow ? new Date().toISOString() : (formData.publishDate || selectedDate.toISOString()),
       status: "active",
-      jobCategoryId: formData.categoryId,
-      employmentType: formData.employmentType,
+      jobCategoryId: formData.categoryId || "",
+      employmentType: formData.employmentType || "N/A",
       compensation: formData.compensation ? "Monthly" : "Negotiable",
       archivedJob: false,
       applicationRequirement: applicationRequirements
@@ -191,14 +190,14 @@ export default function JobPreview({
       customQuestion: customQuestions
         .filter((q) => q.question)
         .map((q) => ({ question: DOMPurify.sanitize(q.question) })),
-      careerStage: formData.careerStage,
-      locationType: formData.locationType,
-    }
+      careerStage: formData.careerStage || "N/A",
+      locationType: formData.locationType || "N/A",
+    };
 
-    publishJob(postData)
-  }
+    publishJob(postData);
+  };
 
-  const sanitizedDescription = DOMPurify.sanitize(formData.jobDescription)
+  const sanitizedDescription = DOMPurify.sanitize(formData.jobDescription || "");
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8">
@@ -441,5 +440,5 @@ export default function JobPreview({
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,43 +1,66 @@
-"use client"
+"use client";
 
-import type { UseFormReturn } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent } from "@/components/ui/card"
-import { ChevronsUpDown } from "lucide-react"
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { cn } from "@/lib/utils"
+import type { UseFormReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { ChevronsUpDown } from "lucide-react";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 import type { JobFormData } from "@/types/job";
 interface JobCategory {
-  _id: string
-  name: string
-  role: string[]
-  categoryIcon: string
+  _id: string;
+  name: string;
+  role: string[];
+  categoryIcon: string;
 }
 
 interface Country {
-  country: string
-  cities: string[]
+  country: string;
+  cities: string[];
 }
 
 interface JobDetailsStepProps {
-  form: UseFormReturn<JobFormData>
-  onNext: () => void
-  onCancel: () => void
-  selectedCountry: string
-  setSelectedCountry: (country: string) => void
-  selectedCategoryRoles: string[]
-  setSelectedCategoryRoles: (roles: string[]) => void
-  jobCategories: any
-  categoriesLoading: boolean
-  categoriesError: string | null
-  countries: Country[]
-  isLoadingCountries: boolean
-  cities: string[]
-  isLoadingCities: boolean
+  form: UseFormReturn<JobFormData>;
+  onNext: () => void;
+  onCancel: () => void;
+  selectedCountry: string;
+  setSelectedCountry: (country: string) => void;
+  selectedCategoryRoles: string[];
+  setSelectedCategoryRoles: (roles: string[]) => void;
+  jobCategories: any;
+  categoriesLoading: boolean;
+  categoriesError: string | null;
+  countries: Country[];
+  isLoadingCountries: boolean;
+  cities: string[];
+  isLoadingCities: boolean;
 }
 
 export default function JobDetailsStep({
@@ -59,7 +82,9 @@ export default function JobDetailsStep({
   return (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Job Details</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          Job Details
+        </h2>
         <div className="space-y-6">
           <FormField
             control={form.control}
@@ -86,7 +111,9 @@ export default function JobDetailsStep({
             name="department"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Department</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Department
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="Enter department"
@@ -116,11 +143,13 @@ export default function JobDetailsStep({
                           role="combobox"
                           className={cn(
                             "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           {field.value
-                            ? countries.find((country) => country.country === field.value)?.country
+                            ? countries.find(
+                                (country) => country.country === field.value
+                              )?.country
                             : "Select country"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -131,7 +160,9 @@ export default function JobDetailsStep({
                         <CommandInput placeholder="Search country..." />
                         <CommandList>
                           <CommandEmpty>
-                            {isLoadingCountries ? "Loading countries..." : "No country found."}
+                            {isLoadingCountries
+                              ? "Loading countries..."
+                              : "No country found."}
                           </CommandEmpty>
                           <CommandGroup>
                             {countries.map((country) => (
@@ -139,9 +170,9 @@ export default function JobDetailsStep({
                                 value={country.country}
                                 key={country.country}
                                 onSelect={() => {
-                                  form.setValue("country", country.country)
-                                  form.setValue("region", "")
-                                  setSelectedCountry(country.country)
+                                  form.setValue("country", country.country);
+                                  form.setValue("region", "");
+                                  setSelectedCountry(country.country);
                                 }}
                               >
                                 {country.country}
@@ -174,10 +205,13 @@ export default function JobDetailsStep({
                           disabled={!selectedCountry || isLoadingCities}
                           className={cn(
                             "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
-                          {field.value || (isLoadingCities ? "Loading cities..." : "Select city")}
+                          {field.value ||
+                            (isLoadingCities
+                              ? "Loading cities..."
+                              : "Select city")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -193,7 +227,7 @@ export default function JobDetailsStep({
                                 value={city}
                                 key={city}
                                 onSelect={() => {
-                                  form.setValue("region", city)
+                                  form.setValue("region", city);
                                 }}
                               >
                                 {city}
@@ -216,7 +250,8 @@ export default function JobDetailsStep({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-700">
-                  Number of Vacancies<span className="text-red-500 ml-1">*</span>
+                  Number of Vacancies
+                  <span className="text-red-500 ml-1">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -241,7 +276,10 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Employment Type<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
                         <SelectValue placeholder="Select employment type" />
@@ -270,7 +308,10 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Experience Level<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
                         <SelectValue placeholder="Select experience level" />
@@ -298,7 +339,10 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Location Type<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
                         <SelectValue placeholder="Select location type" />
@@ -323,7 +367,10 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Career Stage<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
                         <SelectValue placeholder="Select career stage" />
@@ -331,8 +378,12 @@ export default function JobDetailsStep({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="New Entry">New Entry</SelectItem>
-                      <SelectItem value="Experienced Professional">Experienced Professional</SelectItem>
-                      <SelectItem value="Career Returner">Career Returner</SelectItem>
+                      <SelectItem value="Experienced Professional">
+                        Experienced Professional
+                      </SelectItem>
+                      <SelectItem value="Career Returner">
+                        Career Returner
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -357,11 +408,14 @@ export default function JobDetailsStep({
                         role="combobox"
                         className={cn(
                           "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                          !field.value && "text-muted-foreground",
+                          !field.value && "text-muted-foreground"
                         )}
                       >
                         {field.value
-                          ? jobCategories?.data.find((category: JobCategory) => category._id === field.value)?.name
+                          ? jobCategories?.data?.category?.find(
+                              (category: JobCategory) =>
+                                category._id === field.value
+                            )?.name
                           : "Select category"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
@@ -372,22 +426,31 @@ export default function JobDetailsStep({
                       <CommandInput placeholder="Search category..." />
                       <CommandList>
                         <CommandEmpty>
-                          {categoriesLoading ? "Loading categories..." : "No category found."}
+                          {categoriesLoading
+                            ? "Loading categories..."
+                            : categoriesError
+                            ? "Error loading categories"
+                            : "No category found."}
                         </CommandEmpty>
                         <CommandGroup>
-                          {jobCategories?.data?.map((category: JobCategory) => (
-                            <CommandItem
-                              value={category.name}
-                              key={category._id}
-                              onSelect={() => {
-                                form.setValue("categoryId", category._id)
-                                form.setValue("role", "")
-                                setSelectedCategoryRoles(category.role || [])
-                              }}
-                            >
-                              {category.name}
-                            </CommandItem>
-                          ))}
+                          {Array.isArray(jobCategories?.data?.category) &&
+                            jobCategories.data.category.map(
+                              (category: JobCategory) => (
+                                <CommandItem
+                                  value={category.name}
+                                  key={category._id}
+                                  onSelect={() => {
+                                    form.setValue("categoryId", category._id);
+                                    form.setValue("role", "");
+                                    setSelectedCategoryRoles(
+                                      category.role || []
+                                    );
+                                  }}
+                                >
+                                  {category.name}
+                                </CommandItem>
+                              )
+                            )}
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -415,7 +478,7 @@ export default function JobDetailsStep({
                           role="combobox"
                           className={cn(
                             "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                            !field.value && "text-muted-foreground",
+                            !field.value && "text-muted-foreground"
                           )}
                         >
                           {field.value || "Select role"}
@@ -434,7 +497,7 @@ export default function JobDetailsStep({
                                 value={role}
                                 key={role}
                                 onSelect={() => {
-                                  form.setValue("role", role)
+                                  form.setValue("role", role);
                                 }}
                               >
                                 {role}
@@ -456,7 +519,9 @@ export default function JobDetailsStep({
             name="compensation"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Compensation (Optional)</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Compensation (Optional)
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="e.g., $50,000 - $70,000"
@@ -475,9 +540,13 @@ export default function JobDetailsStep({
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-sm font-medium text-gray-700">
-                  Job Posting Expiration (Days)<span className="text-red-500 ml-1">*</span>
+                  Job Posting Expiration (Days)
+                  <span className="text-red-500 ml-1">*</span>
                 </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <FormControl>
                     <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
                       <SelectValue placeholder="Select expiration period" />
@@ -501,7 +570,9 @@ export default function JobDetailsStep({
             name="companyUrl"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">Company Website (Optional)</FormLabel>
+                <FormLabel className="text-sm font-medium text-gray-700">
+                  Company Website (Optional)
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="https://example.com"
@@ -524,11 +595,15 @@ export default function JobDetailsStep({
           >
             Cancel
           </Button>
-          <Button type="button" className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85" onClick={onNext}>
+          <Button
+            type="button"
+            className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85"
+            onClick={onNext}
+          >
             Next
           </Button>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
