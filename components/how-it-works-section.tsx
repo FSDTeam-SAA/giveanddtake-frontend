@@ -38,12 +38,12 @@ export function HowItWorksSection() {
               </CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
                 <li>
-                  Gain an edge over 220 million jobseekers, create your elevator
-                  video pitch today!
+                  Gain an edge over 220 million jobseekers
                 </li>
-                <li>Let employers meet the real you in 30 seconds</li>
-                <li>Make a lasting impression from the first hello!</li>
-                <li>Apply for jobs and edit your profile with the EVP app</li>
+                <li>Create your elevator video pitch today</li>
+                <li>Pitch the real you in 30 seconds</li>
+                <li>Make a lasting impression from the first hello</li>
+                <li>Apply for jobs online or with the EVP app</li>
               </ul>
             </CardContent>
           </Card>
@@ -64,12 +64,12 @@ export function HowItWorksSection() {
                 Recruiters
               </CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
-                <li>Post job adverts</li>
-                <li>View job applicant elevator pitches</li>
-                <li>Screen applicants’ elevator pitches in 30 seconds</li>
+                <li>Create a 60-seconds recruiters’ pitch</li>
                 <li>Schedule job adverts</li>
-                <li>Click to feedback to job applicants</li>
-                <li>Post jobs with the EVP app</li>
+                <li>Screen elevator pitches online</li>
+                <li>Schedule job adverts</li>
+                <li>One-click feedback to applicants</li>
+                <li>Manage your account with the EVP app</li>
               </ul>
             </CardContent>
           </Card>
@@ -89,11 +89,12 @@ export function HowItWorksSection() {
               <CardTitle className="text-xl font-semibold">Companies</CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
                 <li>
-                  Amplify your company brand with a powerful elevator pitch
+                  Amplify your company brand in a 60-seconds pitch
                 </li>
+                <li>Create your powerful elevator pitch</li>
                 <li>Directly screen experienced candidates online</li>
                 <li>Hire strong talent for your business to thrive</li>
-                <li>Listen to a pool of powerful job candidates on EVP</li>
+                <li>Manage your account with the EVP app</li>
               </ul>
             </CardContent>
           </Card>
