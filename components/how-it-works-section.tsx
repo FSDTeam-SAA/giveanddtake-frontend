@@ -37,9 +37,7 @@ export function HowItWorksSection() {
                 Candidates
               </CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
-                <li>
-                  Gain an edge over 220 million jobseekers
-                </li>
+                <li>Gain an edge over 220 million jobseekers</li>
                 <li>Create your elevator video pitch today</li>
                 <li>Pitch the real you in 30 seconds</li>
                 <li>Make a lasting impression from the first hello</li>
@@ -67,7 +65,6 @@ export function HowItWorksSection() {
                 <li>Create a 60-seconds recruiters’ pitch</li>
                 <li>Schedule job adverts</li>
                 <li>Screen elevator pitches online</li>
-                <li>Schedule job adverts</li>
                 <li>One-click feedback to applicants</li>
                 <li>Manage your account with the EVP app</li>
               </ul>
@@ -88,9 +85,7 @@ export function HowItWorksSection() {
             <CardContent className="flex flex-col justify-between flex-1 space-y-3 w-full">
               <CardTitle className="text-xl font-semibold">Companies</CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
-                <li>
-                  Amplify your company brand in a 60-seconds pitch
-                </li>
+                <li>Amplify your company brand in a 60-seconds pitch</li>
                 <li>Create your powerful elevator pitch</li>
                 <li>Directly screen experienced candidates online</li>
                 <li>Hire strong talent for your business to thrive</li>

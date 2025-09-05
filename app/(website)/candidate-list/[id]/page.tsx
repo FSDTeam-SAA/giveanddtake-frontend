@@ -200,7 +200,8 @@ export default function JobApplicantsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Applicant List</h1>
         <p className="text-gray-600 mt-2">
           Please help all applicants by updating each candidate at every stage
-          of the recruitment process. To update applicants, click on the correct button, which will trigger a response to the applicant.
+          of the recruitment process. To update applicants, click on the correct
+          button, which will trigger a response to the applicant.
         </p>
       </div>
 
