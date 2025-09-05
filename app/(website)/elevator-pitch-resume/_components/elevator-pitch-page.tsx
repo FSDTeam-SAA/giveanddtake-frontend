@@ -19,7 +19,6 @@ import UpdateResumeForm from "./update-resume-form";
 import EditableRecruiterAccount from "./editable-recruiter-account";
 import CreateRecruiterAccount from "./create-recruiter-account";
 import { Skeleton } from "@/components/ui/skeleton";
-import CreatedJobs from "./jobs";
 
 export default function ElevatorPitchAndResume() {
   const { data: session, status } = useSession();
