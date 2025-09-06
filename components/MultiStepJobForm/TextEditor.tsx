@@ -11,9 +11,11 @@ import { useEffect } from "react"
 interface TextEditorProps {
   value: string
   onChange: (value: string) => void
+  placeholder?: string
+  className?: string
 }
 
-const TextEditor = ({ value, onChange }: TextEditorProps) => {
+const TextEditor = ({ value, onChange, placeholder, className }: TextEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -36,8 +38,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
     },
     editorProps: {
       attributes: {
-        class:
-          "prose dark:prose-invert min-h-[300px] max-w-none p-4 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500",
+        class: `prose dark:prose-invert min-h-[200px] max-w-none p-4 border-0 focus:outline-none ${className || ""}`,
+        "data-placeholder": placeholder || "Start typing...",
       },
     },
     immediatelyRender: false,
@@ -46,7 +48,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   // Synchronize editor content with value prop changes
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, { emitUpdate: false }) // prevents emitting an update event
+      editor.commands.setContent(value, { emitUpdate: false })
     }
   }, [editor, value])
 
@@ -61,17 +63,17 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border rounded-lg overflow-hidden bg-white">
       {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50">
+      <div className="flex flex-wrap gap-1 p-3 border-b bg-gray-50/50">
         {/* Bold */}
         <Button
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={!editor.can().chain().focus().toggleBold().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("bold") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("bold") ? "default" : "ghost"}
           size="sm"
         >
           <Bold className="h-4 w-4" />
@@ -83,20 +85,22 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleItalic().run()}
           disabled={!editor.can().chain().focus().toggleItalic().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("italic") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("italic") ? "default" : "ghost"}
           size="sm"
         >
           <Italic className="h-4 w-4" />
         </Button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
         {/* Headings */}
         <Button
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("heading", { level: 1 }) ? "secondary" : "ghost"}
+          className="h-8 px-2 text-xs font-semibold"
+          variant={editor.isActive("heading", { level: 1 }) ? "default" : "ghost"}
           size="sm"
         >
           H1
@@ -105,8 +109,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("heading", { level: 2 }) ? "secondary" : "ghost"}
+          className="h-8 px-2 text-xs font-semibold"
+          variant={editor.isActive("heading", { level: 2 }) ? "default" : "ghost"}
           size="sm"
         >
           H2
@@ -115,44 +119,47 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("heading", { level: 3 }) ? "secondary" : "ghost"}
+          className="h-8 px-2 text-xs font-semibold"
+          variant={editor.isActive("heading", { level: 3 }) ? "default" : "ghost"}
           size="sm"
         >
           H3
         </Button>
 
-        {/* Bullet List */}
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
+        {/* Lists */}
         <Button
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("bulletList") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("bulletList") ? "default" : "ghost"}
           size="sm"
         >
           <List className="h-4 w-4" />
         </Button>
 
-        {/* Ordered List */}
         <Button
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("orderedList") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("orderedList") ? "default" : "ghost"}
           size="sm"
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
 
         {/* Blockquote */}
         <Button
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("blockquote") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("blockquote") ? "default" : "ghost"}
           size="sm"
         >
           <Quote className="h-4 w-4" />
@@ -163,8 +170,8 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className="p-2 h-auto"
-          variant={editor.isActive("codeBlock") ? "secondary" : "ghost"}
+          className="h-8 w-8 p-0"
+          variant={editor.isActive("codeBlock") ? "default" : "ghost"}
           size="sm"
         >
           <Code className="h-4 w-4" />
@@ -175,7 +182,7 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
           type="button"
           onMouseDown={handleButtonClick}
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="p-2 h-auto"
+          className="h-8 w-8 p-0"
           variant="ghost"
           size="sm"
         >
@@ -184,7 +191,9 @@ const TextEditor = ({ value, onChange }: TextEditorProps) => {
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} />
+      <div className="min-h-[200px]">
+        <EditorContent editor={editor} />
+      </div>
     </div>
   )
 }
