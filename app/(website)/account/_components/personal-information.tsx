@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Edit2 } from "lucide-react";
+import { Edit2, Eye, EyeOff } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,7 +60,20 @@ async function deleteAccount(token: string) {
   return response.json();
 }
 
-/** Verify password before deletion */
+async function disableAccount(token: string) {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/user/disable`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  if (!response.ok) throw new Error("Failed to disable account");
+
+  return response.json();
+}
+
+/** Verify password before deletion/disable */
 async function verifyPassword(email: string, password: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/user/login`,
@@ -100,6 +113,12 @@ export function PersonalInformation() {
   // delete modal asks for password
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+
+  // disable modal asks for password
+  const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
+  const [disablePassword, setDisablePassword] = useState("");
+  const [showDisablePassword, setShowDisablePassword] = useState(false);
 
   const { data: session } = useSession();
   const token = session?.accessToken || "";
@@ -175,19 +194,69 @@ export function PersonalInformation() {
     },
     onSuccess: async () => {
       toast.success(
-        "Your account is now marked for deletion. You can still log in within 30 days to restore it."
+        "Your account is now marked for deletion. You can still log in within 30 days to restore it.",
+        { duration: 4000 }
       );
       setIsDeleteModalOpen(false);
       setDeletePassword("");
+
       try {
-        await signOut({ redirect: false });
-        router.push("/login");
+        // client-side signOut: no hard redirect
+        const res: any = await signOut({
+          redirect: false,
+          callbackUrl: "/",
+        });
+
+        // give the user a beat to read the toast
+        await new Promise((r) => setTimeout(r, 1000));
+
+        // SPA navigation keeps Toaster mounted
+        router.replace(res?.url ?? "/");
       } catch (error) {
         toast.error("Failed to log out: " + (error as Error).message);
       }
     },
     onError: (error: any) => {
       toast.error(error?.message || "Account deletion failed");
+    },
+  });
+
+  const disableFlowMutation = useMutation({
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string;
+      password: string;
+    }) => {
+      const verify = await verifyPassword(email, password);
+      if (!verify?.success) {
+        throw new Error("Password verification failed");
+      }
+      return await disableAccount(token);
+    },
+    onSuccess: async () => {
+      toast.success(
+        "Your account has been deactivated. You can re-enable it later by logging in with your email and password.",
+        { duration: 4000 }
+      );
+      setIsDisableModalOpen(false);
+      setDisablePassword("");
+
+      try {
+        const res: any = await signOut({
+          redirect: false,
+          callbackUrl: "/",
+        });
+
+        await new Promise((r) => setTimeout(r, 1000));
+        router.replace(res?.url ?? "/");
+      } catch (error) {
+        toast.error("Failed to log out: " + (error as Error).message);
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Account disable failed");
     },
   });
 
@@ -209,6 +278,7 @@ export function PersonalInformation() {
   };
 
   const handleDelete = () => setIsDeleteModalOpen(true);
+  const handleDisable = () => setIsDisableModalOpen(true);
 
   const confirmDelete = () => {
     if (!email) {
@@ -220,6 +290,18 @@ export function PersonalInformation() {
       return;
     }
     deleteFlowMutation.mutate({ email, password: deletePassword });
+  };
+
+  const confirmDisable = () => {
+    if (!email) {
+      toast.error("No email found on session. Please re-login and try again.");
+      return;
+    }
+    if (!disablePassword) {
+      toast.error("Please enter your password to continue.");
+      return;
+    }
+    disableFlowMutation.mutate({ email, password: disablePassword });
   };
 
   if (isLoading) {
@@ -363,26 +445,127 @@ export function PersonalInformation() {
       )}
 
       <div className="t-12 mt-8 border-t border-gray-200">
-        <div className="grid grid-cols-1 mt-8 gap-4 w-[80%] lg:w-[55%] mx-auto">
-          <div>
-            <Button
-              onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700 w-full text-white px-8 py-2 h-[51px]"
-              disabled={deleteFlowMutation.isPending}
-            >
-              {deleteFlowMutation.isPending ? "Deleting..." : "Delete Account"}
-            </Button>
-            <p className="text-xs text-red-600 mt-2 text-center">
-              Deleting your account starts a 30-day grace period. If you change
-              your mind, you can log in again within 30 days to restore your
-              account. After 30 days, your account and its data will be
-              permanently deleted.
-            </p>
+        <div className="mt-8 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Button
+                onClick={handleDisable}
+                className="bg-amber-600 hover:bg-amber-700 w-full text-white px-8 py-2 h-12"
+                disabled={disableFlowMutation.isPending}
+                aria-label="Disable account"
+              >
+                {disableFlowMutation.isPending
+                  ? "Disabling..."
+                  : "Disable Account"}
+              </Button>
+            </div>
+
+            <div>
+              <Button
+                onClick={handleDelete}
+                className="bg-red-600 hover:bg-red-700 w-full text-white px-8 py-2 h-12"
+                disabled={deleteFlowMutation.isPending}
+                aria-label="Delete account"
+              >
+                {deleteFlowMutation.isPending
+                  ? "Deleting..."
+                  : "Delete Account"}
+              </Button>
+
+              <p className="text-xs text-red-600 mt-2 text-center">
+                Deleting your account starts a 30-day grace period. If you
+                change your mind, you can log in again within 30 days to restore
+                your account. After 30 days, your account and its data will be
+                permanently deleted.
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal (with password prompt) */}
+      {/* Disable Confirmation Modal (with password prompt) */}
+      <Dialog open={isDisableModalOpen} onOpenChange={setIsDisableModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Account Disable</DialogTitle>
+            <DialogDescription>
+              Please confirm your identity to temporarily disable your account.
+              You can re-enable it later per your organization's policy.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div>
+              <Label
+                htmlFor="disable-email"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                Email
+              </Label>
+              <Input
+                id="disable-email"
+                type="email"
+                value={email}
+                disabled
+                className="bg-gray-50 border-gray-200"
+              />
+            </div>
+            <div>
+              <Label
+                htmlFor="disable-password"
+                className="text-sm font-medium text-gray-700 mb-2 block"
+              >
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="disable-password"
+                  type={showDisablePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={disablePassword}
+                  onChange={(e) => setDisablePassword(e.target.value)}
+                  className="bg-gray-50 border-gray-200 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDisablePassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={
+                    showDisablePassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showDisablePassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDisableModalOpen(false)}
+              disabled={disableFlowMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDisable}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              disabled={disableFlowMutation.isPending}
+            >
+              {disableFlowMutation.isPending
+                ? "Disabling..."
+                : "Disable Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Modal (with password prompt + eye toggle) */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -416,14 +599,30 @@ export function PersonalInformation() {
               >
                 Password
               </Label>
-              <Input
-                id="delete-password"
-                type="password"
-                placeholder="Enter your password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                className="bg-gray-50 border-gray-200"
-              />
+              <div className="relative">
+                <Input
+                  id="delete-password"
+                  type={showDeletePassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={deletePassword}
+                  onChange={(e) => setDeletePassword(e.target.value)}
+                  className="bg-gray-50 border-gray-200 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDeletePassword((s) => !s)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={
+                    showDeletePassword ? "Hide password" : "Show password"
+                  }
+                >
+                  {showDeletePassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

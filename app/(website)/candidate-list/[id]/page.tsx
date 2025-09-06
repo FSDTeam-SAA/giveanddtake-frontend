@@ -16,13 +16,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface User {
   _id: string;
@@ -40,7 +35,14 @@ interface Application {
   jobId: string;
   resumeId?: resumeId;
   userId: User;
-  status: "pending" | "shortlisted" | "interviewed" | "selected" | "rejected";
+  status:
+    | "pending"
+    | "shortlisted"
+    | "rejected"
+    | "interviewed"
+    | "selected"
+    | "application received"
+    | "unsuccessful"; // widen to tolerate existing values
   createdAt: string;
   updatedAt: string;
   experience?: string; // Added for dynamic experience
@@ -57,6 +59,45 @@ interface ApiResponse {
     itemsPerPage: number;
   };
 }
+
+// Map UI labels -> backend enum values
+const STATUS_OPTIONS: {
+  label: string;
+  value: "pending" | "shortlisted" | "rejected";
+  color: string;
+  active: string;
+}[] = [
+  {
+    label: "Application Received",
+    value: "pending",
+    color: "border-slate-600 text-slate-700 hover:bg-slate-50",
+    active: "bg-slate-100 border-slate-600 text-slate-800",
+  },
+  {
+    label: "Shortlisted",
+    value: "shortlisted",
+    color: "border-blue-600 text-blue-600 hover:bg-blue-50",
+    active: "bg-blue-100 border-blue-600 text-blue-700",
+  },
+  {
+    label: "Unsuccessful",
+    value: "rejected",
+    color: "border-red-600 text-red-600 hover:bg-red-50",
+    active: "bg-red-100 border-red-600 text-red-700",
+  },
+];
+
+// Normalize any incoming status to our canonical 3 values for highlighting
+const normalizeStatus = (
+  status: Application["status"]
+): "pending" | "shortlisted" | "rejected" | null => {
+  if (!status) return null;
+  const s = String(status).toLowerCase();
+  if (s === "pending" || s === "application received") return "pending";
+  if (s === "shortlisted") return "shortlisted";
+  if (s === "rejected" || s === "unsuccessful") return "rejected";
+  return null; // for statuses like interviewed/selected
+};
 
 export default function JobApplicantsPage() {
   const params = useParams();
@@ -77,10 +118,14 @@ export default function JobApplicantsPage() {
   const [statusLoading, setStatusLoading] = useState<string[]>([]); // Track loading state for status updates
   const [selectedApplicationId, setSelectedApplicationId] = useState(
     "689b0fc1167718bb391da85d"
-  ); // Updated to use specific _id instead of generic jobId
+  ); // highlight row example
+
+  const { data: session } = useSession();
+  const token = (session as any)?.accessToken as string | undefined;
 
   useEffect(() => {
     fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId, currentPage]);
 
   const fetchApplications = async () => {
@@ -105,7 +150,9 @@ export default function JobApplicantsPage() {
         throw new Error(result.message || "Failed to fetch applications");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      const msg = err instanceof Error ? err.message : "An error occurred";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -113,7 +160,7 @@ export default function JobApplicantsPage() {
 
   const handleStatusUpdate = async (
     applicationId: string,
-    newStatus: string
+    newStatus: "pending" | "shortlisted" | "rejected"
   ) => {
     try {
       const response = await fetch(
@@ -122,34 +169,37 @@ export default function JobApplicantsPage() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ status: newStatus }),
         }
       );
 
-      if (response.ok) {
-        const allowedStatuses: Application["status"][] = [
-          "selected",
-          "shortlisted",
-          "rejected",
-          "pending",
-          "interviewed",
-        ];
-        if (allowedStatuses.includes(newStatus as Application["status"])) {
-          setApplications(
-            applications.map((app) =>
-              app._id === applicationId
-                ? { ...app, status: newStatus as Application["status"] }
-                : app
-            )
-          );
-        } else {
-          console.error(`Invalid status: ${newStatus}`);
-        }
+      if (!response.ok) {
+        toast.error("Failed to update status");
+        throw new Error("Failed to update status");
       }
+
+      // Optimistically update UI
+      setApplications((prev) =>
+        prev.map((app) =>
+          app._id === applicationId ? { ...app, status: newStatus } : app
+        )
+      );
+      toast.success("Status updated successfully");
     } catch (error) {
       console.error("Failed to update status:", error);
+      toast.error("Could not update status. Please try again.");
     }
+  };
+
+  const updateStatusWithLoading = async (
+    applicationId: string,
+    newStatus: "pending" | "shortlisted" | "rejected"
+  ) => {
+    setStatusLoading((prev) => [...prev, applicationId]);
+    await handleStatusUpdate(applicationId, newStatus);
+    setStatusLoading((prev) => prev.filter((id) => id !== applicationId));
   };
 
   const formatDate = (dateString: string) => {
@@ -200,7 +250,8 @@ export default function JobApplicantsPage() {
         <h1 className="text-3xl font-bold text-gray-900">Applicant List</h1>
         <p className="text-gray-600 mt-2">
           Please help all applicants by updating each candidate at every stage
-          of the recruitment process. To update applicants, click on the correct button, which will trigger a response to the applicant.
+          of the recruitment process. To update applicants, click on the correct
+          button, which will trigger a response to the applicant.
         </p>
       </div>
 
@@ -216,6 +267,9 @@ export default function JobApplicantsPage() {
               </TableHead>
               <TableHead className="text-base text-[#2B7FD0] font-bold">
                 Applied
+              </TableHead>
+              <TableHead className="text-base text-[#2B7FD0] font-bold">
+                Details
               </TableHead>
               <TableHead className="text-base text-[#2B7FD0] font-bold">
                 Status
@@ -239,48 +293,53 @@ export default function JobApplicantsPage() {
                     <Skeleton className="h-4 w-24" />
                   </TableCell>
                   <TableCell>
+                    <Skeleton className="h-8 w-28" />
+                  </TableCell>
+                  <TableCell>
                     <div className="flex gap-2">
-                      <Skeleton className="h-6 w-20" />
-                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-8 w-28" />
+                      <Skeleton className="h-8 w-28" />
+                      <Skeleton className="h-8 w-28" />
                     </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : applications.length > 0 ? (
-              applications.map((application) => (
-                <TableRow
-                  key={application._id}
-                  className={`text-base text-[#000000] font-medium ${
-                    application._id === selectedApplicationId
-                      ? "bg-blue-50 border-l-4 border-l-blue-500"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedApplicationId(application._id)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={application.userId.avatar.url} />
-                        <AvatarFallback className="bg-gray-200 text-gray-700">
-                          {getInitials(application.userId.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">
-                          {application.userId.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {application.userId.email}
+              applications.map((application) => {
+                const normalized = normalizeStatus(application.status);
+                const isUpdating = statusLoading.includes(application._id);
+
+                return (
+                  <TableRow
+                    key={application._id}
+                    className={`text-base text-[#000000] font-medium ${
+                      application._id === selectedApplicationId
+                        ? "bg-blue-50 border-l-4 border-l-blue-500"
+                        : ""
+                    }`}
+                    onClick={() => setSelectedApplicationId(application._id)}
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={application.userId.avatar.url} />
+                          <AvatarFallback className="bg-gray-200 text-gray-700">
+                            {getInitials(application.userId.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">
+                            {application.userId.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {application.userId.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {application.experience || "N/A"} {/* Dynamic experience */}
-                  </TableCell>
-                  <TableCell>{formatDate(application.createdAt)}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-4 flex-wrap items-center">
+                    </TableCell>
+                    <TableCell>{application.experience || "N/A"}</TableCell>
+                    <TableCell>{formatDate(application.createdAt)}</TableCell>
+                    <TableCell>
                       <Link
                         href={`/applicant-details/${
                           application.userId._id
@@ -289,38 +348,51 @@ export default function JobApplicantsPage() {
                         }&applicationId=${application._id}`}
                         className="text-sm bg-[#2B7FD0] text-white py-2 px-4 rounded-lg font-medium"
                       >
-                        Applicant Details
+                        Details
                       </Link>
-
-                      <Select
-                        value={application.status}
-                        onValueChange={(value: string) =>
-                          handleStatusUpdate(application._id, value)
-                        }
-                        disabled={statusLoading.includes(application._id)}
-                      >
-                        <SelectTrigger className="w-40 border text-blue-600 border-blue-600">
-                          <SelectValue placeholder="Change Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[
-                            "Application Received",
-                            "shortlisted",
-                            "unsuccessful",
-                          ].map((status) => (
-                            <SelectItem key={status} value={status}>
-                              {status.charAt(0).toUpperCase() + status.slice(1)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 flex-wrap items-center">
+                        {STATUS_OPTIONS.map((opt) => {
+                          const active = normalized === opt.value;
+                          return (
+                            <Button
+                              key={opt.value}
+                              variant={active ? "default" : "outline"}
+                              className={`h-9 px-3 rounded-lg border ${
+                                active ? opt.active : opt.color
+                              } ${
+                                isUpdating
+                                  ? "opacity-60 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              disabled={isUpdating}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!active) {
+                                  updateStatusWithLoading(
+                                    application._id,
+                                    opt.value
+                                  );
+                                }
+                              }}
+                            >
+                              {isUpdating && active ? (
+                                <span className="animate-pulse">Updating…</span>
+                              ) : (
+                                opt.label
+                              )}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={5} className="text-center py-8">
                   <div className="text-gray-500">
                     <p className="text-lg font-medium">No applications found</p>
                     <p className="text-sm">

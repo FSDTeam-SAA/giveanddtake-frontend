@@ -24,9 +24,9 @@ export const jobSchema = z.object({
   ]),
   categoryId: z.string().min(1),
   role: z.string().min(1),
-  compensation: z.string().optional(), // <-- optional
+  compensation: z.number().optional(), // <-- optional
   expirationDate: z.string(),
-  companyUrl: z.string().optional().or(z.literal("")), // <-- optional
+  companyUrl: z.string().url("Invalid URL").optional(),
   jobDescription: z.string().max(2000).min(1),
   publishDate: z.string().optional(), // <-- optional
   applicationRequirements: z

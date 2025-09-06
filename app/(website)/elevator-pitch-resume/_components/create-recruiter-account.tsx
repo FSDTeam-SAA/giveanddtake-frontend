@@ -474,7 +474,7 @@ export default function CreateRecruiterAccountForm() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-lg font-medium">
-                    Upload Your Elevator Pitch (Optional)
+                    Upload Your Elevator Pitch
                   </CardTitle>
                 </div>
               </div>

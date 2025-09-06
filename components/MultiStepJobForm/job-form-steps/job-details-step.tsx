@@ -412,7 +412,7 @@ export default function JobDetailsStep({
                         )}
                       >
                         {field.value
-                          ? jobCategories?.data?.category?.find(
+                          ? jobCategories?.data.find(
                               (category: JobCategory) =>
                                 category._id === field.value
                             )?.name
@@ -428,29 +428,22 @@ export default function JobDetailsStep({
                         <CommandEmpty>
                           {categoriesLoading
                             ? "Loading categories..."
-                            : categoriesError
-                            ? "Error loading categories"
                             : "No category found."}
                         </CommandEmpty>
                         <CommandGroup>
-                          {Array.isArray(jobCategories?.data?.category) &&
-                            jobCategories.data.category.map(
-                              (category: JobCategory) => (
-                                <CommandItem
-                                  value={category.name}
-                                  key={category._id}
-                                  onSelect={() => {
-                                    form.setValue("categoryId", category._id);
-                                    form.setValue("role", "");
-                                    setSelectedCategoryRoles(
-                                      category.role || []
-                                    );
-                                  }}
-                                >
-                                  {category.name}
-                                </CommandItem>
-                              )
-                            )}
+                          {jobCategories?.data?.map((category: JobCategory) => (
+                            <CommandItem
+                              value={category.name}
+                              key={category._id}
+                              onSelect={() => {
+                                form.setValue("categoryId", category._id);
+                                form.setValue("role", "");
+                                setSelectedCategoryRoles(category.role || []);
+                              }}
+                            >
+                              {category.name}
+                            </CommandItem>
+                          ))}
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -524,6 +517,7 @@ export default function JobDetailsStep({
                 </FormLabel>
                 <FormControl>
                   <Input
+                    type="number"
                     placeholder="e.g., $50,000 - $70,000"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     {...field}

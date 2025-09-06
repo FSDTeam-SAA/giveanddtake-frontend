@@ -46,7 +46,7 @@ import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
-// ➜ NEW: react-datepicker
+// react-datepicker
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -116,7 +116,10 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+
+  // PRIMARY role starts as candidate per your request
   const [selectedRole, setSelectedRole] = useState<ValidRole>("candidate");
+
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("");
@@ -250,6 +253,7 @@ export default function RegisterPage() {
     if (dob && isUnder16) setShowUnderAgeDialog(true);
   }, [dob, isUnder16]);
 
+  // use isPending (fixes TS error you saw)
   const primaryCtaText = useMemo(() => {
     if (registerMutation.isPending) return "Creating Account...";
     if (selectedRole === "candidate") return "Sign up as a Candidate";
@@ -257,7 +261,8 @@ export default function RegisterPage() {
     return "Sign up as a Company";
   }, [registerMutation.isPending, selectedRole]);
 
-  const needsDob = selectedRole === "candidate" || selectedRole === "recruiter";
+  // Now DOB is required for all roles (you requested all fields show for any role)
+  const needsDob = true;
 
   const validateBeforeSubmit = () => {
     if (needsDob) {
@@ -302,6 +307,21 @@ export default function RegisterPage() {
     };
     setPendingFormData(fullFormData);
     setShowRoleConfirm(true);
+  };
+
+  // --- Derived secondary buttons for simpler, standard swap behavior
+  const secondaryButtons = useMemo(
+    () => VALID_ROLES.filter((r) => r !== selectedRole),
+    [selectedRole]
+  );
+
+  // Clicking a secondary button: set it as the new primary.
+  // Because secondaries are derived, the previous primary will automatically appear among them.
+  const handleSecondaryRoleClick = (clickedRole: ValidRole) => {
+    if (clickedRole === selectedRole) return;
+    setSelectedRole(clickedRole);
+    // small UX: focus the primary CTA (optional)
+    // document.getElementById("primary-cta")?.focus();
   };
 
   return (
@@ -420,38 +440,31 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* DOB (react-datepicker) for Candidate & Recruiter */}
-            {(selectedRole === "candidate" || selectedRole === "recruiter") && (
-              <div className="space-y-2">
-                <Label className="mr-5">Date of Birth</Label>
+            {/* DOB - shown for all roles */}
+            <div className="space-y-2">
+              <Label className="mr-5">Date of Birth</Label>
 
-                <DatePicker
-                  selected={dob}
-                  onChange={(date) => setDob(date)}
-                  // Ensure selection between [oldestAllowed, cutoff]
-                  minDate={oldestAllowed}
-                  maxDate={new Date()}
-                  // Nice UX: dropdowns for quick navigation
-                  showMonthDropdown
-                  showYearDropdown
-                  dropdownMode="select"
-                  // Format used for the value passed into the custom input
-                  dateFormat="PPP"
-                  // Close on single selection
-                  shouldCloseOnSelect
-                  // Make the popup attach to the button
-                  popperPlacement="bottom-start"
-                  // Custom input to match your Button styling
-                  customInput={<DateButton />}
-                />
+              <DatePicker
+                selected={dob}
+                onChange={(date) => setDob(date)}
+                // Ensure selection between [oldestAllowed, cutoff]
+                minDate={oldestAllowed}
+                maxDate={new Date()}
+                showMonthDropdown
+                showYearDropdown
+                dropdownMode="select"
+                dateFormat="PPP"
+                shouldCloseOnSelect
+                popperPlacement="bottom-start"
+                customInput={<DateButton />}
+              />
 
-                {dob && isUnder16 && (
-                  <p className="text-sm text-destructive">
-                    You must be at least 16 years old to register.
-                  </p>
-                )}
-              </div>
-            )}
+              {dob && isUnder16 && (
+                <p className="text-sm text-destructive">
+                  You must be at least 16 years old to register.
+                </p>
+              )}
+            </div>
 
             {/* Password */}
             <div className="space-y-2">
@@ -473,6 +486,8 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  aria-pressed={showPassword}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -556,6 +571,12 @@ export default function RegisterPage() {
                   type="button"
                   onClick={() => setShowConfirmPassword((s) => !s)}
                   className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  aria-pressed={showConfirmPassword}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"
+                  }
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="h-4 w-4" />
@@ -586,51 +607,57 @@ export default function RegisterPage() {
 
             {/* Primary submit */}
             <Button
+              id="primary-cta"
               type="submit"
-              className="w-full font-bold text-md"
+              className="w-full font-bold text-md transition duration-150 ease-in-out active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2"
               disabled={registerMutation.isPending}
+              aria-live="polite"
             >
               {primaryCtaText}
             </Button>
 
-            {/* Secondary role toggles */}
+            {/* Secondary role toggles (derived from VALID_ROLES) */}
             <div className="pt-2">
               <p className="text-xs text-muted-foreground mb-2 text-center">
                 Prefer a different role?
               </p>
               <div className="flex gap-2">
-                {[
-                  { value: "recruiter", label: "Sign up as a Recruiter" },
-                  { value: "company", label: "Sign up as a Company" },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() =>
-                      setSelectedRole((prev) =>
-                        prev === option.value
-                          ? "candidate"
-                          : (option.value as "recruiter" | "company")
-                      )
-                    }
-                    className={cn(
-                      "w-full px-4 py-2 border rounded-md transition-colors font-bold",
-                      selectedRole === option.value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background border-input hover:bg-accent"
-                    )}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+                {secondaryButtons.map((value) => {
+                  const label =
+                    value === "recruiter"
+                      ? "Sign up as a Recruiter"
+                      : value === "company"
+                      ? "Sign up as a Company"
+                      : "Sign up as a Candidate";
+
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => handleSecondaryRoleClick(value)}
+                      className={cn(
+                        "w-full px-4 py-2 border rounded-md transition transform duration-150 ease-in-out active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-1",
+                        selectedRole === value
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background border-input hover:bg-accent"
+                      )}
+                      aria-label={`Switch primary role to ${value}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
-              {selectedRole !== "candidate" && (
-                <p className="text-[11px] text-muted-foreground mt-2 text-center">
-                  Currently selected:{" "}
-                  <span className="font-semibold">{selectedRole}</span>. Submit
-                  to continue.
-                </p>
-              )}
+              <p className="text-[11px] text-muted-foreground mt-2 text-center">
+                Currently selected:{" "}
+                <span className="font-semibold">{selectedRole}</span>. Submit to
+                continue.
+              </p>
+
+              {/* Screen-reader live region for role changes */}
+              <div aria-live="polite" className="sr-only">
+                Role changed to {selectedRole}
+              </div>
             </div>
 
             {/* Login link */}
@@ -677,14 +704,12 @@ export default function RegisterPage() {
               Country:{" "}
               <span className="font-medium">{formData.address || "—"}</span>
             </div>
-            {(selectedRole === "candidate" || selectedRole === "recruiter") && (
-              <div>
-                DOB:{" "}
-                <span className="font-medium">
-                  {dob ? format(dob, "PPP") : "—"}
-                </span>
-              </div>
-            )}
+            <div>
+              DOB:{" "}
+              <span className="font-medium">
+                {dob ? format(dob, "PPP") : "—"}
+              </span>
+            </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
@@ -698,7 +723,7 @@ export default function RegisterPage() {
                   setShowRoleConfirm(false);
                 }}
               >
-                Chnage role
+                Change role
               </Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
@@ -710,11 +735,7 @@ export default function RegisterPage() {
                       ...pendingFormData,
                       role: selectedRole,
                     };
-                    if (
-                      (selectedRole === "candidate" ||
-                        selectedRole === "recruiter") &&
-                      isUnder16
-                    ) {
+                    if (isUnder16) {
                       setShowRoleConfirm(false);
                       setShowUnderAgeDialog(true);
                       return;
