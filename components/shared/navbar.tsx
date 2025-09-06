@@ -29,6 +29,9 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+import { getCompanyAccount, getMyResume, getRecruiterAccount } from "@/lib/api-service";
+import { get } from "http";
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -38,6 +41,33 @@ export function SiteHeader() {
   const [userName, setUserName] = useState("");
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
+
+  const role = session?.user?.role;
+  const userId = session?.user?.id;
+
+  // Resume query (only if role is candidate)
+  const { data: myresume, isLoading: resumeLoading } = useQuery({
+    queryKey: ["my-resume"],
+    queryFn: getMyResume,
+    select: (data) => data?.data,
+    enabled: role === "candidate" && !!userId,
+  });
+
+  // Recruiter query (only if role is recruiter)
+  const { data: recruiter, isLoading: recruiterLoading } = useQuery({
+    queryKey: ["recruiter", userId],
+    queryFn: () => getRecruiterAccount(userId || ""),
+    select: (data) => data?.data,
+    enabled: role === "recruiter" && !!userId,
+  });
+
+  // Company query (only if role is neither candidate nor recruiter)
+  const { data: company, isLoading: companyLoading } = useQuery({
+    queryKey: ["company-account", userId],
+    queryFn: () => getCompanyAccount(userId || ""),
+    select: (data) => data?.data,
+    enabled: role !== "candidate" && role !== "recruiter" && !!userId,
+  });
 
   // Fetch user data from API
   useEffect(() => {
@@ -112,6 +142,23 @@ export function SiteHeader() {
 
   const links = getDashboardLinks();
 
+  console.log("MMMMMMMMMMM", myresume?.data?.resume)
+
+  // Helper function to determine Elevator Pitch link text
+  const getElevatorPitchText = () => {
+    if (
+      (userRole === "candidate" && !resumeLoading && myresume?.data?.resume == null) ||
+      (userRole === "recruiter" && !recruiterLoading && recruiter) ||
+      (userRole === "company" && !companyLoading && company)
+    ) {
+      return "Elevator Pitch";
+    }
+    return "Create Elevator Pitch";
+  };
+
+
+  console.log();
+
   return (
     <div className="w-full">
       {/* Top Navbar */}
@@ -162,7 +209,7 @@ export function SiteHeader() {
                   : "hover:text-[#2B7FD0]"
               }`}
             >
-              Elevator Pitch
+              {getElevatorPitchText()}
             </Link>
           )}
 
@@ -455,7 +502,7 @@ export function SiteHeader() {
 
               {status === "authenticated" && (
                 <div className="space-y-2">
-                  <Link href="/notifications" className="pb-2 ">
+                  <Link href="/notifications" className="pb-2">
                     <Button
                       size="sm"
                       className="w-full bg-blue-500 text-white hover:bg-primary my-5"
@@ -495,7 +542,7 @@ export function SiteHeader() {
                 >
                   Jobs
                 </Link>
-                {(userRole === "candidate" || userRole === "recruiter") && (
+                {(userRole === "candidate" || userRole === "recruiter" || userRole === "company") && (
                   <Link
                     href="/elevator-pitch-resume"
                     className={`transition-colors focus:outline-none ${
@@ -504,7 +551,7 @@ export function SiteHeader() {
                         : "hover:text-[#2B7FD0]"
                     }`}
                   >
-                    Elevator Pitch
+                    {getElevatorPitchText()}
                   </Link>
                 )}
                 <Link

@@ -48,49 +48,52 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { FileUpload } from "@/components/company/file-upload";
+import { BannerUpload } from "./banner-upload";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 
-// Dummy skills data
+// ... (Previous imports and DUMMY_SKILLS remain unchanged)
+
+// Dummy skills data (sorted and optimized)
 const DUMMY_SKILLS = [
-  "JavaScript",
-  "TypeScript",
-  "React",
-  "Next.js",
-  "Node.js",
-  "Python",
-  "Java",
-  "C++",
-  "HTML",
-  "CSS",
-  "Tailwind CSS",
-  "Bootstrap",
-  "Vue.js",
+  "Adobe Illustrator",
+  "Adobe Photoshop",
+  "Agile",
   "Angular",
-  "Express.js",
-  "MongoDB",
-  "PostgreSQL",
-  "MySQL",
-  "Redis",
-  "Docker",
-  "Kubernetes",
   "AWS",
+  "Bootstrap",
+  "C++",
+  "Communication",
+  "Critical Thinking",
+  "CSS",
+  "Docker",
+  "Express.js",
+  "Figma",
   "Git",
   "GitHub",
   "GitLab",
-  "Figma",
-  "Adobe Photoshop",
-  "Adobe Illustrator",
-  "Project Management",
-  "Agile",
-  "Scrum",
+  "HTML",
+  "Java",
+  "JavaScript",
+  "Kubernetes",
   "Leadership",
-  "Communication",
+  "MongoDB",
+  "MySQL",
+  "Next.js",
+  "Node.js",
+  "PostgreSQL",
   "Problem Solving",
+  "Project Management",
+  "Python",
+  "React",
+  "Redis",
+  "Scrum",
+  "Tailwind CSS",
   "Team Work",
-  "Critical Thinking",
-  "Web Design",
+  "TypeScript",
   "UI/UX Design",
-];
+  "Vue.js",
+  "Web Design",
+].sort()
 
 const resumeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -238,7 +241,7 @@ function Combobox({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between"
+          className="w-full justify-between bg-transparent"
           disabled={disabled}
         >
           {value
@@ -312,6 +315,19 @@ export default function CreateResumeForm() {
   const [certificationInput, setCertificationInput] = useState("");
   const [languageInput, setLanguageInput] = useState("");
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
+  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>(
+    []
+  );
+  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>(
+    []
+  );
+  const [loadingExperienceCities, setLoadingExperienceCities] = useState<
+    boolean[]
+  >([]);
+  const [loadingEducationCities, setLoadingEducationCities] = useState<
+    boolean[]
+  >([]);
 
   const { data: session } = useSession();
 
@@ -409,12 +425,25 @@ export default function CreateResumeForm() {
     mutationFn: createResume,
     onSuccess: (data: any) => {
       toast.success(data?.message || "Resume created successfully!");
+      window.location.reload(); // ✅ correct reload method
     },
     onError: (error: any) => {
       toast.error(
         error?.message || "Failed to create resume. Please try again."
       );
       console.error("Error creating resume:", error);
+    },
+  });
+
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: uploadElevatorPitch,
+    onSuccess: () => {
+      toast.success("Elevator pitch uploaded successfully!");
+      setIsElevatorPitchUploaded(true);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+      setIsElevatorPitchUploaded(false);
     },
   });
 
@@ -470,55 +499,77 @@ export default function CreateResumeForm() {
     enabled: !!selectedCountry,
   });
 
-  // Fetch cities for each experience entry
-  const experienceCitiesQueries = experienceFields.map((_, index) => {
-    const country = selectedExperienceCountries[index] || "";
-    return useQuery<string[]>({
-      queryKey: ["cities", `experience-${index}`, country],
-      queryFn: async () => {
-        if (!country) return [];
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ country }),
-          }
-        );
-        const data = await response.json();
-        if (data.error) throw new Error("Failed to fetch cities");
-        return data.data as string[];
-      },
-      enabled: !!country,
-    });
-  });
+  const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
+    if (!country) return [];
+    try {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ country }),
+        }
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch cities");
+      return data.data as string[];
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+      return [];
+    }
+  };
 
-  // Fetch cities for each education entry
-  const educationCitiesQueries = educationFields.map((_, index) => {
-    const country = selectedEducationCountries[index] || "";
-    return useQuery<string[]>({
-      queryKey: ["cities", `education-${index}`, country],
-      queryFn: async () => {
-        if (!country) return [];
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ country }),
-          }
-        );
-        const data = await response.json();
-        if (data.error) throw new Error("Failed to fetch cities");
-        return data.data as string[];
-      },
-      enabled: !!country,
-    });
-  });
+  useEffect(() => {
+    const fetchExperienceCities = async () => {
+      const newCitiesData: string[][] = [];
+      const newLoadingStates: boolean[] = [];
+
+      for (let index = 0; index < experienceFields.length; index++) {
+        const country = selectedExperienceCountries[index] || "";
+        newLoadingStates[index] = !!country;
+
+        if (country) {
+          const cities = await fetchCitiesForCountry(country);
+          newCitiesData[index] = cities;
+        } else {
+          newCitiesData[index] = [];
+        }
+        newLoadingStates[index] = false;
+      }
+
+      setExperienceCitiesData(newCitiesData);
+      setLoadingExperienceCities(newLoadingStates);
+    };
+
+    fetchExperienceCities();
+  }, [experienceFields.length, selectedExperienceCountries]);
+
+  useEffect(() => {
+    const fetchEducationCities = async () => {
+      const newCitiesData: string[][] = [];
+      const newLoadingStates: boolean[] = [];
+
+      for (let index = 0; index < educationFields.length; index++) {
+        const country = selectedEducationCountries[index] || "";
+        newLoadingStates[index] = !!country;
+
+        if (country) {
+          const cities = await fetchCitiesForCountry(country);
+          newCitiesData[index] = cities;
+        } else {
+          newCitiesData[index] = [];
+        }
+        newLoadingStates[index] = false;
+      }
+
+      setEducationCitiesData(newCitiesData);
+      setLoadingEducationCities(newLoadingStates);
+    };
+
+    fetchEducationCities();
+  }, [educationFields.length, selectedEducationCountries]);
 
   // Handle country data side effects
   useEffect(() => {
@@ -594,16 +645,16 @@ export default function CreateResumeForm() {
   );
 
   const experienceCityOptions = useMemo(() => {
-    return experienceCitiesQueries.map(
-      (query) => query.data?.map((c) => ({ value: c, label: c })) || []
+    return experienceCitiesData.map(
+      (cities) => cities?.map((c) => ({ value: c, label: c })) || []
     );
-  }, [experienceCitiesQueries]);
+  }, [experienceCitiesData]);
 
   const educationCityOptions = useMemo(() => {
-    return educationCitiesQueries.map(
-      (query) => query.data?.map((c) => ({ value: c, label: c })) || []
+    return educationCitiesData.map(
+      (cities) => cities?.map((c) => ({ value: c, label: c })) || []
     );
-  }, [educationCitiesQueries]);
+  }, [educationCitiesData]);
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -617,25 +668,31 @@ export default function CreateResumeForm() {
     }
   };
 
-  const uploadElevatorPitchMutation = useMutation({
-    mutationFn: uploadElevatorPitch,
-    onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
-    },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
-    },
-  });
-
-  const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleBannerUpload = (file: File | null) => {
+    setBannerFile(file);
     if (file) {
-      setBannerFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setBannerPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setBannerPreview(null);
+    }
+  };
+
+  const handleElevatorPitchUpload = async () => {
+    if (elevatorPitchFile && session?.user?.id) {
+      try {
+        await uploadElevatorPitchMutation.mutateAsync({
+          videoFile: elevatorPitchFile,
+          userId: session.user.id,
+        });
+      } catch (error) {
+        // Error toast is handled in mutation onError
+      }
+    } else {
+      toast.error("Please select a video file to upload");
     }
   };
 
@@ -716,6 +773,11 @@ export default function CreateResumeForm() {
   };
 
   const onSubmit = async (data: ResumeFormData) => {
+    // if (!isElevatorPitchUploaded) {
+    //   toast.error("Please upload your elevator pitch video before submitting the form")
+    //   return
+    // }
+
     const formData = new FormData();
 
     // Prepare resume data according to backend model
@@ -749,18 +811,6 @@ export default function CreateResumeForm() {
       formData.append("banner", bannerFile);
     }
 
-    if (elevatorPitchFile && session?.user?.id) {
-      try {
-        await uploadElevatorPitchMutation.mutateAsync({
-          videoFile: elevatorPitchFile,
-          userId: session.user.id,
-        });
-      } catch (error) {
-        // Error toast is handled in mutation onError
-        return;
-      }
-    }
-
     createResumeMutation.mutate(formData);
   };
 
@@ -778,90 +828,68 @@ export default function CreateResumeForm() {
           })}
           className="space-y-8"
         >
-          {/* Upload Your Elevator Pitch */}
+          {/* Elevator Pitch Upload Section */}
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg font-medium">
-                    Upload Your Elevator Pitch
-                  </CardTitle>
-                </div>
-              </div>
+              <CardTitle>Elevator Pitch</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Upload a short video introducing yourself.
+              </p>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg text-center bg-gray-900 text-white">
-                <FileUpload
-                  onFileSelect={setElevatorPitchFile}
-                  accept="video/*"
-                  maxSize={100 * 1024 * 1024}
-                  variant="dark"
-                ></FileUpload>
-              </div>
+              <ElevatorPitchUpload
+                onFileSelect={setElevatorPitchFile}
+                selectedFile={elevatorPitchFile}
+              />
+              <Button
+                type="button"
+                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={handleElevatorPitchUpload}
+                disabled={
+                  uploadElevatorPitchMutation.isPending || !elevatorPitchFile
+                }
+              >
+                {uploadElevatorPitchMutation.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Uploading...
+                  </div>
+                ) : (
+                  "Upload Elevator Pitch"
+                )}
+              </Button>
+              {isElevatorPitchUploaded && (
+                <p className="mt-2 text-sm text-green-600">
+                  Elevator pitch uploaded successfully!
+                </p>
+              )}
             </CardContent>
           </Card>
 
           {/* Banner Upload */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Upload Banner</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Upload a banner image to enhance your resume profile.
-                </p>
-              </div>
-              <Button
-                type="button"
-                className="bg-primary hover:bg-blue-700 text-white"
-                onClick={() =>
-                  document.getElementById("banner-upload")?.click()
-                }
-              >
-                Upload/Change Banner
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-gray-50">
-                {bannerPreview ? (
-                  <div className="space-y-4">
-                    <Image
-                      src={bannerPreview}
-                      alt="Banner Preview"
-                      width={600}
-                      height={200}
-                      className="mx-auto max-w-full h-auto rounded-lg"
-                    />
-                    <p className="text-sm text-green-400">
-                      Banner uploaded: {bannerFile?.name}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="mx-auto h-12 w-12 mb-4 text-gray-400" />
-                    <p className="text-lg mb-2">Drop your banner image here</p>
-                    <p className="text-sm mb-4">or</p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="bg-gray-200 hover:bg-gray-300"
-                      onClick={() =>
-                        document.getElementById("banner-upload")?.click()
-                      }
-                    >
-                      Choose File
-                    </Button>
-                  </>
-                )}
-                <Input
-                  id="banner-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleBannerUpload}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <BannerUpload
+            onFileSelect={handleBannerUpload}
+            previewUrl={bannerPreview}
+          />
 
           {/* About Us Section */}
           <Card className="border-2 border-blue-500">
@@ -905,25 +933,6 @@ export default function CreateResumeForm() {
                     <FormLabel className="text-blue-600 font-medium">
                       About Me
                     </FormLabel>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleCopyUrl}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      {copyUrlSuccess ? (
-                        <>
-                          <Check className="h-4 w-4 mr-1" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy URL
-                        </>
-                      )}
-                    </Button>
                   </div>
                   <FormField
                     control={form.control}
@@ -1195,7 +1204,7 @@ export default function CreateResumeForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-4"
+                    className="mt-4 bg-transparent"
                     onClick={() => appendSLink({ label: "", url: "" })}
                   >
                     <Plus className="mr-2 h-4 w-4" />
@@ -1349,13 +1358,13 @@ export default function CreateResumeForm() {
                               placeholder={
                                 !selectedExperienceCountries[index]
                                   ? "Select country first"
-                                  : experienceCitiesQueries[index]?.isLoading
+                                  : loadingExperienceCities[index]
                                   ? "Loading cities..."
                                   : "Select City"
                               }
                               minSearchLength={2}
                               disabled={
-                                experienceCitiesQueries[index]?.isLoading ||
+                                loadingExperienceCities[index] ||
                                 !selectedExperienceCountries[index]
                               }
                             />
@@ -1599,13 +1608,13 @@ export default function CreateResumeForm() {
                               placeholder={
                                 !selectedEducationCountries[index]
                                   ? "Select country first"
-                                  : educationCitiesQueries[index]?.isLoading
+                                  : loadingEducationCities[index]
                                   ? "Loading cities..."
                                   : "Select City"
                               }
                               minSearchLength={2}
                               disabled={
-                                educationCitiesQueries[index]?.isLoading ||
+                                loadingEducationCities[index] ||
                                 !selectedEducationCountries[index]
                               }
                             />
@@ -1812,9 +1821,6 @@ export default function CreateResumeForm() {
           <Card>
             <CardHeader>
               <CardTitle>Awards and Honours (Optional)</CardTitle>
-              {/* <p className="text-sm text-muted-foreground">
-                Tell employers what you are in a few impactful sentences.
-              </p> */}
             </CardHeader>
             <CardContent>
               {awardFields.map((field, index) => (
@@ -1916,9 +1922,7 @@ export default function CreateResumeForm() {
           <Button
             type="submit"
             className="w-full bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
-            disabled={
-              createResumeMutation.isPending || form.formState.isSubmitting
-            }
+            // disabled={createResumeMutation.isPending || form.formState.isSubmitting || !isElevatorPitchUploaded}
           >
             {createResumeMutation.isPending || form.formState.isSubmitting ? (
               <div className="flex items-center gap-2">

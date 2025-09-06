@@ -150,29 +150,6 @@ export async function getElevatorPitchVideo(userId: string) {
   return response.data;
 }
 
-// Update elevator pitch video
-export async function updateElevatorPitchVideo({
-  videoFile,
-  userId,
-}: {
-  videoFile: File;
-  userId: string;
-}) {
-  const formData = new FormData();
-  formData.append("videoFile", videoFile); // make sure this matches backend
-
-  const response = await apiClient.put(
-    `/elevator-pitch/video?userId=${userId}`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-  return response.data;
-}
-
 // Delete elevator pitch video
 export async function deleteElevatorPitchVideo(userId: string) {
   const response = await apiClient.delete(
