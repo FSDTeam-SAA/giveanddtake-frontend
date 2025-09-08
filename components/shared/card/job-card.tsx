@@ -57,26 +57,26 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     onSelect();
   };
 
-const TOAST_DURATION_MS = 2200;   // how long the toast stays
-const REDIRECT_DELAY_MS = 1800; 
+  const TOAST_DURATION_MS = 2200; // how long the toast stays
+  const REDIRECT_DELAY_MS = 1800;
 
-const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
-  e.stopPropagation();
-  if (isRedirecting) return;
+  const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isRedirecting) return;
 
-  setIsRedirecting(true);
+    setIsRedirecting(true);
 
-  toast("Please log in as a candidate to apply", {
-    description: "You’ll be redirected to sign in.",
-    duration: TOAST_DURATION_MS,
-  });
+    toast("Please log in as a candidate to apply", {
+      description: "You’ll now be redirected to sign in.",
+      duration: TOAST_DURATION_MS,
+    });
 
-  // let the toast sit for a moment before redirecting
-  setTimeout(() => {
-    // default provider & callback back to the application page
-    void signIn(undefined, { callbackUrl: applicationLink });
-  }, REDIRECT_DELAY_MS);
-};
+    // let the toast sit for a moment before redirecting
+    setTimeout(() => {
+      // default provider & callback back to the application page
+      void signIn(undefined, { callbackUrl: applicationLink });
+    }, REDIRECT_DELAY_MS);
+  };
 
   const getCompanyInitials = (title: string) => {
     return title

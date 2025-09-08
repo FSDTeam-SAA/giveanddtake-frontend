@@ -720,7 +720,7 @@ export default function ApplicantDetailsPage() {
 
         <div className="flex items-center justify-center gap-4 mt-6">
           <div>
-            <Link href="/massage">
+            <Link href="/message">
               <Button variant="outline" className="bg-[#2B7FD0] text-white">
                 Message
               </Button>
