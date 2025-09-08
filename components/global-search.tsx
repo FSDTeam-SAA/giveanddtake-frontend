@@ -1,167 +1,133 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import type React from "react";
-
-import { Search, User, Building2, UserCheck, ArrowRight } from "lucide-react";
+import { Search, User, Building2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
+type Role = "candidate" | "recruiter" | "company";
+
 interface SearchUser {
-  _id: string;
-  name: string;
-  role: "candidate" | "recruiter" | "company";
-  phoneNum: string;
-  address: string;
-  avatar: {
-    url: string;
+  _id?: string;
+  name?: string;
+  role?: Role | string; // allow unknown strings from backend
+  phoneNum?: string;
+  address?: string;
+  avatar?: {
+    url?: string;
   };
 }
 
 interface SearchResult {
-  success: boolean;
-  message: string;
-  data: SearchUser[];
+  success?: boolean;
+  message?: string;
+  data?: SearchUser[];
 }
+
+const safeLower = (v: unknown) => (typeof v === "string" ? v.toLowerCase() : "");
 
 export function GlobalSearch() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchUser[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [relatedSuggestions, setRelatedSuggestions] = useState<string[]>([]);
+
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const router = useRouter();
 
-  // Debounced search function
+  // Debounced search
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (query.trim().length > 0) {
-        searchUsers(query);
-      } else {
+    const doSearch = async () => {
+      const q = query.trim();
+      if (!q) {
         setResults([]);
         setIsOpen(false);
-        setRelatedSuggestions([]);
+        return;
       }
-    }, 300);
+      await searchUsers(q);
+    };
 
-    return () => clearTimeout(timeoutId);
+    const id = setTimeout(doSearch, 300);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
-  // Close dropdown when clicking outside
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const searchUsers = async (searchQuery: string) => {
+    // cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/fetch/all/users`
-      );
+      const base = process.env.NEXT_PUBLIC_BASE_URL;
+      if (!base) {
+        console.error("Missing NEXT_PUBLIC_BASE_URL");
+        setResults([]);
+        setIsOpen(false);
+        return;
+      }
+
+      const response = await fetch(`${base}/fetch/all/users`, {
+        signal: controller.signal,
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
       const result: SearchResult = await response.json();
 
-      if (result.success) {
-        // Enhanced filtering - search in multiple fields with partial matches
+      if (result?.success && Array.isArray(result.data)) {
+        const q = searchQuery.toLowerCase();
         const filteredResults = result.data.filter((user) => {
-          const searchTerm = searchQuery.toLowerCase();
-          return (
-            user.name.toLowerCase().includes(searchTerm) ||
-            user.role.toLowerCase().includes(searchTerm) ||
-            user.address.toLowerCase().includes(searchTerm) ||
-            user.phoneNum.includes(searchTerm) ||
-            // Partial word matching
-            user.name
-              .toLowerCase()
-              .split(" ")
-              .some((word) => word.startsWith(searchTerm)) ||
-            user.address
-              .toLowerCase()
-              .split(" ")
-              .some((word) => word.startsWith(searchTerm))
-          );
+          if (!user) return false;
+          const name = safeLower(user.name);
+          const role = safeLower(user.role);
+          const address = safeLower(user.address);
+          return name.includes(q) || role.includes(q) || address.includes(q);
         });
 
-        setResults(filteredResults.slice(0, 8)); // Limit to 8 results
-        setIsOpen(true);
-
-        // Generate related suggestions when no results found
-        if (filteredResults.length === 0) {
-          generateRelatedSuggestions(result.data, searchQuery);
-        } else {
-          setRelatedSuggestions([]);
-        }
+        const limited = filteredResults.slice(0, 8);
+        setResults(limited);
+        setIsOpen(limited.length > 0);
+      } else {
+        setResults([]);
+        setIsOpen(false);
       }
-    } catch (error) {
-      console.error("Search error:", error);
-      setResults([]);
-      setRelatedSuggestions([]);
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        console.error("Search error:", err);
+        setResults([]);
+        setIsOpen(false);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const generateRelatedSuggestions = (
-    allUsers: SearchUser[],
-    searchQuery: string
-  ) => {
-    const suggestions = new Set<string>();
-    const searchTerm = searchQuery.toLowerCase();
-
-    // Get unique roles
-    const roles = [...new Set(allUsers.map((user) => user.role))];
-    roles.forEach((role) => {
-      if (!role.toLowerCase().includes(searchTerm)) {
-        suggestions.add(role.charAt(0).toUpperCase() + role.slice(1));
-      }
-    });
-
-    // Get unique countries/locations
-    const locations = [...new Set(allUsers.map((user) => user.address))];
-    locations.forEach((location) => {
-      if (
-        !location.toLowerCase().includes(searchTerm) &&
-        suggestions.size < 6
-      ) {
-        suggestions.add(location);
-      }
-    });
-
-    // Add some common search terms
-    const commonTerms = [
-      "developer",
-      "manager",
-      "engineer",
-      "designer",
-      "analyst",
-    ];
-    commonTerms.forEach((term) => {
-      if (!term.includes(searchTerm) && suggestions.size < 6) {
-        suggestions.add(term.charAt(0).toUpperCase() + term.slice(1));
-      }
-    });
-
-    setRelatedSuggestions(Array.from(suggestions).slice(0, 6));
-  };
-
   const handleResultClick = (user: SearchUser) => {
+    const role = (user.role as Role) || "candidate";
+    const id = user._id ?? "";
     const profileUrl =
-      user.role === "company"
-        ? `/companies-profile/${user._id}`
-        : user.role === "recruiter"
-        ? `/recruiters-profile/${user._id}`
-        : `/candidates-profile/${user._id}`;
+      role === "company"
+        ? `/companies-profile/${id}`
+        : role === "recruiter"
+        ? `/recruiters-profile/${id}`
+        : `/candidates-profile/${id}`;
 
     router.push(profileUrl);
     setQuery("");
@@ -169,21 +135,14 @@ export function GlobalSearch() {
     inputRef.current?.blur();
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && query.trim().length > 0) {
-      router.push(`/search-results?q=${encodeURIComponent(query.trim())}`);
-      setQuery("");
-      setIsOpen(false);
-      inputRef.current?.blur();
-    }
+  const handleSeeAllUsers = () => {
+    router.push("/all-users");
+    setQuery("");
+    setIsOpen(false);
+    inputRef.current?.blur();
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setQuery(suggestion);
-    inputRef.current?.focus();
-  };
-
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role?: string) => {
     switch (role) {
       case "candidate":
         return <User className="h-4 w-4 text-green-600" />;
@@ -196,134 +155,117 @@ export function GlobalSearch() {
     }
   };
 
-  const getRoleLabel = (role: string) => {
-    return role.charAt(0).toUpperCase() + role.slice(1);
-  };
+  const getRoleLabel = (role?: string) =>
+    role ? role.charAt(0).toUpperCase() + role.slice(1) : "User";
 
   return (
     <div ref={searchRef} className="relative w-full max-w-md">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search
+          aria-hidden
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
+        />
         <input
           ref={inputRef}
           type="text"
           placeholder="Search people, companies..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyPress={handleKeyPress}
           onFocus={() => query.trim().length > 0 && setIsOpen(true)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent transition-all duration-200 text-sm"
+          aria-label="Global search"
+          className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent transition-all duration-200 text-sm"
         />
         {isLoading && (
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            <div className="animate-spin h-4 w-4 border-2 border-[#4B98DE] border-t-transparent rounded-full"></div>
+          <div
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <div className="animate-spin h-4 w-4 border-2 border-[#4B98DE] border-t-transparent rounded-full" />
           </div>
         )}
       </div>
 
       {/* Search Results Dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+        <div
+          className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+          role="listbox"
+          aria-label="Search results"
+        >
           {results.length > 0 ? (
             <>
               <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
                 {results.length} result{results.length !== 1 ? "s" : ""} found
               </div>
-              {results.map((user) => (
-                <Button
-                  key={user._id}
-                  variant="ghost"
-                  className="w-full justify-start p-4 h-auto hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                  onClick={() => handleResultClick(user)}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={
-                          user.avatar.url ||
-                          "/placeholder.svg?height=40&width=40" ||
-                          "/placeholder.svg"
-                        }
-                        alt={user.name}
-                      />
-                      <AvatarFallback className="bg-[#4B98DE] text-white">
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">
-                          {user.name}
-                        </span>
-                        {getRoleIcon(user.role)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {getRoleLabel(user.role)} • {user.address}
+
+              {results.map((user) => {
+                const id = user._id ?? Math.random().toString(36).slice(2);
+                const displayName = user?.name || "Unnamed";
+                const firstLetter = (user?.name?.charAt(0) || "U").toUpperCase();
+                const avatarUrl =
+                  user?.avatar?.url || "/placeholder.svg?height=40&width=40";
+
+                return (
+                  <Button
+                    key={id}
+                    variant="ghost"
+                    className="w-full justify-start p-4 h-auto hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                    onClick={() => handleResultClick(user)}
+                    role="option"
+                    aria-label={`Open profile for ${displayName}`}
+                  >
+                    <div className="flex items-center gap-3 w-full">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={avatarUrl} alt={displayName} />
+                        <AvatarFallback className="bg-[#4B98DE] text-white">
+                          {firstLetter}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900">
+                            {displayName}
+                          </span>
+                          {getRoleIcon(user?.role as string | undefined)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {getRoleLabel(user?.role as string | undefined)} •{" "}
+                          {user?.address || "N/A"}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Button>
-              ))}
+                  </Button>
+                );
+              })}
+
               <div className="px-4 py-3 text-center border-t bg-gray-50">
                 <Button
                   variant="ghost"
-                  className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium flex items-center gap-2 mx-auto"
-                  onClick={() => {
-                    router.push(
-                      `/search-results?q=${encodeURIComponent(query.trim())}`
-                    );
-                    setQuery("");
-                    setIsOpen(false);
-                  }}
+                  className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
+                  onClick={handleSeeAllUsers}
                 >
-                  View all results <ArrowRight className="h-3 w-3" />
+                  See all users
                 </Button>
               </div>
             </>
           ) : (
-            <div className="px-4 py-6 text-center text-gray-500">
-              <Search className="h-8 w-8 mx-auto mb-3 text-gray-300" />
-              <p className="text-sm font-medium mb-1">
-                No results found for "{query}"
+            <div className="px-4 py-8 text-center text-gray-500">
+              <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" aria-hidden />
+              <p className="text-sm">
+                No results found{query ? ` for "${query}"` : ""}.
               </p>
-              <p className="text-xs text-gray-400 mb-4">
+              <p className="text-xs text-gray-400 mt-1">
                 Try searching for people, companies, or locations
               </p>
-
-              {relatedSuggestions.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs text-gray-600 mb-2 font-medium">
-                    Related searches:
-                  </p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {relatedSuggestions.map((suggestion, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-7 px-3 text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] hover:text-white bg-transparent"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                      >
-                        {suggestion}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="pt-2 border-t">
+              <div className="mt-4">
                 <Button
                   variant="ghost"
-                  className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium flex items-center gap-2 mx-auto"
-                  onClick={() => {
-                    router.push(
-                      `/search-results?q=${encodeURIComponent(query.trim())}`
-                    );
-                    setQuery("");
-                    setIsOpen(false);
-                  }}
+                  className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
+                  onClick={handleSeeAllUsers}
                 >
-                  Search all results <ArrowRight className="h-3 w-3" />
+                  See all users
                 </Button>
               </div>
             </div>
