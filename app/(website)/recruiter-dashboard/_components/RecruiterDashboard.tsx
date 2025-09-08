@@ -1,15 +1,7 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -18,11 +10,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlayIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { PlayIcon, ChevronLeft, ChevronRight, Eye, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -32,14 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import JobList from "./joblist";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { VideoPlayer } from "@/components/company/video-player";
 
 // Define TypeScript interfaces for jobs API response
 interface ApplicationRequirement {
@@ -66,6 +51,7 @@ interface Job {
   benefits: string[];
   vacancy: number;
   experience: number;
+  adminApprove: boolean;
   deadline: string;
   applicantCount: number;
   status: string;
@@ -81,7 +67,7 @@ interface Job {
   publishDate?: string;
 }
 
-interface ApiResponse {
+interface JobApiResponse {
   success: boolean;
   message: string;
   data: Job[];
@@ -102,18 +88,6 @@ interface Applicant {
   createdAt: string;
   updatedAt: string;
   __v: number;
-}
-
-interface ApplicantsApiResponse {
-  success: boolean;
-  message: string;
-  data: Applicant[];
-}
-
-interface UpdateStatusResponse {
-  success: boolean;
-  message: string;
-  data: any;
 }
 
 interface DeleteJobResponse {
@@ -139,9 +113,9 @@ interface Company {
   zipcode: string;
   cemail: string;
   cPhoneNumber: string;
-  links: string[]; // converted from stored JSON string
+  links: string[];
   industry: string;
-  service: string[]; // converted from stored JSON string
+  service: string[];
   employeesId: string[];
   createdAt: string;
   updatedAt: string;
@@ -152,7 +126,7 @@ interface RecruiterAccount {
   _id: string;
   userId: string;
   bio: string;
-  photo: string; // Base64 string or URL
+  photo: string;
   title: string;
   firstName: string;
   lastName: string;
@@ -166,7 +140,6 @@ interface RecruiterAccount {
   roleAtCompany: string;
   awardTitle: string;
   programName: string;
-
   programDate: string;
   awardDescription: string;
   companyId: Company;
@@ -183,10 +156,36 @@ interface RecruiterAccountResponse {
   data: RecruiterAccount;
 }
 
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface PitchApiResponse {
+  success: boolean;
+  total: number;
+  data: PitchData[];
+}
+
 const fetchRecruiterAccount = async (
   applicantId: string,
   token?: string
 ): Promise<RecruiterAccountResponse> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -206,14 +205,16 @@ const fetchRecruiterAccount = async (
   if (!data.success)
     throw new Error(data.message || "Failed to fetch recruiter account");
 
-  // Optionally parse JSON strings to arrays
   if (
     Array.isArray(data.data.companyId.links) &&
     data.data.companyId.links.length === 1
   ) {
     try {
       data.data.companyId.links = JSON.parse(data.data.companyId.links[0]);
-    } catch {}
+    } catch (error) {
+      console.warn("Failed to parse company links:", error);
+      data.data.companyId.links = [];
+    }
   }
   if (
     Array.isArray(data.data.companyId.service) &&
@@ -221,14 +222,20 @@ const fetchRecruiterAccount = async (
   ) {
     try {
       data.data.companyId.service = JSON.parse(data.data.companyId.service[0]);
-    } catch {}
+    } catch (error) {
+      console.warn("Failed to parse company services:", error);
+      data.data.companyId.service = [];
+    }
   }
 
   return data;
 };
 
-// Function to fetch jobs from the API
-const fetchJobs = async (token?: string): Promise<ApiResponse> => {
+const fetchJobs = async (token?: string): Promise<JobApiResponse> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
   try {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -246,7 +253,7 @@ const fetchJobs = async (token?: string): Promise<ApiResponse> => {
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    const data: ApiResponse = await response.json();
+    const data: JobApiResponse = await response.json();
     if (!data.success) {
       throw new Error(data.message || "Failed to fetch jobs");
     }
@@ -258,11 +265,14 @@ const fetchJobs = async (token?: string): Promise<ApiResponse> => {
   }
 };
 
-// Function to fetch applicants for a specific job
-const fetchApplicants = async (
-  jobId: string,
+const fetchPitchData = async (
+  userId: string,
   token?: string
-): Promise<ApplicantsApiResponse> => {
+): Promise<PitchApiResponse> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
   try {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -271,7 +281,7 @@ const fetchApplicants = async (
       headers["Authorization"] = `Bearer ${token}`;
     }
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}`,
+      `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/all/elevator-pitches?type=recruiter`,
       {
         method: "GET",
         headers,
@@ -280,9 +290,9 @@ const fetchApplicants = async (
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
-    const data: ApplicantsApiResponse = await response.json();
+    const data: PitchApiResponse = await response.json();
     if (!data.success) {
-      throw new Error(data.message || "Failed to fetch applicants");
+      throw new Error(data.message || "Failed to fetch pitch data");
     }
     return data;
   } catch (error) {
@@ -292,59 +302,14 @@ const fetchApplicants = async (
   }
 };
 
-const updateApplicantStatus = async (
-  applicantId: string,
-  status: string,
-  token?: string
-): Promise<UpdateStatusResponse> => {
-  try {
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
-    // Show loading toast
-    const toastId = toast.loading("Updating applicant status...");
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicantId}/status`,
-      {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ status }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data: UpdateStatusResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.message || "Failed to update status");
-    }
-
-    // Update toast to success
-    toast.success("Status updated successfully!", { id: toastId });
-
-    return data;
-  } catch (error) {
-    // Show error toast
-    toast.error(
-      error instanceof Error ? error.message : "An unexpected error occurred"
-    );
-    throw error;
-  }
-};
-
-// Function to delete a job
 const deleteJob = async (
   jobId: string,
   token?: string
 ): Promise<DeleteJobResponse> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
   try {
     const headers: HeadersInit = {
       "Content-Type": "application/json",
@@ -380,38 +345,17 @@ export default function RecruiterDashboard() {
   const queryClient = useQueryClient();
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   const [currentPageTable, setCurrentPageTable] = useState(1);
-  const [currentPageCards, setCurrentPageCards] = useState(1);
   const itemsPerPage = 4;
 
-  // Fetch jobs
   const {
     data: jobsData,
     isLoading: jobsLoading,
     error: jobsError,
-  } = useQuery<ApiResponse, Error>({
+  } = useQuery<JobApiResponse, Error>({
     queryKey: ["jobs", token],
     queryFn: () => fetchJobs(token),
   });
-
-  console.log("JJJJJJ", jobsData);
-
-  // Get the first job ID dynamically
-  const firstJobId = jobsData?.data?.[0]?._id;
-
-  // Fetch applicants for the first job
-  const {
-    data: applicantsData,
-    isLoading: applicantsLoading,
-    error: applicantsError,
-  } = useQuery<ApplicantsApiResponse, Error>({
-    queryKey: ["applicants", firstJobId, token],
-    queryFn: () => fetchApplicants(firstJobId!, token),
-    enabled: !!firstJobId,
-  });
-
-  console.log("Applicants", jobsData);
 
   const {
     data: recruiterAccount,
@@ -420,28 +364,19 @@ export default function RecruiterDashboard() {
   } = useQuery<RecruiterAccountResponse, Error>({
     queryKey: ["recruiter", session?.user?.id, token],
     queryFn: () => fetchRecruiterAccount(session?.user?.id!, token),
-    enabled: !!session?.user?.id && !!token, // only run when we have both
+    enabled: !!session?.user?.id && !!token,
   });
 
-  console.log("recruiterAccount", recruiterAccount);
-
-  // Mutation for updating applicant status
-  const statusMutation = useMutation<
-    UpdateStatusResponse,
-    Error,
-    { applicantId: string; status: string }
-  >({
-    mutationFn: ({ applicantId, status }) =>
-      updateApplicantStatus(applicantId, status, token),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["applicants", firstJobId] });
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to update status");
-    },
+  const {
+    data: pitchDataResponse,
+    isLoading: pitchLoading,
+    error: pitchError,
+  } = useQuery<PitchApiResponse, Error>({
+    queryKey: ["pitch", session?.user?.id, token],
+    queryFn: () => fetchPitchData(session?.user?.id!, token),
+    enabled: !!session?.user?.id && !!token,
   });
 
-  // Mutation for deleting a job
   const deleteMutation = useMutation<DeleteJobResponse, Error, string>({
     mutationFn: (jobId) => deleteJob(jobId, token),
     onSuccess: (data) => {
@@ -455,7 +390,6 @@ export default function RecruiterDashboard() {
     },
   });
 
-  // Format date for display
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
@@ -464,19 +398,20 @@ export default function RecruiterDashboard() {
     });
   };
 
-  // Default to empty arrays to simplify data access
-  const jobs = jobsData?.data ?? [];
-  const applicants = applicantsData?.data ?? [];
+  const userPitch = pitchDataResponse?.data.find(
+    (pitch) => pitch.userId._id === session?.user?.id
+  );
 
+  const jobs = jobsData?.data ?? [];
   const totalPagesTable = Math.ceil(jobs.length / itemsPerPage);
   const startIndexTable = (currentPageTable - 1) * itemsPerPage;
   const endIndexTable = startIndexTable + itemsPerPage;
-  const currentJobsTable = jobs.slice(startIndexTable, endIndexTable);
+  const currentJobsTable = useMemo(
+    () => jobs.slice(startIndexTable, endIndexTable),
+    [jobs, startIndexTable, endIndexTable]
+  );
 
-  const totalPagesCards = Math.ceil(jobs.length / itemsPerPage);
-  const startIndexCards = (currentPageCards - 1) * itemsPerPage;
-  const endIndexCards = startIndexCards + itemsPerPage;
-  const currentJobsCards = jobs.slice(startIndexCards, endIndexCards);
+  const firstJobId = jobsData?.data?.[0]?._id;
 
   const handlePageChangeTable = (page: number) => {
     setCurrentPageTable(page);
@@ -494,29 +429,11 @@ export default function RecruiterDashboard() {
     }
   };
 
-  const handlePageChangeCards = (page: number) => {
-    setCurrentPageCards(page);
-  };
-
-  const handlePreviousCards = () => {
-    if (currentPageCards > 1) {
-      setCurrentPageCards(currentPageCards - 1);
-    }
-  };
-
-  const handleNextCards = () => {
-    if (currentPageCards < totalPagesCards) {
-      setCurrentPageCards(currentPageCards + 1);
-    }
-  };
-
-  // Handle delete button click
   const handleDeleteClick = (jobId: string) => {
     setDeleteJobId(jobId);
     setIsDeleteModalOpen(true);
   };
 
-  // Handle confirm delete
   const handleConfirmDelete = () => {
     if (deleteJobId) {
       deleteMutation.mutate(deleteJobId);
@@ -524,71 +441,110 @@ export default function RecruiterDashboard() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
       <div className="container mx-auto">
-        <h1 className="text-[48px] text-[#131313] font-bold text-center mb-8">
+        <h1 className="text-4xl text-[#131313] font-bold text-center mb-12">
           Recruiter Dashboard
         </h1>
 
         {/* Recruiter Information Section */}
-        <section className="mb-10">
+        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex items-center justify-between mb-4 border-b border-[#999999] pb-3">
-              <div>
-                <h2 className="text-3xl font-bold text-[#131313]">
-                  Recruiter Information
-                </h2>
-              </div>
+              <h2 className="text-2xl font-bold text-[#131313]">
+                Recruiter Information
+              </h2>
             </div>
-
+            {recruiterAccountError && (
+              <div className="text-center text-red-600 mb-4">
+                Error loading recruiter data: {recruiterAccountError.message}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ["recruiter", session?.user?.id, token],
+                    })
+                  }
+                  className="ml-4"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
-              {/* Left Column */}
               <div className="flex flex-col gap-6">
                 <div className="flex items-start space-x-3">
-                  <Image
-                    src={recruiterAccount?.data?.companyId.clogo ?? "/placeholder.png"}
-                    alt="Company Logo"
-                    width={1000}
-                    height={1000}
-                    className="mt-1 w-[50px] h-[48px]"
-                  />
+                  {recruiterAccountLoading ? (
+                    <Skeleton className="w-[50px] h-[48px]" />
+                  ) : (
+                    <Image
+                      src={
+                        recruiterAccount?.data?.companyId.clogo ??
+                        "/placeholder.png"
+                      }
+                      alt="Company Logo"
+                      width={50}
+                      height={48}
+                      className="mt-1 w-[50px] h-[48px]"
+                    />
+                  )}
                   <div>
-                    <p className="font-medium text-[22px] text-[#000000]">
-                      {recruiterAccount?.data?.firstName} {recruiterAccount?.data?.lastName}
+                    <p className="font-medium text-xl text-[#000000]">
+                      {recruiterAccountLoading ? (
+                        <Skeleton className="h-6 w-32" />
+                      ) : (
+                        `${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`
+                      )}
                     </p>
-                    <p className="text-[18px] text-[#707070]">
-                      {recruiterAccount?.data?.companyId.cname}
+                    <p className="text-lg text-[#707070]">
+                      {recruiterAccountLoading ? (
+                        <Skeleton className="h-5 w-48" />
+                      ) : (
+                        recruiterAccount?.data?.companyId.cname
+                      )}
                     </p>
                   </div>
                 </div>
                 <div>
-                  <p className="font-medium text-[22px] text-[#000000]">
-                    About Us
-                  </p>
-                  <p className="text-base text-[#707070] leading-relaxed">
-                    {recruiterAccount?.data?.aboutUs}
-                  </p>
+                  <p className="font-medium text-xl text-[#000000]">About Us</p>
+                  {recruiterAccountLoading ? (
+                    <Skeleton className="h-4 w-full" />
+                  ) : (
+                    <p className="text-base text-[#707070] leading-relaxed">
+                      {recruiterAccount?.data?.bio ??
+                        "No description available"}
+                    </p>
+                  )}
                 </div>
               </div>
-
-              {/* Right Column */}
               <div className="flex flex-col gap-6">
                 <div>
-                  <p className="font-medium text-[22px] text-[#000000]">
-                    Email
-                  </p>
-                  <p className="text-[18px] text-[#707070]">
-                    {recruiterAccount?.data?.emailAddress}
-                  </p>
+                  <p className="font-medium text-xl text-[#000000]">Email</p>
+                  {recruiterAccountLoading ? (
+                    <Skeleton className="h-5 w-64" />
+                  ) : (
+                    <p className="text-lg text-[#707070]">
+                      {recruiterAccount?.data?.emailAddress ??
+                        "No email available"}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <p className="font-medium text-[#131313]">Website</p>
-                  <Link
-                    href="#"
-                    className="text-[18px] text-[#707070] underline"
-                  >
-                    yourwebsite.com
-                  </Link>
+                  <p className="font-medium text-xl text-[#131313]">Website</p>
+                  {recruiterAccountLoading ? (
+                    <Skeleton className="h-5 w-48" />
+                  ) : recruiterAccount?.data?.companyId.links?.length ? (
+                    <Link
+                      href={recruiterAccount.data.companyId.links[0]}
+                      className="text-lg text-[#707070] underline"
+                    >
+                      {recruiterAccount.data.companyId.links[0]}
+                    </Link>
+                  ) : (
+                    <p className="text-lg text-[#707070]">
+                      No website available
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -596,41 +552,66 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Elevator Pitch Section */}
-        {/* <section className="mb-10">
-          <h2 className="text-[32px] text-[#4D4D4D] font-semibold mb-4 text-center">
-            Your Elevator Pitch
+        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
+          <h2 className="text-xl lg:text-2xl font-bold text-center mb-8">
+            Elevator Pitch
           </h2>
-          <div className="relative w-full h-[500px] mx-auto aspect-video rounded-lg overflow-hidden shadow-lg">
-            <Image
-              src="/video-placeholder.png"
-              alt="Elevator Pitch Video Thumbnail"
-              layout="fill"
-              objectFit="cover"
-              className="w-full h-full"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-              <Button className="rounded-full w-16 h-16 bg-white bg-opacity-80 text-gray-800 hover:bg-white transition-colors flex items-center justify-center">
-                <PlayIcon className="w-8 h-8 fill-current" />
-                <span className="sr-only">Play video</span>
-              </Button>
-            </div>
+          <div className="rounded-lg overflow-hidden">
+            {pitchLoading ? (
+              <Skeleton className="w-full h-[500px] mx-auto" />
+            ) : pitchError ? (
+              <div className="text-center text-red-500">
+                Error: {pitchError.message}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ["pitch", session?.user?.id, token],
+                    })
+                  }
+                  className="ml-4"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : userPitch ? (
+              <VideoPlayer
+                pitchId={userPitch._id}
+                className="w-full h-[500px] mx-auto"
+              />
+            ) : (
+              <div className="text-center text-gray-500">
+                No pitch available
+              </div>
+            )}
           </div>
-        </section> */}
+        </section>
 
         {/* Your Jobs Section */}
-        <section className="mb-10">
+        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl text-[#000000] font-semibold">Your Jobs</h2>
+            <h2 className="text-xl text-[#000000] font-semibold">Your Jobs</h2>
           </div>
-          <div className="rounded-lg overflow-hidden">
+          {jobsError && (
+            <div className="text-center text-red-600 mb-4">
+              Error loading jobs: {jobsError.message}
+              <Button
+                variant="outline"
+                onClick={() =>
+                  queryClient.invalidateQueries({ queryKey: ["jobs"] })
+                }
+                className="ml-4"
+              >
+                Retry
+              </Button>
+            </div>
+          )}
+          <div className="rounded-lg overflow-hidden overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Job Title
-                  </TableHead>
-                  <TableHead className="text-base text-[#2B7FD0] font-bold">
-                    Applicants
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Status
@@ -639,10 +620,13 @@ export default function RecruiterDashboard() {
                     Deadline
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
-                    Actions
+                    Applicants list
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Deactivation Date
+                  </TableHead>
+                  <TableHead className="text-base text-[#2B7FD0] font-bold">
+                    Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -651,31 +635,25 @@ export default function RecruiterDashboard() {
                   Array.from({ length: itemsPerPage }).map((_, index) => (
                     <TableRow key={index}>
                       <TableCell>
-                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-6 w-48" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-6 w-24" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-32" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-32" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-6 w-32" />
                       </TableCell>
                       <TableCell>
-                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-6 w-24" />
                       </TableCell>
                     </TableRow>
                   ))
-                ) : jobsError ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-red-600">
-                      Error loading jobs: {jobsError.message}
-                    </TableCell>
-                  </TableRow>
                 ) : currentJobsTable.length > 0 ? (
                   currentJobsTable.map((job: Job) => (
                     <TableRow
@@ -683,7 +661,6 @@ export default function RecruiterDashboard() {
                       className="text-base text-[#000000] font-medium"
                     >
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell>{job.applicantCount}</TableCell>
                       <TableCell>
                         {job.status.charAt(0).toUpperCase() +
                           job.status.slice(1)}
@@ -694,10 +671,45 @@ export default function RecruiterDashboard() {
                           href={`/candidate-list/${job._id}`}
                           className="text-blue-600 hover:underline"
                         >
-                          View
+                          View{" "}
+                          <span className="text-gray-500">
+                            ({job.applicantCount})
+                          </span>
                         </Link>
                       </TableCell>
                       <TableCell>{formatDate(job.deadline)}</TableCell>
+                      <TableCell className="flex items-center gap-4">
+                        <span
+                          className={`text-sm font-medium ${
+                            job.adminApprove
+                              ? "text-green-600"
+                              : "text-yellow-600"
+                          }`}
+                        >
+                          {job.adminApprove ? "Live" : "Scheduled"}
+                        </span>
+                        <Link
+                          href={`/single-job/${job._id}`}
+                          className="text-[#000000] hover:text-blue-600 transition-colors"
+                          aria-label={`View job ${job.title}`}
+                        >
+                          <Eye className="h-5 w-5" />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteClick(job._id)}
+                          disabled={
+                            deleteMutation.isPending && deleteJobId === job._id
+                          }
+                          className={`text-red-600 hover:text-red-700 transition-colors ${
+                            deleteMutation.isPending && deleteJobId === job._id
+                              ? "opacity-50 cursor-not-allowed"
+                              : "cursor-pointer"
+                          }`}
+                          aria-label={`Delete job ${job.title}`}
+                        >
+                          <Trash2 className="h-6 w-6" />
+                        </button>
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -710,7 +722,6 @@ export default function RecruiterDashboard() {
               </TableBody>
             </Table>
           </div>
-
           {jobs.length > itemsPerPage && (
             <div className="flex items-center justify-between mt-6">
               <Button
@@ -722,7 +733,6 @@ export default function RecruiterDashboard() {
                 <ChevronLeft className="h-4 w-4" />
                 Previous
               </Button>
-
               <div className="flex items-center gap-2">
                 {Array.from({ length: totalPagesTable }, (_, i) => i + 1).map(
                   (page) => (
@@ -739,7 +749,6 @@ export default function RecruiterDashboard() {
                   )
                 )}
               </div>
-
               <Button
                 variant="outline"
                 onClick={handleNextTable}
@@ -753,259 +762,25 @@ export default function RecruiterDashboard() {
           )}
         </section>
 
-        {/* Job Cards Section */}
-        <section className="mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-[907px] mx-auto">
-            {jobsLoading ? (
-              Array.from({ length: itemsPerPage }).map((_, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <Skeleton className="h-6 w-64 mb-4" />
-                    <div className="flex justify-between pt-10">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-12 w-20 rounded-[8px]" />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-center">
-                    <div className="space-x-2">
-                      <Skeleton className="h-10 w-[160px]" />
-                      <Skeleton className="h-10 w-[160px]" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : jobsError ? (
-              <div className="text-center text-red-600 col-span-2">
-                Error loading jobs: {jobsError.message}
-              </div>
-            ) : currentJobsCards.length > 0 ? (
-              currentJobsCards.map((job: Job) => (
-                <Card key={job._id}>
-                  <CardHeader>
-                    <CardTitle className="text-[#000000] text-2xl font-normal">
-                      <span className="font-semibold">Job Title :</span>{" "}
-                      {job.title}
-                    </CardTitle>
-                    <div className="flex justify-between pt-10">
-                      <CardDescription className="text-base text-[#000000] font-normal">
-                        <span className="font-semibold">Status:</span>{" "}
-                        {job.shift}
-                        <br />
-                        <span className="font-semibold">Posted:</span>{" "}
-                        {formatDate(job.createdAt)}
-                      </CardDescription>
-                      <div className="text-2xl font-bold text-[#000000] bg-[#E6F3FF] px-4 py-2 rounded-[8px]">
-                        {job.applicantCount}
-                        <p className="text-sm font-normal text-gray-500">
-                          Applicants
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex items-center justify-center">
-                    <div className="space-x-2">
-                      <Button
-                        className="bg-red-600 w-[160px] hover:bg-red-700 text-white text-base"
-                        onClick={() => handleDeleteClick(job._id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        {deleteMutation.isPending && deleteJobId === job._id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </Button>
-                      <Link
-                        href={`/single-job/${job._id}`}
-                        className="w-[160px] text-base text-[#000000]"
-                      >
-                        <Button
-                          className="w-[160px] text-base text-[#000000] bg-transparent"
-                          variant="outline"
-                        >
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center col-span-2">No jobs found</div>
-            )}
-          </div>
-
-          {jobs.length > itemsPerPage && (
-            <div className="flex items-center justify-center mt-8">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handlePreviousCards}
-                  disabled={currentPageCards === 1}
-                  className="flex items-center gap-2 bg-transparent"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-
-                {Array.from({ length: totalPagesCards }, (_, i) => i + 1).map(
-                  (page) => (
-                    <Button
-                      key={page}
-                      variant={
-                        currentPageCards === page ? "default" : "outline"
-                      }
-                      onClick={() => handlePageChangeCards(page)}
-                      className="w-10 h-10"
-                    >
-                      {page}
-                    </Button>
-                  )
-                )}
-
-                <Button
-                  variant="outline"
-                  onClick={handleNextCards}
-                  disabled={currentPageCards === totalPagesCards}
-                  className="flex items-center gap-2 bg-transparent"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-        </section>
-
         {/* Applicant List Section */}
-        <section className="mb-10">
+        {/* <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
           <div className="overflow-hidden">
-            {/* Header Row */}
-            <div className="grid grid-cols-12 items-center p-4 border-b font-semibold text-2xl text-[#000000] pb-10">
-              <div className="col-span-2">Picture</div>
-              <div className="col-span-3">Name</div>
-              <div className="col-span-2">Experience</div>
-              <div className="col-span-2">Applied</div>
-              <div className="col-span-3">Actions</div>
-            </div>
-
-            {/* Applicant Rows */}
-            <div className="divide-y border-none space-y-2">
-              {applicantsLoading ? (
-                Array.from({ length: applicants.length || 3 }).map(
-                  (_, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl"
-                    >
-                      <div className="col-span-2">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                      </div>
-                      <div className="col-span-3">
-                        <Skeleton className="h-4 w-32" />
-                      </div>
-                      <div className="col-span-2">
-                        <Skeleton className="h-4 w-16" />
-                      </div>
-                      <div className="col-span-2">
-                        <Skeleton className="h-4 w-24" />
-                      </div>
-                      <div className="col-span-3 flex space-x-2">
-                        <Skeleton className="h-8 w-24" />
-                        <Skeleton className="h-8 w-24" />
-                        <Skeleton className="h-8 w-24" />
-                      </div>
-                    </div>
-                  )
-                )
-              ) : applicantsError ? (
-                <div className="grid grid-cols-12 items-center p-4 text-center text-red-600">
-                  <div className="col-span-12">
-                    Error loading applicants: {applicantsError.message}
-                  </div>
-                </div>
-              ) : applicants.length > 0 ? (
-                applicants.slice(0, 2).map((applicant: Applicant) => (
-                  <div
-                    key={applicant._id}
-                    className="grid grid-cols-12 items-center p-4 bg-[#E6F3FF] text-[#000000] text-xl"
-                  >
-                    <div className="col-span-2">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src="/applicant-profile.png" />
-                        <AvatarFallback>
-                          {applicant.userId.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                            .slice(0, 2)
-                            .toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-
-                    <div className="col-span-3 font-medium">
-                      {applicant.userId.name}
-                    </div>
-
-                    <div className="col-span-2">N/A</div>
-
-                    <div className="col-span-2">
-                      {formatDate(applicant.createdAt)}
-                    </div>
-
-                    <div className="col-span-3 flex space-x-2">
-                      <Button
-                        variant="outline"
-                        className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent text-sm h-8"
-                      >
-                        Applicant Details
-                      </Button>
-
-                      {/* Status Select */}
-                      <Select
-                        value={applicant.status}
-                        onValueChange={(value) =>
-                          statusMutation.mutate({
-                            applicantId: applicant._id,
-                            status: value,
-                          })
-                        }
-                        disabled={statusMutation.isPending}
-                      >
-                        <SelectTrigger className="w-40 h-8 text-sm border text-blue-600 border-blue-600">
-                          <SelectValue placeholder="Change Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {["pending", "shortlisted", "rejected"].map(
-                            (status) => (
-                              <SelectItem key={status} value={status}>
-                                {status.charAt(0).toUpperCase() +
-                                  status.slice(1)}
-                              </SelectItem>
-                            )
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))
+            <div className="flex justify-end">
+              {firstJobId ? (
+                <Link
+                  href={`/candidate-list/${firstJobId}`}
+                  className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer"
+                >
+                  See All
+                </Link>
               ) : (
-                <div className="grid grid-cols-12 items-center p-4 text-center">
-                  <div className="col-span-12">No applicants found</div>
-                </div>
+                <p className="text-base text-[#707070] font-semibold text-right mt-8">
+                  No jobs available to view applicants
+                </p>
               )}
             </div>
-
-            {/* See All */}
-            <div className="flex justify-end">
-              <Link
-                href={`/candidate-list/${firstJobId}`}
-                className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer"
-              >
-                See All
-              </Link>
-            </div>
           </div>
-        </section>
+        </section> */}
 
         {/* Delete Confirmation Modal */}
         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
@@ -1032,16 +807,33 @@ export default function RecruiterDashboard() {
                 onClick={handleConfirmDelete}
                 disabled={deleteMutation.isPending}
               >
-                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                {deleteMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Deleting...
+                  </span>
+                ) : (
+                  "Delete"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
         {/* Post A Job Button */}
-        <div className="text-center mt-10">
+        <div className="text-center mt-12">
           <Link href="/add-job">
-            <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-8 py-3 text-lg">
+            <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
               Post A Job
             </Button>
           </Link>

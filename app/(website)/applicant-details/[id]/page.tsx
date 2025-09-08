@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import DOMPurify from "dompurify"
 
 interface Resume {
   _id: string;
@@ -212,6 +213,7 @@ export default function ApplicantDetailsPage() {
   const handleResumeDownload = () => {
     if (resumeData && resumeData.file.length > 0) {
       const fileUrl = resumeData.file[0].url;
+      console.log(fileUrl)
       const filename = resumeData.file[0].filename;
 
       const link = document.createElement("a");
@@ -533,7 +535,15 @@ export default function ApplicantDetailsPage() {
               <CardTitle>About</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-700">{resume.aboutUs}</p>
+              <div
+                className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
+                // Only sanitize when description exists
+                dangerouslySetInnerHTML={{
+                  __html: resume.aboutUs
+                    ? DOMPurify.sanitize(resume.aboutUs)
+                    : "",
+                }}
+              />
             </CardContent>
           </Card>
         )}
