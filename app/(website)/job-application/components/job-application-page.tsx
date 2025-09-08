@@ -551,18 +551,6 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                           aria-label={`Select resume ${resume.name}`}
                         />
                       </RadioGroup>
-                      {resume.url && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          asChild
-                          aria-label={`View resume ${resume.name}`}
-                        >
-                          <Link href={resume.url} target="_blank">
-                            <Eye className="h-5 w-5 text-gray-500 hover:text-blue-600" />
-                          </Link>
-                        </Button>
-                      )}
                       <Button
                         variant="ghost"
                         size="icon"

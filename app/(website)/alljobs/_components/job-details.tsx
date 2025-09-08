@@ -1,55 +1,55 @@
-"use client"
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Button } from "@/components/ui/button"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, MapPin, DollarSign } from "lucide-react"
-import { useSession } from "next-auth/react"
-import { toast } from "sonner"
-import DOMPurify from "dompurify"
-import Link from "next/link"
-import Image from "next/image"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, MapPin, DollarSign } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import DOMPurify from "dompurify";
+import Link from "next/link";
+import Image from "next/image";
 
 interface CompanyData {
-  clogo?: string
-  cname?: string
-  userId: string
+  clogo?: string;
+  cname?: string;
+  userId: string;
 }
 
 interface JobDetailsData {
-  _id: string
-  userId: string
-  title: string
-  description: string
-  salaryRange: string
-  location: string
-  shift: string
-  responsibilities: string[]
-  educationExperience: string[]
-  companyId?: CompanyData
-  benefits: string[]
-  vacancy: number
-  employement_Type?: string // keeping API typo as-is
-  experience: number
-  deadline: string
-  status: string
-  compensation: string
+  _id: string;
+  userId: string;
+  title: string;
+  description: string;
+  salaryRange: string;
+  location: string;
+  shift: string;
+  responsibilities: string[];
+  educationExperience: string[];
+  companyId?: CompanyData;
+  benefits: string[];
+  vacancy: number;
+  employement_Type?: string; // keeping API typo as-is
+  experience: number;
+  deadline: string;
+  status: string;
+  compensation: string;
   applicationRequirement: Array<{
-    requirement: string
-    _id: string
-  }>
+    requirement: string;
+    _id: string;
+  }>;
   customQuestion: Array<{
-    question: string
-    _id: string
-  }>
-  createdAt: string
+    question: string;
+    _id: string;
+  }>;
+  createdAt: string;
 }
 
 interface JobDetailsResponse {
-  success: boolean
-  message: string
-  data: JobDetailsData
+  success: boolean;
+  message: string;
+  data: JobDetailsData;
 }
 
 interface Bookmark {
@@ -62,24 +62,24 @@ interface Bookmark {
 }
 
 interface BookmarkResponse {
-  success: boolean
-  message: string
+  success: boolean;
+  message: string;
   data: {
-    bookmarks: Bookmark[]
-    meta: Record<string, any>
-  }
+    bookmarks: Bookmark[];
+    meta: Record<string, any>;
+  };
 }
 
 interface JobDetailsProps {
-  jobId: string
-  onBack?: () => void
+  jobId: string;
+  onBack?: () => void;
 }
 
 export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
-  const { data: session, status: sessionStatus } = useSession()
-  const userId = session?.user?.id
-  const token = (session as any)?.accessToken as string | undefined
-  const queryClient = useQueryClient()
+  const { data: session, status: sessionStatus } = useSession();
+  const userId = session?.user?.id;
+  const token = (session as any)?.accessToken as string | undefined;
+  const queryClient = useQueryClient();
 
   // Fetch job details
   const {
@@ -89,42 +89,52 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   } = useQuery<JobDetailsResponse>({
     queryKey: ["job", jobId],
     queryFn: async () => {
-      if (!jobId || jobId === "undefined") throw new Error("Invalid job ID")
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`)
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
-      const data = await response.json()
-      if (!data.success) throw new Error(data.message || "Failed to fetch job details")
-      return data as JobDetailsResponse
+      if (!jobId || jobId === "undefined") throw new Error("Invalid job ID");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`
+      );
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      if (!data.success)
+        throw new Error(data.message || "Failed to fetch job details");
+      return data as JobDetailsResponse;
     },
     enabled: Boolean(jobId && jobId !== "undefined"),
-  })
+  });
 
   // Fetch bookmark status
-  const { data: bookmarkData, isLoading: isBookmarkLoading } = useQuery<BookmarkResponse>({
-    queryKey: ["bookmark", jobId, userId],
-    queryFn: async () => {
-      if (!userId || !token) {
-        return {
-          success: false,
-          message: "User not authenticated",
-          data: { bookmarks: [], meta: {} },
-        } as BookmarkResponse
-      }
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/user/${userId}` as string, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || "Failed to fetch bookmark status")
-      }
-      return (await response.json()) as BookmarkResponse
-    },
-    enabled: Boolean(userId && token && jobId && jobId !== "undefined"),
-  })
+  const { data: bookmarkData, isLoading: isBookmarkLoading } =
+    useQuery<BookmarkResponse>({
+      queryKey: ["bookmark", jobId, userId],
+      queryFn: async () => {
+        if (!userId || !token) {
+          return {
+            success: false,
+            message: "User not authenticated",
+            data: { bookmarks: [], meta: {} },
+          } as BookmarkResponse;
+        }
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/user/${userId}` as string,
+          {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(
+            errorData.message || "Failed to fetch bookmark status"
+          );
+        }
+        return (await response.json()) as BookmarkResponse;
+      },
+      enabled: Boolean(userId && token && jobId && jobId !== "undefined"),
+    });
 
   // Determine if the current job is bookmarked
-  const bookmarked = bookmarkData?.data?.bookmarks[0].bookmarked
+  const bookmarked = bookmarkData?.data?.bookmarks?.[0]?.bookmarked ?? false;
 
   // Toggle bookmark mutation
   const toggleBookmarkMutation = useMutation({
@@ -133,55 +143,60 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       userId,
       bookmarked,
     }: {
-      jobId: string
-      userId: string
-      bookmarked: boolean
+      jobId: string;
+      userId: string;
+      bookmarked: boolean;
     }) => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/update`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ jobId, userId, bookmarked: !bookmarked }),
-      })
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/update`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ jobId, userId, bookmarked: !bookmarked }),
+        }
+      );
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || `Failed to ${bookmarked ? "unsave" : "save"} job`)
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || `Failed to ${bookmarked ? "unsave" : "save"} job`
+        );
       }
-      return response.json()
+      return response.json();
     },
     onSuccess: () => {
-      toast.success(`Job ${bookmarked ? "unsaved" : "saved"} successfully!`)
-      queryClient.invalidateQueries({ queryKey: ["bookmark", jobId, userId] })
-      queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] })
+      toast.success(`Job ${bookmarked ? "unsaved" : "saved"} successfully!`);
+      queryClient.invalidateQueries({ queryKey: ["bookmark", jobId, userId] });
+      queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
     },
     onError: (e) => toast.error((e as Error).message),
-  })
+  });
 
   const handleToggleBookmark = () => {
     if (sessionStatus === "loading") {
-      toast.loading("Checking authentication...")
-      return
+      toast.loading("Checking authentication...");
+      return;
     }
     if (!userId) {
-      toast.error("Please log in to save this job.")
-      return
+      toast.error("Please log in to save this job.");
+      return;
     }
-    if (!jobData?.data?._id) return
+    if (!jobData?.data?._id) return;
     toggleBookmarkMutation.mutate({
       jobId: jobData.data._id,
       userId,
       bookmarked: bookmarked ?? false,
-    })
-  }
+    });
+  };
 
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
-    })
+    });
 
   if (isLoading) {
     return (
@@ -234,7 +249,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -242,32 +257,40 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       <div className="flex items-center justify-center min-h-[50vh] p-6">
         <div className="text-center max-w-md">
           <div className="text-base sm:text-lg text-red-600 mb-4">
-            {error instanceof Error ? error.message : "Error loading job details"}
+            {error instanceof Error
+              ? error.message
+              : "Error loading job details"}
           </div>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Try Again
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   if (!jobData?.data) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] p-6">
-        <div className="text-base sm:text-lg text-gray-600">No job data found</div>
+        <div className="text-base sm:text-lg text-gray-600">
+          No job data found
+        </div>
       </div>
-    )
+    );
   }
 
-  const job = jobData.data
+  const job = jobData.data;
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       {/* Top actions */}
       <div className="mb-4 sm:mb-6">
         <Button asChild variant="ghost" className="mb-2 sm:mb-0">
-          <Link href="/alljobs" onClick={onBack} className="inline-flex items-center">
+          <Link
+            href="/alljobs"
+            onClick={onBack}
+            className="inline-flex items-center"
+          >
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to jobs
           </Link>
         </Button>
@@ -281,7 +304,11 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-4">
               <div className="flex items-center gap-4 sm:gap-6">
                 <Link
-                  href={job.companyId ? `/companies-profile/${job.companyId.userId}` : "#"}
+                  href={
+                    job.companyId
+                      ? `/companies-profile/${job.companyId.userId}`
+                      : "#"
+                  }
                   aria-label="Company profile"
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
@@ -296,7 +323,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   </div>
                 </Link>
                 <div className="min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-bold leading-tight line-clamp-2 break-words">{job.title}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold leading-tight line-clamp-2 break-words">
+                    {job.title}
+                  </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:text-base">
                     {job.companyId ? (
                       <Link
@@ -309,7 +338,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       <span className="font-medium">Unknown Company</span>
                     )}
                     <span className="flex items-center text-[#707070]">
-                      <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" /> {job.location}
+                      <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" />{" "}
+                      {job.location}
                     </span>
                   </div>
                 </div>
@@ -334,7 +364,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
                   // Only sanitize when description exists
                   dangerouslySetInnerHTML={{
-                    __html: job.description ? DOMPurify.sanitize(job.description) : "",
+                    __html: job.description
+                      ? DOMPurify.sanitize(job.description)
+                      : "",
                   }}
                 />
               </CardContent>
@@ -351,7 +383,10 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   variant="outline"
                   onClick={handleToggleBookmark}
                   disabled={
-                    toggleBookmarkMutation.isPending || sessionStatus === "loading" || isBookmarkLoading || !userId
+                    toggleBookmarkMutation.isPending ||
+                    sessionStatus === "loading" ||
+                    isBookmarkLoading ||
+                    !userId
                   }
                   className="w-full bg-transparent"
                 >
@@ -360,8 +395,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       ? "Unsaving..."
                       : "Saving..."
                     : bookmarked
-                      ? "Unsave Job"
-                      : "Save Job"}
+                    ? "Unsave Job"
+                    : "Save Job"}
                 </Button>
                 <Button asChild className="w-full bg-primary hover:bg-blue-700">
                   <Link href={`/job-application?id=${job._id}`}>Apply Now</Link>
@@ -444,11 +479,17 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Deadline</span>
-                  <span className="font-medium">{formatDate(job.deadline)}</span>
+                  <span className="font-medium">
+                    {formatDate(job.deadline)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Status</span>
-                  <Badge variant={job.status === "active" ? "default" : "secondary"}>{job.status}</Badge>
+                  <Badge
+                    variant={job.status === "active" ? "default" : "secondary"}
+                  >
+                    {job.status}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -474,5 +515,5 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
