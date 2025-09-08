@@ -3,8 +3,10 @@
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   MapPin,
   Clock,
@@ -12,13 +14,26 @@ import {
   Briefcase,
   AwardIcon,
   SquarePen,
+  X,
+  Trash2,
+  Globe,
+  Linkedin,
+  Twitter,
+  LinkIcon,
+  ExternalLink,
 } from "lucide-react";
-import { Globe, Linkedin, Twitter, LinkIcon } from "lucide-react";
 import { FaUpwork } from "react-icons/fa6";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { VideoPlayer } from "@/components/company/video-player";
+import {
+  deleteElevatorPitchVideo,
+  uploadElevatorPitch,
+} from "@/lib/api-service";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface ResumeResponse {
   success: boolean;
@@ -100,31 +115,37 @@ interface ResumeAward {
   __v: number;
 }
 
+interface Social {
+  label: string;
+  href?: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+}
+
 interface MyResumeProps {
   resume: ResumeResponse["data"];
   onEdit: () => void;
 }
 
-interface PitchData {
-  _id: string;
-  userId: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
-  video: {
-    hlsUrl: string;
-    encryptionKeyUrl: string;
-  };
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  total: number;
-  data: PitchData[];
+function SocialIconLink({ href, label, icon: Icon }: Social) {
+  if (!href) return null;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Link
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition"
+          )}
+          aria-label={label}
+        >
+          <Icon className="h-4 w-4" />
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
@@ -132,48 +153,60 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const userId = session?.user?.id;
   const token = session?.accessToken;
 
-  // useEffect(() => {
-  //   const fetchPitchData = async () => {
-  //     if (!session?.user?.id || !token) {
-  //       setPitchLoading(false);
-  //       return;
-  //     }
+  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
+    useState<boolean>(!!resume.elevatorPitch[0]);
 
-  //     try {
-  //       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  //       const response = await fetch(
-  //         `${baseUrl}/elevator-pitch/all/elevator-pitches?type=candidate`,
-  //         {
-  //           headers: {
-  //             Authorization: `Bearer ${token}`,
-  //             "Content-Type": "application/json",
-  //           },
-  //         }
-  //       );
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: deleteElevatorPitchVideo,
+    onSuccess: () => {
+      toast.success("Elevator pitch deleted successfully!");
+      setIsElevatorPitchUploaded(false);
+      setElevatorPitchFile(null);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to delete elevator pitch.");
+      console.error("Error deleting elevator pitch:", error);
+    },
+  });
 
-  //       if (!response.ok) {
-  //         throw new Error("Failed to fetch pitch data");
-  //       }
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: uploadElevatorPitch,
+    onSuccess: () => {
+      toast.success("Elevator pitch uploaded successfully!");
+      setIsElevatorPitchUploaded(true);
+      setElevatorPitchFile(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+      setIsElevatorPitchUploaded(false);
+    },
+  });
 
-  //       const apiResponse: ApiResponse = await response.json();
-  //       const userPitch = apiResponse.data.find(
-  //         (pitch) => pitch.userId._id === session.user?.id
-  //       );
+  const handleElevatorPitchUpload = async () => {
+    if (elevatorPitchFile && userId) {
+      try {
+        await uploadElevatorPitchMutation.mutateAsync({
+          videoFile: elevatorPitchFile,
+          userId,
+        });
+      } catch (error) {
+        // Error toast is handled in mutation onError
+      }
+    } else {
+      toast.error("Please select a video file to upload");
+    }
+  };
 
-  //       if (userPitch) {
-  //         setPitchData(userPitch);
-  //       } else {
-  //         setPitchError("No pitch found for current user");
-  //       }
-  //     } catch (err) {
-  //       setPitchError(err instanceof Error ? err.message : "An error occurred");
-  //     } finally {
-  //       setPitchLoading(false);
-  //     }
-  //   };
-
-  //   fetchPitchData();
-  // }, [session, token]);
+  const handleDeleteElevatorPitch = async () => {
+    if (userId && resume.elevatorPitch[0]) {
+      try {
+        await deleteElevatorPitchMutation.mutateAsync(userId);
+      } catch (error) {
+        // Error toast is handled in mutation onError
+      }
+    }
+  };
 
   if (!resume || !resume.resume) {
     return (
@@ -193,14 +226,24 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     });
   };
 
-  const iconMap: Record<string, React.ElementType> = {
+  const allowedLinkTypes = ["website", "linkedin", "twitter", "upwork", "other"];
+
+  const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
     github: LinkIcon,
     website: Globe,
     linkedin: Linkedin,
     twitter: Twitter,
     upwork: FaUpwork,
-    other: LinkIcon,
+    other: ExternalLink,
   };
+
+  const socials: Social[] = resume.resume.sLink
+    ?.filter((link) => allowedLinkTypes.includes(link.label.toLowerCase()))
+    .map((link) => ({
+      label: link.label,
+      href: link.url,
+      icon: iconMap[link.label.toLowerCase()] || iconMap.other,
+    })) || [];
 
   return (
     <main className="min-h-screen">
@@ -212,7 +255,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               alt="Resume Header Background"
               width={1200}
               height={300}
-              className="w-full h-48 object-cover rounded-t-lg"
+              className="w-full h-48 object-cover"
             />
           ) : (
             <div className="w-full h-48 bg-gray-200 rounded-t-lg" />
@@ -255,27 +298,18 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     {resume.resume.title ? `${resume.resume.title}. ` : ""}
                     {resume.resume.firstName} {resume.resume.lastName}
                   </h2>
-                  <div className="flex gap-3 items-center mt-2">
-                    {resume.resume.sLink?.map((linkObj) => {
-                      const { label, url, _id } = linkObj;
-                      const Icon =
-                        iconMap[label.toLowerCase()] || iconMap.other;
-
-                      if (!url) return null;
-
-                      return (
-                        <Link
-                          key={_id}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 border border-[#9EC7DC] hover:border-blue-800 rounded p-2"
-                        >
-                          <Icon size={20} />
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  <TooltipProvider delayDuration={100}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {socials.map((s) => (
+                        <SocialIconLink
+                          key={s.label}
+                          href={s.href}
+                          label={s.label}
+                          icon={s.icon}
+                        />
+                      ))}
+                    </div>
+                  </TooltipProvider>
                 </div>
               </div>
 
@@ -326,19 +360,92 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
 
             {/* Elevator Pitch */}
             <div className="lg:pb-12 pb-5">
-              <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
+              <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
                 Elevator Pitch
               </h2>
-              <div className="rounded-lg">
-                {resume.elevatorPitch[0] ? (
-                  <VideoPlayer
-                    pitchId={resume.elevatorPitch[0]._id}
-                    className="w-full mx-auto"
-                  />
-                ) : (
-                  <div>No pitch available</div>
-                )}
-              </div>
+              <Card>
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <CardTitle>Elevator Pitch</CardTitle>
+                    {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={handleDeleteElevatorPitch}
+                        disabled={deleteElevatorPitchMutation.isPending}
+                        title="Delete Elevator Pitch"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Upload or view a short video introducing yourself.
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  {isElevatorPitchUploaded && resume.elevatorPitch[0] ? (
+                    <VideoPlayer
+                      pitchId={resume.elevatorPitch[0]._id}
+                      className="w-full mx-auto"
+                    />
+                  ) : (
+                    <>
+                      <ElevatorPitchUpload
+                        onFileSelect={setElevatorPitchFile}
+                        selectedFile={elevatorPitchFile}
+                      />
+                      <Button
+                        type="button"
+                        className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={handleElevatorPitchUpload}
+                        disabled={
+                          uploadElevatorPitchMutation.isPending ||
+                          !elevatorPitchFile
+                        }
+                      >
+                        {uploadElevatorPitchMutation.isPending ? (
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="animate-spin h-5 w-5 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Uploading...
+                          </div>
+                        ) : (
+                          "Upload Elevator Pitch"
+                        )}
+                      </Button>
+                      {isElevatorPitchUploaded && (
+                        <p className="mt-2 text-sm text-green-600">
+                          Elevator pitch uploaded successfully!
+                        </p>
+                      )}
+                      {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          No pitch available
+                        </p>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
             </div>
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">

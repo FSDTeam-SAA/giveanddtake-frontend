@@ -135,7 +135,7 @@ export default function MultiStepJobForm() {
       careerStage: undefined,
       categoryId: "",
       role: "",
-      compensation: "",
+      compensation: 0,
       expirationDate: "",
       companyUrl: "",
       jobDescription: "",
@@ -398,7 +398,7 @@ export default function MultiStepJobForm() {
         title: DOMPurify.sanitize(data.jobTitle),
         description: DOMPurify.sanitize(data.jobDescription),
         salaryRange: data.compensation
-          ? DOMPurify.sanitize(data.compensation)
+          ? DOMPurify.sanitize(String(data.compensation))
           : "$0 - $0",
         location: DOMPurify.sanitize(`${data.country}, ${data.region}`),
         shift: data.employmentType === "full-time" ? "Day" : "Flexible",
@@ -474,7 +474,11 @@ export default function MultiStepJobForm() {
           </div>
           <form onSubmit={form.handleSubmit(handlePublish)}>
             <JobPreview
-              formData={{ ...formData, category: selectedCategory?.name ?? "" }}
+              formData={{
+                ...formData,
+                category: selectedCategory?.name ?? "",
+                compensation: formData.compensation !== undefined ? String(formData.compensation) : undefined,
+              }}
               companyUrl={safeCompanyUrl}
               applicationRequirements={formData.applicationRequirements ?? []}
               customQuestions={(formData.customQuestions ?? []).map((q) => ({

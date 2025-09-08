@@ -29,6 +29,25 @@ import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getCompanyAccount,
+  getMyResume,
+  getRecruiterAccount,
+} from "@/lib/api-service";
+
+interface Notification {
+  id: string;
+  message: string;
+  timestamp: string;
+  isViewed: boolean;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: Notification[];
+}
 
 export function SiteHeader() {
   const { data: session, status } = useSession();
@@ -38,6 +57,71 @@ export function SiteHeader() {
   const [userName, setUserName] = useState("");
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
+  const userId = session?.user?.id;
+
+  // Fetch notifications using useQuery
+  const {
+    data: notifications = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery<Notification[], Error>({
+    queryKey: ["notifications", userId],
+    queryFn: async (): Promise<Notification[]> => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: ApiResponse = await response.json();
+      if (result.success) {
+        return result.data;
+      } else {
+        throw new Error(result.message || "Failed to fetch notifications.");
+      }
+    },
+    enabled: !!userId && status === "authenticated",
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  // Calculate unread notifications count
+  const unreadCount = notifications.filter(
+    (notification) => !notification.isViewed
+  ).length;
+
+  // Resume query (only if role is candidate)
+  const { data: myresume, isLoading: resumeLoading } = useQuery({
+    queryKey: ["my-resume"],
+    queryFn: getMyResume,
+    select: (data) => data?.data,
+    enabled: userRole === "candidate" && !!userId,
+  });
+
+  // Recruiter query (only if role is recruiter)
+  const { data: recruiter, isLoading: recruiterLoading } = useQuery({
+    queryKey: ["recruiter", userId],
+    queryFn: () => getRecruiterAccount(userId || ""),
+    select: (data) => data?.data,
+    enabled: userRole === "recruiter" && !!userId,
+  });
+
+  // Company query (only if role is neither candidate nor recruiter)
+  const { data: company, isLoading: companyLoading } = useQuery({
+    queryKey: ["company-account", userId],
+    queryFn: () => getCompanyAccount(userId || ""),
+    select: (data) => data?.data,
+    enabled: userRole !== "candidate" && userRole !== "recruiter" && !!userId,
+  });
 
   // Fetch user data from API
   useEffect(() => {
@@ -112,6 +196,20 @@ export function SiteHeader() {
 
   const links = getDashboardLinks();
 
+  // Helper function to determine Elevator Pitch link text
+  const getElevatorPitchText = () => {
+    if (
+      (userRole === "candidate" &&
+        !resumeLoading &&
+        myresume?.data?.resume == null) ||
+      (userRole === "recruiter" && !recruiterLoading && recruiter) ||
+      (userRole === "company" && !companyLoading && company)
+    ) {
+      return "Elevator Pitch";
+    }
+    return "Create Elevator Pitch";
+  };
+
   return (
     <div className="w-full">
       {/* Top Navbar */}
@@ -152,7 +250,6 @@ export function SiteHeader() {
           >
             Jobs
           </Link>
-
           {token && (
             <Link
               href="/elevator-pitch-resume"
@@ -162,10 +259,9 @@ export function SiteHeader() {
                   : "hover:text-[#2B7FD0]"
               }`}
             >
-              Elevator Pitch
+              {getElevatorPitchText()}
             </Link>
           )}
-
           <Link
             href="/blogs"
             className={`transition-colors focus:outline-none ${
@@ -266,11 +362,12 @@ export function SiteHeader() {
           </DropdownMenu>
         </nav>
 
-        {/* Right Section: Action Buttons & Avatar or Login (hidden on mobile when authenticated) */}
+        {/* Right Section: Action Buttons & Avatar or Login */}
         <div className="flex items-center gap-2 md:gap-4 md:ml-7">
           {status === "authenticated" ? (
             <>
-              <Link href="/notifications" className="hidden lg:block">
+              {/* Notifications Button with Unread Count Badge */}
+              <Link href="/notifications" className="hidden lg:block relative">
                 <Button
                   size="icon"
                   className="rounded-full bg-blue-500 text-white hover:bg-primary"
@@ -278,6 +375,14 @@ export function SiteHeader() {
                   <Bell className="h-5 w-5" />
                   <span className="sr-only">Notifications</span>
                 </Button>
+                {unreadCount > 0 && !isLoading && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-xs font-semibold">
+                    {unreadCount}
+                  </span>
+                )}
+                {isLoading && (
+                  <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-gray-300 animate-pulse"></span>
+                )}
               </Link>
               <Link href="/messages" className="hidden lg:block">
                 <Button
@@ -298,7 +403,6 @@ export function SiteHeader() {
                       </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
-
                   <DropdownMenuContent align="end">
                     {(userRole === "recruiter" || userRole === "company") && (
                       <>
@@ -317,7 +421,6 @@ export function SiteHeader() {
                             </Link>
                           </DropdownMenuItem>
                         )}
-
                         {links.elevatorPitch && (
                           <DropdownMenuItem
                             className={`p-0 ${
@@ -334,7 +437,6 @@ export function SiteHeader() {
                             </Link>
                           </DropdownMenuItem>
                         )}
-
                         {links.settings && (
                           <DropdownMenuItem
                             className={`p-0 ${
@@ -349,7 +451,6 @@ export function SiteHeader() {
                             </Link>
                           </DropdownMenuItem>
                         )}
-
                         <DropdownMenuItem className="p-0">
                           <Link
                             href={
@@ -364,7 +465,6 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                       </>
                     )}
-
                     {userRole === "candidate" && (
                       <>
                         <DropdownMenuItem
@@ -401,12 +501,11 @@ export function SiteHeader() {
                         </DropdownMenuItem>
                       </>
                     )}
-
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() =>
                         signOut({
-                          callbackUrl: "/", // force redirect here
+                          callbackUrl: "/",
                         })
                       }
                       className="cursor-pointer"
@@ -448,20 +547,26 @@ export function SiteHeader() {
                   className="h-[38px] w-[100px]"
                 />
               </Link>
-
               <div className="mb-6 md:hidden">
                 <GlobalSearch />
               </div>
-
               {status === "authenticated" && (
                 <div className="space-y-2">
-                  <Link href="/notifications" className="pb-2 ">
+                  <Link href="/notifications" className="pb-2 relative">
                     <Button
                       size="sm"
                       className="w-full bg-blue-500 text-white hover:bg-primary my-5"
                     >
                       <Bell className="h-4 w-4 mr-2" />
                       Notifications
+                      {unreadCount > 0 && !isLoading && (
+                        <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-semibold">
+                          {unreadCount}
+                        </span>
+                      )}
+                      {isLoading && (
+                        <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-300 animate-pulse"></span>
+                      )}
                     </Button>
                   </Link>
                   <Link href="/messages">
@@ -475,7 +580,6 @@ export function SiteHeader() {
                   </Link>
                 </div>
               )}
-
               <nav className="grid gap-4 text-sm font-medium">
                 <Link
                   href="/"
@@ -495,7 +599,9 @@ export function SiteHeader() {
                 >
                   Jobs
                 </Link>
-                {(userRole === "candidate" || userRole === "recruiter") && (
+                {(userRole === "candidate" ||
+                  userRole === "recruiter" ||
+                  userRole === "company") && (
                   <Link
                     href="/elevator-pitch-resume"
                     className={`transition-colors focus:outline-none ${
@@ -504,7 +610,7 @@ export function SiteHeader() {
                         : "hover:text-[#2B7FD0]"
                     }`}
                   >
-                    Elevator Pitch
+                    {getElevatorPitchText()}
                   </Link>
                 )}
                 <Link
@@ -517,7 +623,6 @@ export function SiteHeader() {
                 >
                   Blogs
                 </Link>
-
                 <div className="space-y-2">
                   <div className="font-medium text-gray-900">Help & Info</div>
                   <div className="pl-4 space-y-2">
@@ -543,7 +648,6 @@ export function SiteHeader() {
                     </Link>
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <div className="font-medium text-gray-900">More</div>
                   <div className="pl-4 space-y-2">
@@ -589,12 +693,11 @@ export function SiteHeader() {
                     </Link>
                   </div>
                 </div>
-
                 {status === "authenticated" ? (
                   <Button
                     onClick={() =>
                       signOut({
-                        callbackUrl: "/", // force redirect here
+                        callbackUrl: "/",
                       })
                     }
                     variant="outline"
