@@ -5,19 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, DollarSign } from "lucide-react";
-<<<<<<< HEAD
-import { useSession } from "next-auth/react";
-=======
 import { useSession, signIn } from "next-auth/react";
->>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import Link from "next/link";
 import Image from "next/image";
-<<<<<<< HEAD
-=======
 import * as React from "react";
->>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 
 interface CompanyData {
   clogo?: string;
@@ -300,8 +293,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   }
 
   const job = jobData.data;
-<<<<<<< HEAD
-=======
   const applicationLink = `/job-application?id=${job._id}`;
 
   const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -318,7 +309,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       void signIn(undefined, { callbackUrl: applicationLink });
     }, REDIRECT_DELAY_MS);
   };
->>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">

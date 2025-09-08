@@ -2,10 +2,10 @@ import { z } from "zod";
 
 export const jobSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required"),
-  department: z.string().optional(), // <-- optional
+  department: z.string().optional(),
   country: z.string().min(1, "Country is required"),
   region: z.string().min(1, "City is required"),
-  vacancy: z.string().min(1).regex(/^\d+$/, "Vacancy must be a number"),
+  vacancy: z.number().min(1, "Vacancy must be at least 1").max(50, "Vacancy cannot exceed 50"),
   employmentType: z.enum([
     "full-time",
     "part-time",
@@ -22,22 +22,22 @@ export const jobSchema = z.object({
     "Experienced Professional",
     "Career Returner",
   ]),
-  categoryId: z.string().min(1),
-  role: z.string().min(1),
-  compensation: z.number().optional(), // <-- optional
-  expirationDate: z.string(),
+  categoryId: z.string().min(1, "Category is required"),
+  role: z.string().min(1, "Role is required"),
+  compensation: z.number().optional(),
+  expirationDate: z.string().min(1, "Expiration date is required"),
   companyUrl: z.string().url("Invalid URL").optional(),
-  jobDescription: z.string().max(2000).min(1),
-  publishDate: z.string().optional(), // <-- optional
+  jobDescription: z.string().max(2000, "Description too long").min(1, "Description is required"),
+  publishDate: z.string().optional(),
   applicationRequirements: z
     .array(
       z.object({ id: z.string(), label: z.string(), required: z.boolean() })
     )
-    .optional(), // <-- optional
+    .optional(),
   customQuestions: z
     .array(z.object({ id: z.string(), question: z.string().optional() }))
-    .optional(), // <-- optional
-  userId: z.string().optional(), // <-- optional
+    .optional(),
+  userId: z.string().optional(),
 });
 
 export type JobFormData = z.infer<typeof jobSchema>;

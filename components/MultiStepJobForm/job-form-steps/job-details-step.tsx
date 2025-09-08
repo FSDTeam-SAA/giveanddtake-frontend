@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import type { JobFormData } from "@/types/job";
+
 interface JobCategory {
   _id: string;
   name: string;
@@ -46,6 +47,14 @@ interface Country {
   cities: string[];
 }
 
+interface JobCategoriesResponse {
+  success: boolean;
+  message: string;
+  data: {
+    category: JobCategory[];
+  };
+}
+
 interface JobDetailsStepProps {
   form: UseFormReturn<JobFormData>;
   onNext: () => void;
@@ -54,7 +63,7 @@ interface JobDetailsStepProps {
   setSelectedCountry: (country: string) => void;
   selectedCategoryRoles: string[];
   setSelectedCategoryRoles: (roles: string[]) => void;
-  jobCategories: any;
+  jobCategories: JobCategoriesResponse;
   categoriesLoading: boolean;
   categoriesError: string | null;
   countries: Country[];
@@ -82,9 +91,19 @@ export default function JobDetailsStep({
   return (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
-          Job Details
-        </h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Job Details</h2>
+        {categoriesError && (
+          <div className="text-red-600 mb-4 text-center">
+            {categoriesError}
+            <Button
+              variant="outline"
+              onClick={() => window.location.reload()}
+              className="ml-4"
+            >
+              Retry
+            </Button>
+          </div>
+        )}
         <div className="space-y-6">
           <FormField
             control={form.control}
@@ -257,9 +276,12 @@ export default function JobDetailsStep({
                   <Input
                     type="number"
                     min="1"
+                    max="50"
                     placeholder="Enter number of vacancies"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
@@ -410,9 +432,10 @@ export default function JobDetailsStep({
                           "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
                           !field.value && "text-muted-foreground"
                         )}
+                        disabled={categoriesLoading || categoriesError !== null}
                       >
                         {field.value
-                          ? jobCategories?.data.find(
+                          ? jobCategories?.data?.category?.find(
                               (category: JobCategory) =>
                                 category._id === field.value
                             )?.name
@@ -431,19 +454,29 @@ export default function JobDetailsStep({
                             : "No category found."}
                         </CommandEmpty>
                         <CommandGroup>
-                          {jobCategories?.data?.map((category: JobCategory) => (
-                            <CommandItem
-                              value={category.name}
-                              key={category._id}
-                              onSelect={() => {
-                                form.setValue("categoryId", category._id);
-                                form.setValue("role", "");
-                                setSelectedCategoryRoles(category.role || []);
-                              }}
-                            >
-                              {category.name}
-                            </CommandItem>
-                          ))}
+                          {jobCategories?.data?.category?.length > 0 ? (
+                            jobCategories.data.category.map(
+                              (category: JobCategory) => (
+                                <CommandItem
+                                  value={category.name}
+                                  key={category._id}
+                                  onSelect={() => {
+                                    form.setValue("categoryId", category._id);
+                                    form.setValue("role", "");
+                                    setSelectedCategoryRoles(
+                                      category.role || []
+                                    );
+                                  }}
+                                >
+                                  {category.name}
+                                </CommandItem>
+                              )
+                            )
+                          ) : (
+                            <CommandEmpty>
+                              No categories available.
+                            </CommandEmpty>
+                          )}
                         </CommandGroup>
                       </CommandList>
                     </Command>
@@ -518,9 +551,11 @@ export default function JobDetailsStep({
                 <FormControl>
                   <Input
                     type="number"
-                    placeholder="e.g., $50,000 - $70,000"
+                    placeholder="e.g., 50000"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    value={field.value ?? ""}
                   />
                 </FormControl>
                 <FormMessage />
