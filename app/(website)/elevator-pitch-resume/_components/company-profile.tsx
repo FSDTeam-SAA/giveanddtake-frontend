@@ -97,7 +97,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   });
   // ----------------------------------------------------------------------
 
-  console.log("JJJJJJJJJJJJ",jobs)
+  console.log("JJJJJJJJJJJJ", jobs);
 
   useEffect(() => {
     const fetchPitchData = async () => {
@@ -224,11 +224,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 Manage Jobs
               </Button>
             </Link>
-            <Link href="/add-job">
+            {/* <Link href="/add-job">
               <Button className="bg-primary hover:bg-primary/90 text-white px-6">
                 Post a Job
               </Button>
-            </Link>
+            </Link> */}
             <Link
               href={`/elevator-pitch-resume/edit-company/${company.userId}`}
             >

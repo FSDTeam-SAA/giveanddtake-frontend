@@ -194,7 +194,7 @@ export function ProfileSidebar() {
               alt={session?.user?.name || "User Avatar"}
             />
             <AvatarFallback className="text-xl bg-gray-200">
-              {session?.user?.name?.[0]?.toUpperCase() || "U"}
+              {userData?.data?.name[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <button
@@ -215,10 +215,10 @@ export function ProfileSidebar() {
           />
         </div>
         <h3 className="font-semibold text-lg sm:text-xl text-gray-900 text-center">
-          {session?.user?.name || "User"}
+          {userData.data.name || "User"}
         </h3>
         <p className="text-xs sm:text-sm text-gray-600 mt-1 text-center break-all">
-          {session?.user?.email || "No email provided"}
+          {userData.data.email || "No email provided"}
         </p>
       </div>
 
