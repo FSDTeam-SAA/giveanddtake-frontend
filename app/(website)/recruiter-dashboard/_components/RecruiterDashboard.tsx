@@ -10,7 +10,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PlayIcon, ChevronLeft, ChevronRight, Eye, Trash2 } from "lucide-react";
+import {
+  PlayIcon,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Trash2,
+  Mail,
+  Globe,
+} from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
@@ -174,6 +182,7 @@ interface PitchData {
 
 interface PitchApiResponse {
   success: boolean;
+  message: string;
   total: number;
   data: PitchData[];
 }
@@ -471,79 +480,95 @@ export default function RecruiterDashboard() {
                 </Button>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6">
-              <div className="flex flex-col gap-6">
-                <div className="flex items-start space-x-3">
-                  {recruiterAccountLoading ? (
-                    <Skeleton className="w-[50px] h-[48px]" />
-                  ) : (
-                    <Image
-                      src={
-                        recruiterAccount?.data?.companyId.clogo ??
-                        "/placeholder.png"
-                      }
-                      alt="Company Logo"
-                      width={50}
-                      height={48}
-                      className="mt-1 w-[50px] h-[48px]"
-                    />
-                  )}
-                  <div>
-                    <p className="font-medium text-xl text-[#000000]">
-                      {recruiterAccountLoading ? (
-                        <Skeleton className="h-6 w-32" />
-                      ) : (
-                        `${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`
-                      )}
-                    </p>
-                    <p className="text-lg text-[#707070]">
-                      {recruiterAccountLoading ? (
-                        <Skeleton className="h-5 w-48" />
-                      ) : (
-                        recruiterAccount?.data?.companyId.cname
-                      )}
-                    </p>
+            <div className="">
+              <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
+                <div className="col-span-1 md:col-span-2">
+                  <div className="flex items-start space-x-3">
+                    {recruiterAccountLoading ? (
+                      <Skeleton className="w-[50px] h-[48px]" />
+                    ) : (
+                      <Image
+                        src={
+                          recruiterAccount?.data?.companyId.clogo ??
+                          "/placeholder.png"
+                        }
+                        alt="Company Logo"
+                        width={50}
+                        height={48}
+                        className="mt-1 w-[170px] h-[170px]"
+                      />
+                    )}
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium text-xl text-[#000000]">
+                          {recruiterAccountLoading ? (
+                            <Skeleton className="h-6 w-32" />
+                          ) : (
+                            `${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`
+                          )}
+                        </p>
+                        <p className="text-base text-blue-600">
+                          {recruiterAccountLoading ? (
+                            <Skeleton className="h-5 w-48" />
+                          ) : (
+                            recruiterAccount?.data?.companyId.cname
+                          )}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        {/* Email */}
+                        <div className="flex items-center gap-3">
+                          <Mail className="text-gray-600 h-5 w-5" />
+                          {recruiterAccountLoading ? (
+                            <Skeleton className="h-5 w-64" />
+                          ) : (
+                            <p className="text-base text-gray-700">
+                              {recruiterAccount?.data?.emailAddress ??
+                                "No email available"}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Website */}
+                        <div className="flex items-center gap-3">
+                          <Globe className="text-gray-700 h-5 w-5" />
+                          {recruiterAccountLoading ? (
+                            <Skeleton className="h-5 w-48" />
+                          ) : recruiterAccount?.data?.companyId.links
+                              ?.length ? (
+                            <Link
+                              href={recruiterAccount.data.companyId.links[0]}
+                              className="text-base text-gray-700 hover:underline"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {recruiterAccount.data.companyId.links[0]}
+                            </Link>
+                          ) : (
+                            <p className="text-base text-gray-700">
+                              No website available
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div>
+                <div className="col-span-1 md:col-span-4">
                   <p className="font-medium text-xl text-[#000000]">About Us</p>
                   {recruiterAccountLoading ? (
                     <Skeleton className="h-4 w-full" />
                   ) : (
-                    <p className="text-base text-[#707070] leading-relaxed">
-                      {recruiterAccount?.data?.bio ??
-                        "No description available"}
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col gap-6">
-                <div>
-                  <p className="font-medium text-xl text-[#000000]">Email</p>
-                  {recruiterAccountLoading ? (
-                    <Skeleton className="h-5 w-64" />
-                  ) : (
-                    <p className="text-lg text-[#707070]">
-                      {recruiterAccount?.data?.emailAddress ??
-                        "No email available"}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium text-xl text-[#131313]">Website</p>
-                  {recruiterAccountLoading ? (
-                    <Skeleton className="h-5 w-48" />
-                  ) : recruiterAccount?.data?.companyId.links?.length ? (
-                    <Link
-                      href={recruiterAccount.data.companyId.links[0]}
-                      className="text-lg text-[#707070] underline"
-                    >
-                      {recruiterAccount.data.companyId.links[0]}
-                    </Link>
-                  ) : (
-                    <p className="text-lg text-[#707070]">
-                      No website available
-                    </p>
+                    // <p className="text-base text-[#707070] leading-relaxed">
+                    //   {recruiterAccount?.data?.bio ??
+                    //     "No description available"}
+                    // </p>
+                    <div
+                      className="text-gray-700 mt-2 prose"
+                      dangerouslySetInnerHTML={{
+                        __html: recruiterAccount?.data?.bio ?? "",
+                      }}
+                    />
                   )}
                 </div>
               </div>
