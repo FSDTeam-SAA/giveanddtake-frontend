@@ -6,6 +6,9 @@ import { MapPin, DollarSign } from "lucide-react";
 import Link from "next/link";
 import DOMPurify from "dompurify";
 import Image from "next/image";
+import { useSession, signIn } from "next-auth/react";
+import { toast } from "sonner"; // ✅ correct Sonner import
+import { useState } from "react";
 
 interface CompanyId {
   _id?: string;
@@ -35,6 +38,46 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, onSelect, variant }: JobCardProps) {
+  const { data: session, status } = useSession();
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const role = session?.user.role as string | undefined;
+  const isUnauthed = status === "unauthenticated";
+  const isCandidate = role === "candidate";
+  const isRecruiterOrCompany = role === "recruiter" || role === "company";
+
+  // Show Apply for: unauthenticated OR candidate
+  // Hide Apply for: recruiter/company (and any other authenticated non-candidate roles)
+  const canSeeApply = isUnauthed || isCandidate;
+
+  const applicationLink = `/job-application?id=${job._id}`;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect();
+  };
+
+const TOAST_DURATION_MS = 2200;   // how long the toast stays
+const REDIRECT_DELAY_MS = 1800; 
+
+const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+  e.stopPropagation();
+  if (isRedirecting) return;
+
+  setIsRedirecting(true);
+
+  toast("Please log in as a candidate to apply", {
+    description: "You’ll be redirected to sign in.",
+    duration: TOAST_DURATION_MS,
+  });
+
+  // let the toast sit for a moment before redirecting
+  setTimeout(() => {
+    // default provider & callback back to the application page
+    void signIn(undefined, { callbackUrl: applicationLink });
+  }, REDIRECT_DELAY_MS);
+};
+
   const getCompanyInitials = (title: string) => {
     return title
       .split(" ")
@@ -67,9 +110,33 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     } ago`;
   };
 
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onSelect();
+  const ApplyButton = () => {
+    if (!canSeeApply || isRecruiterOrCompany) return null;
+
+    // Unauthenticated: show button -> toast + redirect
+    if (isUnauthed) {
+      return (
+        <Button
+          variant="outline"
+          onClick={handleUnauthedApply}
+          className="text-black text-sm md:text-base font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg"
+        >
+          Apply
+        </Button>
+      );
+    }
+
+    // Candidate: normal link to application page
+    return (
+      <Link href={applicationLink}>
+        <Button
+          variant="outline"
+          className="text-black text-sm md:text-base font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg"
+        >
+          Apply
+        </Button>
+      </Link>
+    );
   };
 
   if (variant === "suggested") {
@@ -107,14 +174,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                   </h3>
                 </div>
                 <div className="flex gap-2">
-                  <Link href={`/job-application?id=${job._id}`}>
-                    <Button
-                      variant="outline"
-                      className="text-black text-sm font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg"
-                    >
-                      Apply
-                    </Button>
-                  </Link>
+                  <ApplyButton />
                   <Button className="bg-primary hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
                     {job.employement_Type || "Not Specified"}
                   </Button>
@@ -205,14 +265,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Link href={`/job-application?id=${job._id}`}>
-                  <Button
-                    variant="outline"
-                    className="text-black text-base font-normal border border-[#707070] px-4 py-2 rounded-lg"
-                  >
-                    Apply
-                  </Button>
-                </Link>
+                <ApplyButton />
               </div>
             </div>
             <div className="py-4">

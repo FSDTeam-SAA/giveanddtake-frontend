@@ -5,11 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MapPin, DollarSign } from "lucide-react";
+<<<<<<< HEAD
 import { useSession } from "next-auth/react";
+=======
+import { useSession, signIn } from "next-auth/react";
+>>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import Link from "next/link";
 import Image from "next/image";
+<<<<<<< HEAD
+=======
+import * as React from "react";
+>>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 
 interface CompanyData {
   clogo?: string;
@@ -80,6 +88,18 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const userId = session?.user?.id;
   const token = (session as any)?.accessToken as string | undefined;
   const queryClient = useQueryClient();
+
+  // role & auth
+  const role = session?.user.role as string | undefined;
+  const isUnauthed = sessionStatus === "unauthenticated";
+  const isCandidate = role === "candidate";
+  const isRecruiterOrCompany = role === "recruiter" || role === "company";
+  const canSeeApply = isUnauthed || isCandidate; // show Apply to guests & candidates
+
+  // toast + redirect timing
+  const TOAST_DURATION_MS = 2200;
+  const REDIRECT_DELAY_MS = 1800;
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   // Fetch job details
   const {
@@ -280,6 +300,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   }
 
   const job = jobData.data;
+<<<<<<< HEAD
+=======
+  const applicationLink = `/job-application?id=${job._id}`;
+
+  const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isRedirecting) return;
+    setIsRedirecting(true);
+
+    toast("Please log in as a candidate to apply", {
+      description: "You’ll be redirected to sign in.",
+      duration: TOAST_DURATION_MS,
+    });
+
+    setTimeout(() => {
+      void signIn(undefined, { callbackUrl: applicationLink });
+    }, REDIRECT_DELAY_MS);
+  };
+>>>>>>> 53b23ccf601143c81f5fa2503b1b3158a87fe136
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -362,7 +401,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <CardContent>
                 <div
                   className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
-                  // Only sanitize when description exists
                   dangerouslySetInnerHTML={{
                     __html: job.description
                       ? DOMPurify.sanitize(job.description)
@@ -398,9 +436,29 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     ? "Unsave Job"
                     : "Save Job"}
                 </Button>
-                <Button asChild className="w-full bg-primary hover:bg-blue-700">
-                  <Link href={`/job-application?id=${job._id}`}>Apply Now</Link>
-                </Button>
+
+                {/* Apply button logic */}
+                {canSeeApply && !isRecruiterOrCompany ? (
+                  isUnauthed ? (
+                    <Button
+                      className="w-full bg-primary hover:bg-blue-700"
+                      onClick={handleUnauthedApply}
+                      disabled={isRedirecting}
+                    >
+                      {isRedirecting ? "Redirecting..." : "Apply Now"}
+                    </Button>
+                  ) : (
+                    // Candidate
+                    <Button
+                      asChild
+                      className="w-full bg-primary hover:bg-blue-700"
+                    >
+                      <Link href={`/job-application?id=${job._id}`}>
+                        Apply Now
+                      </Link>
+                    </Button>
+                  )
+                ) : null}
               </div>
             </div>
           </Card>
