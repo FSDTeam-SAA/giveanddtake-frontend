@@ -301,7 +301,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     setIsRedirecting(true);
 
     toast("Please log in as a candidate to apply", {
-      description: "You’ll be redirected to sign in.",
+      description: "You’ll now be redirected to sign in.",
       duration: TOAST_DURATION_MS,
     });
 

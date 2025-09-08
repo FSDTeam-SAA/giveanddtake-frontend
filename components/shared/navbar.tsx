@@ -22,6 +22,7 @@ import {
   Settings,
   Bookmark,
   CreditCard,
+  User,
 } from "lucide-react";
 import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { GlobalSearch } from "../global-search";
@@ -476,7 +477,7 @@ export function SiteHeader() {
                             href={getProfileLink()}
                             className="flex items-center w-full px-2 py-1.5"
                           >
-                            <UserPen className="mr-2 h-4 w-4" /> Profile
+                            <User className="mr-2 h-4 w-4" /> Profile
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem
@@ -523,7 +524,7 @@ export function SiteHeader() {
                   isActive("/login") ? "bg-[#2B7FD0]" : ""
                 }`}
               >
-                Login
+                Login/Sign-Up
               </Button>
             </Link>
           )}
@@ -709,7 +710,7 @@ export function SiteHeader() {
                 ) : (
                   <Link href="/login">
                     <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
-                      Login
+                      Login/Sign-Up
                     </Button>
                   </Link>
                 )}
