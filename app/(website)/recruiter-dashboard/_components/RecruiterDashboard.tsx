@@ -457,12 +457,22 @@ export default function RecruiterDashboard() {
         </h1>
 
         {/* Recruiter Information Section */}
-        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
+        <section className="mb-12 bg-white md:p-6 rounded-lg shadow-sm">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="flex items-center justify-between mb-4 border-b border-[#999999] pb-3">
-              <h2 className="text-2xl font-bold text-[#131313]">
-                Recruiter Information
-              </h2>
+            <div className="md:flex md:items-center md:justify-between mb-4 border-b border-[#999999] pb-3 space-y-2">
+              <div>
+                <h2 className="text-2xl font-bold text-[#131313]">
+                  Recruiter Information
+                </h2>
+              </div>
+              {/* Post A Job Button */}
+              <div className="">
+                <Link href="/add-job">
+                  <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
+                    Post A Job
+                  </Button>
+                </Link>
+              </div>
             </div>
             {recruiterAccountError && (
               <div className="text-center text-red-600 mb-4">
@@ -481,9 +491,9 @@ export default function RecruiterDashboard() {
               </div>
             )}
             <div className="">
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
-                <div className="col-span-1 md:col-span-2">
-                  <div className="flex items-start space-x-3">
+              <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+                <div className="col-span-1 lg:col-span-2">
+                  <div className="md:flex space-x-3">
                     {recruiterAccountLoading ? (
                       <Skeleton className="w-[50px] h-[48px]" />
                     ) : (
@@ -554,7 +564,7 @@ export default function RecruiterDashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="col-span-1 md:col-span-4">
+                <div className="col-span-1 lg:col-span-4">
                   <p className="font-medium text-xl text-[#000000]">About Us</p>
                   {recruiterAccountLoading ? (
                     <Skeleton className="h-4 w-full" />
@@ -613,7 +623,7 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Your Jobs Section */}
-        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
+        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm ">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl text-[#000000] font-semibold">Your Jobs</h2>
           </div>
@@ -631,7 +641,7 @@ export default function RecruiterDashboard() {
               </Button>
             </div>
           )}
-          <div className="rounded-lg overflow-hidden overflow-x-auto">
+          <div className="rounded-lg w-full overflow-hidden overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -642,13 +652,13 @@ export default function RecruiterDashboard() {
                     Status
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
-                    Deadline
+                    Publish Date
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Applicants list
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
-                    Deactivation Date
+                    Deadline
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Actions
@@ -690,7 +700,7 @@ export default function RecruiterDashboard() {
                         {job.status.charAt(0).toUpperCase() +
                           job.status.slice(1)}
                       </TableCell>
-                      <TableCell>{formatDate(job.deadline)}</TableCell>
+                      <TableCell>{formatDate(job.publishDate)}</TableCell>
                       <TableCell>
                         <Link
                           href={`/candidate-list/${job._id}`}
@@ -748,7 +758,7 @@ export default function RecruiterDashboard() {
             </Table>
           </div>
           {jobs.length > itemsPerPage && (
-            <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center justify-center gap-2 mt-6">
               <Button
                 variant="outline"
                 onClick={handlePreviousTable}
@@ -756,7 +766,6 @@ export default function RecruiterDashboard() {
                 className="flex items-center gap-2 bg-transparent"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
               </Button>
               <div className="flex items-center gap-2">
                 {Array.from({ length: totalPagesTable }, (_, i) => i + 1).map(
@@ -780,7 +789,6 @@ export default function RecruiterDashboard() {
                 disabled={currentPageTable === totalPagesTable}
                 className="flex items-center gap-2 bg-transparent"
               >
-                Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -854,15 +862,6 @@ export default function RecruiterDashboard() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Post A Job Button */}
-        <div className="text-center mt-12">
-          <Link href="/add-job">
-            <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
-              Post A Job
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   );

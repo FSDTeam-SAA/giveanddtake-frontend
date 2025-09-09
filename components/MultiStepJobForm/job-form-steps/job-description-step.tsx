@@ -1,23 +1,23 @@
-"use client"
+"use client";
 
-import type { UseFormReturn } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Info } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import TextEditor from "../TextEditor"
-import CustomCalendar from "../CustomCalendar"
+import type { UseFormReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import TextEditor from "../TextEditor";
+import CustomCalendar from "../CustomCalendar";
 import type { JobFormData } from "@/types/job";
 
 interface JobDescriptionStepProps {
-  form: UseFormReturn<JobFormData>
-  onNext: () => void
-  onCancel: () => void
-  publishNow: boolean
-  setPublishNow: (value: boolean) => void
-  selectedDate: Date | null
-  setSelectedDate: (date: Date | null) => void
+  form: UseFormReturn<JobFormData>;
+  onNext: () => void;
+  onCancel: () => void;
+  publishNow: boolean;
+  setPublishNow: (value: boolean) => void;
+  selectedDate: Date | null;
+  setSelectedDate: (date: Date | null) => void;
 }
 
 export default function JobDescriptionStep({
@@ -39,18 +39,32 @@ export default function JobDescriptionStep({
               <FormField
                 control={form.control}
                 name="jobDescription"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-700">
-                      Job Description<span className="text-red-500 ml-1">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <TextEditor value={field.value} onChange={field.onChange} />
-                    </FormControl>
-                    <p className="text-sm text-gray-600">Character count: {field.value.length}/2000</p>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Calculate word count
+                  const wordCount = field.value
+                    ? field.value
+                        .replace(/<[^>]+>/g, "")
+                        .trim()
+                        .split(/\s+/)
+                        .filter((word) => word.length > 0).length
+                    : 0;
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-700">
+                        Job Description<span className="text-red-500 ml-1">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <TextEditor value={field.value} onChange={field.onChange} />
+                      </FormControl>
+                      <div className="text-sm text-gray-600 flex items-center gap-4">
+                        <p>Character count: {field.value.length}/2000,</p>
+                        <p>Word count: {wordCount}/20 minimum</p>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </CardContent>
@@ -104,8 +118,8 @@ export default function JobDescriptionStep({
                           <CustomCalendar
                             selectedDate={field.value ? new Date(field.value) : undefined}
                             onDateSelect={(date) => {
-                              setSelectedDate(date as any)
-                              field.onChange(date?.toISOString())
+                              setSelectedDate(date as any);
+                              field.onChange(date?.toISOString());
                             }}
                           />
                         </FormControl>
@@ -138,5 +152,5 @@ export default function JobDescriptionStep({
         </Button>
       </div>
     </div>
-  )
+  );
 }
