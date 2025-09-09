@@ -2,7 +2,6 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SocialIcon } from "@/components/company/social-icon";
@@ -283,113 +282,6 @@ export default function CompanyProfilePage() {
               className="text-gray-700 mt-2 prose"
               dangerouslySetInnerHTML={{ __html: company.aboutUs }}
             />
-          </div>
-        </div>
-
-        {/* Company Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-900">Website</h3>
-              <a
-                href="https://www.buzzdesignagency.com/"
-                className="text-blue-600 hover:underline text-sm"
-              >
-                https://www.buzzdesignagency.com/
-              </a>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-900">Industry</h3>
-              <p className="text-gray-700 text-sm">Design Services</p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2 text-gray-900">Company size</h3>
-              <p className="text-gray-700 text-sm">51-200 employees</p>
-            </div>
-          </div>
-          <div className="space-y-6">
-            <div>
-              <h3 className="font-semibold mb-3 text-gray-900">Specialties</h3>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  Web Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  UI/UX Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  User Interface Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Product Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Visual Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Art Direction
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Interaction Design
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Branding
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Mobile Apps
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Front-end Development
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Design System
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Animation
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Video Production
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Style Guide
-                </Badge>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3 text-gray-900">Locations</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Dubai, AE</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 h-auto text-blue-600 text-xs"
-                  >
-                    Get Direction
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Dubai, AE</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 h-auto text-blue-600 text-xs"
-                  >
-                    Get Direction
-                  </Button>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-700 text-sm">Dubai, AE</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="p-0 h-auto text-blue-600 text-xs"
-                  >
-                    Get Direction
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 
