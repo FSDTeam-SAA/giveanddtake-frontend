@@ -377,7 +377,7 @@ export default function MultiStepJobForm() {
 
       await postJob(postData);
       toast.success("Job published successfully!");
-      router.push("/jobs");
+      router.push("/recruiter-dashboard");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to publish job");
     } finally {
