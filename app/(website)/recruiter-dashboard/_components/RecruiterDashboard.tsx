@@ -697,10 +697,26 @@ export default function RecruiterDashboard() {
                     >
                       <TableCell className="font-medium">{job.title}</TableCell>
                       <TableCell>
-                        {job.status.charAt(0).toUpperCase() +
-                          job.status.slice(1)}
+                        <span
+                          className={`text-sm font-medium ${
+                            job.adminApprove &&
+                            new Date(job.publishDate as string) <= new Date()
+                              ? "text-green-600"
+                              : "text-yellow-600"
+                          }`}
+                        >
+                          {new Date(job.publishDate as string) > new Date()
+                            ? "Scheduled"
+                            : job.adminApprove
+                            ? "Live"
+                            : "Scheduled"}{" "}
+                          {job.adminApprove &&
+                          new Date(job.publishDate as string) > new Date()
+                            ? "(Admin Approved)"
+                            : ""}
+                        </span>
                       </TableCell>
-                      <TableCell>{formatDate(job.publishDate)}</TableCell>
+                      <TableCell>{formatDate(job.publishDate as string)}</TableCell>
                       <TableCell>
                         <Link
                           href={`/candidate-list/${job._id}`}
@@ -714,15 +730,6 @@ export default function RecruiterDashboard() {
                       </TableCell>
                       <TableCell>{formatDate(job.deadline)}</TableCell>
                       <TableCell className="flex items-center gap-4">
-                        <span
-                          className={`text-sm font-medium ${
-                            job.adminApprove
-                              ? "text-green-600"
-                              : "text-yellow-600"
-                          }`}
-                        >
-                          {job.adminApprove ? "Live" : "Scheduled"}
-                        </span>
                         <Link
                           href={`/single-job/${job._id}`}
                           className="text-[#000000] hover:text-blue-600 transition-colors"
