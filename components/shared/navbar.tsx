@@ -198,18 +198,18 @@ export function SiteHeader() {
   const links = getDashboardLinks();
 
   // Helper function to determine Elevator Pitch link text
-  const getElevatorPitchText = () => {
-    if (
-      (userRole === "candidate" &&
-        !resumeLoading &&
-        myresume?.data?.resume == null) ||
-      (userRole === "recruiter" && !recruiterLoading && recruiter) ||
-      (userRole === "company" && !companyLoading && company)
-    ) {
-      return "Elevator Pitch";
-    }
-    return "Create Elevator Pitch";
-  };
+  // const getElevatorPitchText = () => {
+  //   if (
+  //     (userRole === "candidate" &&
+  //       !resumeLoading &&
+  //       myresume?.data?.resume == null) ||
+  //     (userRole === "recruiter" && !recruiterLoading && recruiter) ||
+  //     (userRole === "company" && !companyLoading && company)
+  //   ) {
+  //     return "Elevator Pitch";
+  //   }
+  //   return "Create Elevator Pitch";
+  // };
 
   return (
     <div className="w-full">
@@ -233,7 +233,7 @@ export function SiteHeader() {
           <GlobalSearch />
         </div>
 
-        {/* Navigation Links (moved to right, hidden on smaller screens) */}
+        {/* Navigation Links (desktop) */}
         <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
           <Link
             href="/"
@@ -251,26 +251,37 @@ export function SiteHeader() {
           >
             Jobs
           </Link>
-          {token && (
-            <Link
-              href="/elevator-pitch-resume"
-              className={`transition-colors focus:outline-none ${
-                isActive("/elevator-pitch-resume")
-                  ? "text-[#2B7FD0]"
-                  : "hover:text-[#2B7FD0]"
-              }`}
-            >
-              {getElevatorPitchText()}
-            </Link>
-          )}
+
+          <Link
+            href="/elevator-pitch-resume"
+            className={`transition-colors focus:outline-none ${
+              isActive("/elevator-pitch-resume")
+                ? "text-[#2B7FD0]"
+                : "hover:text-[#2B7FD0]"
+            }`}
+          >
+            Elevator Pitch
+          </Link>
+
+          {/* Blogs (ensure href and isActive match) */}
           <Link
             href="/blogs"
             className={`transition-colors focus:outline-none ${
-              isActive("/blog") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
+              isActive("/blogs") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
             }`}
           >
             Blogs
           </Link>
+          {/* About Us moved out of More */}
+          <Link
+            href="/about-us"
+            className={`transition-colors focus:outline-none ${
+              isActive("/about-us") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
+            }`}
+          >
+            About Us
+          </Link>
+
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -303,6 +314,8 @@ export function SiteHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* More dropdown WITHOUT About Us */}
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -317,15 +330,6 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                className={`p-0 ${
-                  isActive("/about-us") ? "text-[#2B7FD0]" : ""
-                }`}
-              >
-                <Link href="/about-us" className="w-full px-2 py-1.5 block">
-                  About Us
-                </Link>
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className={`p-0 ${
                   isActive("/careers") ? "text-[#2B7FD0]" : ""
@@ -528,6 +532,8 @@ export function SiteHeader() {
               </Button>
             </Link>
           )}
+
+          {/* Mobile Sheet */}
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">
@@ -535,126 +541,117 @@ export function SiteHeader() {
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[250px] sm:w-[300px]">
-              <Link
-                href="/"
-                className="flex items-center gap-2 font-bold text-lg mb-6"
-              >
-                <Image
-                  src={"/assets/evp-logo.jpg"}
-                  alt="Logo"
-                  width={500}
-                  height={500}
-                  className="h-[38px] w-[100px]"
-                />
-              </Link>
-              <div className="mb-6 md:hidden">
-                <GlobalSearch />
-              </div>
-              {status === "authenticated" && (
-                <div className="space-y-2">
-                  <Link href="/notifications" className="pb-2 relative">
-                    <Button
-                      size="sm"
-                      className="w-full bg-blue-500 text-white hover:bg-primary my-5"
-                    >
-                      <Bell className="h-4 w-4 mr-2" />
-                      Notifications
-                      {unreadCount > 0 && !isLoading && (
-                        <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-semibold">
-                          {unreadCount}
-                        </span>
-                      )}
-                      {isLoading && (
-                        <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-300 animate-pulse"></span>
-                      )}
-                    </Button>
-                  </Link>
-                  <Link href="/messages">
-                    <Button
-                      size="sm"
-                      className="w-full bg-blue-500 text-white hover:bg-primary mb-5"
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" />
-                      Messages
-                    </Button>
-                  </Link>
-                </div>
-              )}
-              <nav className="grid gap-4 text-sm font-medium">
+            <SheetContent
+              side="left"
+              className="w-[300px]  p-0"
+              onOpenAutoFocus={(e) => e.preventDefault()} // prevent mobile keyboard
+            >
+              <div className="h-full flex flex-col overflow-hidden">
                 <Link
                   href="/"
-                  className={`transition-colors focus:outline-none ${
-                    isActive("/") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
-                  }`}
+                  className="flex items-center gap-2 font-bold text-lg mb-6 px-4 pt-4"
                 >
-                  Home
+                  <Image
+                    src={"/assets/evp-logo.jpg"}
+                    alt="Logo"
+                    width={500}
+                    height={500}
+                    className="h-[38px] w-[100px]"
+                  />
                 </Link>
-                <Link
-                  href="/alljobs"
-                  className={`transition-colors focus:outline-none ${
-                    isActive("/alljobs")
-                      ? "text-[#2B7FD0]"
-                      : "hover:text-[#2B7FD0]"
-                  }`}
-                >
-                  Jobs
-                </Link>
-                {(userRole === "candidate" ||
-                  userRole === "recruiter" ||
-                  userRole === "company") && (
-                  <Link
-                    href="/elevator-pitch-resume"
-                    className={`transition-colors focus:outline-none ${
-                      isActive("/elevator-pitch-resume")
-                        ? "text-[#2B7FD0]"
-                        : "hover:text-[#2B7FD0]"
-                    }`}
-                  >
-                    {getElevatorPitchText()}
-                  </Link>
-                )}
-                <Link
-                  href="/blog"
-                  className={`transition-colors focus:outline-none ${
-                    isActive("/blog")
-                      ? "text-[#2B7FD0]"
-                      : "hover:text-[#2B7FD0]"
-                  }`}
-                >
-                  Blogs
-                </Link>
-                <div className="space-y-2">
-                  <div className="font-medium text-gray-900">Help & Info</div>
-                  <div className="pl-4 space-y-2">
-                    <Link
-                      href="/faq"
-                      className={`block transition-colors focus:outline-none ${
-                        isActive("/faq")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      FAQ
-                    </Link>
-                    <Link
-                      href="/contact-us"
-                      className={`block transition-colors focus:outline-none ${
-                        isActive("/contact-us")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Contact Us
-                    </Link>
-                  </div>
+
+                {/* Mobile-only search */}
+                <div className="mb-6 md:hidden px-4">
+                  {/* If GlobalSearch supports autoFocus, pass false. Otherwise, ensure it doesn't auto-focus internally. */}
+                  <GlobalSearch />
                 </div>
-                <div className="space-y-2">
-                  <div className="font-medium text-gray-900">More</div>
-                  <div className="pl-4 space-y-2">
+
+                {/* Scrollable content area */}
+                <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-24">
+                  {status === "authenticated" && (
+                    <div className="space-y-2 mb-6">
+                      <Link href="/notifications" className="relative block">
+                        <Button
+                          size="sm"
+                          className="w-full bg-blue-500 text-white hover:bg-primary my-5"
+                        >
+                          <Bell className="h-4 w-4 mr-2" />
+                          Notifications
+                          {unreadCount > 0 && !isLoading && (
+                            <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-semibold">
+                              {unreadCount}
+                            </span>
+                          )}
+                          {isLoading && (
+                            <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-300 animate-pulse"></span>
+                          )}
+                        </Button>
+                      </Link>
+                      <Link href="/messages" className="block">
+                        <Button
+                          size="sm"
+                          className="w-full bg-blue-500 text-white hover:bg-primary mb-5"
+                        >
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Messages
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+
+                  {/* Mobile nav links */}
+                  <nav className="grid gap-4 text-sm font-medium">
+                    <Link
+                      href="/"
+                      className={`transition-colors focus:outline-none ${
+                        isActive("/")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Home
+                    </Link>
+                    <Link
+                      href="/alljobs"
+                      className={`transition-colors focus:outline-none ${
+                        isActive("/alljobs")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Jobs
+                    </Link>
+                    {(userRole === "candidate" ||
+                      userRole === "recruiter" ||
+                      userRole === "company") && (
+                      <Link
+                        href="/elevator-pitch-resume"
+                        className={`transition-colors focus:outline-none ${
+                          isActive("/elevator-pitch-resume")
+                            ? "text-[#2B7FD0]"
+                            : "hover:text-[#2B7FD0]"
+                        }`}
+                      >
+                        Elevator Pitch
+                      </Link>
+                    )}
+
+                    {/* Blogs (consistent path) */}
+                    <Link
+                      href="/blogs"
+                      className={`transition-colors focus:outline-none ${
+                        isActive("/blogs")
+                          ? "text-[#2B7FD0]"
+                          : "hover:text-[#2B7FD0]"
+                      }`}
+                    >
+                      Blogs
+                    </Link>
+
+                    {/* About Us as a normal link (moved out of More) */}
                     <Link
                       href="/about-us"
-                      className={`block transition-colors focus:outline-none ${
+                      className={`transition-colors focus:outline-none ${
                         isActive("/about-us")
                           ? "text-[#2B7FD0]"
                           : "hover:text-[#2B7FD0]"
@@ -662,59 +659,97 @@ export function SiteHeader() {
                     >
                       About Us
                     </Link>
-                    <Link
-                      href="/careers"
-                      className={`block transition-colors focus:outline-none ${
-                        isActive("/careers")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Careers
-                    </Link>
-                    <Link
-                      href="/privacy-policy"
-                      className={`block transition-colors focus:outline-none ${
-                        isActive("/privacy-policy")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Privacy Policy
-                    </Link>
-                    <Link
-                      href="/terms-condition"
-                      className={`block transition-colors focus:outline-none ${
-                        isActive("/terms-condition")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Terms and Conditions
-                    </Link>
-                  </div>
+
+                    {/* Help & Info */}
+                    <div className="space-y-2">
+                      <div className="font-medium text-gray-900">
+                        Help & Info
+                      </div>
+                      <div className="pl-4 space-y-2">
+                        <Link
+                          href="/faq"
+                          className={`block transition-colors focus:outline-none ${
+                            isActive("/faq")
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          FAQ
+                        </Link>
+                        <Link
+                          href="/contact-us"
+                          className={`block transition-colors focus:outline-none ${
+                            isActive("/contact-us")
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          Contact Us
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* More (without About Us) */}
+                    <div className="space-y-2">
+                      <div className="font-medium text-gray-900">More</div>
+                      <div className="pl-4 space-y-2">
+                        <Link
+                          href="/careers"
+                          className={`block transition-colors focus:outline-none ${
+                            isActive("/careers")
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          Careers
+                        </Link>
+                        <Link
+                          href="/privacy-policy"
+                          className={`block transition-colors focus:outline-none ${
+                            isActive("/privacy-policy")
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          Privacy Policy
+                        </Link>
+                        <Link
+                          href="/terms-condition"
+                          className={`block transition-colors focus:outline-none ${
+                            isActive("/terms-condition")
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          Terms and Conditions
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Auth button */}
+                    {status === "authenticated" ? (
+                      <Button
+                        onClick={() =>
+                          signOut({
+                            callbackUrl: "/",
+                          })
+                        }
+                        variant="outline"
+                        className="w-full mt-4"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </Button>
+                    ) : (
+                      <Link href="/login">
+                        <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
+                          Login/Sign-Up
+                        </Button>
+                      </Link>
+                    )}
+                  </nav>
                 </div>
-                {status === "authenticated" ? (
-                  <Button
-                    onClick={() =>
-                      signOut({
-                        callbackUrl: "/",
-                      })
-                    }
-                    variant="outline"
-                    className="w-full mt-4"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Logout
-                  </Button>
-                ) : (
-                  <Link href="/login">
-                    <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
-                      Login/Sign-Up
-                    </Button>
-                  </Link>
-                )}
-              </nav>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
