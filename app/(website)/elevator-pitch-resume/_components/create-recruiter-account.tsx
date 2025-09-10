@@ -823,9 +823,9 @@ export default function CreateRecruiterAccountForm() {
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zip Code</FormLabel>
+                      <FormLabel>Zip/Postal Code </FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter zip code" {...field} />
+                        <Input placeholder="Enter Zip/Postal Code" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

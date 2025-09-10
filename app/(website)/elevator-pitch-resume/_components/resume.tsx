@@ -32,7 +32,12 @@ import {
   uploadElevatorPitch,
 } from "@/lib/api-service";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface ResumeResponse {
@@ -236,9 +241,18 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     });
   };
 
-  const allowedLinkTypes = ["website", "linkedin", "twitter", "upwork", "other"];
+  const allowedLinkTypes = [
+    "website",
+    "linkedin",
+    "twitter",
+    "upwork",
+    "other",
+  ];
 
-  const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+  const iconMap: Record<
+    string,
+    React.ComponentType<React.SVGProps<SVGSVGElement>>
+  > = {
     github: LinkIcon,
     website: Globe,
     linkedin: Linkedin,
@@ -247,13 +261,14 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     other: ExternalLink,
   };
 
-  const socials: Social[] = resume.resume.sLink
-    ?.filter((link) => allowedLinkTypes.includes(link.label.toLowerCase()))
-    .map((link) => ({
-      label: link.label,
-      href: link.url,
-      icon: iconMap[link.label.toLowerCase()] || iconMap.other,
-    })) || [];
+  const socials: Social[] =
+    resume.resume.sLink
+      ?.filter((link) => allowedLinkTypes.includes(link.label.toLowerCase()))
+      .map((link) => ({
+        label: link.label,
+        href: link.url,
+        icon: iconMap[link.label.toLowerCase()] || iconMap.other,
+      })) || [];
 
   return (
     <main className="min-h-screen">
@@ -462,11 +477,10 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
             {isDeleteModalOpen && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Confirm Delete
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
                   <p className="text-sm text-gray-600 mb-6">
-                    Are you sure you want to delete your elevator pitch? This action cannot be undone.
+                    Are you sure you want to delete your elevator pitch? This
+                    action cannot be undone.
                   </p>
                   <div className="flex justify-end gap-4">
                     <Button
@@ -625,36 +639,38 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Awards & Honours
-              </h3>
-              <div className="space-y-6">
-                {resume.awardsAndHonors?.map((award) => (
-                  <div
-                    key={award._id}
-                    className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                  >
-                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <AwardIcon className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 text-lg">
-                        {award.title}
-                      </h4>
-                      <p className="text-gray-500 text-sm">
-                        {formatDate(award.programeDate)}
-                      </p>
-                      {award.description && (
-                        <p className="text-gray-600 text-sm">
-                          {award.description}
+            {resume.awardsAndHonors?.length > 0 && (
+              <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                  Awards & Honours
+                </h3>
+                <div className="space-y-6">
+                  {resume.awardsAndHonors?.map((award) => (
+                    <div
+                      key={award._id}
+                      className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+                    >
+                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <AwardIcon className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 text-lg">
+                          {award.title}
+                        </h4>
+                        <p className="text-gray-500 text-sm">
+                          {formatDate(award.programeDate)}
                         </p>
-                      )}
+                        {award.description && (
+                          <p className="text-gray-600 text-sm">
+                            {award.description}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+                  ))}
+                </div>
+              </section>
+            )}
           </CardContent>
         </Card>
       </div>
