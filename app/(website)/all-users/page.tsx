@@ -6,7 +6,7 @@ import {
   Building2,
   UserCheck,
   MapPin,
-  Phone,
+  // Phone, // unused for now
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,8 +20,9 @@ interface SearchUser {
   role: "candidate" | "recruiter" | "company";
   phoneNum: string;
   address: string;
+  position?: string | null; // ← added
   avatar: {
-    url: string;
+    url?: string | null; // ← safe optional
   };
 }
 
@@ -51,16 +52,22 @@ export default function AllUsersPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/fetch/all/users`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/fetch/all/users`,
+        { cache: "no-store" }
       );
       const result: SearchResult = await response.json();
 
-      if (result.success) {
+      if (result.success && Array.isArray(result.data)) {
         setUsers(result.data);
         setFilteredUsers(result.data);
+      } else {
+        setUsers([]);
+        setFilteredUsers([]);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setIsLoading(false);
     }
@@ -71,12 +78,19 @@ export default function AllUsersPage() {
 
     // Filter by search query
     if (searchQuery.trim()) {
-      filtered = filtered.filter(
-        (user) =>
-          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter((user) => {
+        const name = user.name?.toLowerCase() ?? "";
+        const role = user.role?.toLowerCase() ?? "";
+        const address = user.address?.toLowerCase() ?? "";
+        const position = user.position?.toLowerCase() ?? "";
+        return (
+          name.includes(q) ||
+          address.includes(q) ||
+          position.includes(q) ||
+          role.includes(q)
+        );
+      });
     }
 
     // Filter by role
@@ -91,6 +105,8 @@ export default function AllUsersPage() {
     const profileUrl =
       user.role === "company"
         ? `/companies-profile/${user._id}`
+        : user.role === "recruiter"
+        ? `/recruiters-profile/${user._id}`
         : `/candidate-profile/${user._id}`;
     router.push(profileUrl);
   };
@@ -105,23 +121,6 @@ export default function AllUsersPage() {
         return <Building2 className="h-5 w-5 text-purple-600" />;
       default:
         return <User className="h-5 w-5 text-gray-600" />;
-    }
-  };
-
-  const getRoleLabel = (role: string) => {
-    return role.charAt(0).toUpperCase() + role.slice(1);
-  };
-
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case "candidate":
-        return "bg-green-100 text-green-800";
-      case "recruiter":
-        return "bg-blue-100 text-blue-800";
-      case "company":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -199,13 +198,13 @@ export default function AllUsersPage() {
                     <Avatar className="h-12 w-12">
                       <AvatarImage
                         src={
-                          user.avatar.url ||
+                          user.avatar?.url ||
                           "/placeholder.svg?height=48&width=48"
                         }
                         alt={user.name}
                       />
                       <AvatarFallback className="bg-[#4B98DE] text-white font-semibold">
-                        {user.name.charAt(0).toUpperCase()}
+                        {user.name?.charAt(0)?.toUpperCase() || "U"}
                       </AvatarFallback>
                     </Avatar>
 
@@ -217,25 +216,22 @@ export default function AllUsersPage() {
                         {getRoleIcon(user.role)}
                       </div>
 
-                      <div className="mb-3">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(
-                            user.role
-                          )}`}
-                        >
-                          {getRoleLabel(user.role)}
-                        </span>
-                      </div>
-
+                      {/* Position • Address (no role shown here) */}
                       <div className="space-y-2 text-sm text-gray-600">
                         <div className="flex items-center gap-2">
                           <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="truncate">{user.address}</span>
+                          <span className="truncate">
+                            {user.position
+                              ? `${user.position} • ${user.address}`
+                              : user.address}
+                          </span>
                         </div>
-                        {/* <div className="flex items-center gap-2">
+                        {/* If you ever need phone back, uncomment below:
+                        <div className="flex items-center gap-2">
                           <Phone className="h-4 w-4 text-gray-400 flex-shrink-0" />
                           <span className="truncate">{user.phoneNum}</span>
-                        </div> */}
+                        </div>
+                        */}
                       </div>
                     </div>
                   </div>

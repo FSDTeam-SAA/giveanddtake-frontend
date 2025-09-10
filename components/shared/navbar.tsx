@@ -260,7 +260,7 @@ export function SiteHeader() {
                 : "hover:text-[#2B7FD0]"
             }`}
           >
-            Elevator Pitch
+            My EVP Profile
           </Link>
 
           {/* Blogs (ensure href and isActive match) */}
@@ -632,7 +632,7 @@ export function SiteHeader() {
                             : "hover:text-[#2B7FD0]"
                         }`}
                       >
-                        Elevator Pitch
+                        My EVP Profile
                       </Link>
                     )}
 
