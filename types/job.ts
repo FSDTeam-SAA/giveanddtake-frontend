@@ -26,7 +26,7 @@ export const jobSchema = z.object({
     "Career Returner",
   ]),
   categoryId: z.string().min(1, "Category is required"),
-  role: z.string().min(1, "Role is required"),
+  role: z.string(),
   compensation: z.number().optional(),
   expirationDate: z.string().min(1, "Expiration date is required"),
   companyUrl: z.string().url("Invalid URL").optional(),

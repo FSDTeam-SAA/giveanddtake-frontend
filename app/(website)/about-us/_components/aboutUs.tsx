@@ -202,7 +202,12 @@ export default function AboutUsPage() {
               What We Offer
             </h2>
             <p className="text-base text-[#545454] leading-relaxed">
-              We offer the opportunity for each candidate, i.e., including technologists, doctors, tradesmen, pilots, project managers, event planners, administrators, chefs, etc.  to pitch yourself to companies, and for cross-sector companies to pitch their corporate culture to candidates. After all, it’s often said that interviews are two-way meetings between a candidate and the hiring company!
+              We offer the opportunity for each candidate, i.e., including
+              technologists, doctors, tradesmen, pilots, project managers, event
+              planners, administrators, chefs, etc. to pitch yourself to
+              companies, and for cross-sector companies to pitch their corporate
+              culture to candidates. After all, it’s often said that interviews
+              are two-way meetings between a candidate and the hiring company!
             </p>
           </div>
 
@@ -211,18 +216,13 @@ export default function AboutUsPage() {
             <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-4">
               Unique Business Content
             </h2>
-            <p className="text-base text-[#545454] leading-relaxed">Our platform is the first global portal where job candidates can:</p>
-            <ul className="list-disc list-inside text-base text-[#545454] leading-relaxed space-y-2 text-justify">
-              <li>Upload your free 30-second candidate elevator video pitch (pay to upgrade).</li>
-              <li>
-                Apply for jobs seamlessly.
-              </li>
-              <li>
-                Receive timely application status updates through our intuitive recruiters & companies  one-click feedback  dashboard.
-              </li>
-              <li>Stay confident—your dream job is on its way!</li>
-            </ul>
-            <p className="text-base text-[#545454] leading-relaxed">Do stay confident as you’re only one pitch away from your dream job!</p>
+            <p className="text-base text-[#545454] leading-relaxed">
+              Our platform is the first global point where you can apply for
+              jobs seamlessly with your elevator video pitch and, receive timely
+              positive or constructive feedback through our intuitive EVP
+              dashboard. Stay confident, your dream job is a pitch away so don’t
+              give up!
+            </p>
           </div>
         </div>
       </div>

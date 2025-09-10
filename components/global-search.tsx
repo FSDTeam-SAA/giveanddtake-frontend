@@ -16,6 +16,7 @@ interface SearchUser {
   avatar?: {
     url?: string;
   };
+  position?: string;
 }
 
 interface SearchResult {
@@ -24,7 +25,8 @@ interface SearchResult {
   data?: SearchUser[];
 }
 
-const safeLower = (v: unknown) => (typeof v === "string" ? v.toLowerCase() : "");
+const safeLower = (v: unknown) =>
+  typeof v === "string" ? v.toLowerCase() : "";
 
 export function GlobalSearch() {
   const [query, setQuery] = useState("");
@@ -57,7 +59,10 @@ export function GlobalSearch() {
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -202,7 +207,9 @@ export function GlobalSearch() {
               {results.map((user) => {
                 const id = user._id ?? Math.random().toString(36).slice(2);
                 const displayName = user?.name || "Unnamed";
-                const firstLetter = (user?.name?.charAt(0) || "U").toUpperCase();
+                const firstLetter = (
+                  user?.name?.charAt(0) || "U"
+                ).toUpperCase();
                 const avatarUrl =
                   user?.avatar?.url || "/placeholder.svg?height=40&width=40";
 
@@ -231,8 +238,13 @@ export function GlobalSearch() {
                           {getRoleIcon(user?.role as string | undefined)}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {getRoleLabel(user?.role as string | undefined)} •{" "}
-                          {user?.address || "N/A"}
+                          {user?.position ? (
+                            <>
+                              {user.position} • {user.address || "N/A"}
+                            </>
+                          ) : (
+                            user?.address || "N/A"
+                          )}
                         </div>
                       </div>
                     </div>
@@ -246,13 +258,16 @@ export function GlobalSearch() {
                   className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
                   onClick={handleSeeAllUsers}
                 >
-                  See all users
+                  See All Results
                 </Button>
               </div>
             </>
           ) : (
             <div className="px-4 py-8 text-center text-gray-500">
-              <Search className="h-8 w-8 mx-auto mb-2 text-gray-300" aria-hidden />
+              <Search
+                className="h-8 w-8 mx-auto mb-2 text-gray-300"
+                aria-hidden
+              />
               <p className="text-sm">
                 No results found{query ? ` for "${query}"` : ""}.
               </p>
@@ -265,7 +280,7 @@ export function GlobalSearch() {
                   className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
                   onClick={handleSeeAllUsers}
                 >
-                  See all users
+                  See All Results
                 </Button>
               </div>
             </div>

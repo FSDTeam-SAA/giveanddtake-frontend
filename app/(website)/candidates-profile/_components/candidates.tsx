@@ -261,14 +261,15 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           {/* Social Links */}
           <div className="flex gap-2 mt-3">
             {resume.sLink?.map((link) => (
-              <SocialIcon
-                key={link._id}
-                url={link.url}
-              />
+              <SocialIcon key={link._id} url={link.url} />
             ))}
           </div>
           <div className="mt-4">
-            <Button variant="outline" size="sm" className="bg-blue-600 hover:bg-blue-700 transition-colors text-white">
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700 transition-colors text-white"
+            >
               Follow
             </Button>
           </div>
@@ -287,16 +288,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                   {resume.city && `${resume.city}, `} {resume.country || "N/A"}
                 </p>
               </div>
-              <div>
-                <h3 className="font-semibold text-lg">Phone</h3>
-                <p className="text-gray-500">{resume.phoneNumber}</p>
-              </div>
             </div>
             <div>
-              <div>
-                <h3 className="font-semibold text-lg">Email</h3>
-                <p className="text-gray-500">{resume.email}</p>
-              </div>
               <div>
                 <h3 className="font-semibold text-lg">Website</h3>
                 <p className="text-blue-600">
