@@ -1,19 +1,21 @@
-import { User } from "next-auth";
+import { User as NextAuthUser } from "next-auth";
 
 declare module "next-auth" {
-  interface User {
+  interface User extends NextAuthUser {
     accessToken?: string;
     role?: string;
+    isValid?: boolean; // ⬅️ new
   }
 
   interface Session {
     accessToken?: string;
     user: {
-      image: string;
+      image: string; // (you already require this elsewhere)
       id: string;
       email: string;
       name?: string;
       role?: string;
+      isValid?: boolean; // ⬅️ new
     };
   }
 }
@@ -23,5 +25,6 @@ declare module "next-auth/jwt" {
     accessToken?: string;
     role?: string;
     userId?: string;
+    isValid?: boolean; // ⬅️ new
   }
 }

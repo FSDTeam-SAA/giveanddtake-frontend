@@ -2,7 +2,8 @@
 
 import type React from "react";
 
-import {  useState } from "react";
+import { useState } from "react";
+
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
 
 
   const handleSubmit = async (e: React.FormEvent) => {

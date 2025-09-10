@@ -19,9 +19,7 @@ const handler = NextAuth({
             `${process.env.NEXT_PUBLIC_BASE_URL}/user/login`,
             {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 email: credentials.email,
                 password: credentials.password,
@@ -32,12 +30,15 @@ const handler = NextAuth({
           const data = await response.json();
 
           if (response.ok && data.success) {
+            const userData = data.data;
             return {
-              id: data.data._id,
+              id: userData._id,
               email: credentials.email,
-              name: credentials.email.split("@")[0], // Extract name from email since it's not in response
-              accessToken: data.data.accessToken,
-              role: data.data.role,
+              name: credentials.email.split("@")[0],
+              accessToken: userData.accessToken,
+              role: userData.role,
+              isValid: userData.isValid, // ⬅️ new
+              // refreshToken: userData.refreshToken, // (optional) add if you want it later
             };
           }
           return null;
@@ -54,13 +55,17 @@ const handler = NextAuth({
         token.accessToken = user.accessToken;
         token.role = user.role;
         token.userId = user.id;
+        token.isValid = user.isValid; // ⬅️ new
       }
       return token;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken;
-      session.user.role = token.role;
+      session.accessToken = token.accessToken as string | undefined;
+      session.user.role = token.role as string | undefined;
       session.user.id = token.userId as string;
+      // make isValid available on the client session
+      (session.user as typeof session.user & { isValid?: boolean }).isValid =
+        token.isValid as boolean | undefined; // ⬅️ new
       return session;
     },
   },
