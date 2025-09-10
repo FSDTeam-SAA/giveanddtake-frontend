@@ -263,9 +263,6 @@ export default function JobApplicantsPage() {
                 Name
               </TableHead>
               <TableHead className="text-base text-[#2B7FD0] font-bold">
-                Experience
-              </TableHead>
-              <TableHead className="text-base text-[#2B7FD0] font-bold">
                 Applied
               </TableHead>
               <TableHead className="text-base text-[#2B7FD0] font-bold">
@@ -337,7 +334,6 @@ export default function JobApplicantsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{application.experience || "N/A"}</TableCell>
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link

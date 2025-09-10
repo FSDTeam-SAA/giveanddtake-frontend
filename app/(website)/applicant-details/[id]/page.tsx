@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import DOMPurify from "dompurify"
+import DOMPurify from "dompurify";
 
 interface Resume {
   _id: string;
@@ -213,7 +213,7 @@ export default function ApplicantDetailsPage() {
   const handleResumeDownload = () => {
     if (resumeData && resumeData.file.length > 0) {
       const fileUrl = resumeData.file[0].url;
-      console.log(fileUrl)
+      console.log(fileUrl);
       const filename = resumeData.file[0].filename;
 
       const link = document.createElement("a");
@@ -720,11 +720,9 @@ export default function ApplicantDetailsPage() {
 
         <div className="flex items-center justify-center gap-4 mt-6">
           <div>
-            <Link href="/message">
-              <Button variant="outline" className="bg-[#2B7FD0] text-white">
-                Message
-              </Button>
-            </Link>
+            <Button variant="outline" className="bg-[#2B7FD0] text-white">
+              Message
+            </Button>
           </div>
           <div>
             <Select
