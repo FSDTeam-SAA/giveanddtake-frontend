@@ -920,9 +920,9 @@ export default function UpdateResumeForm({
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zip Code</FormLabel>
+                      <FormLabel>Zip/Postal Code</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Zip Code" {...field} />
+                        <Input placeholder="Enter Zip/Postal Code" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

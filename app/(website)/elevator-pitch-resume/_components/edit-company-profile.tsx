@@ -575,7 +575,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           Zip Code / Postal Code*
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter Zip Code" />
+                          <Input {...field} placeholder="Enter Zip/Postal Code" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

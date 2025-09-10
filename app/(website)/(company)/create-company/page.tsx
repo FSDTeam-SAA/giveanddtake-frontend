@@ -355,7 +355,7 @@ export default function CreateCompanyPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Enter code" />
+                          <SelectValue placeholder="Enter Zip/Postal Code" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

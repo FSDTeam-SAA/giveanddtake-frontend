@@ -1079,7 +1079,7 @@ export default function CreateResumeForm() {
                     <FormItem>
                       <FormLabel>Zip Code / Postal Code</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter code" {...field} />
+                        <Input placeholder="Enter Zip/Postal Code" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
