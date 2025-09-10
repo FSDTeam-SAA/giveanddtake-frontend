@@ -274,7 +274,7 @@ export default function CompanyProfilePage() {
       </div>
 
       {/* About Us */}
-      <div className="space-y-12 pb-24 pt-8 max-w-6xl mx-auto">
+      <div className="space-y-12 pb-24 pt-8  mx-auto">
         <div>
           <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
           <div className="text-gray-700 leading-relaxed text-sm">
@@ -292,7 +292,7 @@ export default function CompanyProfilePage() {
               Awards and Honors
             </h2>
             <div className="space-y-4">
-              {honors.map((honor) => (
+              {honors.map((honor: Honor) => (
                 <Card key={honor._id}>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-gray-900">

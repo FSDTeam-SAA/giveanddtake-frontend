@@ -26,6 +26,9 @@ import {
 } from "@/components/ui/select";
 import DOMPurify from "dompurify";
 
+import { VideoPlayer } from "@/components/company/video-player";
+
+
 interface Resume {
   _id: string;
   userId: string;
@@ -512,7 +515,7 @@ export default function ApplicantDetailsPage() {
                     <span className="font-medium">Years of Experience:</span>{" "}
                     {getYearsOfExperience(experiences)}
                   </div>
-                  {resume.email && (
+                  {/* {resume.email && (
                     <div>
                       <span className="font-medium">Email:</span> {resume.email}
                     </div>
@@ -522,7 +525,7 @@ export default function ApplicantDetailsPage() {
                       <span className="font-medium">Contact:</span>{" "}
                       {resume.phoneNumber}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>
@@ -548,34 +551,16 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {elevatorPitch.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Elevator Pitch</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4">
-                {elevatorPitch.map((pitch) => (
-                  <div key={pitch._id} className="flex items-start gap-4">
-                    {pitch.videoUrl && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => window.open(pitch.videoUrl, "_blank")}
-                      >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <div>
-                      <p className="text-gray-700">
-                        {pitch.description || "No description provided"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {elevatorPitch && (
+          <div className="rounded-lg py-6 bg-gray-50">
+            <h2 className="text-xl font-semibold mb-4 text-gray-900">
+              Elevator Pitch
+            </h2>
+            <VideoPlayer
+              pitchId={elevatorPitch[0]._id}
+              className="w-full mx-auto"
+            />
+          </div>
         )}
 
         {experiences.length > 0 && (
