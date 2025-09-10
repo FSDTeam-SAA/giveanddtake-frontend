@@ -18,7 +18,6 @@ import {
   LogOut,
   LayoutDashboard,
   Video,
-  UserPlus as UserPen,
   Settings,
   Bookmark,
   CreditCard,
@@ -59,6 +58,20 @@ export function SiteHeader() {
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
   const userId = session?.user?.id;
+  const isValid = session?.user?.isValid === true ? true : false;
+
+  const getUpgradePath = () => {
+    switch (userRole) {
+      case "recruiter":
+        return "/recruiter-pricing";
+      case "candidate":
+        return "/user-pricing";
+      case "company":
+        return "/company-pricing";
+      default:
+        return null;
+    }
+  };
 
   // Fetch notifications using useQuery
   const {
@@ -197,20 +210,6 @@ export function SiteHeader() {
 
   const links = getDashboardLinks();
 
-  // Helper function to determine Elevator Pitch link text
-  // const getElevatorPitchText = () => {
-  //   if (
-  //     (userRole === "candidate" &&
-  //       !resumeLoading &&
-  //       myresume?.data?.resume == null) ||
-  //     (userRole === "recruiter" && !recruiterLoading && recruiter) ||
-  //     (userRole === "company" && !companyLoading && company)
-  //   ) {
-  //     return "Elevator Pitch";
-  //   }
-  //   return "Create Elevator Pitch";
-  // };
-
   return (
     <div className="w-full">
       {/* Top Navbar */}
@@ -263,7 +262,23 @@ export function SiteHeader() {
             My EVP Profile
           </Link>
 
-          {/* Blogs (ensure href and isActive match) */}
+          {/* Upgrade Plan (desktop) */}
+          {status === "authenticated" &&
+            isValid === false &&
+            getUpgradePath() && (
+              <Link
+                href={getUpgradePath()!}
+                className={`transition-colors focus:outline-none font-semibold ${
+                  isActive(getUpgradePath()!)
+                    ? "text-[#2B7FD0]"
+                    : "text-[#2B7FD0] hover:opacity-80"
+                }`}
+              >
+                Upgrade Plan
+              </Link>
+            )}
+
+          {/* Blogs */}
           <Link
             href="/blogs"
             className={`transition-colors focus:outline-none ${
@@ -272,6 +287,7 @@ export function SiteHeader() {
           >
             Blogs
           </Link>
+
           {/* About Us moved out of More */}
           <Link
             href="/about-us"
@@ -562,7 +578,6 @@ export function SiteHeader() {
 
                 {/* Mobile-only search */}
                 <div className="mb-6 md:hidden px-4">
-                  {/* If GlobalSearch supports autoFocus, pass false. Otherwise, ensure it doesn't auto-focus internally. */}
                   <GlobalSearch />
                 </div>
 
@@ -636,7 +651,7 @@ export function SiteHeader() {
                       </Link>
                     )}
 
-                    {/* Blogs (consistent path) */}
+                    {/* Blogs */}
                     <Link
                       href="/blogs"
                       className={`transition-colors focus:outline-none ${
@@ -648,7 +663,23 @@ export function SiteHeader() {
                       Blogs
                     </Link>
 
-                    {/* About Us as a normal link (moved out of More) */}
+                    {/* Upgrade Plan (mobile) */}
+                    {status === "authenticated" &&
+                      isValid === false &&
+                      getUpgradePath() && (
+                        <Link
+                          href={getUpgradePath()!}
+                          className={`transition-colors focus:outline-none ${
+                            isActive(getUpgradePath()!)
+                              ? "text-[#2B7FD0]"
+                              : "hover:text-[#2B7FD0]"
+                          }`}
+                        >
+                          Upgrade Plan
+                        </Link>
+                      )}
+
+                    {/* About Us */}
                     <Link
                       href="/about-us"
                       className={`transition-colors focus:outline-none ${
