@@ -156,6 +156,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
     useState<boolean>(!!resume.elevatorPitch[0]);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const deleteElevatorPitchMutation = useMutation({
     mutationFn: deleteElevatorPitchVideo,
@@ -163,6 +164,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
       toast.success("Elevator pitch deleted successfully!");
       setIsElevatorPitchUploaded(false);
       setElevatorPitchFile(null);
+      setIsDeleteModalOpen(false);
     },
     onError: (error: any) => {
       toast.error(error?.message || "Failed to delete elevator pitch.");
@@ -206,6 +208,14 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
         // Error toast is handled in mutation onError
       }
     }
+  };
+
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
   };
 
   if (!resume || !resume.resume) {
@@ -371,7 +381,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <Button
                         variant="destructive"
                         size="icon"
-                        onClick={handleDeleteElevatorPitch}
+                        onClick={openDeleteModal}
                         disabled={deleteElevatorPitchMutation.isPending}
                         title="Delete Elevator Pitch"
                       >
@@ -447,6 +457,37 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Confirm Delete
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-6">
+                    Are you sure you want to delete your elevator pitch? This action cannot be undone.
+                  </p>
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={closeDeleteModal}
+                      className="px-4 py-2"
+                    >
+                      No
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteElevatorPitch}
+                      disabled={deleteElevatorPitchMutation.isPending}
+                      className="px-4 py-2"
+                    >
+                      Yes
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
