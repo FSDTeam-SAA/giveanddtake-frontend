@@ -510,20 +510,20 @@ export default function RecruiterDashboard() {
                     )}
                     <div className="space-y-3">
                       <div>
-                        <p className="font-medium text-xl text-[#000000]">
+                        <div className="font-medium text-xl text-[#000000]">
                           {recruiterAccountLoading ? (
                             <Skeleton className="h-6 w-32" />
                           ) : (
                             `${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`
                           )}
-                        </p>
-                        <p className="text-base text-blue-600">
+                        </div>
+                        <div className="text-base text-blue-600">
                           {recruiterAccountLoading ? (
                             <Skeleton className="h-5 w-48" />
                           ) : (
                             recruiterAccount?.data?.companyId.cname
                           )}
-                        </p>
+                        </div>
                       </div>
                       <div className="space-y-3">
                         {/* Email */}
@@ -565,7 +565,7 @@ export default function RecruiterDashboard() {
                   </div>
                 </div>
                 <div className="col-span-1 lg:col-span-4">
-                  <p className="font-medium text-xl text-[#000000]">About Us</p>
+                  <div className="font-medium text-xl text-[#000000]">About Us</div>
                   {recruiterAccountLoading ? (
                     <Skeleton className="h-4 w-full" />
                   ) : (
