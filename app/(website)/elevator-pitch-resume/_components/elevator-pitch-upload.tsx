@@ -41,7 +41,7 @@ export function ElevatorPitchUpload({ onFileSelect, selectedFile }: ElevatorPitc
               <div className="text-center">
                 <p className="text-lg font-medium text-white mb-2">Upload Your Video Pitch</p>
                 <p className="text-gray-300 text-sm mb-4">Drop your video here or click to browse</p>
-                <p className="text-xs text-gray-400">Supports MP4, MOV, AVI • Max 100MB</p>
+                <p className="text-xs text-gray-400">Supports MP4, MOV, AVI • Max 100MB for 30 seconds free</p>
               </div>
               <Button type="button" variant="secondary" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
                 Choose Video File
