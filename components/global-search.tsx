@@ -103,7 +103,13 @@ export function GlobalSearch() {
           const name = safeLower(user.name);
           const role = safeLower(user.role);
           const address = safeLower(user.address);
-          return name.includes(q) || role.includes(q) || address.includes(q);
+          const position = safeLower(user.position);
+          return (
+            name.includes(q) ||
+            role.includes(q) ||
+            address.includes(q) ||
+            position.includes(q)
+          );
         });
 
         const limited = filteredResults.slice(0, 8);
@@ -132,7 +138,7 @@ export function GlobalSearch() {
         ? `/companies-profile/${id}`
         : role === "recruiter"
         ? `/recruiters-profile/${id}`
-        : `/candidates-profile/${id}`;
+        : `/candidates-profile/${id}`; // keep your existing route shape
 
     router.push(profileUrl);
     setQuery("");
@@ -141,7 +147,8 @@ export function GlobalSearch() {
   };
 
   const handleSeeAllUsers = () => {
-    router.push("/all-users");
+    const searchParam = query.trim() ? `?s=${encodeURIComponent(query)}` : "";
+    router.push(`/all-users${searchParam}`);
     setQuery("");
     setIsOpen(false);
     inputRef.current?.blur();
@@ -159,9 +166,6 @@ export function GlobalSearch() {
         return <User className="h-4 w-4 text-gray-600" />;
     }
   };
-
-  const getRoleLabel = (role?: string) =>
-    role ? role.charAt(0).toUpperCase() + role.slice(1) : "User";
 
   return (
     <div ref={searchRef} className="relative w-full max-w-md">
@@ -258,7 +262,7 @@ export function GlobalSearch() {
                   className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
                   onClick={handleSeeAllUsers}
                 >
-                  See All Results
+                  Show All Results
                 </Button>
               </div>
             </>
@@ -280,7 +284,7 @@ export function GlobalSearch() {
                   className="text-[#4B98DE] hover:text-[#3a7bc8] text-sm font-medium"
                   onClick={handleSeeAllUsers}
                 >
-                  See All Results
+                  Show All Results
                 </Button>
               </div>
             </div>

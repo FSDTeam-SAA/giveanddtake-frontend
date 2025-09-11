@@ -1,10 +1,8 @@
 "use client";
 
 import type React from "react";
-
 import { useState } from "react";
-
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +11,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+
+// API helpers used exactly like in your ElevatorPitchAndResume component
+import {
+  getCompanyAccount,
+  getMyResume,
+  getRecruiterAccount,
+} from "@/lib/api-service";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -23,6 +28,44 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const checkProfileAndRedirect = async () => {
+    // Ensure we have the latest session after sign-in
+    const session = await getSession();
+    const role = (session as any)?.user?.role as string | undefined;
+    const userId = (session as any)?.user?.id as string | undefined;
+
+    // Safety: if we can't read session, just go home
+    if (!role || !userId) {
+      router.push("/");
+      return;
+    }
+
+    try {
+      if (role === "candidate") {
+        const res = await getMyResume();
+        const data = (res as any)?.data;
+        const hasResume = Boolean(data?.resume);
+        if (!hasResume) return router.push("/elevator-pitch-resume");
+      } else if (role === "recruiter") {
+        const res = await getRecruiterAccount(userId);
+        const recruiter = (res as any)?.data;
+        const exists = Boolean(recruiter);
+        if (!exists) return router.push("/elevator-pitch-resume");
+      } else {
+        const res = await getCompanyAccount(userId);
+        const company = (res as any)?.data;
+        const hasCompany =
+          Array.isArray(company?.companies) && company.companies.length > 0;
+        if (!hasCompany) return router.push("/elevator-pitch-resume");
+      }
+
+      // Default: profile exists, proceed to home
+      router.push("/");
+    } catch (e) {
+      // On any error, don't block the user; fall back to home
+      router.push("/");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +82,14 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password. Please try again.");
       } else if (result?.ok) {
-        router.push("/");
+        // Optional: persist rememberMe locally (depends on your auth strategy)
+        try {
+          if (rememberMe) localStorage.setItem("rememberedEmail", email);
+          else localStorage.removeItem("rememberedEmail");
+        } catch {}
+
+        // After successful sign-in, check for profile existence and redirect accordingly
+        await checkProfileAndRedirect();
       }
     } catch (error) {
       setError("Something went wrong. Please try again.");
@@ -100,9 +150,7 @@ export default function LoginPage() {
                 <Checkbox
                   id="remember"
                   checked={rememberMe}
-                  onCheckedChange={(checked) =>
-                    setRememberMe(checked as boolean)
-                  }
+                  onCheckedChange={(checked) => setRememberMe(!!checked)}
                 />
                 <Label htmlFor="remember" className="text-sm">
                   Remember me

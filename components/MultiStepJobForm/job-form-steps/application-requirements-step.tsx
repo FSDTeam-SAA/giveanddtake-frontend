@@ -143,7 +143,7 @@ export default function ApplicationRequirementsStep({
         {/* Notice Period (replaces Start Date) */}
         <div className="mt-8">
           <label className="block text-xl text-[#000000] mb-3">
-            Notice Period
+            Availibility
           </label>
           <Select
             value={form.watch("noticePeriod") || ""}

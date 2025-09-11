@@ -40,9 +40,7 @@ export default function CustomQuestionsStep({ form, onNext, onCancel }: CustomQu
             Skip
           </Button>
         </div>
-        <p className="text-xl text-[#808080] font-medium mb-6">
-          Would you require visa sponsorship for this role within the next two years?
-        </p>
+       
         <div className="space-y-4 mb-6">
           {customQuestions.map((question, index) => (
             <FormField

@@ -9,6 +9,7 @@ import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner"; // ✅ correct Sonner import
 import { useState } from "react";
+import clsx from "clsx";
 
 interface CompanyId {
   _id?: string;
@@ -23,7 +24,7 @@ interface Job {
   salaryRange: string;
   location: string;
   shift: string;
-  employement_Type?: string;
+  employement_Type?: string; // keeping the original field name for compatibility
   companyId?: CompanyId;
   vacancy: number;
   experience: number;
@@ -35,9 +36,15 @@ interface JobCardProps {
   job: Job;
   onSelect: () => void;
   variant: "suggested" | "list";
+  className?: string;
 }
 
-export default function JobCard({ job, onSelect, variant }: JobCardProps) {
+export default function JobCard({
+  job,
+  onSelect,
+  variant,
+  className,
+}: JobCardProps) {
   const { data: session, status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -81,6 +88,7 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
   const getCompanyInitials = (title: string) => {
     return title
       .split(" ")
+      .filter(Boolean)
       .map((word) => word[0])
       .join("")
       .toUpperCase()
@@ -110,6 +118,25 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     } ago`;
   };
 
+  const CompanyAvatar = () => (
+    <div className="relative shrink-0">
+      {job.companyId?.clogo ? (
+        <Image
+          src={job.companyId.clogo}
+          alt={job.companyId.cname || "Company Logo"}
+          width={56}
+          height={56}
+          className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover"
+          sizes="(max-width: 768px) 40px, 48px"
+        />
+      ) : (
+        <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg bg-blue-100 text-gray-700 grid place-items-center font-semibold">
+          {getCompanyInitials(job.title)}
+        </div>
+      )}
+    </div>
+  );
+
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
 
@@ -117,9 +144,10 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     if (isUnauthed) {
       return (
         <Button
+          type="button"
           variant="outline"
           onClick={handleUnauthedApply}
-          className="text-black text-sm md:text-base font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg"
+          className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
         >
           Apply
         </Button>
@@ -128,10 +156,11 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
 
     // Candidate: normal link to application page
     return (
-      <Link href={applicationLink}>
+      <Link href={applicationLink} onClick={(e) => e.stopPropagation()}>
         <Button
+          type="button"
           variant="outline"
-          className="text-black text-sm md:text-base font-normal border border-[#707070] px-4 py-[2px] md:py-2 rounded-lg"
+          className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
         >
           Apply
         </Button>
@@ -139,78 +168,99 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     );
   };
 
+  const EmploymentBadge = () => (
+    <span className="inline-flex items-center justify-center rounded-lg border border-transparent bg-primary/90 px-3 py-1 text-xs sm:text-sm text-white shadow-sm ring-1 ring-primary/30">
+      {job.employement_Type || "Not Specified"}
+    </span>
+  );
+
+  /**
+   * SUGGESTED VARIANT (now mobile-first)
+   */
   if (variant === "suggested") {
     return (
       <Card
-        className="hover:shadow-md transition-shadow cursor-pointer"
+        role="article"
+        aria-label={`${job.title} — ${
+          job.companyId?.cname ?? "Unknown Company"
+        }`}
+        className={clsx(
+          "hover:shadow-md transition-shadow cursor-pointer",
+          "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
+          className
+        )}
         onClick={handleClick}
       >
-        <CardContent className="p-4">
-          <div className="grid grid-cols-8">
-            <div className="col-span-1 hidden md:block">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <div className="w-[50px] h-[50px] flex items-center justify-center">
-                  {job.companyId ? (
-                    <Image
-                      src={job.companyId.clogo || "/default-logo.png"}
-                      alt={job.companyId.cname || "Company Logo"}
-                      width={50}
-                      height={50}
-                      className="w-[50px] h-[50px] object-cover"
-                    />
-                  ) : (
-                    <div className="text-xl font-bold text-gray-600">
-                      {getCompanyInitials(job.title)}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-            <div className="col-span-8 md:col-span-7">
-              <div className="flex justify-between">
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-800">
+        <CardContent className="p-4 sm:p-5">
+          {/* Header: Avatar + Title/Company + Actions */}
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <CompanyAvatar />
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
                     {job.title}
                   </h3>
+                  <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    <EmploymentBadge />
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <ApplyButton />
-                  <Button className="bg-primary hover:bg-blue-700 text-white text-sm px-4 md:py-2 rounded-lg">
-                    {job.employement_Type || "Not Specified"}
-                  </Button>
-                </div>
-              </div>
-              <div className="my-2">
-                <div
-                  className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(job.description),
-                  }}
-                />
-              </div>
-              <div className="flex flex-wrap gap-6 text-sm text-gray-600">
-                <div className="bg-[#E9ECFC] p-2 rounded-lg">
+                <div className="mt-0.5">
                   {job.companyId ? (
                     <Link
                       href={`/companies-profile/${job.companyId._id || "#"}`}
-                      className="text-[#707070] text-[16px] font-normal"
+                      className="text-primary text-sm hover:underline"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       {job.companyId.cname || "Unknown Company"}
                     </Link>
                   ) : (
-                    <span className="text-[#707070] text-[16px] font-normal">
+                    <span className="text-muted-foreground text-sm">
                       Unknown Company
                     </span>
                   )}
                 </div>
-                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  {job.salaryRange}
-                </div>
-                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {job.location}
-                </div>
+              </div>
+            </div>
+
+            {/* Actions (mobile first) */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+              <ApplyButton />
+              <div className="sm:hidden">
+                <EmploymentBadge />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div
+              className="prose prose-sm max-w-none text-gray-700 line-clamp-3 sm:line-clamp-2"
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(job.description),
+              }}
+            />
+
+            {/* Meta */}
+            <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
+              <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                {job.companyId ? (
+                  <Link
+                    href={`/companies-profile/${job.companyId._id || "#"}`}
+                    className="text-[#707070]"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {job.companyId.cname || "Unknown Company"}
+                  </Link>
+                ) : (
+                  <span className="text-[#707070]">Unknown Company</span>
+                )}
+              </div>
+              <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                <DollarSign className="h-4 w-4 mr-1" aria-hidden />
+                <span className="truncate">{job.salaryRange}</span>
+              </div>
+              <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                <MapPin className="h-4 w-4 mr-1" aria-hidden />
+                <span className="truncate">{job.location}</span>
               </div>
             </div>
           </div>
@@ -219,79 +269,83 @@ export default function JobCard({ job, onSelect, variant }: JobCardProps) {
     );
   }
 
+  /**
+   * LIST VARIANT (now mobile-first)
+   */
   return (
     <Card
-      className="hover:shadow-md transition-shadow cursor-pointer"
+      role="article"
+      aria-label={`${job.title} — ${job.companyId?.cname ?? "Unknown Company"}`}
+      className={clsx(
+        "hover:shadow-md transition-shadow cursor-pointer",
+        "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
+        className
+      )}
       onClick={handleClick}
     >
-      <CardContent className="p-4">
-        <div className="grid grid-cols-8">
-          <div className="col-span-1">
-            <div className="w-[50px] h-[50px] flex items-center justify-center">
-              {job.companyId ? (
-                <Image
-                  src={job.companyId.clogo || "/default-logo.png"}
-                  alt={job.companyId.cname || "Company Logo"}
-                  width={50}
-                  height={50}
-                  className="w-[50px] h-[50px] object-cover"
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          {/* Row: Avatar + Title/Company + Apply */}
+          <div className="flex items-start gap-3 sm:gap-4">
+            <CompanyAvatar />
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
+                    {job.title}
+                  </h3>
+                  <div>
+                    {job.companyId ? (
+                      <Link
+                        href={`/companies-profile/${job.companyId._id || "#"}`}
+                        className="text-primary text-sm hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {job.companyId.cname || "Unknown Company"}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">
+                        Unknown Company
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w-full sm:w-auto">
+                  <ApplyButton />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mt-2 sm:mt-3">
+                <div
+                  className="text-gray-700 text-sm sm:text-[15px] leading-relaxed line-clamp-3 sm:line-clamp-2 prose prose-sm max-w-none text-start"
+                  dangerouslySetInnerHTML={{
+                    __html: DOMPurify.sanitize(job.description),
+                  }}
                 />
-              ) : (
-                <div className="text-xl font-bold text-gray-600">
-                  {getCompanyInitials(job.title)}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="col-span-7">
-            <div className="flex justify-between">
-              <div>
-                <h3 className="font-semibold text-lg text-gray-800">
-                  {job.title}
-                </h3>
-                <div>
-                  {job.companyId ? (
-                    <Link
-                      href={`/companies-profile/${job.companyId._id || "#"}`}
-                      className="text-primary text-[14px] font-normal hover:underline"
-                    >
-                      {job.companyId.cname || "Unknown Company"}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground text-[16px] font-normal">
-                      Unknown Company
-                    </span>
-                  )}
-                </div>
               </div>
-              <div className="flex gap-2">
-                <ApplyButton />
-              </div>
-            </div>
-            <div className="py-4">
-              <div
-                className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(job.description),
-                }}
-              />
-            </div>
-            <div className="flex flex-wrap justify-between items-center gap-6 text-sm text-gray-600">
-              <div className="flex flex-wrap justify-between gap-6">
-                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  {job.salaryRange}
+
+              {/* Meta Row */}
+              <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                    <DollarSign className="h-4 w-4 mr-1" aria-hidden />
+                    <span className="truncate">{job.salaryRange}</span>
+                  </div>
+                  <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                    <MapPin className="h-4 w-4 mr-1" aria-hidden />
+                    <span className="truncate">{job.location}</span>
+                  </div>
+                  <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
+                    {job.employement_Type || "Not Specified"}
+                  </div>
                 </div>
-                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {job.location}
+
+                <div className="text-[#059c05] font-semibold">
+                  {formatDate(job.createdAt)}
                 </div>
-                <div className="flex items-center bg-[#E9ECFC] p-2 rounded-lg capitalize">
-                  {job.employement_Type || "Not Specified"}
-                </div>
-              </div>
-              <div className="text-[#059c05] text-sm text-bold">
-                {formatDate(job.createdAt)}
               </div>
             </div>
           </div>
