@@ -89,7 +89,11 @@ async function postJob(data: JobPostData, retries = 2): Promise<any> {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"}`);
+      throw new Error(
+        `Failed to publish job: ${response.status} - ${
+          errorData.message || "Unknown error"
+        }`
+      );
     }
 
     return response.json();
@@ -99,7 +103,9 @@ async function postJob(data: JobPostData, retries = 2): Promise<any> {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return postJob(data, retries - 1);
     }
-    throw error instanceof Error ? error : new Error("An unexpected error occurred");
+    throw error instanceof Error
+      ? error
+      : new Error("An unexpected error occurred");
   }
 }
 
@@ -125,7 +131,9 @@ export default function JobPreview({
     },
     onError: (error: Error) => {
       console.error("Error posting job:", error);
-      toast.error(error.message || "An error occurred while publishing the job.");
+      toast.error(
+        error.message || "An error occurred while publishing the job."
+      );
     },
   });
 
@@ -170,7 +178,9 @@ export default function JobPreview({
       title: DOMPurify.sanitize(formData.jobTitle || ""),
       description: DOMPurify.sanitize(formData.jobDescription || ""),
       salaryRange: DOMPurify.sanitize(formData.compensation || "Negotiable"),
-      location: DOMPurify.sanitize(`${formData.country || "N/A"}, ${formData.region || "N/A"}`),
+      location: DOMPurify.sanitize(
+        `${formData.country || "N/A"}, ${formData.region || "N/A"}`
+      ),
       shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
       companyUrl: companyUrl ? DOMPurify.sanitize(companyUrl) : undefined,
       responsibilities,
@@ -178,7 +188,9 @@ export default function JobPreview({
       benefits,
       experience,
       deadline: getDeadline(),
-      publishDate: publishNow ? new Date().toISOString() : (formData.publishDate || selectedDate.toISOString()),
+      publishDate: publishNow
+        ? new Date().toISOString()
+        : formData.publishDate || selectedDate.toISOString(),
       status: "active",
       jobCategoryId: formData.categoryId || "",
       employmentType: formData.employmentType || "N/A",
@@ -186,7 +198,9 @@ export default function JobPreview({
       archivedJob: false,
       applicationRequirement: applicationRequirements
         .filter((req) => req.required)
-        .map((req) => ({ requirement: `${DOMPurify.sanitize(req.label)} required` })),
+        .map((req) => ({
+          requirement: `${DOMPurify.sanitize(req.label)} required`,
+        })),
       customQuestion: customQuestions
         .filter((q) => q.question)
         .map((q) => ({ question: DOMPurify.sanitize(q.question) })),
@@ -197,20 +211,31 @@ export default function JobPreview({
     publishJob(postData);
   };
 
-  const sanitizedDescription = DOMPurify.sanitize(formData.jobDescription || "");
+  const sanitizedDescription = DOMPurify.sanitize(
+    formData.jobDescription || ""
+  );
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mx-auto">Preview Job Posting</h1>
-          <Button variant="ghost" size="icon" onClick={onBackToEdit} aria-label="Close preview">
+          <h1 className="text-3xl font-bold text-gray-900 mx-auto">
+            Preview Job Posting
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onBackToEdit}
+            aria-label="Close preview"
+          >
             <X className="h-6 w-6 text-gray-500" />
           </Button>
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Job Details</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Job Details
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <p className="text-sm font-medium text-gray-700">Job Title</p>
@@ -237,13 +262,17 @@ export default function JobPreview({
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Employment Type</p>
+              <p className="text-sm font-medium text-gray-700">
+                Employment Type
+              </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {formData.employmentType || "N/A"}
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Experience Level</p>
+              <p className="text-sm font-medium text-gray-700">
+                Experience Level
+              </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {formData.experience || "N/A"}
               </div>
@@ -261,11 +290,17 @@ export default function JobPreview({
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Company Website</p>
+              <p className="text-sm font-medium text-gray-700">
+                Company Website
+              </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {companyUrl ? (
                   <Link
-                    href={companyUrl.startsWith("http") ? companyUrl : `https://${companyUrl}`}
+                    href={
+                      companyUrl.startsWith("http")
+                        ? companyUrl
+                        : `https://${companyUrl}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
@@ -278,9 +313,13 @@ export default function JobPreview({
               </div>
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Job Posting Expiration Date</p>
+              <p className="text-sm font-medium text-gray-700">
+                Job Posting Expiration Date
+              </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                {formData.expirationDate ? `${formData.expirationDate} days` : "N/A"}
+                {formData.expirationDate
+                  ? `${formData.expirationDate} days`
+                  : "N/A"}
               </div>
             </div>
             <div className="space-y-2">
@@ -301,7 +340,9 @@ export default function JobPreview({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <Card className="lg:col-span-2 border-none shadow-sm">
             <CardContent className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">Job Description</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Job Description
+              </h2>
               <div className="space-y-4">
                 <div
                   className="p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap"
@@ -316,43 +357,51 @@ export default function JobPreview({
               <CardContent className="p-6">
                 <div className="flex items-start space-x-2 mb-4">
                   <Info className="h-5 w-5 text-[#9EC7DC]" />
-                  <h3 className="text-base font-semibold text-[#9EC7DC]">TIP</h3>
+                  <h3 className="text-base font-semibold text-[#9EC7DC]">
+                    TIP
+                  </h3>
                 </div>
                 <p className="text-base text-gray-800 mb-4">
-                  Job boards will often reject jobs that do not have quality job descriptions. To ensure that your job
-                  description matches the requirements for job boards, consider the following guidelines:
+                  To ensure that your job description matches the requirements
+                  for the EVP job board, consider the following guidelines:
                 </p>
                 <ul className="list-disc list-inside text-base text-gray-800 space-y-2">
-                  <li>Job descriptions should be clear, well-written, and informative</li>
-                  <li>Job descriptions with 700-2,000 characters get the most interaction</li>
                   <li>Do not use discriminatory language</li>
-                  <li>Do not post offensive or inappropriate content</li>
-                  <li>Be honest about the job requirement details</li>
-                  <li>Help the candidate understand the expectations for this role</li>
+                  <li>
+                    Help the candidate understand the expectations for this role
+                  </li>
                 </ul>
-                <p className="text-base text-gray-800 mt-4">
-                  For more tips on writing good job descriptions,{" "}
-                  <Link href="#" className="text-[#9EC7DC] hover:underline">
-                    read our help article.
-                  </Link>
-                </p>
               </CardContent>
             </Card>
 
             <Card className="border-none shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-gray-900">Publish Now</h3>
-                  <Switch checked={publishNow} disabled className="data-[state=checked]:bg-[#2B7FD0]" />
+                  <h3 className="text-base font-semibold text-gray-900">
+                    Publish Now
+                  </h3>
+                  <Switch
+                    checked={publishNow}
+                    disabled
+                    className="data-[state=checked]:bg-[#2B7FD0]"
+                  />
                 </div>
                 {!publishNow && (
                   <>
-                    <h3 className="text-base font-semibold mb-4">Schedule Publish</h3>
+                    <h3 className="text-base font-semibold mb-4">
+                      Schedule Publish
+                    </h3>
                     <div className="border rounded-lg p-3">
-                      <CustomCalendar selectedDate={selectedDate} onDateSelect={() => {}} disabled />
+                      <CustomCalendar
+                        selectedDate={selectedDate}
+                        onDateSelect={() => {}}
+                        disabled
+                      />
                     </div>
                     {selectedDate && (
-                      <p className="text-sm text-gray-600 mt-2">Selected date: {selectedDate.toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-600 mt-2">
+                        Selected date: {selectedDate.toLocaleDateString()}
+                      </p>
                     )}
                   </>
                 )}
@@ -362,18 +411,25 @@ export default function JobPreview({
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Application Requirements</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Application Requirements
+          </h2>
           <p className="text-xl text-gray-800 mb-6">
             What personal info would you like to gather about each applicant?
           </p>
           <div className="space-y-4">
             {applicationRequirements.map((requirement) => (
-              <div key={requirement.id} className="flex items-center justify-between py-2 border-b pb-6">
+              <div
+                key={requirement.id}
+                className="flex items-center justify-between py-2 border-b pb-6"
+              >
                 <div className="flex items-center space-x-3">
                   <div className="w-[22px] h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center">
                     <Check className="text-white w-4 h-4" />
                   </div>
-                  <span className="text-xl text-gray-900 font-normal">{requirement.label}</span>
+                  <span className="text-xl text-gray-900 font-normal">
+                    {requirement.label}
+                  </span>
                 </div>
                 <div className="flex space-x-2">
                   <Button
@@ -405,19 +461,25 @@ export default function JobPreview({
         </div>
 
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Custom Questions</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Custom Questions
+          </h2>
           <div className="space-y-4">
             {customQuestions.length > 0 ? (
               customQuestions.map((question) => (
                 <div key={question.id} className="space-y-2">
-                  <p className="text-xl font-medium text-[#2B7FD0]">Ask a question</p>
+                  <p className="text-xl font-medium text-[#2B7FD0]">
+                    Ask a question
+                  </p>
                   <div className="min-h-[80px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
                     {question.question || "No question entered."}
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-xl text-gray-500">No custom questions added.</p>
+              <p className="text-xl text-gray-500">
+                No custom questions added.
+              </p>
             )}
           </div>
         </div>

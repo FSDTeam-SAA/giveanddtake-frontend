@@ -339,7 +339,7 @@ export function HeroSection() {
             variants={itemVariants}
             className="text-2xl font-bold leading-[120%] sm:text-3xl md:text-[40px] text-[#2B7FD0]"
           >
-            Shape Your Future <br className="hidden sm:block" /> with the Right
+            Shape Your Career <br className="hidden sm:block" /> with the Right
             Elevator Pitch
           </motion.h1>
 

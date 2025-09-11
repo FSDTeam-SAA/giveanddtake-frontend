@@ -146,11 +146,7 @@ export default function MultiStepJobForm() {
       jobDescription: "",
       publishDate: new Date().toISOString(),
       applicationRequirements: [
-        { id: "address", label: "Address", required: false },
         { id: "resume", label: "Resume", required: true },
-        { id: "name", label: "Name", required: true },
-        { id: "email", label: "Email", required: true },
-        { id: "phone", label: "Phone", required: true },
         { id: "visa", label: "Valid visa for this job location?", required: true },
       ],
       customQuestions: [{ id: "1", question: "" }],

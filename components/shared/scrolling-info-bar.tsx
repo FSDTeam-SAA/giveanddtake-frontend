@@ -13,17 +13,36 @@ export function ScrollingInfoBar() {
       buttonText: "Candidates Access",
       texts: [
         "Amplify your Profile",
-        "Technologists",
+        "IT",
+        "Data",
+        "AI",
+        "Leadership",
+        "Education",
+        "Engineering",
+        "Aviation",
+        "Oil & Gas",
         "Health Care",
+        "Social Care",
+        "Legal",
         "Tradesmen",
-        "TV",
-        "Events",
+        "Film & TV",
+        "Marketing",
+        "Catering",
+        "Hospitality",
+        "Content Creation",
+        "Events Management",
+        "Compères",
+        "Multimedia",
+        "Pharmaceutical",
+        "Medical",
+        "Leadership",
         "Admin",
-        "Chefs",
         "Graduates",
         "Trainees",
-        "All Skills Welcome",
-        "Free 30-Second Elevator Pitch",
+        "Apprentices",
+        "Experienced Professionals",
+        "All Skills & All Levels Welcome",
+        "Record Your Free 30-Second Elevator Pitch",
         "Apply to Jobs",
         "Start your Dream Job",
       ],
@@ -64,7 +83,7 @@ export function ScrollingInfoBar() {
     <div className="bg-primary text-white py-3 px-4 md:px-6 overflow-hidden relative">
       <motion.div
         className="flex items-center gap-8 whitespace-nowrap"
-        animate={{ x: ["0%", "-50%"] }} // scroll only half because we duplicated
+        animate={{ x: ["0%", "-50%"] }}
         transition={{
           x: {
             repeat: Infinity,

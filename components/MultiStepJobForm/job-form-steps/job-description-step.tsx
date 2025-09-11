@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Info } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import TextEditor from "../TextEditor";
 import CustomCalendar from "../CustomCalendar";
 import type { JobFormData } from "@/types/job";
@@ -34,7 +40,9 @@ export default function JobDescriptionStep({
       <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-none shadow-none">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-[#000000] mb-6">Job Description</h2>
+            <h2 className="text-xl font-semibold text-[#000000] mb-6">
+              Job Description
+            </h2>
             <div className="space-y-4">
               <FormField
                 control={form.control}
@@ -52,10 +60,14 @@ export default function JobDescriptionStep({
                   return (
                     <FormItem>
                       <FormLabel className="text-sm font-medium text-gray-700">
-                        Job Description<span className="text-red-500 ml-1">*</span>
+                        Job Description
+                        <span className="text-red-500 ml-1">*</span>
                       </FormLabel>
                       <FormControl>
-                        <TextEditor value={field.value} onChange={field.onChange} />
+                        <TextEditor
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
                       </FormControl>
                       <div className="text-sm text-gray-600 flex items-center gap-4">
                         <p>Character count: {field.value.length}/2000,</p>
@@ -77,29 +89,23 @@ export default function JobDescriptionStep({
                 <h3 className="text-base font-semibold text-[#9EC7DC]">TIP</h3>
               </div>
               <p className="text-base text-[#000000] mb-4">
-                Job boards will often reject jobs that do not have quality job descriptions. To ensure that your job
-                description matches the requirements for job boards, consider the following guidelines:
+                To ensure that your job description matches the requirements for
+                job boards, consider the following guidelines:
               </p>
               <ul className="list-disc list-inside text-base text-[#000000] space-y-2">
-                <li>Job descriptions should be clear, well-written, and informative</li>
-                <li>Job descriptions with 700-2000 characters get the most interaction</li>
                 <li>Do not use discriminatory language</li>
-                <li>Do not post offensive or inappropriate content</li>
-                <li>Be honest about the job requirement details</li>
-                <li>Help the candidate understand the expectations for this role</li>
+                <li>
+                  Help the candidate understand the expectations for this role
+                </li>
               </ul>
-              <p className="text-base text-[#000000] mt-4">
-                For more tips on writing good job descriptions,{" "}
-                <a href="#" className="text-[#9EC7DC] hover:underline">
-                  read our help article.
-                </a>
-              </p>
             </CardContent>
           </Card>
           <Card className="border-none shadow-none">
             <CardContent className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-[#000000]">Publish Now</h3>
+                <h3 className="text-base font-semibold text-[#000000]">
+                  Publish Now
+                </h3>
                 <Switch
                   checked={publishNow}
                   onCheckedChange={setPublishNow}
@@ -113,10 +119,14 @@ export default function JobDescriptionStep({
                     name="publishDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold mb-3">Schedule Publish</FormLabel>
+                        <FormLabel className="text-base font-semibold mb-3">
+                          Schedule Publish
+                        </FormLabel>
                         <FormControl>
                           <CustomCalendar
-                            selectedDate={field.value ? new Date(field.value) : undefined}
+                            selectedDate={
+                              field.value ? new Date(field.value) : undefined
+                            }
                             onDateSelect={(date) => {
                               setSelectedDate(date as any);
                               field.onChange(date?.toISOString());
@@ -125,7 +135,8 @@ export default function JobDescriptionStep({
                         </FormControl>
                         {field.value && (
                           <p className="text-sm text-gray-600 mt-2">
-                            Selected date: {new Date(field.value).toLocaleDateString()}
+                            Selected date:{" "}
+                            {new Date(field.value).toLocaleDateString()}
                           </p>
                         )}
                         <FormMessage />
@@ -147,7 +158,11 @@ export default function JobDescriptionStep({
         >
           Back
         </Button>
-        <Button type="button" className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85" onClick={onNext}>
+        <Button
+          type="button"
+          className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85"
+          onClick={onNext}
+        >
           Next
         </Button>
       </div>
