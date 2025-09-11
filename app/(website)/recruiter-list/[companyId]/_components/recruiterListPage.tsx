@@ -14,8 +14,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
+import Link from "next/link";
 
-// Interface for employee data based on API response
 interface EmployeeData {
   _id: string;
   name: string;
@@ -56,11 +56,12 @@ interface RecruiterListPageProps {
   companyId: string;
 }
 
-function RecruiterListPage({ companyId }: RecruiterListPageProps) {
+export default function RecruiterListPage({
+  companyId,
+}: RecruiterListPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const queryClient = useQueryClient();
 
-  // Fetch employees with pagination
   const { data, isLoading, isError, error, isFetching } = useQuery<
     ApiResponse,
     Error
@@ -84,14 +85,12 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       return response;
     },
     placeholderData: (previousData) => previousData,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: 2, // Retry failed requests up to 2 times
+    staleTime: 1000 * 60 * 5,
+    retry: 2,
   });
 
-  // Mutation for deleting an employee
   const deleteMutation = useMutation<DeleteResponse, Error, string>({
     mutationFn: async (employeeId: string) => {
-      // Fetch the current company data to get the existing employeesId array
       const companyRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`
       );
@@ -101,12 +100,10 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       const companyData = await companyRes.json();
       const currentEmployeesId = companyData.data.companies[0].employeesId;
 
-      // Filter out the employeeId to be deleted
       const updatedEmployeesId = currentEmployeesId.filter(
         (id: string) => id !== employeeId
       );
 
-      // Send PUT request to update the employeesId array
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`,
         {
@@ -131,19 +128,16 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
       return response;
     },
     onMutate: async (employeeId: string) => {
-      // Cancel any outgoing refetches
       await queryClient.cancelQueries({
         queryKey: ["employees", companyId, currentPage],
       });
 
-      // Snapshot the previous value
       const previousData = queryClient.getQueryData([
         "employees",
         companyId,
         currentPage,
       ]);
 
-      // Optimistically update the employees list
       queryClient.setQueryData(
         ["employees", companyId, currentPage],
         (old: ApiResponse | undefined) => {
@@ -158,40 +152,33 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
         }
       );
 
-      // Return context with the previous data for rollback on error
       return { previousData };
     },
-    onError: (
-      err,
-      employeeId,
-      context
-    ) => {
-      // Rollback to the previous data on error
+    onError: (err, employeeId, context) => {
       const ctx = context as { previousData?: ApiResponse } | undefined;
       queryClient.setQueryData(
         ["employees", companyId, currentPage],
         ctx?.previousData
       );
-      console.error("Error deleting employee:", err instanceof Error ? err.message : err);
+      console.error(
+        "Error deleting employee:",
+        err instanceof Error ? err.message : err
+      );
     },
     onSuccess: () => {
-      // Invalidate the query to refetch the updated data
       queryClient.invalidateQueries({
         queryKey: ["employees", companyId, currentPage],
       });
     },
   });
 
-  // Handle delete button click
   const handleDelete = (employeeId: string) => {
     deleteMutation.mutate(employeeId);
   };
 
-  // Map API data to table structure
   const recruiters: EmployeeData[] = data?.data?.employees || [];
   const totalPages = data?.data?.meta?.totalPages || 1;
 
-  // Pagination handlers
   const handlePreviousPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
@@ -210,7 +197,12 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
 
   return (
     <div className="p-6 container mx-auto">
-      <h1 className="text-2xl font-semibold mb-6">Recruiter List</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
+        <h1 className="text-2xl font-semibold mb-6 md:mb-0">Recruiter List</h1>
+        <div>
+          <Button>All recruiter request</Button>
+        </div>
+      </div>
 
       <div className="bg-white rounded-lg border">
         <Table>
@@ -283,7 +275,6 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         <div className="flex items-center justify-center gap-2 p-4 border-t">
           <Button
             variant="outline"
@@ -326,5 +317,3 @@ function RecruiterListPage({ companyId }: RecruiterListPageProps) {
     </div>
   );
 }
-
-export default RecruiterListPage;
