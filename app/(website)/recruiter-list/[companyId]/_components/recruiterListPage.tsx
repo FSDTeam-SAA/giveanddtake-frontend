@@ -3,18 +3,18 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import RecruiterTable from "./RecruiterTable";
+import PendingEmployeeRequest from "./PendingEmployeeRequest";
+import { useSession } from "next-auth/react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
-import Link from "next/link";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { EmployeeSelector } from "@/components/company/employee-selector";
 
 interface EmployeeData {
   _id: string;
@@ -23,6 +23,25 @@ interface EmployeeData {
   phoneNum: string;
   role: string;
   skills: string[];
+}
+
+interface UserData {
+  _id: string;
+  name: string;
+  email: string;
+  phoneNum: string;
+  role: string;
+  avatar?: { url: string };
+}
+
+interface RequestData {
+  _id: string;
+  userId: UserData;
+  company: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 interface ApiResponse {
@@ -38,6 +57,7 @@ interface ApiResponse {
       city: string;
     };
     employees: EmployeeData[];
+    request: RequestData[];
     meta: {
       currentPage: number;
       totalPages: number;
@@ -60,7 +80,15 @@ export default function RecruiterListPage({
   companyId,
 }: RecruiterListPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [showRequests, setShowRequests] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const queryClient = useQueryClient();
+
+  const session = useSession();
+  const userId = session.data?.user?.id;
+
+  const token = session.data?.accessToken;
 
   const { data, isLoading, isError, error, isFetching } = useQuery<
     ApiResponse,
@@ -84,19 +112,19 @@ export default function RecruiterListPage({
       }
       return response;
     },
-    placeholderData: (previousData) => previousData,
+    placeholderData: (prev) => prev,
     staleTime: 1000 * 60 * 5,
     retry: 2,
   });
 
+  // Delete Employee Mutation
   const deleteMutation = useMutation<DeleteResponse, Error, string>({
     mutationFn: async (employeeId: string) => {
       const companyRes = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`
       );
-      if (!companyRes.ok) {
-        throw new Error("Failed to fetch company data");
-      }
+      if (!companyRes.ok) throw new Error("Failed to fetch company data");
+
       const companyData = await companyRes.json();
       const currentEmployeesId = companyData.data.companies[0].employeesId;
 
@@ -108,23 +136,14 @@ export default function RecruiterListPage({
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            employeesId: updatedEmployeesId,
-          }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ employeesId: updatedEmployeesId }),
         }
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to delete employee");
-      }
-
-      const response = (await res.json()) as DeleteResponse;
-      if (!response.success) {
+      const response = await res.json();
+      if (!res.ok || !response.success)
         throw new Error(response.message || "Failed to delete employee");
-      }
       return response;
     },
     onMutate: async (employeeId: string) => {
@@ -132,7 +151,7 @@ export default function RecruiterListPage({
         queryKey: ["employees", companyId, currentPage],
       });
 
-      const previousData = queryClient.getQueryData([
+      const previousData = queryClient.getQueryData<ApiResponse>([
         "employees",
         companyId,
         currentPage,
@@ -172,148 +191,122 @@ export default function RecruiterListPage({
     },
   });
 
-  const handleDelete = (employeeId: string) => {
+  const handleDelete = (employeeId: string) =>
     deleteMutation.mutate(employeeId);
-  };
 
-  const recruiters: EmployeeData[] = data?.data?.employees || [];
-  const totalPages = data?.data?.meta?.totalPages || 1;
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  // Pagination
+  const handlePreviousPage = (page?: number) => {
+    if (page) setCurrentPage(page);
+    else if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
   const handleNextPage = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+    if (currentPage < (data?.data?.meta?.totalPages || 1))
+      setCurrentPage(currentPage + 1);
   };
 
-  if (isLoading && !data) {
-    return <div className="p-6 container mx-auto">Loading...</div>;
-  }
+  // Add Employees Mutation
+  const addEmployeesMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/add-employee-to-company`,
+        {
+          method: "PATCH",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+           },
+          body: JSON.stringify({ companyId, employeeIds: selectedEmployees }),
+        }
+      );
+      const response = await res.json();
+      if (!res.ok || !response.success)
+        throw new Error(response.message || "Failed to add employees");
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["employees", companyId, currentPage],
+      });
+      setShowModal(false);
+      setSelectedEmployees([]);
+    },
+    onError: (err: any) =>
+      console.error("Error adding employees:", err.message),
+  });
 
-  if (isError) {
+  const recruiters: EmployeeData[] = data?.data?.employees || [];
+  const requests: RequestData[] = data?.data?.request || [];
+  const totalPages = data?.data?.meta?.totalPages || 1;
+
+  if (isLoading && !data)
+    return <div className="p-6 container mx-auto">Loading...</div>;
+  if (isError)
     return <div className="p-6 container mx-auto">Error: {error.message}</div>;
-  }
 
   return (
     <div className="p-6 container mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
         <h1 className="text-2xl font-semibold mb-6 md:mb-0">Recruiter List</h1>
-        <div>
-          <Button>All recruiter request</Button>
+        <div className="flex gap-4">
+          <Button onClick={() => setShowModal(true)}>Add recruiter</Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="font-medium text-gray-700">
-                Recruiter Name
-              </TableHead>
-              <TableHead className="font-medium text-gray-700">Role</TableHead>
-              <TableHead className="font-medium text-gray-700">
-                Phone Number
-              </TableHead>
-              <TableHead className="font-medium text-gray-700">
-                Total Skills
-              </TableHead>
-              <TableHead className="font-medium text-gray-700">
-                Action
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {recruiters.map((recruiter) => (
-              <TableRow key={recruiter._id} className="hover:bg-gray-50">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="/placeholder.svg"
-                        alt={recruiter.name}
-                      />
-                      <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                        {recruiter.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium text-gray-900">
-                      {recruiter.name}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    className="bg-blue-100 text-blue-800 hover:bg-opacity-80"
-                  >
-                    {recruiter.role}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {recruiter.phoneNum}
-                </TableCell>
-                <TableCell className="text-gray-600">
-                  {recruiter.skills.length}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                    onClick={() => handleDelete(recruiter._id)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+      {/* Requests Section */}
+      <PendingEmployeeRequest
+        companyId={companyId}
+        requests={requests}
+        setShowRequests={setShowRequests}
+      />
 
-        <div className="flex items-center justify-center gap-2 p-4 border-t">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0 bg-transparent"
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant="outline"
-              size="sm"
-              className={`h-8 w-8 p-0 ${
-                currentPage === page
-                  ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
-                  : "bg-transparent"
-              }`}
-              onClick={() => setCurrentPage(page)}
-            >
-              {page}
-            </Button>
-          ))}
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-8 p-0 bg-transparent"
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        {isFetching && (
-          <div className="text-center text-gray-500 pb-4">Updating list...</div>
-        )}
-      </div>
+      {/* Recruiters Table */}
+      {!showRequests && (
+        <RecruiterTable
+          recruiters={recruiters}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          isFetching={isFetching}
+          handleDelete={handleDelete}
+          handlePreviousPage={handlePreviousPage}
+          handleNextPage={handleNextPage}
+          isDeletePending={deleteMutation.isPending}
+        />
+      )}
+
+      {/* Add Recruiter Modal */}
+      {showModal && (
+        // Inside your RecruiterListPage component
+        <Dialog open={showModal} onOpenChange={setShowModal}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add Recruiters</DialogTitle>
+            </DialogHeader>
+
+            <div className="mt-2">
+              <EmployeeSelector
+                selectedEmployees={selectedEmployees}
+                onEmployeesChange={setSelectedEmployees}
+              />
+            </div>
+
+            <DialogFooter className="mt-4">
+              <Button variant="secondary" onClick={() => setShowModal(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => addEmployeesMutation.mutate()}
+                disabled={
+                  selectedEmployees.length === 0 ||
+                  addEmployeesMutation.isPending
+                }
+              >
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
