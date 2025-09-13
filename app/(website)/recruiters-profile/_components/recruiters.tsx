@@ -196,14 +196,20 @@ export default function Recruiters({ userId }: MydataProps) {
   return (
     <div className="container mx-auto px-6">
       {/* Banner */}
-      <div className="relative w-full h-[300px]">
-        <Image
-          src={recruiterData.banner || "/placeholder-banner.jpg"}
-          alt={`${recruiterData.firstName} ${recruiterData.lastName} Banner`}
-          fill
-          className="object-cover"
-          priority
-        />
+      <div
+        className={`relative w-full h-[300px] ${
+          recruiterData.banner ? "" : "bg-gray-200"
+        }`}
+      >
+        {recruiterData.banner && (
+          <Image
+            src={recruiterData.banner}
+            alt={`${recruiterData.firstName} ${recruiterData.lastName} Banner`}
+            fill
+            className="object-cover"
+            priority
+          />
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] px-24">

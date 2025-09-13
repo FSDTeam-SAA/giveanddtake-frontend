@@ -22,7 +22,9 @@ interface Blog {
 interface ApiResponse {
   success: boolean;
   message: string;
-  data: Blog[];
+  data: {
+    blogs: Blog[];
+  };
 }
 
 const fetchBlogs = async (): Promise<ApiResponse> => {
@@ -33,7 +35,10 @@ const fetchBlogs = async (): Promise<ApiResponse> => {
   if (!response.ok) {
     throw new Error(`Failed to fetch blogs: ${response.statusText}`);
   }
-  return response.json();
+
+  const json = await response.json();
+  console.log("API Response:", json); // For debugging
+  return json;
 };
 
 export default function BlogListingPage() {
@@ -76,6 +81,21 @@ export default function BlogListingPage() {
     );
   }
 
+  // Check if data.data.blogs is an array
+  if (!data?.data?.blogs || !Array.isArray(data.data.blogs)) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <PageHeaders
+          title="Blogs"
+          description="Insights, ideas and updates on topics that matter most."
+        />
+        <div className="text-gray-500">
+          No blogs available or invalid data received.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <PageHeaders
@@ -83,63 +103,68 @@ export default function BlogListingPage() {
         description="Insights, ideas and updates on topics that matter most."
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {data?.data.map((blog) => {
-          const formattedDate = new Intl.DateTimeFormat("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          }).format(new Date(blog.createdAt));
+        {data.data.blogs.length === 0 ? (
+          <div className="text-gray-500 col-span-full">
+            No blogs found.
+          </div>
+        ) : (
+          data.data.blogs.map((blog) => {
+            const formattedDate = new Intl.DateTimeFormat("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }).format(new Date(blog.createdAt));
 
-          return (
-            <Link href={`/blogs/${blog._id}`}>
-              <Card
-                key={blog._id}
-                className="w-full shadow-none border-none overflow-hidden transition-all "
-              >
-                <div className=" w-full  h-[277px]">
-                  <Image
-                    src={blog.image}
-                    alt={blog.title}
-                    width={1000}
-                    height={1000}
-                    className="rounded-lg w-full h-full "
-                  />
-                </div>
-                <CardContent className="py-4 !px-0 space-y-2 ">
-                  <div className="text-xs text-[#595959] flex gap-[20px] ">
-                    {formattedDate}
-                    <span className="text-[#595959]">{"Alex Robert"} </span>
+            return (
+              <Link href={`/blogs/${blog._id}`} key={blog._id}>
+                <Card className="w-full shadow-none border-none overflow-hidden transition-all">
+                  <div className="w-full h-[277px]">
+                    <Image
+                      src={blog.image}
+                      alt={blog.title}
+                      width={1000}
+                      height={1000}
+                      className="rounded-lg w-full h-full"
+                    />
                   </div>
-                  <h3 className="text-sm font-semibold text-[#272727]">
-                    {blog.title}
-                  </h3>
-                  <div
-                    className="text-gray-600 dark:text-gray-300 prose"
-                    dangerouslySetInnerHTML={{
-                      __html: blog.description
-                        ? `${blog.description
-                            .split(" ")
-                            .slice(0, 10)
-                            .join(" ")}${
-                            blog.description.split(" ").length > 10 ? "..." : ""
-                          }`
-                        : "No description available.",
-                    }}
-                  />
-                </CardContent>
-                <CardFooter className="py-4 pt-0 px-0">
-                  <Link
-                    href={`/blog/${blog._id}`}
-                    className="inline-flex items-center text-sm font-medium text-[#9EC7DC] "
-                  >
-                    Read More
-                    <ArrowRight className=" h-4 w-4" />
-                  </Link>
-                </CardFooter>
-              </Card>
-            </Link>
-          );
-        })}
+                  <CardContent className="py-4 !px-0 space-y-2">
+                    <div className="text-xs text-[#595959] flex gap-[20px]">
+                      {formattedDate}
+                      <span className="text-[#595959]">{"Alex Robert"}</span>
+                    </div>
+                    <h3 className="text-sm font-semibold text-[#272727]">
+                      {blog.title}
+                    </h3>
+                    <div
+                      className="text-gray-600 dark:text-gray-300 prose"
+                      dangerouslySetInnerHTML={{
+                        __html: blog.description
+                          ? `${blog.description
+                              .split(" ")
+                              .slice(0, 10)
+                              .join(" ")}${
+                              blog.description.split(" ").length > 10
+                                ? "..."
+                                : ""
+                            }`
+                          : "No description available.",
+                      }}
+                    />
+                  </CardContent>
+                  <CardFooter className="py-4 pt-0 px-0">
+                    <Link
+                      href={`/blogs/${blog._id}`}
+                      className="inline-flex items-center text-sm font-medium text-[#9EC7DC]"
+                    >
+                      Read More
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </CardFooter>
+                </Card>
+              </Link>
+            );
+          })
+        )}
       </div>
     </div>
   );
