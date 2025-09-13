@@ -133,14 +133,18 @@ export default function CompanyProfilePage() {
   return (
     <div className="container mx-auto">
       {/* Banner */}
-      <div>
-        <Image
-          src={company.banner || "/company-cover.jpg"}
-          alt={`${company.cname} banner`}
-          width={1200}
-          height={200}
-          className="w-full h-[200px] object-cover rounded-b-lg"
-        />
+      <div className="w-full h-[200px] rounded-b-lg">
+        {company.banner ? (
+          <Image
+            src={company.banner}
+            alt={`${company.cname} banner`}
+            width={1200}
+            height={200}
+            className="w-full h-[200px] object-cover rounded-b-lg"
+          />
+        ) : (
+          <div className="w-full h-[200px] bg-gray-200 rounded-b-lg" />
+        )}
       </div>
 
       {/* Header Section */}
