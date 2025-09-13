@@ -24,11 +24,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
@@ -56,6 +56,16 @@ import {
   deleteElevatorPitchVideo,
   createResume,
 } from "@/lib/api-service";
+import CustomDateInput from "@/components/custom-date-input";
+import { useSession } from "next-auth/react";
+
+const mockSession = {
+  user: {
+    id: "demo-user-123",
+    email: "demo@example.com",
+    name: "Demo User",
+  },
+};
 
 // ... (Previous imports and DUMMY_SKILLS remain unchanged)
 
@@ -74,23 +84,6 @@ const DUMMY_SKILLS = [
   "Docker",
   "Web Design",
 ].sort();
-
-const isBrowser = typeof window !== "undefined";
-
-const LS_KEYS = {
-  formData: "register.formData",
-  firstName: "register.firstName",
-  surname: "register.surname",
-  selectedCountry: "register.selectedCountry",
-} as const;
-
-function safeJSON<T>(raw: string | null, fallback: T): T {
-  try {
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
 
 const resumeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -185,6 +178,7 @@ const resumeSchema = z.object({
     .optional(),
   certifications: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
+  immediatelyAvailable: z.boolean().optional().default(false),
 });
 
 type ResumeFormData = z.infer<typeof resumeSchema>;
@@ -326,6 +320,7 @@ export default function CreateResumeForm() {
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
@@ -384,6 +379,7 @@ export default function CreateResumeForm() {
       ],
       certifications: [],
       languages: [],
+      immediatelyAvailable: false,
     },
   });
 
@@ -748,10 +744,12 @@ export default function CreateResumeForm() {
 
   const removeCertification = (index: number) => {
     const currentCertifications = form.getValues("certifications") || [];
-    form.setValue(
-      "certifications",
-      currentCertifications.filter((_, i) => i !== index)
+    const updatedCertifications = currentCertifications.filter(
+      (_, i) => i !== index
     );
+    form.setValue("certifications", updatedCertifications);
+    // Force form to re-render
+    form.trigger("certifications");
   };
 
   const addLanguage = (language: string) => {
@@ -764,10 +762,10 @@ export default function CreateResumeForm() {
 
   const removeLanguage = (index: number) => {
     const currentLanguages = form.getValues("languages") || [];
-    form.setValue(
-      "languages",
-      currentLanguages.filter((_, i) => i !== index)
-    );
+    const updatedLanguages = currentLanguages.filter((_, i) => i !== index);
+    form.setValue("languages", updatedLanguages);
+    // Force form to re-render
+    form.trigger("languages");
   };
 
   const handleCertificationKeyPress = (
@@ -796,137 +794,99 @@ export default function CreateResumeForm() {
     }
   };
 
-  const onSubmit = async (data: ResumeFormData) => {
+  const onSubmit = async (data: z.infer<typeof resumeSchema>) => {
     if (!isElevatorPitchUploaded) {
-      toast.error(
-        "Please upload your elevator pitch video before submitting the form"
-      );
+      toast("Please upload an elevator pitch video before submitting.");
       return;
     }
 
-    const formData = new FormData();
+    try {
+      setIsSubmitting(true);
 
-    const formatDateToMonthYear = (dateString: string) => {
-      if (!dateString) return "";
-      const date = new Date(dateString + "-01"); // Add day to make it valid
-      return date.toLocaleDateString("en-US", {
-        month: "2-digit",
-        year: "numeric",
-      });
-    };
+      const formatDateToISO = (dateString: string) => {
+        if (!dateString) return "";
+        // Handle mm/yyyy format
+        const [month, year] = dateString.split("/");
+        if (month && year && month.length === 2 && year.length === 4) {
+          // Create ISO date string with first day of the month
+          return new Date(`${year}-${month}-01T00:00:00.000Z`).toISOString();
+        }
+        return "";
+      };
 
-    const processedExperiences = data.experiences?.map((exp) => ({
-      ...exp,
-      startDate: formatDateToMonthYear(exp.startDate || ""),
-      endDate: exp.currentlyWorking
-        ? ""
-        : formatDateToMonthYear(exp.endDate || ""),
-    }));
+      const processedExperiences = data.experiences?.map((exp) => ({
+        ...exp,
+        startDate: formatDateToISO(exp.startDate || ""),
+        endDate: exp.currentlyWorking ? "" : formatDateToISO(exp.endDate || ""),
+      }));
 
-    const processedEducation = data.educationList?.map((edu) => ({
-      ...edu,
-      startDate: formatDateToMonthYear(edu.startDate || ""),
-      graduationDate: edu.currentlyStudying
-        ? ""
-        : formatDateToMonthYear(edu.graduationDate || ""),
-    }));
+      const processedEducation = data.educationList?.map((edu) => ({
+        ...edu,
+        startDate: formatDateToISO(edu.startDate || ""),
+        graduationDate: edu.currentlyStudying
+          ? ""
+          : formatDateToISO(edu.graduationDate || ""),
+      }));
 
-    const processedAwards = data.awardsAndHonors?.map((award) => ({
-      ...award,
-      programeDate: formatDateToMonthYear(award.programeDate || ""),
-    }));
+      const processedAwards = data.awardsAndHonors?.map((award) => ({
+        ...award,
+        programeDate: formatDateToISO(award.programeDate || ""),
+      }));
 
-    const resumeData = {
-      firstName: data.firstName,
-      lastName: data.lastName,
-      email: data.email,
-      phoneNumber: data.phoneNumber,
-      title: data.title,
-      city: data.city,
-      zip: data.zip,
-      country: data.country,
-      aboutUs: data.aboutUs,
-      skills: data.skills,
-      sLink: data.sLink?.filter((link) => link.label && link.url), // Only include filled links
-      certifications: data.certifications,
-      languages: data.languages,
-    };
+      const formData = new FormData();
 
-    formData.append("resume", JSON.stringify(resumeData));
-    formData.append("experiences", JSON.stringify(processedExperiences));
-    formData.append("educationList", JSON.stringify(processedEducation));
-    formData.append("awardsAndHonors", JSON.stringify(processedAwards));
-    formData.append("userId", session?.user?.id as string);
+      const resumeData = {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phoneNumber: data.phoneNumber,
+        title: data.title,
+        city: data.city,
+        zip: data.zip,
+        country: data.country,
+        aboutUs: data.aboutUs,
+        skills: data.skills,
+        sLink: data.sLink?.filter((link) => link.label && link.url), // Only include filled links
+        certifications: data.certifications,
+        languages: data.languages,
+        immediatelyAvailable: data.immediatelyAvailable,
+      };
 
-    if (photoFile) {
-      formData.append("photo", photoFile);
+      formData.append("resume", JSON.stringify(resumeData));
+      formData.append("experiences", JSON.stringify(processedExperiences));
+      formData.append("educationList", JSON.stringify(processedEducation));
+      formData.append("awardsAndHonors", JSON.stringify(processedAwards));
+      formData.append("userId", session?.user?.id as string);
+
+      if (photoFile) {
+        formData.append("photo", photoFile);
+      }
+
+      if (bannerFile) {
+        formData.append("banner", bannerFile);
+      }
+
+      createResumeMutation.mutate(formData);
+      // console.log("Submitting form data:", formData);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    if (bannerFile) {
-      formData.append("banner", bannerFile);
-    }
-
-    createResumeMutation.mutate(formData);
   };
 
-  useEffect(() => {
-    if (!isBrowser) return;
-
-    // whatever you saved on the register page:
-    // - formData: { name, email, password, phoneNum, address, role }
-    const saved = safeJSON<{
-      name?: string;
-      email?: string;
-      phoneNum?: string;
-      address?: string; // country name
-      role?: string;
-    }>(localStorage.getItem(LS_KEYS.formData), {});
-
-    // also saved individually:
-    const savedFirst = localStorage.getItem(LS_KEYS.firstName) ?? "";
-    const savedLast = localStorage.getItem(LS_KEYS.surname) ?? "";
-    const savedSelectedCountry =
-      localStorage.getItem(LS_KEYS.selectedCountry) ?? "";
-
-    // derive first/last from "name" if not explicitly saved
-    const splitName = (saved.name || "").trim().split(/\s+/);
-    const derivedFirst = splitName[0] ?? "";
-    const derivedLast = splitName.slice(1).join(" ");
-
-    // current form values as baseline, then patch
-    const curr = form.getValues();
-    form.reset({
-      ...curr,
-      firstName: savedFirst || derivedFirst || curr.firstName,
-      lastName: savedLast || derivedLast || curr.lastName,
-      email: saved.email || curr.email,
-      phoneNumber: saved.phoneNum || curr.phoneNumber,
-      country: saved.address || savedSelectedCountry || curr.country,
-      // keep the rest as-is
-    });
-
-    // also reflect the hydrated country into your controlled state, if any
-    if (!selectedCountry) {
-      const nextCountry = saved.address || savedSelectedCountry;
-      if (nextCountry) setSelectedCountry(nextCountry);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // run once after mount
-
   return (
-    <div className="p-6 space-y-8">
+    <div className=" mx-auto p-6 space-y-8">
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">Create Your Resume</h1>
+        <p className="text-muted-foreground">
+          Fill in your details to create a professional resume
+        </p>
+      </div>
+
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit, (errors) => {
-            const firstError = Object.values(errors)[0];
-            if (firstError) {
-              toast.error(
-                firstError.message || "Please fill in all required fields"
-              );
-            }
-          })}
-          className="space-y-8"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Elevator Pitch</CardTitle>
@@ -1065,7 +1025,10 @@ export default function CreateResumeForm() {
 
           {/* Personal Information */}
           <Card>
-            <CardContent className="pt-6">
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
@@ -1249,6 +1212,28 @@ export default function CreateResumeForm() {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="immediatelyAvailable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="font-normal">
+                          Immediately Available
+                        </FormLabel>
+                        <FormDescription>
+                          Check if you are available to start immediately
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <SocialLinksSection form={form} />
@@ -1274,17 +1259,11 @@ export default function CreateResumeForm() {
           {/* Experience */}
           <Card>
             <CardHeader>
-              <CardTitle>Experience (Optional)</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Highlight your work journey and key achievements.
-              </p>
+              <CardTitle>Work Experience</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {experienceFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="border rounded-lg p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -1408,7 +1387,11 @@ export default function CreateResumeForm() {
                           <FormItem>
                             <FormLabel>Start Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <CustomDateInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="MM/YYYY"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1421,9 +1404,10 @@ export default function CreateResumeForm() {
                           <FormItem>
                             <FormLabel>End Date</FormLabel>
                             <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
+                              <CustomDateInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="MM/YYYY"
                                 disabled={form.watch(
                                   `experiences.${index}.currentlyWorking`
                                 )}
@@ -1487,19 +1471,13 @@ export default function CreateResumeForm() {
           </Card>
 
           {/* Education */}
-          <Card className="border-2 border-blue-500">
+          <Card>
             <CardHeader>
               <CardTitle>Education</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Showcase your academic background and qualifications.
-              </p>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {educationFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="border rounded-lg p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -1658,7 +1636,11 @@ export default function CreateResumeForm() {
                           <FormItem>
                             <FormLabel>Start Date</FormLabel>
                             <FormControl>
-                              <Input type="date" {...field} />
+                              <CustomDateInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="MM/YYYY"
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1671,9 +1653,10 @@ export default function CreateResumeForm() {
                           <FormItem>
                             <FormLabel>Graduation Date</FormLabel>
                             <FormControl>
-                              <Input
-                                type="date"
-                                {...field}
+                              <CustomDateInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="MM/YYYY"
                                 disabled={form.watch(
                                   `educationList.${index}.currentlyStudying`
                                 )}
@@ -1758,10 +1741,19 @@ export default function CreateResumeForm() {
                         className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                       >
                         {certification}
-                        <X
-                          className="h-3 w-3 cursor-pointer"
-                          onClick={() => removeCertification(index)}
-                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent form submission
+                            e.stopPropagation(); // Stop event bubbling
+                            removeCertification(index);
+                          }}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </Badge>
                     )
                   )}
@@ -1807,10 +1799,19 @@ export default function CreateResumeForm() {
                         className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                       >
                         {language}
-                        <X
-                          className="h-3 w-3 cursor-pointer"
-                          onClick={() => removeLanguage(index)}
-                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent form submission
+                            e.stopPropagation(); // Stop event bubbling
+                            removeLanguage(index);
+                          }}
+                          className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </Badge>
                     )
                   )}
@@ -1822,14 +1823,11 @@ export default function CreateResumeForm() {
           {/* Awards and Honours */}
           <Card>
             <CardHeader>
-              <CardTitle>Awards and Honours (Optional)</CardTitle>
+              <CardTitle>Awards & Honors</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               {awardFields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="space-y-4 p-4 border rounded-lg mb-4"
-                >
+                <div key={field.id} className="border rounded-lg p-4 space-y-4">
                   <div className="grid grid-cols-1 gap-4">
                     <FormField
                       control={form.control}
@@ -1865,12 +1863,10 @@ export default function CreateResumeForm() {
                           <FormItem>
                             <FormLabel>Program Date</FormLabel>
                             <FormControl>
-                              <Input
-                                type="number"
-                                min="1900"
-                                max={new Date().getFullYear()}
-                                placeholder="e.g. 2023"
-                                {...field}
+                              <CustomDateInput
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder="MM/YYYY"
                               />
                             </FormControl>
                             <FormMessage />
