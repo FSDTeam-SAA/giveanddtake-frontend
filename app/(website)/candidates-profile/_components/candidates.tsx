@@ -224,15 +224,20 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div>
       {/* Banner */}
-      <div>
-        <Image
-          src={resume.banner || "/company-cover.jpg"}
-          alt={`${resume.firstName} banner`}
-          width={1200}
-          height={200}
-          className="w-full h-48 object-cover"
-        />
+      <div className="w-full h-48">
+        {resume.banner ? (
+          <Image
+            src={resume.banner}
+            alt={`${resume.firstName} banner`}
+            width={1200}
+            height={200}
+            className="w-full h-48 object-cover"
+          />
+        ) : (
+          <div className="w-full h-48 bg-gray-200" /> // fallback background color
+        )}
       </div>
+
       {/* Profile Section */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 px-6 mt-[-30px]">
         <div className="col-span-3">

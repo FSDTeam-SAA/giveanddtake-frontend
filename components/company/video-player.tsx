@@ -52,7 +52,7 @@ export function VideoPlayer({ pitchId, className = "" }: VideoPlayerProps) {
         controls
         autoPlay
         muted
-        className="w-full h-full rounded-lg"
+        className="w-full  rounded-lg  h-[500px]"
         poster="/placeholder.svg?height=300&width=500"
       >
         Your browser does not support the video tag.

@@ -380,7 +380,7 @@ const transformApiPlanToLocalPlan = (apiPlan: Plan): {
 } => {
   return {
     name: apiPlan.title,
-    description: `$${apiPlan.price} per Job Advert (30 Days Post)`,
+    description: `$${apiPlan.price} ${apiPlan.description}`,
     features: apiPlan.features.map(feature => ({
       text: feature,
       included: true
