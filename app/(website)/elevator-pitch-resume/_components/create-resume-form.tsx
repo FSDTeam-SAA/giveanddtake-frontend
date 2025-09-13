@@ -27,10 +27,9 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, X, Copy, Check, Plus, ChevronsUpDown } from "lucide-react";
+import { Upload, X, Check, ChevronsUpDown } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import { createResume, uploadElevatorPitch } from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -50,6 +49,13 @@ import {
 import { cn } from "@/lib/utils";
 import { BannerUpload } from "./banner-upload";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
+import { SkillsSelector } from "./skills-selector";
+import { SocialLinksSection } from "./social-links-section";
+import {
+  uploadElevatorPitch,
+  deleteElevatorPitchVideo,
+  createResume,
+} from "@/lib/api-service";
 
 // ... (Previous imports and DUMMY_SKILLS remain unchanged)
 
@@ -66,34 +72,25 @@ const DUMMY_SKILLS = [
   "Critical Thinking",
   "CSS",
   "Docker",
-  "Express.js",
-  "Figma",
-  "Git",
-  "GitHub",
-  "GitLab",
-  "HTML",
-  "Java",
-  "JavaScript",
-  "Kubernetes",
-  "Leadership",
-  "MongoDB",
-  "MySQL",
-  "Next.js",
-  "Node.js",
-  "PostgreSQL",
-  "Problem Solving",
-  "Project Management",
-  "Python",
-  "React",
-  "Redis",
-  "Scrum",
-  "Tailwind CSS",
-  "Team Work",
-  "TypeScript",
-  "UI/UX Design",
-  "Vue.js",
   "Web Design",
-].sort()
+].sort();
+
+const isBrowser = typeof window !== "undefined";
+
+const LS_KEYS = {
+  formData: "register.formData",
+  firstName: "register.firstName",
+  surname: "register.surname",
+  selectedCountry: "register.selectedCountry",
+} as const;
+
+function safeJSON<T>(raw: string | null, fallback: T): T {
+  try {
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 const resumeSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -116,7 +113,7 @@ const resumeSchema = z.object({
         message: "About section cannot exceed 200 words",
       }
     ),
-  skills: z.array(z.string()),
+  skills: z.array(z.string()).min(1, "At least one skill is required"),
   sLink: z
     .array(
       z.object({
@@ -306,7 +303,6 @@ export default function CreateResumeForm() {
   >([]);
   const [skillSearch, setSkillSearch] = useState("");
   const [filteredSkills, setFilteredSkills] = useState<string[]>([]);
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
@@ -314,8 +310,6 @@ export default function CreateResumeForm() {
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [certificationInput, setCertificationInput] = useState("");
   const [languageInput, setLanguageInput] = useState("");
-  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
   const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>(
     []
   );
@@ -328,6 +322,14 @@ export default function CreateResumeForm() {
   const [loadingEducationCities, setLoadingEducationCities] = useState<
     boolean[]
   >([]);
+
+  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "{{base_url}}";
 
   const { data: session } = useSession();
 
@@ -385,6 +387,10 @@ export default function CreateResumeForm() {
     },
   });
 
+  useEffect(() => {
+    form.setValue("skills", selectedSkills);
+  }, [selectedSkills, form]);
+
   const {
     fields: experienceFields,
     append: appendExperience,
@@ -437,13 +443,28 @@ export default function CreateResumeForm() {
 
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
-    onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
+    onSuccess: (data) => {
       setIsElevatorPitchUploaded(true);
+      setUploadedVideoUrl(data.videoUrl);
+      toast.success("Elevator pitch uploaded successfully!");
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
+    onError: (error) => {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload elevator pitch. Please try again.");
+    },
+  });
+
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: deleteElevatorPitchVideo,
+    onSuccess: () => {
       setIsElevatorPitchUploaded(false);
+      setUploadedVideoUrl(null);
+      setElevatorPitchFile(null);
+      toast.success("Elevator pitch deleted successfully!");
+    },
+    onError: (error) => {
+      console.error("Delete error:", error);
+      toast.error("Failed to delete elevator pitch. Please try again.");
     },
   });
 
@@ -682,18 +703,21 @@ export default function CreateResumeForm() {
   };
 
   const handleElevatorPitchUpload = async () => {
-    if (elevatorPitchFile && session?.user?.id) {
-      try {
-        await uploadElevatorPitchMutation.mutateAsync({
-          videoFile: elevatorPitchFile,
-          userId: session.user.id,
-        });
-      } catch (error) {
-        // Error toast is handled in mutation onError
-      }
-    } else {
-      toast.error("Please select a video file to upload");
+    if (!elevatorPitchFile || !session?.user?.id) {
+      toast.error("Please select a video file first");
+      return;
     }
+
+    uploadElevatorPitchMutation.mutate({
+      videoFile: elevatorPitchFile,
+      userId: session.user.id,
+    });
+  };
+
+  const handleElevatorPitchDelete = async () => {
+    if (!session?.user?.id) return;
+
+    deleteElevatorPitchMutation.mutate(session.user.id);
   };
 
   const addSkill = (skill: string) => {
@@ -773,14 +797,45 @@ export default function CreateResumeForm() {
   };
 
   const onSubmit = async (data: ResumeFormData) => {
-    // if (!isElevatorPitchUploaded) {
-    //   toast.error("Please upload your elevator pitch video before submitting the form")
-    //   return
-    // }
+    if (!isElevatorPitchUploaded) {
+      toast.error(
+        "Please upload your elevator pitch video before submitting the form"
+      );
+      return;
+    }
 
     const formData = new FormData();
 
-    // Prepare resume data according to backend model
+    const formatDateToMonthYear = (dateString: string) => {
+      if (!dateString) return "";
+      const date = new Date(dateString + "-01"); // Add day to make it valid
+      return date.toLocaleDateString("en-US", {
+        month: "2-digit",
+        year: "numeric",
+      });
+    };
+
+    const processedExperiences = data.experiences?.map((exp) => ({
+      ...exp,
+      startDate: formatDateToMonthYear(exp.startDate || ""),
+      endDate: exp.currentlyWorking
+        ? ""
+        : formatDateToMonthYear(exp.endDate || ""),
+    }));
+
+    const processedEducation = data.educationList?.map((edu) => ({
+      ...edu,
+      startDate: formatDateToMonthYear(edu.startDate || ""),
+      graduationDate: edu.currentlyStudying
+        ? ""
+        : formatDateToMonthYear(edu.graduationDate || ""),
+    }));
+
+    const processedAwards = data.awardsAndHonors?.map((award) => ({
+      ...award,
+      programeDate: formatDateToMonthYear(award.programeDate || ""),
+    }));
+
     const resumeData = {
       firstName: data.firstName,
       lastName: data.lastName,
@@ -792,15 +847,15 @@ export default function CreateResumeForm() {
       country: data.country,
       aboutUs: data.aboutUs,
       skills: data.skills,
-      sLink: data.sLink,
+      sLink: data.sLink?.filter((link) => link.label && link.url), // Only include filled links
       certifications: data.certifications,
       languages: data.languages,
     };
 
     formData.append("resume", JSON.stringify(resumeData));
-    formData.append("experiences", JSON.stringify(data.experiences));
-    formData.append("educationList", JSON.stringify(data.educationList));
-    formData.append("awardsAndHonors", JSON.stringify(data.awardsAndHonors));
+    formData.append("experiences", JSON.stringify(processedExperiences));
+    formData.append("educationList", JSON.stringify(processedEducation));
+    formData.append("awardsAndHonors", JSON.stringify(processedAwards));
     formData.append("userId", session?.user?.id as string);
 
     if (photoFile) {
@@ -813,6 +868,50 @@ export default function CreateResumeForm() {
 
     createResumeMutation.mutate(formData);
   };
+
+  useEffect(() => {
+    if (!isBrowser) return;
+
+    // whatever you saved on the register page:
+    // - formData: { name, email, password, phoneNum, address, role }
+    const saved = safeJSON<{
+      name?: string;
+      email?: string;
+      phoneNum?: string;
+      address?: string; // country name
+      role?: string;
+    }>(localStorage.getItem(LS_KEYS.formData), {});
+
+    // also saved individually:
+    const savedFirst = localStorage.getItem(LS_KEYS.firstName) ?? "";
+    const savedLast = localStorage.getItem(LS_KEYS.surname) ?? "";
+    const savedSelectedCountry =
+      localStorage.getItem(LS_KEYS.selectedCountry) ?? "";
+
+    // derive first/last from "name" if not explicitly saved
+    const splitName = (saved.name || "").trim().split(/\s+/);
+    const derivedFirst = splitName[0] ?? "";
+    const derivedLast = splitName.slice(1).join(" ");
+
+    // current form values as baseline, then patch
+    const curr = form.getValues();
+    form.reset({
+      ...curr,
+      firstName: savedFirst || derivedFirst || curr.firstName,
+      lastName: savedLast || derivedLast || curr.lastName,
+      email: saved.email || curr.email,
+      phoneNumber: saved.phoneNum || curr.phoneNumber,
+      country: saved.address || savedSelectedCountry || curr.country,
+      // keep the rest as-is
+    });
+
+    // also reflect the hydrated country into your controlled state, if any
+    if (!selectedCountry) {
+      const nextCountry = saved.address || savedSelectedCountry;
+      if (nextCountry) setSelectedCountry(nextCountry);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once after mount
 
   return (
     <div className="p-6 space-y-8">
@@ -828,59 +927,65 @@ export default function CreateResumeForm() {
           })}
           className="space-y-8"
         >
-          {/* Elevator Pitch Upload Section */}
           <Card>
             <CardHeader>
               <CardTitle>Elevator Pitch</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Upload a short video introducing yourself.
+                Upload a short video introducing yourself. This is required
+                before submitting your resume.
               </p>
             </CardHeader>
             <CardContent>
               <ElevatorPitchUpload
                 onFileSelect={setElevatorPitchFile}
                 selectedFile={elevatorPitchFile}
+                uploadedVideoUrl={uploadedVideoUrl}
+                onDelete={handleElevatorPitchDelete}
+                isUploaded={isElevatorPitchUploaded}
               />
-              <Button
-                type="button"
-                className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={handleElevatorPitchUpload}
-                disabled={
-                  uploadElevatorPitchMutation.isPending || !elevatorPitchFile
-                }
-              >
-                {uploadElevatorPitchMutation.isPending ? (
-                  <div className="flex items-center gap-2">
-                    <svg
-                      className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Uploading...
-                  </div>
-                ) : (
-                  "Upload Elevator Pitch"
-                )}
-              </Button>
+              {elevatorPitchFile && !isElevatorPitchUploaded && (
+                <Button
+                  type="button"
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleElevatorPitchUpload}
+                  disabled={uploadElevatorPitchMutation.isPending}
+                >
+                  {uploadElevatorPitchMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Uploading...
+                    </div>
+                  ) : (
+                    "Upload Elevator Pitch"
+                  )}
+                </Button>
+              )}
               {isElevatorPitchUploaded && (
-                <p className="mt-2 text-sm text-green-600">
-                  Elevator pitch uploaded successfully!
-                </p>
+                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ Elevator pitch uploaded successfully! You can now submit
+                    your resume.
+                  </p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -1146,76 +1251,10 @@ export default function CreateResumeForm() {
                 />
               </div>
 
-              {/* Social Links */}
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium">
-                    Social Links
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {sLinkFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-4">
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`sLink.${index}.label`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Platform</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="e.g. GitHub, Portfolio"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`sLink.${index}.url`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://example.com/..."
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="mt-6"
-                        onClick={() => removeSLink(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-4 bg-transparent"
-                    onClick={() => appendSLink({ label: "", url: "" })}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Social Link
-                  </Button>
-                </CardContent>
-              </Card>
+              <SocialLinksSection form={form} />
             </CardContent>
           </Card>
 
-          {/* Skills */}
           <Card>
             <CardHeader>
               <CardTitle>Skills</CardTitle>
@@ -1224,48 +1263,11 @@ export default function CreateResumeForm() {
               </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <FormLabel>Skills*</FormLabel>
-                <div className="relative">
-                  <Input
-                    placeholder="Search and add skills"
-                    value={skillSearch}
-                    onChange={(e) => setSkillSearch(e.target.value)}
-                  />
-                  {filteredSkills.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-                      {filteredSkills.slice(0, 10).map((skill) => (
-                        <button
-                          key={skill}
-                          type="button"
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                          onClick={() => {
-                            addSkill(skill);
-                            setSkillSearch("");
-                          }}
-                        >
-                          {skill}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedSkills.map((skill) => (
-                    <Badge
-                      key={skill}
-                      variant="secondary"
-                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                    >
-                      {skill}
-                      <X
-                        className="h-3 w-3 cursor-pointer"
-                        onClick={() => removeSkill(skill)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+              <SkillsSelector
+                selectedSkills={selectedSkills}
+                onSkillsChange={setSelectedSkills}
+                baseUrl={baseUrl}
+              />
             </CardContent>
           </Card>
 
@@ -1918,11 +1920,14 @@ export default function CreateResumeForm() {
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
           <Button
             type="submit"
             className="w-full bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
-            // disabled={createResumeMutation.isPending || form.formState.isSubmitting || !isElevatorPitchUploaded}
+            disabled={
+              createResumeMutation.isPending ||
+              form.formState.isSubmitting ||
+              !isElevatorPitchUploaded
+            }
           >
             {createResumeMutation.isPending || form.formState.isSubmitting ? (
               <div className="flex items-center gap-2">
@@ -1946,12 +1951,21 @@ export default function CreateResumeForm() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Saving...
+                Creating Resume...
               </div>
+            ) : !isElevatorPitchUploaded ? (
+              "Upload Elevator Pitch First"
             ) : (
-              "Save"
+              "Create Resume"
             )}
           </Button>
+
+          {!isElevatorPitchUploaded && (
+            <p className="text-center text-sm text-red-600">
+              Please upload your elevator pitch video before submitting the
+              form.
+            </p>
+          )}
         </form>
       </Form>
     </div>
