@@ -72,15 +72,6 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Social Icons Preview */}
-        <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-          <Image
-            src="/images/social-icons.png"
-            alt="Social media platforms"
-            width={400}
-            height={80}
-            className="object-contain"
-          />
-        </div>
 
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-center gap-4">
