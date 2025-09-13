@@ -49,7 +49,11 @@ import { format } from "date-fns";
 // react-datepicker
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { toast } from "sonner";
 
+/* =========================
+   Types / constants
+========================= */
 interface Country {
   name: string;
   code: string;
@@ -59,7 +63,32 @@ interface Country {
 type ValidRole = "candidate" | "recruiter" | "company";
 const VALID_ROLES: ValidRole[] = ["candidate", "recruiter", "company"];
 
-// Handles reading ?role=candidate|recruiter|company
+/* =========================
+   Local Storage Helpers
+========================= */
+const LS_KEYS = {
+  formData: "register.formData",
+  firstName: "register.firstName",
+  surname: "register.surname",
+  dobISO: "register.dobISO",
+  agreeToTerms: "register.agreeToTerms",
+  selectedCountry: "register.selectedCountry",
+  selectedRole: "register.selectedRole",
+} as const;
+
+const safeParseJSON = <T,>(raw: string | null, fallback: T): T => {
+  try {
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const isBrowser = typeof window !== "undefined";
+
+/* =========================
+   URL Role selector (unchanged)
+========================= */
 function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
   const searchParams = useSearchParams();
   const roleFromUrl = searchParams.get("role") as ValidRole | null;
@@ -75,7 +104,9 @@ function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
   return null;
 }
 
-// Custom input for DatePicker to match shadcn Button look & feel
+/* =========================
+   Custom Date Button
+========================= */
 const DateButton = forwardRef<
   HTMLButtonElement,
   { value?: string; onClick?: () => void }
@@ -91,45 +122,116 @@ const DateButton = forwardRef<
     )}
   >
     <CalendarIcon className="mr-2 h-4 w-4" />
-    {value || <span>Select your date</span>}
+    {value || <span>Select month & year</span>}
   </Button>
 ));
 DateButton.displayName = "DateButton";
 
+/* =========================
+   Validation Helpers
+========================= */
+const nameRegex = /^[A-Za-z' -]*$/; // letters, spaces, apostrophes, hyphens
+const emailRegex =
+  // reasonably strict but practical RFC 5322–ish
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// normalize to one optional leading + and digits only after
+const sanitizePhone = (raw: string) => {
+  const trimmed = raw.replace(/\s+/g, "");
+  // remove all non + or digits
+  let cleaned = trimmed.replace(/[^+\d]/g, "");
+  // ensure at most a single leading +
+  cleaned = cleaned.replace(/\+/g, (m, offset) => (offset === 0 ? "+" : ""));
+  // strip any '+' that is not at the start
+  if (cleaned.length > 0 && cleaned[0] !== "+") {
+    cleaned = cleaned.replace(/\+/g, "");
+  }
+  // also prevent things like "+123+45"
+  const plusIndex = cleaned.indexOf("+");
+  if (plusIndex > 0) {
+    cleaned = cleaned.replace(/\+/g, "");
+  }
+  return cleaned;
+};
+
 export default function RegisterPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState<RegisterData>({
-    name: "",
-    email: "",
-    password: "",
-    phoneNum: "",
-    address: "",
-    role: "candidate",
+
+  /* =========================
+     State (with LS hydration)
+  ========================= */
+  const [formData, setFormData] = useState<RegisterData>(() => {
+    if (!isBrowser) {
+      return {
+        name: "",
+        email: "",
+        password: "",
+        phoneNum: "",
+        address: "",
+        role: "candidate",
+      };
+    }
+    return safeParseJSON<RegisterData>(localStorage.getItem(LS_KEYS.formData), {
+      name: "",
+      email: "",
+      password: "",
+      phoneNum: "",
+      address: "",
+      role: "candidate",
+    });
   });
 
-  // DOB via react-datepicker
-  const [dob, setDob] = useState<Date | null>(null);
+  const [dob, setDob] = useState<Date | null>(() => {
+    if (!isBrowser) return null;
+    const iso = localStorage.getItem(LS_KEYS.dobISO);
+    if (!iso) return null;
+    // stored as YYYY-MM-01; keep local date object
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  });
 
-  const [firstName, setFirstName] = useState("");
-  const [surname, setSurname] = useState("");
+  const [firstName, setFirstName] = useState<string>(() => {
+    if (!isBrowser) return "";
+    return localStorage.getItem(LS_KEYS.firstName) ?? "";
+  });
+
+  const [surname, setSurname] = useState<string>(() => {
+    if (!isBrowser) return "";
+    return localStorage.getItem(LS_KEYS.surname) ?? "";
+  });
+
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [agreeToTerms, setAgreeToTerms] = useState<boolean>(() => {
+    if (!isBrowser) return false;
+    return localStorage.getItem(LS_KEYS.agreeToTerms) === "true";
+  });
 
-  // PRIMARY role starts as candidate per your request
-  const [selectedRole, setSelectedRole] = useState<ValidRole>("candidate");
+  const [selectedRole, setSelectedRole] = useState<ValidRole>(() => {
+    if (!isBrowser) return "candidate";
+    const fromLS =
+      (localStorage.getItem(LS_KEYS.selectedRole) as ValidRole | null) ??
+      "candidate";
+    return VALID_ROLES.includes(fromLS) ? fromLS : "candidate";
+  });
 
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoadingCountries, setIsLoadingCountries] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState<string>(() => {
+    if (!isBrowser) return "";
+    return localStorage.getItem(LS_KEYS.selectedCountry) ?? "";
+  });
 
   const [passwordValidation, setPasswordValidation] = useState({
-    minLength: false,
-    hasNumber: false,
-    hasSpecialChar: false,
-    hasUpperCase: false,
-    hasLowerCase: false,
+    minLength: formData.password.length >= 10,
+    hasNumber: /\d/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(
+      formData.password
+    ),
+    hasUpperCase: /[A-Z]/.test(formData.password),
+    hasLowerCase: /[a-z]/.test(formData.password),
   });
 
   const [showRoleConfirm, setShowRoleConfirm] = useState(false);
@@ -138,20 +240,34 @@ export default function RegisterPage() {
   );
   const [showUnderAgeDialog, setShowUnderAgeDialog] = useState(false);
 
+  /* =========================
+     React Query Mutation (unchanged)
+  ========================= */
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
     onSuccess: () => {
       router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Registration failed:", error);
+
+      if (error.errorSources?.length > 0) {
+        toast.error(error.errorSources[0].message);
+      } else {
+        toast.error(error.message);
+      }
     },
   });
 
+  /* =========================
+     Effects
+  ========================= */
+  // Keep formData.role in sync with selectedRole
   useEffect(() => {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
   }, [selectedRole]);
 
+  // Fetch countries once
   useEffect(() => {
     const fetchCountries = async () => {
       setIsLoadingCountries(true);
@@ -161,13 +277,19 @@ export default function RegisterPage() {
         );
         const data = await response.json();
         if (!data.error) {
-          setCountries(data.data);
-          if (data.data.length > 0) {
-            setSelectedCountry(data.data[0].name);
+          setCountries(data.data as Country[]);
+          // Initialize selection ONLY if nothing in LS
+          if (!selectedCountry && data.data.length > 0) {
+            const initial = data.data[0] as Country;
+            setSelectedCountry(initial.name);
             setFormData((prev) => ({
               ...prev,
-              address: data.data[0].name,
-              phoneNum: data.data[0].dial_code,
+              address: initial.name,
+              phoneNum:
+                // ensure we don't duplicate dial code if LS already has one
+                prev.phoneNum && prev.phoneNum.startsWith(initial.dial_code)
+                  ? prev.phoneNum
+                  : initial.dial_code,
             }));
           }
         }
@@ -178,8 +300,53 @@ export default function RegisterPage() {
       }
     };
     fetchCountries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Persist to localStorage whenever relevant fields change
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.formData, JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.firstName, firstName);
+  }, [firstName]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.surname, surname);
+  }, [surname]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    const dobISO = dob
+      ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), 1))
+          .toISOString()
+          .slice(0, 10)
+      : "";
+    localStorage.setItem(LS_KEYS.dobISO, dobISO);
+  }, [dob]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.agreeToTerms, String(agreeToTerms));
+  }, [agreeToTerms]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.selectedCountry, selectedCountry);
+  }, [selectedCountry]);
+
+  useEffect(() => {
+    if (!isBrowser) return;
+    localStorage.setItem(LS_KEYS.selectedRole, selectedRole);
+  }, [selectedRole]);
+
+  /* =========================
+     Password Validation
+  ========================= */
   const validatePassword = (password: string) => {
     const validation = {
       minLength: password.length >= 10,
@@ -192,39 +359,119 @@ export default function RegisterPage() {
     return Object.values(validation).every(Boolean);
   };
 
+  /* =========================
+     Controlled Handlers with Validation
+  ========================= */
+
+  // Shared setter for RegisterData fields with validation hooks
   const handleInputChange = (field: keyof RegisterData, value: string) => {
+    if (field === "email") {
+      value = value.trim();
+    }
+
+    if (field === "password") {
+      validatePassword(value);
+    }
+
+    // Phone special handling: keep leading dial code behavior and enforce numeric characters
     if (field === "phoneNum") {
+      // sanitize user keystrokes to + and digits only
+      let next = sanitizePhone(value);
+
+      // Enforce that the selected country's dial code is present as prefix
       const selectedCountryData = countries.find(
         (country) => country.name === formData.address
       );
       const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
-      if (!value.startsWith(dialCode)) {
-        value = dialCode + value.replace(/^\+\d+/, "");
+
+      if (dialCode) {
+        // ensure next starts with dialCode (which includes '+')
+        if (!next.startsWith(dialCode)) {
+          // strip any leading +country part, keep the rest digits
+          const withoutDial = next.replace(/^\+\d+/, "");
+          next = dialCode + withoutDial;
+        }
       }
+
+      setFormData((prev) => ({ ...prev, phoneNum: next }));
+      return;
     }
+
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === "password") validatePassword(value);
   };
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
     const selectedCountryData = countries.find((c) => c.name === value);
     const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
-    setFormData((prev) => ({
-      ...prev,
-      address: value,
-      phoneNum: dialCode + prev.phoneNum.replace(/^\+\d+/, ""),
-    }));
+    setFormData((prev) => {
+      const stripped = sanitizePhone(prev.phoneNum).replace(/^\+\d+/, "");
+      const nextPhone = dialCode + stripped;
+      return {
+        ...prev,
+        address: value,
+        phoneNum: nextPhone,
+      };
+    });
   };
 
-  // ---- Age helpers ----
+  // Prevent illegal chars at input level for names and phone.
+  const blockNonNameChars: React.FormEventHandler<HTMLInputElement> = (e) => {
+    const target = e.target as HTMLInputElement;
+    if (!nameRegex.test(target.value)) {
+      target.value = target.value.replace(/[^A-Za-z' -]/g, "");
+    }
+  };
+
+  const preventInvalidPhoneKey: React.KeyboardEventHandler<HTMLInputElement> = (
+    e
+  ) => {
+    const allowedControl = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Home",
+      "End",
+      "Tab",
+    ];
+    if (allowedControl.includes(e.key)) return;
+
+    // allow digits
+    if (/^\d$/.test(e.key)) return;
+
+    // allow a single leading '+'
+    const input = e.currentTarget;
+    if (
+      e.key === "+" &&
+      input.selectionStart === 0 &&
+      !input.value.includes("+")
+    )
+      return;
+
+    // otherwise block
+    e.preventDefault();
+  };
+
+  // extra guard for paste into phone
+  const onPhonePaste: React.ClipboardEventHandler<HTMLInputElement> = (e) => {
+    const text = e.clipboardData.getData("text");
+    const sanitized = sanitizePhone(text);
+    if (sanitized.length === 0) {
+      e.preventDefault();
+      return;
+    }
+  };
+
+  /* =========================
+     DOB / Age helpers (unchanged)
+  ========================= */
   const today = useMemo(() => {
     const t = new Date();
     t.setHours(0, 0, 0, 0);
     return t;
   }, []);
 
-  // Cutoff = today - 16 years (must be born on/before this)
   const cutoff = useMemo(() => {
     const d = new Date(today);
     d.setFullYear(d.getFullYear() - 16);
@@ -240,20 +487,27 @@ export default function RegisterPage() {
   const dobISO = useMemo(
     () =>
       dob
-        ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate()))
+        ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), 1))
             .toISOString()
             .slice(0, 10)
         : "",
     [dob]
   );
 
-  const isUnder16 = useMemo(() => (dob ? dob > cutoff : false), [dob, cutoff]);
+  const isUnder16 = useMemo(() => {
+    if (!dob) return false;
+    const dobPlus16 = new Date(dob);
+    dobPlus16.setFullYear(dobPlus16.getFullYear() + 16);
+    return dobPlus16 > today;
+  }, [dob, today]);
 
   useEffect(() => {
     if (dob && isUnder16) setShowUnderAgeDialog(true);
   }, [dob, isUnder16]);
 
-  // use isPending (fixes TS error you saw)
+  /* =========================
+     CTA Text (unchanged)
+  ========================= */
   const primaryCtaText = useMemo(() => {
     if (registerMutation.isPending) return "Creating Account...";
     if (selectedRole === "candidate") return "Sign up as a Candidate";
@@ -261,32 +515,74 @@ export default function RegisterPage() {
     return "Sign up as a Company";
   }, [registerMutation.isPending, selectedRole]);
 
-  // Now DOB is required for all roles (you requested all fields show for any role)
   const needsDob = true;
 
+  /* =========================
+     Submit Validations
+  ========================= */
   const validateBeforeSubmit = () => {
+    // First/surname
+    if (!firstName.trim() || !nameRegex.test(firstName)) {
+      toast.error("Please enter a valid First Name.");
+      return false;
+    }
+    if (!surname.trim() || !nameRegex.test(surname)) {
+      toast.error("Please enter a valid Surname.");
+      return false;
+    }
+
+    // Email
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address.");
+      return false;
+    }
+
+    // Country
+    if (!formData.address) {
+      toast.error("Please select your country.");
+      return false;
+    }
+
+    // Phone (must be + and digits only, at least dial code + 4 digits typical)
+    const sanitizedPhone = sanitizePhone(formData.phoneNum);
+    if (!/^\+\d{4,}$/.test(sanitizedPhone)) {
+      toast.error("Please enter a valid phone number (e.g., +123456789).");
+      return false;
+    }
+
+    // DOB
     if (needsDob) {
       if (!dob) {
-        alert("Please select your Date of Birth.");
+        toast.error("Please select your Date of Birth (MM/YYYY).");
         return false;
       }
       if (isUnder16) {
         setShowUnderAgeDialog(true);
         return false;
       }
+      // also ensure not in future and within allowed range
+      if (dob > today || dob < oldestAllowed) {
+        toast.error("Please select a valid Date of Birth.");
+        return false;
+      }
     }
+
+    // Password
     if (formData.password !== confirmPassword) {
-      alert("Passwords do not match");
+      toast.error("Passwords do not match");
       return false;
     }
     if (!validatePassword(formData.password)) {
-      alert("Password does not meet the requirements");
+      toast.error("Password does not meet the requirements");
       return false;
     }
+
+    // Terms
     if (!agreeToTerms) {
-      alert("Please agree to the terms and conditions");
+      toast.error("Please agree to the terms and conditions");
       return false;
     }
+
     return true;
   };
 
@@ -309,21 +605,19 @@ export default function RegisterPage() {
     setShowRoleConfirm(true);
   };
 
-  // --- Derived secondary buttons for simpler, standard swap behavior
   const secondaryButtons = useMemo(
     () => VALID_ROLES.filter((r) => r !== selectedRole),
     [selectedRole]
   );
 
-  // Clicking a secondary button: set it as the new primary.
-  // Because secondaries are derived, the previous primary will automatically appear among them.
   const handleSecondaryRoleClick = (clickedRole: ValidRole) => {
     if (clickedRole === selectedRole) return;
     setSelectedRole(clickedRole);
-    // small UX: focus the primary CTA (optional)
-    // document.getElementById("primary-cta")?.focus();
   };
 
+  /* =========================
+     Render
+  ========================= */
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Suspense fallback={<div>Loading role...</div>}>
@@ -351,7 +645,11 @@ export default function RegisterPage() {
                   id="firstName"
                   placeholder="Enter First Name"
                   value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^A-Za-z' -]/g, "");
+                    setFirstName(val);
+                  }}
+                  onInput={blockNonNameChars}
                   className="pl-10"
                   required
                 />
@@ -367,7 +665,11 @@ export default function RegisterPage() {
                   id="surname"
                   placeholder="Enter Surname"
                   value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^A-Za-z' -]/g, "");
+                    setSurname(val);
+                  }}
+                  onInput={blockNonNameChars}
                   className="pl-10"
                   required
                 />
@@ -385,6 +687,12 @@ export default function RegisterPage() {
                   placeholder="Enter Email"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && !emailRegex.test(v)) {
+                      toast.error("Invalid email format.");
+                    }
+                  }}
                   className="pl-10"
                   required
                 />
@@ -431,6 +739,10 @@ export default function RegisterPage() {
                   id="phone"
                   placeholder="Enter Phone Number"
                   value={formData.phoneNum}
+                  inputMode="tel"
+                  autoComplete="tel"
+                  onKeyDown={preventInvalidPhoneKey}
+                  onPaste={onPhonePaste}
                   onChange={(e) =>
                     handleInputChange("phoneNum", e.target.value)
                   }
@@ -438,22 +750,35 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                Only digits allowed. Keep the leading “+” and country code.
+              </p>
             </div>
 
-            {/* DOB - shown for all roles */}
+            {/* DOB - month/year only (we send YYYY-MM-01) */}
             <div className="space-y-2">
-              <Label className="mr-5">Date of Birth</Label>
+              <Label className="mr-5">Date of Birth (MM/YYYY)</Label>
 
               <DatePicker
                 selected={dob}
-                onChange={(date) => setDob(date)}
-                // Ensure selection between [oldestAllowed, cutoff]
+                onChange={(date) => {
+                  if (!date) {
+                    setDob(null);
+                    return;
+                  }
+                  const normalized = new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    1
+                  );
+                  normalized.setHours(0, 0, 0, 0);
+                  setDob(normalized);
+                }}
                 minDate={oldestAllowed}
-                maxDate={new Date()}
-                showMonthDropdown
-                showYearDropdown
-                dropdownMode="select"
-                dateFormat="PPP"
+                maxDate={today}
+                showMonthYearPicker
+                showFullMonthYearPicker={false}
+                dateFormat="MM/yyyy"
                 shouldCloseOnSelect
                 popperPlacement="bottom-start"
                 customInput={<DateButton />}
@@ -654,7 +979,6 @@ export default function RegisterPage() {
                 continue.
               </p>
 
-              {/* Screen-reader live region for role changes */}
               <div aria-live="polite" className="sr-only">
                 Role changed to {selectedRole}
               </div>
@@ -707,7 +1031,7 @@ export default function RegisterPage() {
             <div>
               DOB:{" "}
               <span className="font-medium">
-                {dob ? format(dob, "PPP") : "—"}
+                {dob ? format(dob, "MM/yyyy") : "—"}
               </span>
             </div>
           </div>
@@ -717,9 +1041,7 @@ export default function RegisterPage() {
                 variant="outline"
                 type="button"
                 onClick={() => {
-                  // reset selection so the secondary role buttons are unselected
                   setSelectedRole("candidate");
-                  // close the dialog
                   setShowRoleConfirm(false);
                 }}
               >
@@ -767,8 +1089,8 @@ export default function RegisterPage() {
               </span>
               <br />
               <span className="text-xs text-muted-foreground">
-                If you selected the wrong date, please adjust your Date of Birth
-                above.
+                If you selected the wrong month or year, please adjust your Date
+                of Birth above.
               </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
