@@ -261,6 +261,10 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             {resume.firstName} {resume.lastName}
           </h2>
           <p className="text-gray-600">{resume.title}</p>
+          <p className="text-gray-600 flex items-center">
+            <MapPin className="w-4 h-4 mr-1" />
+            {resume.country || "N/A"},{resume.city}
+          </p>
 
           {/* Social Links */}
           <div className="flex gap-2 mt-3">
@@ -282,43 +286,21 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         {/* Contact Info */}
         <div className="col-span-7 lg:mt-[60px]">
           <h3 className="font-semibold text-gray-800 mb-3 text-2xl border-b-2 pb-2">
-            Contact Info
+            About
           </h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div>
-                <h3 className="font-semibold text-lg">Location</h3>
-                <p className="text-gray-600">
-                  {resume.city && `${resume.city}, `} {resume.country || "N/A"}
-                </p>
-              </div>
-            </div>
-            <div>
-              <div>
-                <h3 className="font-semibold text-lg">Website</h3>
-                <p className="text-blue-600">
-                  {resume.sLink?.find((s) => s.label === "website")?.url ||
-                    "N/A"}
-                </p>
-              </div>
-            </div>
+          <div className="">
+            <p
+              className="text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: resume.aboutUs || "No description provided",
+              }}
+            />
           </div>
         </div>
       </div>
 
-      {/* About */}
-      <section className="border-b py-6">
-        <h3 className="text-2xl font-semibold mb-3">About</h3>
-        <p
-          className="text-gray-600 leading-relaxed"
-          dangerouslySetInnerHTML={{
-            __html: resume.aboutUs || "No description provided",
-          }}
-        />
-      </section>
-
       {/* Skills */}
-      <section className="border-b py-6">
+      <section className="border-b py-12">
         <h3 className="text-2xl font-semibold mb-3">Skills</h3>
         <div className="flex flex-wrap gap-2">
           {resume.skills?.length ? (

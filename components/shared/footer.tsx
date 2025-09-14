@@ -13,7 +13,6 @@ export function Footer() {
   const role = session?.user?.role;
   const router = useRouter();
 
-
   const handleCreateAccountClick = () => {
     if (!token) {
       router.push("/login");
@@ -25,16 +24,20 @@ export function Footer() {
   const handleCreateRecruiterAccountClick = () => {
     if (!token) {
       router.push("/login");
+    } else if (role !== "recruiter") {
+      router.push("/login"); // Redirect to login if user is not a company
     } else {
-      router.push("/recruiter-dashboard");
+      router.push("/elevator-pitch-resume");
     }
   };
 
   const handleCreateCompanyAccountClick = () => {
     if (!token) {
       router.push("/login");
+    } else if (role !== "company") {
+      router.push("/login"); // Redirect to login if user is not a company
     } else {
-      router.push("/create-company");
+      router.push("/ elevator-pitch-resume");
     }
   };
 
@@ -62,7 +65,7 @@ export function Footer() {
     } else if (role == "company") {
       router.push("/add-job"); // Redirect to login if user is not a company
     } else {
-      router.push("/create-company");
+      router.push("/elelevator-pitch-resume");
     }
   };
 
