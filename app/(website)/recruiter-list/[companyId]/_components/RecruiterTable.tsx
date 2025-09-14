@@ -19,6 +19,7 @@ interface EmployeeData {
   email: string;
   phoneNum: string;
   role: string;
+  photo?: { url: string };
   skills: string[];
 }
 
@@ -55,9 +56,6 @@ export default function RecruiterTable({
             <TableHead className="font-medium text-gray-700">
               Phone Number
             </TableHead>
-            <TableHead className="font-medium text-gray-700">
-              Total Skills
-            </TableHead>
             <TableHead className="font-medium text-gray-700">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -67,7 +65,7 @@ export default function RecruiterTable({
               <TableCell>
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg" alt={recruiter.name} />
+                    <AvatarImage src={recruiter?.photo?.url} alt={recruiter.name} />
                     <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
                       {recruiter.name
                         .split(" ")
@@ -90,9 +88,6 @@ export default function RecruiterTable({
               </TableCell>
               <TableCell className="text-gray-600">
                 {recruiter.phoneNum}
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {recruiter.skills.length}
               </TableCell>
               <TableCell>
                 <Button

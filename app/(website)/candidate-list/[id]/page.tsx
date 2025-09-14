@@ -18,6 +18,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"; // Import Dialog components from Shadcn UI
 
 interface User {
   _id: string;
@@ -27,6 +34,12 @@ interface User {
 }
 
 interface resumeId {
+  _id: string;
+}
+
+interface Answer {
+  question: string;
+  ans: string;
   _id: string;
 }
 
@@ -42,10 +55,11 @@ interface Application {
     | "interviewed"
     | "selected"
     | "application received"
-    | "unsuccessful"; // widen to tolerate existing values
+    | "unsuccessful";
   createdAt: string;
   updatedAt: string;
-  experience?: string; // Added for dynamic experience
+  experience?: string;
+  answer?: Answer[]; // Add answer field to the interface
 }
 
 interface ApiResponse {
@@ -115,10 +129,12 @@ export default function JobApplicantsPage() {
     totalItems: 0,
     itemsPerPage: 10,
   });
-  const [statusLoading, setStatusLoading] = useState<string[]>([]); // Track loading state for status updates
+  const [statusLoading, setStatusLoading] = useState<string[]>([]);
   const [selectedApplicationId, setSelectedApplicationId] = useState(
     "689b0fc1167718bb391da85d"
-  ); // highlight row example
+  );
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
+  const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>([]); // State for answers
 
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
@@ -180,7 +196,6 @@ export default function JobApplicantsPage() {
         throw new Error("Failed to update status");
       }
 
-      // Optimistically update UI
       setApplications((prev) =>
         prev.map((app) =>
           app._id === applicationId ? { ...app, status: newStatus } : app
@@ -223,6 +238,12 @@ export default function JobApplicantsPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", page.toString());
     router.push(`?${params.toString()}`);
+  };
+
+  // Handle opening the modal and setting the answers
+  const handleOpenModal = (answers: Answer[] | undefined) => {
+    setSelectedAnswers(answers || []);
+    setIsModalOpen(true);
   };
 
   if (error) {
@@ -268,6 +289,13 @@ export default function JobApplicantsPage() {
               <TableHead className="text-base text-[#2B7FD0] font-bold">
                 Details
               </TableHead>
+
+              {applications.length > 0 && applications[0].answer && applications[0].answer.length > 0 && (
+                <TableHead className="text-base text-[#2B7FD0] font-bold">
+                  Custom Question
+                </TableHead>
+              )}
+
               <TableHead className="text-base text-[#2B7FD0] font-bold">
                 Status
               </TableHead>
@@ -347,6 +375,53 @@ export default function JobApplicantsPage() {
                         Details
                       </Link>
                     </TableCell>
+                    {applications.length > 0 && applications[0] && applications[0].answer && applications[0].answer.length > 0 && (
+                      <TableCell>
+                        <Dialog
+                          open={isModalOpen}
+                          onOpenChange={setIsModalOpen}
+                        >
+                          <DialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                handleOpenModal(application.answer)
+                              }
+                            >
+                              Answer
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="sm:max-w-[600px] max-h-[600px] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Custom Question Answers</DialogTitle>
+                            </DialogHeader>
+                            <div className="mt-4">
+                              {selectedAnswers.length > 0 ? (
+                                <div className="space-y-4">
+                                  {selectedAnswers.map((answer) => (
+                                    <div
+                                      key={answer._id}
+                                      className="border-b pb-4"
+                                    >
+                                      <h3 className="font-semibold text-gray-800">
+                                        {answer.question}
+                                      </h3>
+                                      <p className="text-gray-600 mt-1">
+                                        {answer.ans}
+                                      </p>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-gray-500">
+                                  No answers provided.
+                                </p>
+                              )}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </TableCell>
+                    )}
                     <TableCell>
                       <div className="flex gap-2 flex-wrap items-center">
                         {STATUS_OPTIONS.map((opt) => {

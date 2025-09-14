@@ -243,7 +243,7 @@ export default function ManagePage() {
               <tr key={request.id} className="border-b align-top">
                 {/* Recruiter */}
                 <td className="p-3 w-[25%]">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
                       {request.avatar?.url ? (
                         <AvatarImage
@@ -259,9 +259,6 @@ export default function ManagePage() {
                     <div>
                       <div className="font-medium line-clamp-1">
                         {request.name}
-                      </div>
-                      <div className="text-xs text-muted-foreground line-clamp-1">
-                        {request.company}
                       </div>
                     </div>
                   </div>
@@ -331,13 +328,6 @@ export default function ManagePage() {
         <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
-            onClick={() => setPage(1)}
-            disabled={currentPage === 1}
-          >
-            First
-          </Button>
-          <Button
-            variant="outline"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
           >
@@ -362,13 +352,6 @@ export default function ManagePage() {
             disabled={currentPage === totalPages}
           >
             Next
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setPage(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            Last
           </Button>
         </div>
       </div>

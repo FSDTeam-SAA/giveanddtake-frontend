@@ -113,8 +113,6 @@ export default function NotificationsPage() {
     )
   }
 
-  console.log("NOOOOOOOOOOOOOOOOOO", notifications)
-
   return (
     <div className="container mx-auto py-24">
       <div className="flex items-center justify-between mb-6">

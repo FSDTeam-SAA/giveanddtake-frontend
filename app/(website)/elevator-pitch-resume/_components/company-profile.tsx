@@ -73,6 +73,9 @@ interface EmployeeData {
   name: string;
   email: string;
   phoneNum: string;
+  photo: {
+    url: string;
+  };
   role: string;
   skills: string[];
 }
@@ -547,7 +550,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage
-                              src="/placeholder.svg"
+                              src={recruiter.photo.url}
                               alt={recruiter.name}
                             />
                             <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">

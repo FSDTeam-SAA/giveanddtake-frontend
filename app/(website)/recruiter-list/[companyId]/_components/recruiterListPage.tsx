@@ -15,6 +15,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EmployeeSelector } from "@/components/company/employee-selector";
+import Link from "next/link";
+import { ArrowBigLeft, ArrowLeft } from "lucide-react";
 
 interface EmployeeData {
   _id: string;
@@ -212,10 +214,10 @@ export default function RecruiterListPage({
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/add-employee-to-company`,
         {
           method: "PATCH",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
-           },
+          },
           body: JSON.stringify({ companyId, employeeIds: selectedEmployees }),
         }
       );
@@ -247,7 +249,13 @@ export default function RecruiterListPage({
   return (
     <div className="p-6 container mx-auto">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
-        <h1 className="text-2xl font-semibold mb-6 md:mb-0">Recruiter List</h1>
+        <Link href="/elevator-pitch-resume">
+          <Button variant="ghost" size="icon" className="text-gray-500">
+            <ArrowLeft className="h-6 w-6 text-gray-500" />
+            Back
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">Recruiter List</h1>
         <div className="flex gap-4">
           <Button onClick={() => setShowModal(true)}>Add recruiter</Button>
         </div>

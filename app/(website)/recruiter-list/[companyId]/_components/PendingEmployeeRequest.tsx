@@ -56,6 +56,15 @@ export default function PendingEmployeeRequest({
   const session = useSession()
   const token = session.data?.accessToken
 
+
+
+  const companyid = requests[0]?.company
+
+
+  const requireterId = requests[0]?.userId._id
+
+  console.log("requireters", requireterId)
+
   const updateStatusMutation = useMutation<
     UpdateStatusResponse,
     Error,
@@ -70,7 +79,7 @@ export default function PendingEmployeeRequest({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ status, companyId: companyId, userId: requestId }),
+          body: JSON.stringify({ status, companyId: companyid, userId: requireterId }),
         }
       )
 
@@ -113,7 +122,6 @@ export default function PendingEmployeeRequest({
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="font-medium text-gray-700">Request ID</TableHead>
                 <TableHead className="font-medium text-gray-700">User</TableHead>
                 <TableHead className="font-medium text-gray-700">Status</TableHead>
                 <TableHead className="font-medium text-gray-700">Created At</TableHead>
@@ -123,7 +131,6 @@ export default function PendingEmployeeRequest({
             <TableBody>
               {requests.map((req) => (
                 <TableRow key={req._id} className="hover:bg-gray-50">
-                  <TableCell>{req._id}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -162,7 +169,7 @@ export default function PendingEmployeeRequest({
                             size="sm"
                             variant="default"
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
-                            onClick={() => handleStatusUpdate(req._id, "approved")}
+                            onClick={() => handleStatusUpdate(req._id, "accepted")}
                             disabled={updateStatusMutation.isPending}
                           >
                             Approve
