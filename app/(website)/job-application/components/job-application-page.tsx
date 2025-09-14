@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ArrowLeft,
   Linkedin,
@@ -17,7 +18,6 @@ import {
   Instagram,
   Upload,
   Trash,
-  Eye,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -51,11 +51,25 @@ interface UserDataResponse {
   data: UserData;
 }
 
+interface CustomQuestion {
+  question: string;
+  _id: string;
+}
+
+interface JobDetailsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    _id: string;
+    title: string;
+    customQuestion: CustomQuestion[];
+  };
+}
+
 interface JobApplicationPageProps {
   jobId: string;
 }
 
-// Skeleton loader component
 const Skeleton = ({ className }: { className?: string }) => (
   <div
     className={`animate-pulse bg-gray-200 rounded ${className}`}
@@ -68,18 +82,17 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const userId = session?.user?.id;
   const token = session?.accessToken;
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [agreedToShareCV, setAgreedToShareCV] = useState(false);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({}); // Keeping state as answers for internal use
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Inside your component:
-  const router = useRouter();
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
-    console.error("NEXT_PUBLIC_BASE_URL is not defined");
+    console.error("NEXT_PUBLIC_BASE_URL is not defined at 11:31 AM +06, 2025-09-14");
     toast.error("Application configuration error. Please contact support.");
   }
 
@@ -95,6 +108,26 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       return response.json();
     },
     enabled: !!token,
+  });
+
+  // Fetch job data
+  const {
+    data: jobData,
+    isLoading: isJobLoading,
+    error: jobError,
+  } = useQuery<JobDetailsResponse>({
+    queryKey: ["job", jobId],
+    queryFn: async () => {
+      if (!jobId || jobId === "undefined") throw new Error("Invalid job ID");
+      const response = await fetch(`${baseUrl}/jobs/${jobId}`);
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      if (!data.success)
+        throw new Error(data.message || "Failed to fetch job details");
+      return data as JobDetailsResponse;
+    },
+    enabled: Boolean(jobId && jobId !== "undefined"),
   });
 
   // Fetch resumes
@@ -115,7 +148,9 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       return data.data.map((resume: any, index: number) => ({
         id: resume._id,
         name: resume.file[0]?.filename || "Unnamed Resume",
-        lastUsed: new Date(resume.uploadDate).toLocaleDateString("en-US"),
+        lastUsed: new Date(resume.uploadDate).toLocaleDateString("en-US", {
+          timeZone: "Asia/Dhaka",
+        }),
         url: resume.file[0]?.url?.startsWith("undefined")
           ? `${baseUrl}${resume.file[0].url.replace("undefined", "")}`
           : resume.file[0]?.url,
@@ -138,8 +173,6 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       });
     }
   }, [resumeData]);
-
-  const userData: UserData = data?.data || {};
 
   // Upload resume mutation
   const uploadResumeMutation = useMutation({
@@ -169,7 +202,9 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
           data.data?.file[0]?.filename ||
           uploadedFile?.name ||
           "Uploaded Resume.pdf",
-        lastUsed: new Date().toLocaleDateString("en-US"),
+        lastUsed: new Date().toLocaleDateString("en-US", {
+          timeZone: "Asia/Dhaka",
+        }),
         url: data.data?.file[0]?.url?.startsWith("undefined")
           ? `${baseUrl}${data.data.file[0].url.replace("undefined", "")}`
           : data.data?.file[0]?.url,
@@ -215,10 +250,12 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       jobId,
       userId,
       resumeId,
+      answer,
     }: {
       jobId: string;
       userId: string;
       resumeId: string;
+      answer: { question: string; ans: string }[];
     }) => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL");
       const response = await fetch(`${baseUrl}/applied-jobs`, {
@@ -231,6 +268,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
           jobId,
           userId,
           resumeId,
+          answer, // Changed from answers to answer
         }),
       });
       if (!response.ok) {
@@ -250,12 +288,10 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       );
       setUploadedFile(null);
       setAgreedToShareCV(false);
-
+      setAnswers({});
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
-
-      // Redirect to /alljobs
       router.push("/alljobs");
     },
     onError: (error: Error) => {
@@ -291,6 +327,13 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     }
   };
 
+  const handleAnswerChange = (questionId: string, answer: string) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (sessionStatus === "loading") {
@@ -316,14 +359,30 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       return;
     }
 
+    const customQuestions = jobData?.data.customQuestion || [];
+    const answeredQuestions = Object.keys(answers);
+    const missingAnswers = customQuestions.filter(
+      (q) => !answeredQuestions.includes(q._id) || !answers[q._id].trim()
+    );
+    if (missingAnswers.length > 0) {
+      toast.error("Please answer all custom questions.");
+      return;
+    }
+
+    const answer = customQuestions.map((q) => ({
+      question: q.question,
+      ans: answers[q._id] || "",
+    }));
+
     applyJobMutation.mutate({
       jobId,
       userId,
       resumeId: selectedResume.id,
+      answer, // Changed from answers to answer
     });
   };
 
-  if (isLoading || isResumesLoading) {
+  if (isLoading || isResumesLoading || isJobLoading) {
     return (
       <div className="container mx-auto">
         <div className="hidden md:block">
@@ -376,19 +435,23 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     );
   }
 
-  if (error || resumesError) {
+  if (error || resumesError || jobError) {
     return (
       <div className="container mx-auto text-center text-red-600">
         Error:{" "}
-        {error?.message || resumesError?.message || "Failed to load data"}
+        {error?.message ||
+          resumesError?.message ||
+          jobError?.message ||
+          "Failed to load data"}
       </div>
     );
   }
 
-  console.log("UUUUUUUUUUUUUUUU", userData);
+  const userData: UserData = data?.data || {};
+
   return (
     <div className="container mx-auto">
-      <div className="">
+      <div>
         <div className="hidden md:block">
           <div className="flex items-center text-[18px] text-gray-500 my-6">
             <Link
@@ -515,6 +578,37 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
             </div>
           </div>
         </div>
+
+        {(jobData?.data.customQuestion?.length ?? 0) > 0 && (
+          <div className="my-12">
+            <h2 className="text-[40px] font-semibold mb-4 border-b pb-4">
+              Custom Questions
+            </h2>
+            <div className="space-y-6">
+              {jobData?.data.customQuestion.map((question) => (
+                <div key={question._id}>
+                  <Label
+                    htmlFor={`question-${question._id}`}
+                    className="block text-lg font-medium mb-2"
+                  >
+                    {question.question} *
+                  </Label>
+                  <Textarea
+                    id={`question-${question._id}`}
+                    value={answers[question._id] || ""}
+                    onChange={(e) =>
+                      handleAnswerChange(question._id, e.target.value)
+                    }
+                    placeholder="Enter your answer here"
+                    className="w-full min-h-[100px]"
+                    aria-label={`Answer for ${question.question}`}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="my-12">
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>

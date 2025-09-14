@@ -13,7 +13,6 @@ export function Footer() {
   const role = session?.user?.role;
   const router = useRouter();
 
-  console.log(role, "rrrrrrrrrrrrr");
 
   const handleCreateAccountClick = () => {
     if (!token) {
