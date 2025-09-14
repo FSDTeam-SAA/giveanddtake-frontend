@@ -3,7 +3,7 @@
 import type React from "react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { Globe, Linkedin, Twitter, LinkIcon } from "lucide-react";
+import { Globe, Linkedin, Twitter, LinkIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -230,11 +230,17 @@ export default function Recruiters({ userId }: MydataProps) {
             )}
           </div>
           <div>
-            <h1 className="text-2xl font-bold">
-              {recruiterData.firstName} {recruiterData.sureName}{" "}
-              {recruiterData.lastName}
-            </h1>
-            <p className="text-lg text-gray-600">{recruiterData.title}</p>
+            <div className="py-2">
+              <h1 className="text-2xl font-bold">
+                {recruiterData.firstName} {recruiterData.sureName}{" "}
+                {recruiterData.lastName}
+              </h1>
+              <p className="text-lg text-gray-600">{recruiterData.title}</p>
+              <p className="text-gray-700 flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                {recruiterData.country}, {recruiterData.city},
+              </p>
+            </div>
             <div className="flex space-x-2 mt-2">
               {recruiterData.sLink.map((link) => (
                 <SocialIcon
@@ -257,50 +263,21 @@ export default function Recruiters({ userId }: MydataProps) {
         {/* Contact Info */}
         <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
           <h2 className="text-xl font-semibold border-b-2 border-gray-300 pb-1">
-            Contact Info
+            About
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            <p className="text-gray-700">
-              <strong>Location:</strong> {recruiterData.city},{" "}
-              {recruiterData.country}, {recruiterData.zipCode}
-            </p>
-            <p className="text-gray-700">
-              <strong>Phone:</strong> {recruiterData.phoneNumber}
-            </p>
-            <p className="text-gray-700">
-              <strong>Email:</strong>{" "}
-              <a
-                href={`mailto:${recruiterData.emailAddress}`}
-                className="text-blue-500 hover:underline"
-              >
-                {recruiterData.emailAddress}
-              </a>
-            </p>
-            <p className="text-gray-700">
-              <strong>Website:</strong>{" "}
-              {recruiterData.sLink.find(
-                (link) => link.label.toLowerCase() === "website"
-              )?.url ? (
-                <a
-                  href={
-                    recruiterData.sLink.find(
-                      (link) => link.label.toLowerCase() === "website"
-                    )?.url
-                  }
-                  className="text-blue-500 hover:underline"
-                >
-                  Visit Website
-                </a>
-              ) : (
-                "Not provided"
-              )}
-            </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"></div>
+          {/* About */}
+          <div className="">
+            <div
+              className="text-gray-700 mt-2 prose"
+              dangerouslySetInnerHTML={{ __html: recruiterData.bio }}
+            />
           </div>
         </div>
       </div>
 
       {/* Elevator Pitch */}
-      <div className="lg:pb-12 pb-5">
+      <div className="lg:py-12 pb-5">
         <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
           Elevator Pitch
         </h2>
@@ -318,15 +295,6 @@ export default function Recruiters({ userId }: MydataProps) {
       </div>
 
       <div className="border-t border-gray-300 mt-6" />
-
-      {/* About */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold">About</h2>
-        <div
-          className="text-gray-700 mt-2 prose"
-          dangerouslySetInnerHTML={{ __html: recruiterData.bio }}
-        />
-      </section>
 
       {/* Skills */}
       <section className="mt-6 bg-white p-6 rounded-lg shadow">
