@@ -388,6 +388,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
       </section>
 
       {/* Awards */}
+
+      {(awardsAndHonors?.length ?? 0) > 0 &&(
       <section className="py-6">
         <h3 className="text-2xl font-semibold mb-3">Awards & Honours</h3>
         <div className="space-y-4">
@@ -418,6 +420,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           )}
         </div>
       </section>
+      )}
     </div>
   );
 };
