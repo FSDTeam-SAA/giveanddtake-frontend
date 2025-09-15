@@ -160,6 +160,9 @@ export default function ApplicantDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+
+  const MyId = session?.user.id;
+  const MyRole = session?.user.role;
   const token = session?.accessToken;
   const applicationId = params.id as string;
   const resumeId = searchParams.get("resumeId");
@@ -453,6 +456,12 @@ export default function ApplicantDetailsPage() {
       </div>
     );
   }
+
+
+  console.log("RRRTTTTTTTTT", resume.userId)
+
+
+  const userId = resume.userId
 
   return (
     <div className="container mx-auto px-4 py-8">
