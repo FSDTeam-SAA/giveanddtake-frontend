@@ -6,11 +6,10 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-
 import {
   Select,
   SelectContent,
@@ -28,9 +27,8 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Upload, X, ChevronsUpDown, Check } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
-import apiClient, { uploadElevatorPitch } from "@/lib/api-service";
+import { uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { CompanySelector } from "@/components/company/company-selector";
@@ -48,7 +46,10 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { FileUpload } from "@/components/company/file-upload";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload";
+import { SocialLinksSection } from "./social-links-section";
+import CustomDateInput from "@/components/custom-date-input";
+import apiClient from "@/lib/api-service";
 
 interface Option {
   value: string;
@@ -59,10 +60,6 @@ interface Education {
   school: string;
   degree: string;
   year: string;
-}
-
-interface Skill {
-  name: string;
 }
 
 interface SocialLink {
@@ -82,18 +79,7 @@ const recruiterSchema = z.object({
   emailAddress: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
   title: z.string().min(1, "Current position is required"),
-  bio: z
-    .string()
-    .min(1, "Bio is required")
-    .refine(
-      (value) => {
-        const wordCount = value.trim().split(/\s+/).length;
-        return wordCount <= 200;
-      },
-      {
-        message: "Bio cannot exceed 200 words",
-      }
-    ),
+  bio: z.string().optional(),
   experience: z.string().min(1, "Years of experience is required"),
   country: z.string().min(1, "Country is required"),
   city: z.string().optional(),
@@ -109,16 +95,16 @@ const recruiterSchema = z.object({
         year: z.string().min(1, "Year is required"),
       })
     )
-    .min(1, "At least one education entry is required"),
+    .optional(),
   sLink: z
     .array(
       z.object({
         label: z.string().min(1, "Platform name is required"),
-        link: z.string(),
+        link: z.string().url("Invalid URL").optional(), // Made link optional
       })
     )
     .optional(),
-  companyId: z.string().min(1, "Company selection is required"),
+  companyId: z.string().optional(),
   userId: z.string().optional(),
 });
 
@@ -216,19 +202,18 @@ function Combobox({
 export default function CreateRecruiterAccountForm() {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id;
-  const token = session?.accessToken;
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [selectedCountry, setSelectedCountry] = useState<string>("");
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [selectedCompany, setSelectedCompany] = useState<string | undefined>();
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<RecruiterFormData>({
     resolver: zodResolver(recruiterSchema),
@@ -248,11 +233,7 @@ export default function CreateRecruiterAccountForm() {
       languages: [],
       companyRecruiters: [],
       educations: [{ school: "", degree: "", year: "" }],
-      sLink: [
-        { label: "Upwork", link: "https://www.upwork.com/" },
-        { label: "LinkedIn", link: "https://www.linkedin.com/" },
-        { label: "X", link: "https://x.com/" },
-      ],
+      sLink: [],
       companyId: "",
       userId: userId || "",
     },
@@ -265,15 +246,6 @@ export default function CreateRecruiterAccountForm() {
   } = useFieldArray({
     control: form.control,
     name: "educations",
-  });
-
-  const {
-    fields: socialLinkFields,
-    append: appendSocialLink,
-    remove: removeSocialLink,
-  } = useFieldArray({
-    control: form.control,
-    name: "sLink",
   });
 
   const { data: countries, isLoading: isLoadingCountries } = useQuery<
@@ -316,11 +288,14 @@ export default function CreateRecruiterAccountForm() {
       const defaultCountry = countries[0].country;
       form.setValue("country", defaultCountry);
       setSelectedCountry(defaultCountry);
+    } else if (!countries) {
+      console.warn("Countries data is empty or not loaded");
     }
   }, [countries, form]);
 
   useEffect(() => {
     if (selectedCompany) {
+      console.log("Selected companyId:", selectedCompany);
       form.setValue("companyId", selectedCompany);
     }
   }, [selectedCompany, form]);
@@ -331,13 +306,62 @@ export default function CreateRecruiterAccountForm() {
     }
   }, [userId, form]);
 
+  // Cleanup browser extension attributes to prevent hydration mismatch
+  useEffect(() => {
+    const cleanupAttributes = () => {
+      document
+        .querySelectorAll(
+          '[bis_skin_checked], [bis_register], [__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__]'
+        )
+        .forEach((el) => {
+          el.removeAttribute("bis_skin_checked");
+          el.removeAttribute("bis_register");
+          el.removeAttribute("__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__");
+        });
+    };
+    cleanupAttributes();
+  }, []);
+
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: async ({ videoFile, userId }: { videoFile: File; userId: string }) => {
+      return await uploadElevatorPitch({ videoFile, userId });
+    },
+    onSuccess: (data) => {
+      setIsElevatorPitchUploaded(true);
+      setUploadedVideoUrl(data.videoUrl);
+      toast.success("Elevator pitch uploaded successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload elevator pitch");
+    },
+  });
+
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await deleteElevatorPitchVideo(userId);
+    },
+    onSuccess: () => {
+      setIsElevatorPitchUploaded(false);
+      setUploadedVideoUrl(null);
+      setElevatorPitchFile(null);
+      toast.success("Elevator pitch deleted successfully");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete elevator pitch");
+    },
+  });
+
   const createRecruiterAccount = async (data: RecruiterFormData) => {
     const formData = new FormData();
     Object.entries(data).forEach(([key, value]) => {
       if (key === "sLink") {
         (value as SocialLink[]).forEach((link, index) => {
-          formData.append(`sLink[${index}][label]`, link.label);
-          formData.append(`sLink[${index}][link]`, link.link);
+          if (link.label) {
+            formData.append(`sLink[${index}][label]`, link.label);
+            if (link.link) {
+              formData.append(`sLink[${index}][link]`, link.link);
+            }
+          }
         });
       } else if (key === "educations") {
         formData.append("educations", JSON.stringify(value));
@@ -354,12 +378,9 @@ export default function CreateRecruiterAccountForm() {
 
     if (photoFile) formData.append("photo", photoFile);
     if (bannerFile) formData.append("banner", bannerFile);
-    if (elevatorPitchFile && session?.user?.id) {
-      await uploadElevatorPitchMutation.mutateAsync({
-        videoFile: elevatorPitchFile,
-        userId: session.user.id,
-      });
-    }
+
+    console.log("Submitting to URL:", "/recruiter/recruiter-account");
+    console.log("FormData entries:", Object.fromEntries(formData));
 
     try {
       const response = await apiClient.post(
@@ -368,7 +389,6 @@ export default function CreateRecruiterAccountForm() {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            ...(token && { Authorization: `Bearer ${token}` }),
           },
         }
       );
@@ -382,31 +402,13 @@ export default function CreateRecruiterAccountForm() {
   const mutation = useMutation({
     mutationFn: createRecruiterAccount,
     onSuccess: (data) => {
-      toast({
-        title: "Success!",
-        description: "Recruiter account created successfully",
-      });
+      toast.success("Recruiter account created successfully");
       queryClient.invalidateQueries({ queryKey: ["recruiter"] });
       queryClient.invalidateQueries({ queryKey: ["company-account"] });
       queryClient.invalidateQueries({ queryKey: ["my-resume"] });
     },
     onError: (error: any) => {
-      toast({
-        title: "Error",
-        description:
-          error.response?.data?.message || "Failed to create recruiter account",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const uploadElevatorPitchMutation = useMutation({
-    mutationFn: uploadElevatorPitch,
-    onSuccess: () => {
-      // toast.success("Elevator pitch uploaded successfully!");
-    },
-    onError: (error: any) => {
-      // toast.error(error.response?.data?.message || "Failed to upload video");
+      toast.error(error.response?.data?.message || "Failed to create recruiter account");
     },
   });
 
@@ -419,15 +421,6 @@ export default function CreateRecruiterAccountForm() {
     }
   };
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-    }
-  };
-
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -437,56 +430,144 @@ export default function CreateRecruiterAccountForm() {
     }
   };
 
-  const onSubmit = (data: RecruiterFormData) => {
-    const submissionData = { ...data, userId: userId || data.userId };
-    mutation.mutate(submissionData);
+  const handleElevatorPitchUpload = async () => {
+    if (!elevatorPitchFile || !session?.user?.id) {
+      toast.error("Please select a video file and ensure you are logged in");
+      return;
+    }
+
+    uploadElevatorPitchMutation.mutate({
+      videoFile: elevatorPitchFile,
+      userId: session.user.id,
+    });
+  };
+
+  const handleElevatorPitchDelete = async () => {
+    if (!session?.user?.id) {
+      toast.error("User not authenticated");
+      return;
+    }
+
+    deleteElevatorPitchMutation.mutate(session.user.id);
+  };
+
+  const getFirstErrorMessage = (errors: any): string | undefined => {
+    for (const key in errors) {
+      const error = errors[key];
+      if (error.message) {
+        return `${key}: ${error.message}`;
+      }
+      if (typeof error === "object") {
+        for (const subKey in error) {
+          if (error[subKey].message) {
+            return `${key}[${subKey}]: ${error[subKey].message}`;
+          }
+          if (typeof error[subKey] === "object") {
+            for (const subSubKey in error[subKey]) {
+              if (error[subKey][subSubKey].message) {
+                return `${key}[${subKey}].${subSubKey}: ${error[subKey][subSubKey].message}`;
+              }
+            }
+          }
+        }
+      }
+    }
+    return undefined;
+  };
+
+  const onSubmit = async (data: RecruiterFormData) => {
+    console.log("Form submission data:", data);
+    console.log("isElevatorPitchUploaded:", isElevatorPitchUploaded);
+    if (!isElevatorPitchUploaded) {
+      toast.error("Please upload an elevator pitch video before submitting.");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const submissionData = { ...data, userId: userId || data.userId };
+      await mutation.mutateAsync(submissionData);
+    } catch (error) {
+      console.error("Form submission error:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold">Create Recruiter Account</h1>
-        <Button
-          variant="outline"
-          className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
-        >
-          Continue with Google
-        </Button>
+       
       </div>
 
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit, (errors) => {
-            const firstError = Object.values(errors)[0];
-            if (firstError) {
-              toast({
-                title: "Error",
-                description:
-                  firstError.message || "Please fill in all required fields",
-                variant: "destructive",
-              });
+          onSubmit={form.handleSubmit(
+            async (data) => {
+              await onSubmit(data);
+            },
+            (errors) => {
+              console.log("Validation errors:", errors);
+              const errorMessage = getFirstErrorMessage(errors);
+              toast.error(errorMessage || "Please fill in all required fields");
             }
-          })}
+          )}
           className="space-y-6"
         >
           <Card>
             <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg font-medium">
-                    Upload Your Elevator Pitch
-                  </CardTitle>
-                </div>
-              </div>
+              <CardTitle className="text-lg font-medium">
+                Elevator Pitch
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg text-center bg-gray-900 text-white">
-                <FileUpload
-                  onFileSelect={setElevatorPitchFile}
-                  accept="video/*"
-                  maxSize={100 * 1024 * 1024}
-                  variant="dark"
-                ></FileUpload>
+              <ElevatorPitchUpload
+                onFileSelect={setElevatorPitchFile}
+                selectedFile={elevatorPitchFile}
+                uploadedVideoUrl={uploadedVideoUrl}
+                onDelete={handleElevatorPitchDelete}
+                isUploaded={isElevatorPitchUploaded}
+              />
+              <div className="flex justify-center pt-4">
+                <Button
+                  type="button"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                  onClick={handleElevatorPitchUpload}
+                  disabled={
+                    !elevatorPitchFile ||
+                    uploadElevatorPitchMutation.isPending ||
+                    isElevatorPitchUploaded
+                  }
+                >
+                  {uploadElevatorPitchMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Uploading...
+                    </div>
+                  ) : (
+                    "Upload Elevator Pitch"
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -563,48 +644,46 @@ export default function CreateRecruiterAccountForm() {
               <div className="flex items-center gap-4">
                 <div className="mt-[-130px]">
                   <Label className="text-sm font-medium">Profile Photo</Label>
-                  <div className="">
-                    <div>
-                      {photoPreview ? (
-                        <div className="">
-                          <Image
-                            src={photoPreview || "/placeholder.svg"}
-                            alt="Profile preview"
-                            width={80}
-                            height={80}
-                            className="w-[170px] h-[170px] rounded bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center"
-                          />
-                          <div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="mt-1 bg-transparent"
-                              onClick={() =>
-                                document.getElementById("photo-upload")?.click()
-                              }
-                            >
-                              Change Photo
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="w-[170px] h-[170px] rounded bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                            <Upload className="h-6 w-6 text-gray-400" />
-                          </div>
+                  <div>
+                    {photoPreview ? (
+                      <div>
+                        <Image
+                          src={photoPreview}
+                          alt="Profile preview"
+                          width={170}
+                          height={170}
+                          className="rounded bg-gray-100 border-2 border-dashed border-gray-300"
+                        />
+                        <div>
                           <Button
                             type="button"
                             variant="outline"
+                            size="sm"
+                            className="mt-1 bg-transparent"
                             onClick={() =>
                               document.getElementById("photo-upload")?.click()
                             }
                           >
-                            Upload Photo
+                            Change Photo
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="w-[170px] h-[170px] rounded bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                          <Upload className="h-6 w-6 text-gray-400" />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            document.getElementById("photo-upload")?.click()
+                          }
+                        >
+                          Upload Photo
+                        </Button>
+                      </div>
+                    )}
                     <Input
                       id="photo-upload"
                       type="file"
@@ -621,17 +700,16 @@ export default function CreateRecruiterAccountForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          Bio
+                          Bio (Optional)
                         </FormLabel>
                         <FormControl>
                           <TextEditor
-                            value={field.value}
+                            value={field.value ?? ""}
                             onChange={field.onChange}
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
-                          Word count: {field.value.trim().split(/\s+/).length}
-                          /200
+                          Word count: {field.value?.trim().split(/\s+/).length || 0}
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -672,7 +750,7 @@ export default function CreateRecruiterAccountForm() {
                   name="sureName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Surname</FormLabel>
+                      <FormLabel>Surname (Optional)</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter surname" {...field} />
                       </FormControl>
@@ -794,7 +872,7 @@ export default function CreateRecruiterAccountForm() {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>City</FormLabel>
+                      <FormLabel>City (Optional)</FormLabel>
                       <FormControl>
                         <Combobox
                           options={(cities || []).map((city) => ({
@@ -823,7 +901,7 @@ export default function CreateRecruiterAccountForm() {
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Zip/Postal Code </FormLabel>
+                      <FormLabel>Zip/Postal Code (Optional)</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter Zip/Postal Code" {...field} />
                       </FormControl>
@@ -849,83 +927,19 @@ export default function CreateRecruiterAccountForm() {
                       <FormControl>
                         <Input type="hidden" {...field} />
                       </FormControl>
-                      <FormMessage />
+                      <FormMessage className="text-red-500" />
                     </FormItem>
                   )}
                 />
               </div>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg font-medium">
-                    Social Links
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {socialLinkFields.map((field, index) => (
-                    <div key={field.id} className="flex items-center gap-4">
-                      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`sLink.${index}.label`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Platform</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="e.g. GitHub, Portfolio"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name={`sLink.${index}.link`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>URL</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="https://example.com/..."
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="mt-6"
-                        onClick={() => removeSocialLink(index)} // Fixed: Changed removeSocialLinkwhose to removeSocialLink
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => appendSocialLink({ label: "", link: "" })}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Social Link
-                  </Button>
-                </CardContent>
-              </Card>
+              <SocialLinksSection form={form} />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-medium">Education</CardTitle>
+              <CardTitle className="text-lg font-medium">Education (Optional)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {educationFields.map((field, index) => (
@@ -935,7 +949,7 @@ export default function CreateRecruiterAccountForm() {
                     name={`educations.${index}.school`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Institution Name*</FormLabel>
+                        <FormLabel>Institution Name</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="Enter institution name"
@@ -951,7 +965,7 @@ export default function CreateRecruiterAccountForm() {
                     name={`educations.${index}.degree`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Degree*</FormLabel>
+                        <FormLabel>Degree</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter degree" {...field} />
                         </FormControl>
@@ -964,23 +978,21 @@ export default function CreateRecruiterAccountForm() {
                     name={`educations.${index}.year`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Year*</FormLabel>
+                        <FormLabel>Year</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <CustomDateInput {...field} placeholder="MM/YYYY" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  {educationFields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => removeEducation(index)}
-                    >
-                      <X className="mr-2 h-4 w-4" /> Remove Education
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => removeEducation(index)}
+                  >
+                    <X className="mr-2 h-4 w-4" /> Remove Education
+                  </Button>
                 </div>
               ))}
               <Button
@@ -1005,71 +1017,68 @@ export default function CreateRecruiterAccountForm() {
               <FormField
                 control={form.control}
                 name="languages"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Languages</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter languages separated by commas (e.g., English, Spanish, French)"
-                        value={field.value?.join(", ") || ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean)
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const [inputValue, setInputValue] = useState("");
+                  return (
+                    <FormItem>
+                      <FormLabel>Languages</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter a language and press Enter"
+                          value={inputValue}
+                          onChange={(e) => setInputValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const trimmedInput = inputValue.trim();
+                              if (trimmedInput && !field.value?.includes(trimmedInput)) {
+                                field.onChange([...(field.value || []), trimmedInput]);
+                                setInputValue("");
+                              }
+                            }
+                          }}
+                        />
+                      </FormControl>
+                      {field.value && field.value.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {field.value.map((language, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded"
+                            >
+                              {language}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="ml-2 h-4 w-4 p-0"
+                                onClick={() => {
+                                  field.onChange((field.value ?? []).filter((_, i) => i !== index));
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Add Profiles of Company Recruiters (Optional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="companyRecruiters"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Recruiters</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter profile links separated by commas"
-                        value={field.value?.join(", ") || ""}
-                        onChange={(e) =>
-                          field.onChange(
-                            e.target.value
-                              .split(",")
-                              .map((s) => s.trim())
-                              .filter(Boolean)
-                          )
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+      
 
           <div className="flex justify-center pt-4">
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
-              disabled={mutation.isPending || form.formState.isSubmitting}
+              disabled={mutation.isPending || isSubmitting || !isElevatorPitchUploaded}
             >
-              {mutation.isPending || form.formState.isSubmitting ? (
+              {mutation.isPending || isSubmitting ? (
                 <div className="flex items-center gap-2">
                   <svg
                     className="animate-spin h-5 w-5 text-white"

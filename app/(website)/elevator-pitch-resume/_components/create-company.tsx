@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -29,7 +30,9 @@ import {
 import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { DynamicInputList } from "@/components/company/dynamic-input-list";
-import { createCompany, uploadElevatorPitch } from "@/lib/api-service";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload";
+import CustomDateInput from "@/components/custom-date-input";
+import { createCompany, uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
 
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -54,6 +57,8 @@ export default function CreateCompanyPage() {
   const queryClient = useQueryClient();
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
+  const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [websites, setWebsites] = useState<string[]>([""]);
   const [services, setServices] = useState<string[]>([""]);
@@ -73,7 +78,6 @@ export default function CreateCompanyPage() {
       toast.success("Company created successfully!");
       queryClient.invalidateQueries({ queryKey: ["company"] });
     },
-
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create company");
     },
@@ -81,12 +85,32 @@ export default function CreateCompanyPage() {
 
   // Upload elevator pitch mutation
   const uploadElevatorPitchMutation = useMutation({
-    mutationFn: uploadElevatorPitch,
-    onSuccess: () => {
+    mutationFn: async ({ videoFile, userId }: { videoFile: File; userId: string }) => {
+      return await uploadElevatorPitch({ videoFile, userId });
+    },
+    onSuccess: (data) => {
+      setIsElevatorPitchUploaded(true);
+      setUploadedVideoUrl(data.videoUrl);
       toast.success("Elevator pitch uploaded successfully!");
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
+    },
+  });
+
+  // Delete elevator pitch mutation
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      return await deleteElevatorPitchVideo(userId);
+    },
+    onSuccess: () => {
+      setIsElevatorPitchUploaded(false);
+      setUploadedVideoUrl(null);
+      setElevatorPitchFile(null);
+      toast.success("Elevator pitch deleted successfully!");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete video");
     },
   });
 
@@ -126,9 +150,35 @@ export default function CreateCompanyPage() {
     setAwards(newAwards);
   };
 
+  const handleElevatorPitchUpload = async () => {
+    if (!elevatorPitchFile || !session?.user?.id) {
+      toast.error("Please select a video file and ensure you are logged in");
+      return;
+    }
+
+    uploadElevatorPitchMutation.mutate({
+      videoFile: elevatorPitchFile,
+      userId: session.user.id,
+    });
+  };
+
+  const handleElevatorPitchDelete = async () => {
+    if (!session?.user?.id) {
+      toast.error("User not authenticated");
+      return;
+    }
+
+    deleteElevatorPitchMutation.mutate(session.user.id);
+  };
+
   const onSubmit = async (data: FormData) => {
     if (!session?.user?.id) {
       toast.error("Please log in to create a company");
+      return;
+    }
+
+    if (!isElevatorPitchUploaded) {
+      toast.error("Please upload an elevator pitch video before submitting.");
       return;
     }
 
@@ -171,16 +221,9 @@ export default function CreateCompanyPage() {
 
     try {
       await createCompanyMutation.mutateAsync(formData);
-
-      // Upload elevator pitch if provided
-      if (elevatorPitchFile && session.user.id) {
-        await uploadElevatorPitchMutation.mutateAsync({
-          videoFile: elevatorPitchFile,
-          userId: session.user.id,
-        });
-      }
     } catch (error) {
       console.error("Error creating company:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
@@ -206,20 +249,55 @@ export default function CreateCompanyPage() {
                   company and what should make candidates want to join you!
                 </p>
               </div>
-              <Button
-                type="button"
-                className="bg-primary hover:bg-blue-700 text-white px-6"
-              >
-                Upload/Change Elevator Pitch
-              </Button>
             </div>
 
-            <FileUpload
+            <ElevatorPitchUpload
               onFileSelect={setElevatorPitchFile}
-              accept="video/*"
-              maxSize={100 * 1024 * 1024}
-              variant="dark"
-            ></FileUpload>
+              selectedFile={elevatorPitchFile}
+              uploadedVideoUrl={uploadedVideoUrl}
+              onDelete={handleElevatorPitchDelete}
+              isUploaded={isElevatorPitchUploaded}
+            />
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                onClick={handleElevatorPitchUpload}
+                disabled={
+                  !elevatorPitchFile ||
+                  uploadElevatorPitchMutation.isPending ||
+                  isElevatorPitchUploaded
+                }
+              >
+                {uploadElevatorPitchMutation.isPending ? (
+                  <div className="flex items-center gap-2">
+                    <svg
+                      className="animate-spin h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Uploading...
+                  </div>
+                ) : (
+                  "Upload Elevator Pitch"
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Company Logo and About */}
@@ -419,7 +497,7 @@ export default function CreateCompanyPage() {
             buttonText="Add More"
           />
 
-          {/* Social Links */}
+          /* Social Links */
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -483,172 +561,187 @@ export default function CreateCompanyPage() {
                     <Input {...field} placeholder="Enter Your Website Url" />
                   </FormControl>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="otherProfessional"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Other Professional Website*
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="Enter Your Website Address"
-                      />
-                    </FormControl>
-                    <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="industry"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Industry*
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="otherProfessional"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-900">
+                        Other Professional Website*
+                      </FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Industry" />
-                        </SelectTrigger>
+                        <Input
+                          {...field}
+                          placeholder="Enter Your Website Address"
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="technology">Technology</SelectItem>
-                        <SelectItem value="healthcare">Healthcare</SelectItem>
-                        <SelectItem value="finance">Finance</SelectItem>
-                        <SelectItem value="education">Education</SelectItem>
-                        <SelectItem value="retail">Retail</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </div>
-
-          {/* Services */}
-          <DynamicInputList
-            label="Services*"
-            placeholder="Add Here"
-            values={services}
-            onChange={setServices}
-          />
-
-          {/* Employee Selection */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">
-              View your company employees
-            </h3>
-            <EmployeeSelector
-              selectedEmployees={selectedEmployees}
-              onEmployeesChange={setSelectedEmployees}
-            />
-          </div>
-
-          {/* Awards and Honours */}
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Company Awards and Honours
-            </h3>
-            {awards.map((award, index) => (
-              <div
-                key={index}
-                className="space-y-4 p-6 border border-gray-200 rounded-lg bg-gray-50"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-900">
-                    Award {index + 1}
-                  </h4>
-                  {awards.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeAward(index)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Remove
-                    </Button>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                </div>
-
-                <Input
-                  placeholder="Award Title"
-                  value={award.title}
-                  onChange={(e) => updateAward(index, "title", e.target.value)}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    placeholder="Issuer"
-                    value={award.issuer}
-                    onChange={(e) =>
-                      updateAward(index, "issuer", e.target.value)
-                    }
-                  />
-
-                  <Select
-                    value={award.issueDate}
-                    onValueChange={(value) =>
-                      updateAward(index, "issueDate", value)
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add a Month & Year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="2024-01">January 2024</SelectItem>
-                      <SelectItem value="2024-02">February 2024</SelectItem>
-                      <SelectItem value="2024-03">March 2024</SelectItem>
-                      <SelectItem value="2023-12">December 2023</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Textarea
-                  placeholder="Award Short Description"
-                  value={award.description}
-                  onChange={(e) =>
-                    updateAward(index, "description", e.target.value)
-                  }
-                  className="resize-none"
+                <FormField
+                  control={form.control}
+                  name="industry"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-900">
+                        Industry*
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Industry" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="finance">Finance</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
+                          <SelectItem value="retail">Retail</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            ))}
+            </div>
 
+            {/* Services */}
+            <DynamicInputList
+              label="Services*"
+              placeholder="Add Here"
+              values={services}
+              onChange={setServices}
+            />
+
+            {/* Employee Selection */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                View your company employees
+              </h3>
+              <EmployeeSelector
+                selectedEmployees={selectedEmployees}
+                onEmployeesChange={setSelectedEmployees}
+              />
+            </div>
+
+            {/* Awards and Honours */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Company Awards and Honours
+              </h3>
+              {awards.map((award, index) => (
+                <div
+                  key={index}
+                  className="space-y-4 p-6 border border-gray-200 rounded-lg bg-gray-50"
+                >
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium text-gray-900">
+                      Award {index + 1}
+                    </h4>
+                    {awards.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => removeAward(index)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+
+                  <Input
+                    placeholder="Award Title"
+                    value={award.title}
+                    onChange={(e) => updateAward(index, "title", e.target.value)}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Issuer"
+                      value={award.issuer}
+                      onChange={(e) =>
+                        updateAward(index, "issuer", e.target.value)
+                      }
+                    />
+
+                    <CustomDateInput
+                      value={award.issueDate}
+                      onChange={(value) => updateAward(index, "issueDate", value)}
+                      placeholder="MM/YYYY"
+                    />
+                  </div>
+
+                  <Textarea
+                    placeholder="Award Short Description"
+                    value={award.description}
+                    onChange={(e) =>
+                      updateAward(index, "description", e.target.value)
+                    }
+                    className="resize-none"
+                  />
+                </div>
+              ))}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addAward}
+                className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
+              >
+                Add More
+              </Button>
+            </div>
+
+            {/* Submit Button */}
             <Button
-              type="button"
-              variant="outline"
-              onClick={addAward}
-              className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
+              type="submit"
+              className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
+              disabled={createCompanyMutation.isPending || !isElevatorPitchUploaded}
             >
-              Add More
+              {createCompanyMutation.isPending ? (
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Creating...
+                </div>
+              ) : (
+                "Save"
+              )}
             </Button>
-          </div>
-
-          {/* Submit Button */}
-          <Button
-            type="submit"
-            className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
-            disabled={createCompanyMutation.isPending}
-          >
-            {createCompanyMutation.isPending ? "Creating..." : "Save"}
-          </Button>
-        </form>
-      </Form>
-    </div>
-  );
+          </form>
+        </Form>
+      </div>
+    );
 }
