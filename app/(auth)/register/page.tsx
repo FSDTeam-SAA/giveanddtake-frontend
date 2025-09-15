@@ -45,11 +45,10 @@ import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-
-// react-datepicker
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
 import { toast } from "sonner";
+
+// ⬇️ NEW: custom MM/YYYY input replaces react-datepicker
+import CustomDateInput from "@/components/custom-date-input";
 
 /* =========================
    Types / constants
@@ -103,29 +102,6 @@ function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
 
   return null;
 }
-
-/* =========================
-   Custom Date Button
-========================= */
-const DateButton = forwardRef<
-  HTMLButtonElement,
-  { value?: string; onClick?: () => void }
->(({ value, onClick }, ref) => (
-  <Button
-    type="button"
-    variant="outline"
-    onClick={onClick}
-    ref={ref}
-    className={cn(
-      "w-full justify-start text-left font-normal h-11",
-      !value && "text-muted-foreground"
-    )}
-  >
-    <CalendarIcon className="mr-2 h-4 w-4" />
-    {value || <span>Select month & year</span>}
-  </Button>
-));
-DateButton.displayName = "DateButton";
 
 /* =========================
    Validation Helpers
@@ -185,10 +161,18 @@ export default function RegisterPage() {
     if (!isBrowser) return null;
     const iso = localStorage.getItem(LS_KEYS.dobISO);
     if (!iso) return null;
-    // stored as YYYY-MM-01; keep local date object
     const d = new Date(iso);
     if (isNaN(d.getTime())) return null;
     return d;
+  });
+
+  // NEW: keep a controlled string for the MM/YYYY input (so partial typing doesn't fight Date parsing)
+  const [dobInput, setDobInput] = useState<string>(() => {
+    if (!isBrowser) return "";
+    const iso = localStorage.getItem(LS_KEYS.dobISO);
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : format(d, "MM/yyyy");
   });
 
   const [firstName, setFirstName] = useState<string>(() => {
@@ -464,7 +448,7 @@ export default function RegisterPage() {
   };
 
   /* =========================
-     DOB / Age helpers (unchanged)
+     DOB / Age helpers (unchanged logic)
   ========================= */
   const today = useMemo(() => {
     const t = new Date();
@@ -755,34 +739,48 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* DOB - month/year only (we send YYYY-MM-01) */}
+            {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
               <Label className="mr-5">Date of Birth (MM/YYYY)</Label>
 
-              <DatePicker
-                selected={dob}
-                onChange={(date) => {
-                  if (!date) {
-                    setDob(null);
-                    return;
-                  }
-                  const normalized = new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    1
-                  );
-                  normalized.setHours(0, 0, 0, 0);
-                  setDob(normalized);
-                }}
-                minDate={oldestAllowed}
-                maxDate={today}
-                showMonthYearPicker
-                showFullMonthYearPicker={false}
-                dateFormat="MM/yyyy"
-                shouldCloseOnSelect
-                popperPlacement="bottom-start"
-                customInput={<DateButton />}
-              />
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <CustomDateInput
+                  value={dobInput}
+                  onChange={(val) => {
+                    setDobInput(val);
+                    // when fully typed MM/YYYY, parse and set normalized Date
+                    const full = /^\d{2}\/\d{4}$/.test(val);
+                    if (!full) {
+                      setDob(null);
+                      return;
+                    }
+                    const [mmStr, yyyyStr] = val.split("/");
+                    const mm = Number.parseInt(mmStr, 10);
+                    const yyyy = Number.parseInt(yyyyStr, 10);
+
+                    // guard month range (CustomDateInput also constrains this)
+                    if (mm < 1 || mm > 12 || Number.isNaN(yyyy)) {
+                      setDob(null);
+                      return;
+                    }
+
+                    const normalized = new Date(yyyy, mm - 1, 1);
+                    normalized.setHours(0, 0, 0, 0);
+
+                    // keep previous behavior: allow typing but validate bounds on submit
+                    // however, if clearly invalid (NaN), clear it
+                    if (isNaN(normalized.getTime())) {
+                      setDob(null);
+                      return;
+                    }
+
+                    setDob(normalized);
+                  }}
+                  placeholder="MM/YYYY"
+                  className="pl-10 h-11"
+                />
+              </div>
 
               {dob && isUnder16 && (
                 <p className="text-sm text-destructive">
