@@ -430,7 +430,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className=" rounded-lg ">
-                {companyData.data.companies[0].elevatorPitch && (
+                {companyData?.data?.companies[0].elevatorPitch && (
                   <VideoPlayer
                     pitchId={companyData.data?.companies[0].elevatorPitch._id}
                     className="w-full mx-auto"

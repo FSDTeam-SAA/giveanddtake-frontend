@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,7 @@ interface JobCategoriesResponse {
 }
 
 interface JobDetailsStepProps {
-  form: UseFormReturn<JobFormData>;
+  form: UseFormReturn<JobFormData & { compensationCurrency?: "USD" | "EUR" }>;
   onNext: () => void;
   onCancel: () => void;
   selectedCountry: string;
@@ -71,6 +72,11 @@ interface JobDetailsStepProps {
   cities: string[];
   isLoadingCities: boolean;
 }
+
+// Helpers
+const clamp = (n: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, n));
+const digitsOnly = (s: string) => s.replace(/[^0-9.]/g, "");
 
 export default function JobDetailsStep({
   form,
@@ -88,10 +94,28 @@ export default function JobDetailsStep({
   cities,
   isLoadingCities,
 }: JobDetailsStepProps) {
+  // --- Compensation display state (allows $ / € and commas while storing a number) ---
+  const currency = form.watch("compensationCurrency") || "USD";
+  const initialComp = form.getValues("compensation");
+  const [compensationDisplay, setCompensationDisplay] = useState<string>(
+    typeof initialComp === "number" && !Number.isNaN(initialComp)
+      ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
+          initialComp
+        )
+      : ""
+  );
+
+  const currencySymbol = useMemo(
+    () => (currency === "EUR" ? "€" : "$"),
+    [currency]
+  );
+
   return (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Job Details</h2>
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          Job Details
+        </h2>
         {categoriesError && (
           <div className="text-red-600 mb-4 text-center">
             {categoriesError}
@@ -105,6 +129,7 @@ export default function JobDetailsStep({
           </div>
         )}
         <div className="space-y-6">
+          {/* Job Title */}
           <FormField
             control={form.control}
             name="jobTitle"
@@ -125,6 +150,7 @@ export default function JobDetailsStep({
             )}
           />
 
+          {/* Department */}
           <FormField
             control={form.control}
             name="department"
@@ -145,6 +171,7 @@ export default function JobDetailsStep({
             )}
           />
 
+          {/* Country & City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -166,9 +193,8 @@ export default function JobDetailsStep({
                           )}
                         >
                           {field.value
-                            ? countries.find(
-                                (country) => country.country === field.value
-                              )?.country
+                            ? countries.find((c) => c.country === field.value)
+                                ?.country
                             : "Select country"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -189,8 +215,12 @@ export default function JobDetailsStep({
                                 value={country.country}
                                 key={country.country}
                                 onSelect={() => {
-                                  form.setValue("country", country.country);
-                                  form.setValue("region", "");
+                                  form.setValue("country", country.country, {
+                                    shouldValidate: true,
+                                  });
+                                  form.setValue("region", "", {
+                                    shouldValidate: true,
+                                  });
                                   setSelectedCountry(country.country);
                                 }}
                               >
@@ -246,7 +276,9 @@ export default function JobDetailsStep({
                                 value={city}
                                 key={city}
                                 onSelect={() => {
-                                  form.setValue("region", city);
+                                  form.setValue("region", city, {
+                                    shouldValidate: true,
+                                  });
                                 }}
                               >
                                 {city}
@@ -263,6 +295,7 @@ export default function JobDetailsStep({
             />
           </div>
 
+          {/* Vacancies (clamped 1..50, never 0) */}
           <FormField
             control={form.control}
             name="vacancy"
@@ -275,20 +308,37 @@ export default function JobDetailsStep({
                 <FormControl>
                   <Input
                     type="number"
-                    min="1"
-                    max="50"
-                    placeholder="Enter number of vacancies"
+                    inputMode="numeric"
+                    min={1}
+                    max={50}
+                    step={1}
+                    placeholder="Enter number of vacancies (1–50)"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    value={field.value ?? ""}
+                    value={field.value && field.value > 0 ? field.value : ""}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      if (raw === "") {
+                        field.onChange(undefined);
+                        return;
+                      }
+                      const n = clamp(Number(raw), 1, 50);
+                      field.onChange(Number.isNaN(n) ? undefined : n);
+                    }}
+                    onBlur={(e) => {
+                      const n = clamp(Number(e.target.value || 1), 1, 50);
+                      field.onChange(n);
+                    }}
                   />
                 </FormControl>
+                <p className="text-xs text-muted-foreground">
+                  Allowed range: 1–50.
+                </p>
                 <FormMessage />
               </FormItem>
             )}
           />
 
+          {/* Employment & Experience */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -352,6 +402,7 @@ export default function JobDetailsStep({
             />
           </div>
 
+          {/* Location Type & Career Stage */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -414,6 +465,7 @@ export default function JobDetailsStep({
             />
           </div>
 
+          {/* Category */}
           <FormField
             control={form.control}
             name="categoryId"
@@ -436,8 +488,7 @@ export default function JobDetailsStep({
                       >
                         {field.value
                           ? jobCategories?.data?.category?.find(
-                              (category: JobCategory) =>
-                                category._id === field.value
+                              (c) => c._id === field.value
                             )?.name
                           : "Select category"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -454,24 +505,24 @@ export default function JobDetailsStep({
                             : "No category found."}
                         </CommandEmpty>
                         <CommandGroup>
-                          {jobCategories?.data?.category?.length > 0 ? (
-                            jobCategories.data.category.map(
-                              (category: JobCategory) => (
-                                <CommandItem
-                                  value={category.name}
-                                  key={category._id}
-                                  onSelect={() => {
-                                    form.setValue("categoryId", category._id);
-                                    form.setValue("role", "");
-                                    setSelectedCategoryRoles(
-                                      category.role || []
-                                    );
-                                  }}
-                                >
-                                  {category.name}
-                                </CommandItem>
-                              )
-                            )
+                          {jobCategories?.data?.category?.length ? (
+                            jobCategories.data.category.map((category) => (
+                              <CommandItem
+                                value={category.name}
+                                key={category._id}
+                                onSelect={() => {
+                                  form.setValue("categoryId", category._id, {
+                                    shouldValidate: true,
+                                  });
+                                  form.setValue("role", "", {
+                                    shouldValidate: true,
+                                  });
+                                  setSelectedCategoryRoles(category.role || []);
+                                }}
+                              >
+                                {category.name}
+                              </CommandItem>
+                            ))
                           ) : (
                             <CommandEmpty>
                               No categories available.
@@ -487,6 +538,7 @@ export default function JobDetailsStep({
             )}
           />
 
+          {/* Role (dependent) */}
           {selectedCategoryRoles.length > 0 && (
             <FormField
               control={form.control}
@@ -523,7 +575,9 @@ export default function JobDetailsStep({
                                 value={role}
                                 key={role}
                                 onSelect={() => {
-                                  form.setValue("role", role);
+                                  form.setValue("role", role, {
+                                    shouldValidate: true,
+                                  });
                                 }}
                               >
                                 {role}
@@ -540,29 +594,103 @@ export default function JobDetailsStep({
             />
           )}
 
-          <FormField
-            control={form.control}
-            name="compensation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Compensation (Optional)
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="e.g., 50000"
-                    className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
-                    value={field.value ?? ""}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* Compensation: currency + amount with commas; stores numeric amount in form.compensation */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Currency selector */}
+            <FormField
+              control={form.control}
+              name="compensationCurrency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Currency
+                  </FormLabel>
+                  <Select
+                    onValueChange={(v) => field.onChange(v as "USD" | "EUR")}
+                    defaultValue={field.value || "USD"}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
+            {/* Amount input with friendly formatting */}
+            <FormField
+              control={form.control}
+              name="compensation"
+              render={() => (
+                <FormItem className="md:col-span-2">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Compensation (Optional)
+                  </FormLabel>
+                  <div className="relative">
+                    <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none select-none">
+                      {currencySymbol}
+                    </span>
+                    <Input
+                      inputMode="decimal"
+                      placeholder="e.g., 50,000"
+                      className="h-11 pl-8 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
+                      value={compensationDisplay}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        // Allow user to type $/€ and commas but store number
+                        const sanitized = digitsOnly(raw);
+                        const n = sanitized === "" ? NaN : Number(sanitized);
+                        if (!Number.isNaN(n)) {
+                          form.setValue("compensation", n, {
+                            shouldValidate: true,
+                          });
+                        } else {
+                          form.setValue("compensation", undefined, {
+                            shouldValidate: true,
+                          });
+                        }
+                        // Keep original characters but normalize commas/format
+                        // format only the digits part to pretty commas
+                        const pretty = sanitized
+                          ? new Intl.NumberFormat(undefined, {
+                              maximumFractionDigits: 2,
+                            }).format(Number(sanitized))
+                          : "";
+                        // If user typed a symbol, preserve it visually (we already show a prefix symbol)
+                        setCompensationDisplay(pretty);
+                      }}
+                      onBlur={() => {
+                        const current = form.getValues("compensation");
+                        if (
+                          typeof current === "number" &&
+                          !Number.isNaN(current)
+                        ) {
+                          setCompensationDisplay(
+                            new Intl.NumberFormat(undefined, {
+                              maximumFractionDigits: 2,
+                            }).format(current)
+                          );
+                        }
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    You can type commas (e.g., 50,000). Choose USD or EUR.
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Expiration */}
           <FormField
             control={form.control}
             name="expirationDate"
@@ -594,6 +722,7 @@ export default function JobDetailsStep({
             )}
           />
 
+          {/* Company URL */}
           <FormField
             control={form.control}
             name="companyUrl"
@@ -627,7 +756,16 @@ export default function JobDetailsStep({
           <Button
             type="button"
             className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85"
-            onClick={onNext}
+            onClick={() => {
+              // Ensure vacancy is clamped before proceeding
+              const v = form.getValues("vacancy");
+              if (typeof v === "number") {
+                form.setValue("vacancy", clamp(v, 1, 50), {
+                  shouldValidate: true,
+                });
+              }
+              onNext();
+            }}
           >
             Next
           </Button>
