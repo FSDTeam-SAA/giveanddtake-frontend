@@ -330,9 +330,7 @@ export default function JobDetailsStep({
                     }}
                   />
                 </FormControl>
-                <p className="text-xs text-muted-foreground">
-                  Allowed range: 1–50.
-                </p>
+                <p className="text-xs text-muted-foreground">Maximum 50</p>
                 <FormMessage />
               </FormItem>
             )}
@@ -681,9 +679,7 @@ export default function JobDetailsStep({
                       }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    You can type commas (e.g., 50,000). Choose USD or EUR.
-                  </p>
+
                   <FormMessage />
                 </FormItem>
               )}
