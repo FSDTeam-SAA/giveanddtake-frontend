@@ -47,30 +47,23 @@ interface PendingEmployeeRequestProps {
 }
 
 export default function PendingEmployeeRequest({
-  companyId,
   requests,
   setShowRequests,
 }: PendingEmployeeRequestProps) {
   const [showRequests, setLocalShowRequests] = useState(false)
   const queryClient = useQueryClient()
-  const session = useSession()
-  const token = session.data?.accessToken
+  const { data: session } = useSession() // Use destructuring to get session
+  const token = session?.accessToken
 
+  const companyId = requests[0]?.company // Consider handling empty requests case
 
-
-  const companyid = requests[0]?.company
-
-
-  const requireterId = requests[0]?.userId._id
-
-  console.log("requireters", requireterId)
-
+  // Mutation to update request status
   const updateStatusMutation = useMutation<
     UpdateStatusResponse,
     Error,
-    { requestId: string; status: string }
+    { requestId: string; status: string; userId: string }
   >({
-    mutationFn: async ({ requestId, status }) => {
+    mutationFn: async ({ requestId, status, userId }) => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/update-company-employee/${requestId}`,
         {
@@ -79,7 +72,7 @@ export default function PendingEmployeeRequest({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ status, companyId: companyid, userId: requireterId }),
+          body: JSON.stringify({ status, companyId, userId }),
         }
       )
 
@@ -99,13 +92,14 @@ export default function PendingEmployeeRequest({
     },
   })
 
-  const handleStatusUpdate = (requestId: string, newStatus: string) => {
-    updateStatusMutation.mutate({ requestId, status: newStatus })
+  // Updated handleStatusUpdate to accept userId
+  const handleStatusUpdate = (requestId: string, userId: string, newStatus: string) => {
+    updateStatusMutation.mutate({ requestId, status: newStatus, userId })
   }
 
   const handleToggleRequests = () => {
     setLocalShowRequests(!showRequests)
-    setShowRequests(!showRequests) // sync with parent
+    setShowRequests(!showRequests) // Sync with parent
   }
 
   return (
@@ -129,66 +123,74 @@ export default function PendingEmployeeRequest({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {requests.map((req) => (
-                <TableRow key={req._id} className="hover:bg-gray-50">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={req.userId.avatar?.url || "/placeholder.svg"}
-                          alt={req.userId.name}
-                        />
-                        <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                          {req.userId.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="font-medium text-gray-900">{req.userId.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={`
-                        ${req.status.toLowerCase() === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
-                        ${req.status.toLowerCase() === "approved" ? "bg-green-100 text-green-800" : ""}
-                        ${req.status.toLowerCase() === "rejected" ? "bg-red-100 text-red-800" : ""}
-                      `}
-                    >
-                      {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {req.status.toLowerCase() === "pending" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="default"
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
-                            onClick={() => handleStatusUpdate(req._id, "accepted")}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                            onClick={() => handleStatusUpdate(req._id, "rejected")}
-                            disabled={updateStatusMutation.isPending}
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
+              {requests.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-gray-500">
+                    No requests available
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                requests.map((req) => (
+                  <TableRow key={req._id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={req.userId.avatar?.url || "/placeholder.svg"}
+                            alt={req.userId.name}
+                          />
+                          <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                            {req.userId.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-gray-900">{req.userId.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={`
+                          ${req.status.toLowerCase() === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
+                          ${req.status.toLowerCase() === "approved" ? "bg-green-100 text-green-800" : ""}
+                          ${req.status.toLowerCase() === "rejected" ? "bg-red-100 text-red-800" : ""}
+                        `}
+                      >
+                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        {req.status.toLowerCase() === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
+                              onClick={() => handleStatusUpdate(req._id, req.userId._id, "accepted")}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
+                              onClick={() => handleStatusUpdate(req._id, req.userId._id, "rejected")}
+                              disabled={updateStatusMutation.isPending}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>

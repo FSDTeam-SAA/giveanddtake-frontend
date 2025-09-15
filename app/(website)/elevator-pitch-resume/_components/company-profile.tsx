@@ -3,10 +3,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
-import { fetchCompanyDetails } from "@/lib/api-service";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload"; // Assumed component
+import { fetchCompanyDetails, uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
 import {
   MapPin,
   Users,
@@ -14,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Trash,
+  Trash2,
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner"; // For toast notifications
 
 interface PitchData {
   _id: string;
@@ -113,6 +116,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -269,6 +275,69 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     },
   });
 
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: uploadElevatorPitch,
+    onSuccess: () => {
+      toast.success("Elevator pitch uploaded successfully!");
+      setIsElevatorPitchUploaded(true);
+      setElevatorPitchFile(null);
+      queryClient.invalidateQueries({ queryKey: ["company", userId] }); // Invalidate to refetch pitch data
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+      setIsElevatorPitchUploaded(false);
+    },
+  });
+
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: deleteElevatorPitchVideo,
+    onSuccess: () => {
+      toast.success("Elevator pitch deleted successfully!");
+      setIsElevatorPitchUploaded(false);
+      setElevatorPitchFile(null);
+      setIsDeleteModalOpen(false);
+      setPitchData(null); // Clear pitch data
+      queryClient.invalidateQueries({ queryKey: ["company", userId]}); // Invalidate to refetch pitch data
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to delete elevator pitch.");
+      console.error("Error deleting elevator pitch:", error);
+    },
+  });
+
+  const handleElevatorPitchUpload = async () => {
+    if (elevatorPitchFile && userId) {
+      try {
+        await uploadElevatorPitchMutation.mutateAsync({
+          videoFile: elevatorPitchFile,
+          userId,
+        });
+      } catch (error) {
+        // Error toast is handled in mutation onError
+      }
+    } else {
+      toast.error("Please select a video file to upload");
+    }
+  };
+
+  const handleDeleteElevatorPitch = async () => {
+    if (userId && pitchData) {
+      try {
+        await deleteElevatorPitchMutation.mutateAsync(userId);
+      } catch (error) {
+        // Error toast is handled in mutation onError
+      }
+    }
+  };
+
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+  };
+
   const handleDelete = (employeeId: string) => {
     deleteMutation.mutate(employeeId);
   };
@@ -315,11 +384,14 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
         if (userPitch) {
           setPitchData(userPitch);
+          setIsElevatorPitchUploaded(true);
         } else {
           setError("No pitch found for current user");
+          setIsElevatorPitchUploaded(false);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
+        setIsElevatorPitchUploaded(false);
       } finally {
         setLoading(false);
       }
@@ -354,8 +426,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   }
 
   const honors = companyData.honors || [];
-  const links = company.links || [];
-  const services = company.service || [];
+  const links = companyData.companies[0].links || [];
+  const services = companyData.companies[0].service || [];
 
   return (
     <div className="container mx-auto p-6 space-y-8 bg-white">
@@ -427,22 +499,121 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       </div>
 
       {/* Elevator Pitch */}
-      <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
+      <div className="lg:pb-12 pb-5">
+        <h2 className="text-xl lg:text-4xl font-bold text-center my-10 text-gray-900">
           Elevator Pitch
         </h2>
-        <div className="rounded-lg">
-          {pitchData ? (
-            <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
-          ) : loading ? (
-            <div>Loading pitch...</div>
-          ) : error ? (
-            <div className="text-red-500">Error: {error}</div>
-          ) : (
-            <div>No pitch available</div>
-          )}
-        </div>
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle>Elevator Pitch</CardTitle>
+              {pitchData && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={openDeleteModal}
+                  disabled={deleteElevatorPitchMutation.isPending}
+                  title="Delete Elevator Pitch"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Upload or view a short video introducing your company.
+            </p>
+          </CardHeader>
+          <CardContent>
+            {pitchData ? (
+              <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
+            ) : loading ? (
+              <div>Loading pitch...</div>
+            ) : error && error !== "No pitch found for current user" ? (
+              <div className="text-red-500">Error: {error}</div>
+            ) : (
+              <>
+                <ElevatorPitchUpload
+                  onFileSelect={setElevatorPitchFile}
+                  selectedFile={elevatorPitchFile}
+                />
+                <Button
+                  type="button"
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleElevatorPitchUpload}
+                  disabled={uploadElevatorPitchMutation.isPending || !elevatorPitchFile}
+                >
+                  {uploadElevatorPitchMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Uploading...
+                    </div>
+                  ) : (
+                    "Upload Elevator Pitch"
+                  )}
+                </Button>
+                {isElevatorPitchUploaded && (
+                  <p className="mt-2 text-sm text-green-600">
+                    Elevator pitch uploaded successfully!
+                  </p>
+                )}
+                {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    No pitch available
+                  </p>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete your elevator pitch? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={closeDeleteModal}
+                className="px-4 py-2"
+              >
+                No
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteElevatorPitch}
+                disabled={deleteElevatorPitchMutation.isPending}
+                className="px-4 py-2"
+              >
+                Yes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* About Us */}
       <div>

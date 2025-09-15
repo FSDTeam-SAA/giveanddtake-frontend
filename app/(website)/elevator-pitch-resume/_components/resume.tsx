@@ -362,22 +362,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
                     </div>
-                    {resume.resume.sLink?.length > 0 && (
-                      <div>
-                        <p className="font-semibold text-base">Links</p>
-                        {resume.resume.sLink.map((link) => (
-                          <p key={link._id} className="text-blue-600">
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              {link.label}
-                            </a>
-                          </p>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
