@@ -19,6 +19,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import Image from "next/image";
+
+interface User {
+  _id: string;
+  name: string;
+  email: string;
+  role: "admin" | "candidate" | "recruiter";
+  avatar?: {
+    url: string;
+  };
+}
 
 interface EmployeeSelectorProps {
   selectedEmployees: string[];
@@ -33,7 +44,7 @@ export function EmployeeSelector({
 }: EmployeeSelectorProps) {
   const [open, setOpen] = useState(false);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["users", companyUserId],
     queryFn: () => fetchUsers(companyUserId),
   });
@@ -87,15 +98,38 @@ export function EmployeeSelector({
                         key={user._id}
                         value={user.email}
                         onSelect={() => handleSelect(user._id)}
+                        className="flex items-center gap-2"
                       >
                         <Check
-                          className={`mr-2 h-4 w-4 ${
+                          className={`h-4 w-4 ${
                             selectedEmployees.includes(user._id)
                               ? "opacity-100"
                               : "opacity-0"
                           }`}
                         />
-                        {user.email}
+                        <div className="flex items-center gap-2">
+                          {user.avatar?.url && user.avatar.url !== "" ? (
+                            <Image
+                              src={user.avatar.url}
+                              alt={`${user.name}'s avatar`}
+                              width={24}
+                              height={24}
+                              className="rounded-full"
+                            />
+                          ) : (
+                            <div className="bg-gray-200 w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs">
+                              {user.name?.charAt(0) || "?"}
+                            </div>
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium">
+                              {user.name}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {user.email}
+                            </span>
+                          </div>
+                        </div>
                       </CommandItem>
                     ))}
                 </CommandGroup>
@@ -113,14 +147,27 @@ export function EmployeeSelector({
               <Badge
                 key={user._id}
                 variant="secondary"
-                className="flex items-center gap-1"
+                className="flex items-center gap-1 py-1"
               >
-                {user.email}
+                {user.avatar?.url && user.avatar.url !== "" ? (
+                  <Image
+                    src={user.avatar.url}
+                    alt={`${user.name}'s avatar`}
+                    width={24}
+                    height={24}
+                    className="rounded-full"
+                  />
+                ) : (
+                  <div className="bg-gray-200 w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs">
+                    {user.name?.charAt(0) || "?"}
+                  </div>
+                )}
+                {user.name}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-auto p-0 text-gray-500 hover:text-red-500"
+                  className="h-auto p-0 text-gray-500 hover:text-red-500 ml-1"
                   onClick={() => removeEmployee(user._id)}
                 >
                   <X className="h-3 w-3" />
@@ -136,6 +183,7 @@ export function EmployeeSelector({
         variant="outline"
         size="sm"
         className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
+        onClick={() => setOpen(true)}
       >
         Add More
       </Button>

@@ -119,6 +119,15 @@ export default function RecruiterListPage({
     retry: 2,
   });
 
+  const handleInvalidate = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["employees", companyId, currentPage],
+    });
+
+    // If you want to refetch immediately:
+    // queryClient.refetchQueries(["employees", companyId, currentPage]);
+  };
+
   // Delete Employee Mutation
   const deleteMutation = useMutation<DeleteResponse, Error, string>({
     mutationFn: async (employeeId: string) => {
@@ -266,6 +275,7 @@ export default function RecruiterListPage({
         companyId={companyId}
         requests={requests}
         setShowRequests={setShowRequests}
+        handleInvalidate={handleInvalidate}
       />
 
       {/* Recruiters Table */}

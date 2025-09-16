@@ -9,6 +9,7 @@ import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal"
+import { useSession } from "next-auth/react"
 
 interface SubscriptionPlan {
   _id: string
@@ -62,6 +63,8 @@ const getPlanStyles = (index: number) => {
 export default function PricingList() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null)
+
+
 
   const { data: plans, isLoading, error } = useQuery<SubscriptionPlan[]>({
     queryKey: ["subscriptionPlans"],

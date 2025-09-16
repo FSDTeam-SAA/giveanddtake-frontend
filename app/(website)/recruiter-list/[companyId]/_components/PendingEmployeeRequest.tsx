@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Table,
   TableBody,
@@ -12,50 +12,53 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { useSession } from "next-auth/react"
+} from "@/components/ui/table";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner"; // Import toast
 
 interface UserData {
-  _id: string
-  name: string
-  email: string
-  phoneNum: string
-  role: string
-  avatar?: { url: string }
+  _id: string;
+  name: string;
+  email: string;
+  phoneNum: string;
+  role: string;
+  avatar?: { url: string };
 }
 
 interface RequestData {
-  _id: string
-  userId: UserData
-  company: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  __v: number
+  _id: string;
+  userId: UserData;
+  company: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 interface UpdateStatusResponse {
-  success: boolean
-  message: string
-  data: RequestData
+  success: boolean;
+  message: string;
+  data: RequestData;
 }
 
 interface PendingEmployeeRequestProps {
-  companyId: string
-  requests: RequestData[]
-  setShowRequests: (value: boolean) => void
+  companyId: string;
+  requests: RequestData[];
+  setShowRequests: (value: boolean) => void;
+  handleInvalidate: () => void;
 }
 
 export default function PendingEmployeeRequest({
+  handleInvalidate,
   requests,
   setShowRequests,
 }: PendingEmployeeRequestProps) {
-  const [showRequests, setLocalShowRequests] = useState(false)
-  const queryClient = useQueryClient()
-  const { data: session } = useSession() // Use destructuring to get session
-  const token = session?.accessToken
+  const [showRequests, setLocalShowRequests] = useState(false);
+  const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const token = session?.accessToken;
 
-  const companyId = requests[0]?.company // Consider handling empty requests case
+  const companyId = requests[0]?.company;
 
   // Mutation to update request status
   const updateStatusMutation = useMutation<
@@ -74,39 +77,52 @@ export default function PendingEmployeeRequest({
           },
           body: JSON.stringify({ status, companyId, userId }),
         }
-      )
+      );
 
-      if (!res.ok) throw new Error("Failed to update request status")
+      if (!res.ok) throw new Error("Failed to update request status");
 
-      const response = (await res.json()) as UpdateStatusResponse
+      const response = (await res.json()) as UpdateStatusResponse;
       if (!response.success) {
-        throw new Error(response.message || "Failed to update request status")
+        throw new Error(response.message || "Failed to update request status");
       }
-      return response
+      return response;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employees", companyId] })
+    onSuccess: (data) => {
+      if (handleInvalidate) handleInvalidate();
+
+      // OR directly invalidate the query here
+      // queryClient.invalidateQueries(["employees", data.data.companyId]);
+      toast.success(`Request ${data.data.status.toLowerCase()} successfully!`, {
+        duration: 3000,
+      }); // Show success toast
     },
     onError: (error) => {
-      console.error("Error updating status:", error.message)
+      console.error("Error updating status:", error.message);
+      toast.error(`Error: ${error.message}`, { duration: 4000 }); // Show error toast
     },
-  })
+  });
 
   // Updated handleStatusUpdate to accept userId
-  const handleStatusUpdate = (requestId: string, userId: string, newStatus: string) => {
-    updateStatusMutation.mutate({ requestId, status: newStatus, userId })
-  }
+  const handleStatusUpdate = (
+    requestId: string,
+    userId: string,
+    newStatus: string
+  ) => {
+    updateStatusMutation.mutate({ requestId, status: newStatus, userId });
+  };
 
   const handleToggleRequests = () => {
-    setLocalShowRequests(!showRequests)
-    setShowRequests(!showRequests) // Sync with parent
-  }
+    setLocalShowRequests(!showRequests);
+    setShowRequests(!showRequests);
+  };
 
   return (
     <div>
       <div className="mb-4">
         <Button onClick={handleToggleRequests}>
-          {showRequests ? "Hide Recruiter Requests" : "Show All Recruiter Requests"}
+          {showRequests
+            ? "Hide Recruiter Requests"
+            : "Show All Recruiter Requests"}
         </Button>
       </div>
 
@@ -116,10 +132,18 @@ export default function PendingEmployeeRequest({
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead className="font-medium text-gray-700">User</TableHead>
-                <TableHead className="font-medium text-gray-700">Status</TableHead>
-                <TableHead className="font-medium text-gray-700">Created At</TableHead>
-                <TableHead className="font-medium text-gray-700">Actions</TableHead>
+                <TableHead className="font-medium text-gray-700">
+                  User
+                </TableHead>
+                <TableHead className="font-medium text-gray-700">
+                  Status
+                </TableHead>
+                <TableHead className="font-medium text-gray-700">
+                  Created At
+                </TableHead>
+                <TableHead className="font-medium text-gray-700">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -146,22 +170,39 @@ export default function PendingEmployeeRequest({
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-gray-900">{req.userId.name}</span>
+                        <span className="font-medium text-gray-900">
+                          {req.userId.name}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge
                         variant="secondary"
                         className={`
-                          ${req.status.toLowerCase() === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
-                          ${req.status.toLowerCase() === "approved" ? "bg-green-100 text-green-800" : ""}
-                          ${req.status.toLowerCase() === "rejected" ? "bg-red-100 text-red-800" : ""}
+                          ${
+                            req.status.toLowerCase() === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : ""
+                          }
+                          ${
+                            req.status.toLowerCase() === "approved"
+                              ? "bg-green-100 text-green-800"
+                              : ""
+                          }
+                          ${
+                            req.status.toLowerCase() === "rejected"
+                              ? "bg-red-100 text-red-800"
+                              : ""
+                          }
                         `}
                       >
-                        {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        {req.status.charAt(0).toUpperCase() +
+                          req.status.slice(1)}
                       </Badge>
                     </TableCell>
-                    <TableCell>{new Date(req.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      {new Date(req.createdAt).toLocaleDateString()}
+                    </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
                         {req.status.toLowerCase() === "pending" && (
@@ -170,7 +211,13 @@ export default function PendingEmployeeRequest({
                               size="sm"
                               variant="default"
                               className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
-                              onClick={() => handleStatusUpdate(req._id, req.userId._id, "accepted")}
+                              onClick={() =>
+                                handleStatusUpdate(
+                                  req._id,
+                                  req.userId._id,
+                                  "accepted"
+                                )
+                              }
                               disabled={updateStatusMutation.isPending}
                             >
                               Approve
@@ -179,7 +226,13 @@ export default function PendingEmployeeRequest({
                               size="sm"
                               variant="destructive"
                               className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                              onClick={() => handleStatusUpdate(req._id, req.userId._id, "rejected")}
+                              onClick={() =>
+                                handleStatusUpdate(
+                                  req._id,
+                                  req.userId._id,
+                                  "rejected"
+                                )
+                              }
                               disabled={updateStatusMutation.isPending}
                             >
                               Reject
@@ -196,5 +249,5 @@ export default function PendingEmployeeRequest({
         </div>
       )}
     </div>
-  )
+  );
 }

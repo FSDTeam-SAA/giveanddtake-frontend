@@ -36,8 +36,10 @@ const handler = NextAuth({
               email: credentials.email,
               name: credentials.email.split("@")[0],
               accessToken: userData.accessToken,
+
               role: userData.role,
               isValid: userData.isValid, // ⬅️ new
+              payAsYouGo: userData.payAsYouGo,
               // refreshToken: userData.refreshToken, // (optional) add if you want it later
             };
           }
@@ -56,6 +58,7 @@ const handler = NextAuth({
         token.role = user.role;
         token.userId = user.id;
         token.isValid = user.isValid; // ⬅️ new
+        token.payAsYouGo = user.payAsYouGo; // ⬅️ Add payAsYouGo to token
       }
       return token;
     },
@@ -65,7 +68,10 @@ const handler = NextAuth({
       session.user.id = token.userId as string;
       // make isValid available on the client session
       (session.user as typeof session.user & { isValid?: boolean }).isValid =
-        token.isValid as boolean | undefined; // ⬅️ new
+        token.isValid as boolean | undefined;
+      (
+        session.user as typeof session.user & { payAsYouGo?: boolean }
+      ).payAsYouGo = token.payAsYouGo as boolean | undefined; // ⬅️ Add payAsYouGo to session
       return session;
     },
   },
