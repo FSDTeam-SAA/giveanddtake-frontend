@@ -11,12 +11,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import Link from "next/link";
-import { ArrowBigLeft, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 interface EmployeeData {
   _id: string;
@@ -83,13 +83,14 @@ export default function RecruiterListPage({
 }: RecruiterListPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [showRequests, setShowRequests] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [employeeToDelete, setEmployeeToDelete] = useState<string>(""); // Single ID as string
   const queryClient = useQueryClient();
 
   const session = useSession();
   const userId = session.data?.user?.id;
-
   const token = session.data?.accessToken;
 
   const { data, isLoading, isError, error, isFetching } = useQuery<
@@ -123,100 +124,9 @@ export default function RecruiterListPage({
     queryClient.invalidateQueries({
       queryKey: ["employees", companyId, currentPage],
     });
-
-    // If you want to refetch immediately:
-    // queryClient.refetchQueries(["employees", companyId, currentPage]);
   };
 
-  // Delete Employee Mutation
-  const deleteMutation = useMutation<DeleteResponse, Error, string>({
-    mutationFn: async (employeeId: string) => {
-      const companyRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`
-      );
-      if (!companyRes.ok) throw new Error("Failed to fetch company data");
-
-      const companyData = await companyRes.json();
-      const currentEmployeesId = companyData.data.companies[0].employeesId;
-
-      const updatedEmployeesId = currentEmployeesId.filter(
-        (id: string) => id !== employeeId
-      );
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ employeesId: updatedEmployeesId }),
-        }
-      );
-
-      const response = await res.json();
-      if (!res.ok || !response.success)
-        throw new Error(response.message || "Failed to delete employee");
-      return response;
-    },
-    onMutate: async (employeeId: string) => {
-      await queryClient.cancelQueries({
-        queryKey: ["employees", companyId, currentPage],
-      });
-
-      const previousData = queryClient.getQueryData<ApiResponse>([
-        "employees",
-        companyId,
-        currentPage,
-      ]);
-
-      queryClient.setQueryData(
-        ["employees", companyId, currentPage],
-        (old: ApiResponse | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              employees: old.data.employees.filter((e) => e._id !== employeeId),
-            },
-          };
-        }
-      );
-
-      return { previousData };
-    },
-    onError: (err, employeeId, context) => {
-      const ctx = context as { previousData?: ApiResponse } | undefined;
-      queryClient.setQueryData(
-        ["employees", companyId, currentPage],
-        ctx?.previousData
-      );
-      console.error(
-        "Error deleting employee:",
-        err instanceof Error ? err.message : err
-      );
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["employees", companyId, currentPage],
-      });
-    },
-  });
-
-  const handleDelete = (employeeId: string) =>
-    deleteMutation.mutate(employeeId);
-
-  // Pagination
-  const handlePreviousPage = (page?: number) => {
-    if (page) setCurrentPage(page);
-    else if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < (data?.data?.meta?.totalPages || 1))
-      setCurrentPage(currentPage + 1);
-  };
-
-  // Add Employees Mutation
+  // Add Employees Mutation (kept as array for multiple adds; adjust if needed)
   const addEmployeesMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(
@@ -239,12 +149,73 @@ export default function RecruiterListPage({
       queryClient.invalidateQueries({
         queryKey: ["employees", companyId, currentPage],
       });
-      setShowModal(false);
+      setShowAddModal(false);
       setSelectedEmployees([]);
     },
     onError: (err: any) =>
       console.error("Error adding employees:", err.message),
   });
+
+  // Delete Employee Mutation (single ID as string)
+  const deleteMutation = useMutation<DeleteResponse, Error, string>({
+    mutationFn: async (employeeId: string) => {
+      if (!employeeId) {
+        throw new Error("No employee selected for deletion");
+      }
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/remove-employee-to-company`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ companyId, employeeId: employeeId }), // Send as string
+        }
+      );
+      const response = await res.json();
+      if (!res.ok || !response.success) {
+        throw new Error(response.message || "Failed to remove employee");
+      }
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["employees", companyId, currentPage],
+      });
+      setShowDeleteModal(false);
+      setEmployeeToDelete("");
+    },
+    onError: (err: any) => {
+      console.error("Error removing employee:", err.message);
+    },
+  });
+
+  // Handle delete initiation
+  const handleDelete = (employeeId: string) => {
+    if (employeeId) {
+      setEmployeeToDelete(employeeId); // Single ID as string
+      setShowDeleteModal(true);
+    }
+  };
+
+  // Confirm delete action
+  const confirmDelete = () => {
+    if (employeeToDelete) {
+      deleteMutation.mutate(employeeToDelete);
+    }
+  };
+
+  // Pagination
+  const handlePreviousPage = (page?: number) => {
+    if (page) setCurrentPage(page);
+    else if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < (data?.data?.meta?.totalPages || 1))
+      setCurrentPage(currentPage + 1);
+  };
 
   const recruiters: EmployeeData[] = data?.data?.employees || [];
   const requests: RequestData[] = data?.data?.request || [];
@@ -266,7 +237,7 @@ export default function RecruiterListPage({
         </Link>
         <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">Recruiter List</h1>
         <div className="flex gap-4">
-          <Button onClick={() => setShowModal(true)}>Add recruiter</Button>
+          <Button onClick={() => setShowAddModal(true)}>Add recruiter</Button>
         </div>
       </div>
 
@@ -293,23 +264,20 @@ export default function RecruiterListPage({
       )}
 
       {/* Add Recruiter Modal */}
-      {showModal && (
-        // Inside your RecruiterListPage component
-        <Dialog open={showModal} onOpenChange={setShowModal}>
+      {showAddModal && (
+        <Dialog open={showAddModal} onOpenChange={setShowAddModal}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Add Recruiters</DialogTitle>
             </DialogHeader>
-
             <div className="mt-2">
               <EmployeeSelector
                 selectedEmployees={selectedEmployees}
                 onEmployeesChange={setSelectedEmployees}
               />
             </div>
-
             <DialogFooter className="mt-4">
-              <Button variant="secondary" onClick={() => setShowModal(false)}>
+              <Button variant="secondary" onClick={() => setShowAddModal(false)}>
                 Cancel
               </Button>
               <Button
@@ -320,6 +288,38 @@ export default function RecruiterListPage({
                 }
               >
                 Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove this recruiter? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setEmployeeToDelete("");
+                }}
+              >
+                No
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending || !employeeToDelete}
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Yes"}
               </Button>
             </DialogFooter>
           </DialogContent>
