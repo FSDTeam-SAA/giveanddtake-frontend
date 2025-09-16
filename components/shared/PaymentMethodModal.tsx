@@ -55,6 +55,9 @@ export function PaymentMethodModal({ isOpen, onClose, price,planId }: PaymentMet
   const session = useSession();
   const userId = session?.data?.user?.id || "";
   const router = useRouter();
+
+  const plan = session?.data
+  console.log("PPPPPPPPPPPPPPP", plan)
   // const staticPlanId = "687221b652944a219c699c83"; // Static planId
   console.log("Selected Plan ID:", planId);
 

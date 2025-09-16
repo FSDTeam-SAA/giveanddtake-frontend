@@ -5,6 +5,7 @@ declare module "next-auth" {
     accessToken?: string;
     role?: string;
     isValid?: boolean; // ⬅️ new
+    payAsYouGo?: boolean;
   }
 
   interface Session {
@@ -15,6 +16,7 @@ declare module "next-auth" {
       email: string;
       name?: string;
       role?: string;
+      payAsYouGo?: boolean;
       isValid?: boolean; // ⬅️ new
     };
   }
@@ -26,5 +28,6 @@ declare module "next-auth/jwt" {
     role?: string;
     userId?: string;
     isValid?: boolean; // ⬅️ new
+    payAsYouGo?: boolean;
   }
 }

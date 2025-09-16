@@ -22,7 +22,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -35,7 +35,7 @@ import {
 import { VideoPlayer } from "@/components/company/video-player";
 import DOMPurify from "dompurify";
 
-// Define TypeScript interfaces for jobs API response
+// Define TypeScript interfaces
 interface ApplicationRequirement {
   requirement: string;
   _id: string;
@@ -83,7 +83,6 @@ interface JobApiResponse {
   data: Job[];
 }
 
-// Define TypeScript interfaces for applicants API response
 interface User {
   _id: string;
   name: string;
@@ -152,7 +151,7 @@ interface RecruiterAccount {
   programName: string;
   programDate: string;
   awardDescription: string;
-  companyId: Company;
+  companyId?: Company;
   sLink: SocialLink[];
   createdAt: string;
   updatedAt: string;
@@ -189,6 +188,19 @@ interface PitchApiResponse {
   data: PitchData[];
 }
 
+interface CompanyListItem {
+  id: string;
+  cname: string;
+  clogo?: string;
+}
+
+interface CompaniesApiResponse {
+  success: boolean;
+  message: string;
+  data: CompanyListItem[];
+}
+
+// Fetch functions
 const fetchRecruiterAccount = async (
   applicantId: string,
   token?: string
@@ -217,8 +229,8 @@ const fetchRecruiterAccount = async (
     throw new Error(data.message || "Failed to fetch recruiter account");
 
   if (
-    Array.isArray(data.data.companyId.links) &&
-    data.data.companyId.links.length === 1
+    Array.isArray(data.data.companyId?.links) &&
+    data.data.companyId?.links.length === 1
   ) {
     try {
       data.data.companyId.links = JSON.parse(data.data.companyId.links[0]);
@@ -228,8 +240,8 @@ const fetchRecruiterAccount = async (
     }
   }
   if (
-    Array.isArray(data.data.companyId.service) &&
-    data.data.companyId.service.length === 1
+    Array.isArray(data.data.companyId?.service) &&
+    data.data.companyId?.service.length === 1
   ) {
     try {
       data.data.companyId.service = JSON.parse(data.data.companyId.service[0]);
@@ -350,6 +362,80 @@ const deleteJob = async (
   }
 };
 
+const fetchCompanies = async (
+  token?: string
+): Promise<CompaniesApiResponse> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/all/companies`,
+      {
+        method: "GET",
+        headers,
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data: CompaniesApiResponse = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || "Failed to fetch companies");
+    }
+    return data;
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "An unexpected error occurred"
+    );
+  }
+};
+
+const applyForCompanyEmployee = async (
+  companyId: string,
+  token?: string
+): Promise<{ success: boolean; message: string }> => {
+  if (!process.env.NEXT_PUBLIC_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is not defined");
+  }
+
+  try {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/company/apply-for-company-employee`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ companyId }),
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message || "Failed to apply for company");
+    }
+    return data;
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "An unexpected error occurred"
+    );
+  }
+};
+
 export default function RecruiterDashboard() {
   const { data: session } = useSession();
   const token = session?.accessToken;
@@ -357,6 +443,10 @@ export default function RecruiterDashboard() {
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPageTable, setCurrentPageTable] = useState(1);
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
+    null
+  );
   const itemsPerPage = 4;
 
   const {
@@ -388,6 +478,33 @@ export default function RecruiterDashboard() {
     enabled: !!session?.user?.id && !!token,
   });
 
+  const {
+    data: companiesData,
+    isLoading: companiesLoading,
+    error: companiesError,
+  } = useQuery<CompaniesApiResponse, Error>({
+    queryKey: ["companies", token],
+    queryFn: () => fetchCompanies(token),
+    enabled: isCompanyModalOpen && !!token,
+  });
+
+  const applyMutation = useMutation<
+    { success: boolean; message: string },
+    Error,
+    string
+  >({
+    mutationFn: (companyId) => applyForCompanyEmployee(companyId, token),
+    onSuccess: (data) => {
+      toast.success(data.message || "Successfully applied to company");
+      queryClient.invalidateQueries({ queryKey: ["recruiter"] });
+      setIsCompanyModalOpen(false);
+      setSelectedCompanyId(null);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to apply to company");
+    },
+  });
+
   const deleteMutation = useMutation<DeleteJobResponse, Error, string>({
     mutationFn: (jobId) => deleteJob(jobId, token),
     onSuccess: (data) => {
@@ -400,6 +517,18 @@ export default function RecruiterDashboard() {
       toast.error(error.message || "Failed to delete job");
     },
   });
+
+  // Ensure DOMPurify runs client-side
+  const [sanitizedContent, setSanitizedContent] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const content =
+        recruiterAccount?.data?.companyId?.aboutUs ??
+        recruiterAccount?.data?.bio ??
+        "";
+      setSanitizedContent(DOMPurify.sanitize(content));
+    }
+  }, [recruiterAccount?.data?.companyId?.aboutUs, recruiterAccount?.data?.bio]);
 
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -451,7 +580,24 @@ export default function RecruiterDashboard() {
     }
   };
 
-  console.log("FFFFFFFFFF", recruiterAccount);
+  const handleConnectWithCompany = () => {
+    setIsCompanyModalOpen(true);
+  };
+
+  const handleSelectCompany = (companyId: string) => {
+    setSelectedCompanyId(companyId);
+    console.log(selectedCompanyId);
+  };
+
+  const handleConfirmApply = () => {
+    if (selectedCompanyId) {
+      applyMutation.mutate(selectedCompanyId);
+    } else {
+      toast.error("Please select a company");
+    }
+  };
+
+  console.log(companiesData)
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
@@ -466,76 +612,116 @@ export default function RecruiterDashboard() {
             <div className="md:flex md:items-center md:justify-between mb-4 border-b border-[#999999] pb-3 space-y-2">
               <div>
                 <h2 className="text-2xl font-bold text-[#131313]">
-                  Recruiter Information
+                  {recruiterAccount?.data?.companyId?._id
+                    ? "Company Information"
+                    : "Recruiter Information"}
                 </h2>
               </div>
-              {/* Post A Job Button */}
-              <div className="">
-                <Link href="/add-job">
-                  <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
-                    Post A Job
-                  </Button>
-                </Link>
+              <div className="flex gap-2">
+                {!recruiterAccount?.data?.companyId?._id && (
+                  <div>
+                    <Button
+                      onClick={handleConnectWithCompany}
+                      className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md"
+                    >
+                      Connect with a Company
+                    </Button>
+                  </div>
+                )}
+
+                <div>
+                  <Link href="/add-job">
+                    <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
+                      Post A Job
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
-            
 
-            {recruiterAccount?.data?.companyId?._id && Number(recruiterAccount.data.companyId._id) > 0 && !recruiterAccountError && (
+            {recruiterAccountLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+                <div className="col-span-1 lg:col-span-2">
+                  <div className="md:flex space-x-3">
+                    <Skeleton className="w-[170px] h-[170px]" />
+                    <div className="space-y-3">
+                      <div>
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-5 w-48" />
+                      </div>
+                      <div className="space-y-3">
+                        <Skeleton className="h-5 w-64" />
+                        <Skeleton className="h-5 w-48" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-span-1 lg:col-span-4">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-20 w-full mt-2" />
+                </div>
+              </div>
+            ) : recruiterAccountError ? (
+              <div className="text-center text-red-500">
+                Error: {recruiterAccountError.message}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    queryClient.invalidateQueries({
+                      queryKey: ["recruiter", session?.user?.id, token],
+                    })
+                  }
+                  className="ml-4"
+                >
+                  Retry
+                </Button>
+              </div>
+            ) : (
               <div className="container mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-                  <div className="col-span-1 lg:col-span-2">
+                  <div className="col-span-1 md:col-span-2">
                     <div className="md:flex space-x-3">
-                      {recruiterAccountLoading ? (
-                        <Skeleton className="w-[170px] h-[170px]" />
-                      ) : (
-                        <Image
-                          src={
-                            recruiterAccount?.data?.companyId.clogo ??
-                            "/placeholder.png"
-                          }
-                          alt="Company Logo"
-                          width={170}
-                          height={170}
-                          className="mt-1"
-                        />
-                      )}
+                      <Image
+                        src={
+                          recruiterAccount?.data?.companyId?.clogo ??
+                          recruiterAccount?.data?.photo ??
+                          "/placeholder.png"
+                        }
+                        alt={
+                          recruiterAccount?.data?.companyId
+                            ? "Company Logo"
+                            : "Recruiter Photo"
+                        }
+                        width={170}
+                        height={170}
+                        className="mt-1"
+                      />
                       <div className="space-y-3">
                         <div>
                           <div className="font-medium text-xl text-[#000000]">
-                            {recruiterAccountLoading ? (
-                              <Skeleton className="h-6 w-32" />
-                            ) : (
-                              `${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`
-                            )}
+                            {`${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`}
                           </div>
-                          <div className="text-base text-blue-600">
-                            {recruiterAccountLoading ? (
-                              <Skeleton className="h-5 w-48" />
-                            ) : (
-                              recruiterAccount?.data?.companyId.cname
-                            )}
-                          </div>
+                          {recruiterAccount?.data?.companyId && (
+                            <div className="text-base text-blue-600">
+                              {recruiterAccount?.data?.companyId.cname}
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-3">
                           {/* Email */}
                           <div className="flex items-center gap-3">
                             <Mail className="text-gray-600 h-5 w-5" />
-                            {recruiterAccountLoading ? (
-                              <Skeleton className="h-5 w-64" />
-                            ) : (
-                              <p className="text-base text-gray-700">
-                                {recruiterAccount?.data?.emailAddress ??
-                                  "No email available"}
-                              </p>
-                            )}
+                            <p className="text-base text-gray-700">
+                              {recruiterAccount?.data?.emailAddress ??
+                                "No email available"}
+                            </p>
                           </div>
                           {/* Website */}
                           <div className="flex items-center gap-3">
                             <Globe className="text-gray-700 h-5 w-5" />
-                            {recruiterAccountLoading ? (
-                              <Skeleton className="h-5 w-48" />
-                            ) : recruiterAccount?.data?.companyId.links
-                                ?.length ? (
+                            {recruiterAccount?.data?.companyId?.links?.length &&
+                            typeof recruiterAccount.data.companyId.links[0] ===
+                              "string" ? (
                               <Link
                                 href={recruiterAccount.data.companyId.links[0]}
                                 className="text-base text-gray-700 hover:underline"
@@ -544,6 +730,18 @@ export default function RecruiterDashboard() {
                                 aria-label={`Visit ${recruiterAccount.data.companyId.cname} website`}
                               >
                                 {recruiterAccount.data.companyId.links[0]}
+                              </Link>
+                            ) : recruiterAccount?.data?.sLink?.length &&
+                              typeof recruiterAccount.data.sLink[0].url ===
+                                "string" ? (
+                              <Link
+                                href={recruiterAccount.data.sLink[0].url}
+                                className="text-base text-gray-700 hover:underline"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Visit ${recruiterAccount.data.sLink[0].label}`}
+                              >
+                                {recruiterAccount.data.sLink[0].url}
                               </Link>
                             ) : (
                               <p className="text-base text-gray-700">
@@ -555,21 +753,21 @@ export default function RecruiterDashboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="col-span-1 lg:col-span-4">
+                  <div className="col-span-1 md:col-span-4">
                     <div className="font-medium text-xl text-[#000000]">
-                      About Us
+                      About {recruiterAccount?.data?.companyId ? "Us" : "Me"}
                     </div>
-                    {recruiterAccountLoading ? (
-                      <Skeleton className="h-20 w-full" />
-                    ) : (
+                    {sanitizedContent ? (
                       <div
                         className="text-gray-700 mt-2 prose"
                         dangerouslySetInnerHTML={{
-                          __html: DOMPurify.sanitize(
-                            recruiterAccount?.data?.bio ?? ""
-                          ),
+                          __html: sanitizedContent,
                         }}
                       />
+                    ) : (
+                      <p className="text-gray-700 mt-2">
+                        No description available
+                      </p>
                     )}
                   </div>
                 </div>
@@ -615,7 +813,7 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Your Jobs Section */}
-        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm ">
+        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl text-[#000000] font-semibold">Your Jobs</h2>
           </div>
@@ -688,8 +886,8 @@ export default function RecruiterDashboard() {
                       className="text-base text-[#000000] font-medium"
                     >
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell className="font-medium">{job.derivedStatus}
-                        
+                      <TableCell className="font-medium">
+                        {job.derivedStatus}
                       </TableCell>
                       <TableCell>
                         {formatDate(job.publishDate as string)}
@@ -779,25 +977,103 @@ export default function RecruiterDashboard() {
           )}
         </section>
 
-        {/* Applicant List Section */}
-        {/* <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
-          <div className="overflow-hidden">
-            <div className="flex justify-end">
-              {firstJobId ? (
-                <Link
-                  href={`/candidate-list/${firstJobId}`}
-                  className="text-base text-[#000000] font-semibold text-right mt-8 cursor-pointer"
-                >
-                  See All
-                </Link>
+        {/* Company Selection Modal */}
+        <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Connect with a Company</DialogTitle>
+              <DialogDescription>
+                Select a company to connect with as an employee.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[400px] overflow-y-auto">
+              {companiesLoading ? (
+                <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <Skeleton key={index} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : companiesError ? (
+                <div className="text-center text-red-500">
+                  Error: {companiesError.message}
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      queryClient.invalidateQueries({
+                        queryKey: ["companies", token],
+                      })
+                    }
+                    className="ml-4"
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ) : companiesData?.data?.length ? (
+                <div className="space-y-2">
+                  {companiesData.data.map((company) => (
+                    <div
+                      key={company.id}
+                      className={`p-4 border rounded-lg cursor-pointer hover:bg-gray-100 ${
+                        selectedCompanyId === company.id ? "bg-gray-200" : ""
+                      }`}
+                      onClick={() => handleSelectCompany(company.id)}
+                    >
+                      <div className="flex items-center gap-4">
+                        {company.clogo && (
+                          <Image
+                            src={company.clogo}
+                            alt={`${company.cname} logo`}
+                            width={400}
+                            height={400}
+                            className="rounded-full w-[40px] h-[40px]"
+                          />
+                        )}
+                        <span className="text-base font-medium">
+                          {company.cname}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p className="text-base text-[#707070] font-semibold text-right mt-8">
-                  No jobs available to view applicants
-                </p>
+                <div className="text-center text-gray-500">
+                  No companies available
+                </div>
               )}
             </div>
-          </div>
-        </section> */}
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsCompanyModalOpen(false);
+                  setSelectedCompanyId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmApply}>
+                {applyMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Applying...
+                  </span>
+                ) : (
+                  "Connect"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Confirmation Modal */}
         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
