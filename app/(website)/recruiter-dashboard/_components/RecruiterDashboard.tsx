@@ -65,6 +65,7 @@ interface Job {
   applicantCount: number;
   status: string;
   jobCategoryId: string;
+  derivedStatus: string;
   compensation: string;
   arcrivedJob: boolean;
   applicationRequirement: ApplicationRequirement[];
@@ -687,25 +688,8 @@ export default function RecruiterDashboard() {
                       className="text-base text-[#000000] font-medium"
                     >
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell>
-                        <span
-                          className={`text-sm font-medium ${
-                            job.adminApprove &&
-                            new Date(job.publishDate as string) <= new Date()
-                              ? "text-green-600"
-                              : "text-yellow-600"
-                          }`}
-                        >
-                          {new Date(job.publishDate as string) > new Date()
-                            ? "Scheduled"
-                            : job.adminApprove
-                            ? "Live"
-                            : "Scheduled"}{" "}
-                          {job.adminApprove &&
-                          new Date(job.publishDate as string) > new Date()
-                            ? "(Admin Approved)"
-                            : ""}
-                        </span>
+                      <TableCell className="font-medium">{job.derivedStatus}
+                        
                       </TableCell>
                       <TableCell>
                         {formatDate(job.publishDate as string)}
