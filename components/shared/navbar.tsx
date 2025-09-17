@@ -27,7 +27,7 @@ import { ScrollingInfoBar } from "./scrolling-info-bar";
 import { GlobalSearch } from "../global-search";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -55,6 +55,9 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [userAvatar, setUserAvatar] = useState("");
   const [userName, setUserName] = useState("");
+
+  // NEW: control mobile sheet open state so we can close it when navigating
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
   const userId = session?.user?.id;
@@ -210,6 +213,97 @@ export function SiteHeader() {
 
   const links = getDashboardLinks();
 
+  // ---- Shared user dropdown content (used for desktop and mobile avatar) ----
+  const UserMenuContent = () => (
+    <DropdownMenuContent align="end">
+      {(userRole === "recruiter" || userRole === "company") && (
+        <Fragment>
+          {links.dashboard && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={links.dashboard}
+                className="flex items-center w-full px-2 py-1.5"
+              >
+                <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {links.elevatorPitch && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={links.elevatorPitch}
+                className="flex items-center w-full px-2 py-1.5"
+              >
+                <Video className="mr-2 h-4 w-4" /> Elevator Pitch
+              </Link>
+            </DropdownMenuItem>
+          )}
+          {links.settings && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={links.settings}
+                className="flex items-center w-full px-2 py-1.5"
+              >
+                <Settings className="mr-2 h-4 w-4" /> Settings
+              </Link>
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem asChild>
+            <Link
+              href={
+                userRole === "recruiter"
+                  ? "/recruiter-pricing"
+                  : "/company-pricing"
+              }
+              className="flex items-center w-full px-2 py-1.5"
+            >
+              <CreditCard className="mr-2 h-4 w-4" /> My Plan
+            </Link>
+          </DropdownMenuItem>
+        </Fragment>
+      )}
+      {userRole === "candidate" && (
+        <Fragment>
+          <DropdownMenuItem asChild>
+            <Link
+              href={getProfileLink()}
+              className="flex items-center w-full px-2 py-1.5"
+            >
+              <User className="mr-2 h-4 w-4" /> Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/bookmarks"
+              className="flex items-center w-full px-2 py-1.5"
+            >
+              <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link
+              href="/user-pricing"
+              className="flex items-center w-full px-2 py-1.5"
+            >
+              <CreditCard className="mr-2 h-4 w-4" /> My Plan
+            </Link>
+          </DropdownMenuItem>
+        </Fragment>
+      )}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        onClick={() =>
+          signOut({
+            callbackUrl: "/",
+          })
+        }
+        className="cursor-pointer"
+      >
+        <LogOut className="mr-2 h-4 w-4" /> Log Out
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  );
+
   return (
     <div className="w-full">
       {/* Top Navbar */}
@@ -312,18 +406,12 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                className={`p-0 ${isActive("/faq") ? "text-[#2B7FD0]" : ""}`}
-              >
+              <DropdownMenuItem asChild>
                 <Link href="/faq" className="w-full px-2 py-1.5 block">
                   FAQ
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className={`p-0 ${
-                  isActive("/contact-us") ? "text-[#2B7FD0]" : ""
-                }`}
-              >
+              <DropdownMenuItem asChild>
                 <Link href="/contact-us" className="w-full px-2 py-1.5 block">
                   Contact Us
                 </Link>
@@ -346,20 +434,12 @@ export function SiteHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuItem
-                className={`p-0 ${
-                  isActive("/careers") ? "text-[#2B7FD0]" : ""
-                }`}
-              >
+              <DropdownMenuItem asChild>
                 <Link href="/careers" className="w-full px-2 py-1.5 block">
                   Careers
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className={`p-0 ${
-                  isActive("/privacy-policy") ? "text-[#2B7FD0]" : ""
-                }`}
-              >
+              <DropdownMenuItem asChild>
                 <Link
                   href="/privacy-policy"
                   className="w-full px-2 py-1.5 block"
@@ -367,11 +447,7 @@ export function SiteHeader() {
                   Privacy Policy
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className={`p-0 ${
-                  isActive("/terms-condition") ? "text-[#2B7FD0]" : ""
-                }`}
-              >
+              <DropdownMenuItem asChild>
                 <Link
                   href="/terms-condition"
                   className="w-full px-2 py-1.5 block"
@@ -387,7 +463,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 md:gap-4 md:ml-7">
           {status === "authenticated" ? (
             <>
-              {/* Notifications Button with Unread Count Badge */}
+              {/* Notifications Button with Unread Count Badge (desktop only) */}
               <Link href="/notifications" className="hidden lg:block relative">
                 <Button
                   size="icon"
@@ -414,126 +490,34 @@ export function SiteHeader() {
                   <span className="sr-only">Messages</span>
                 </Button>
               </Link>
+
+              {/* DESKTOP Avatar */}
               <div className="hidden lg:block">
                 <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="h-10 w-10 cursor-pointer">
                       <AvatarImage src={userAvatar} alt="User Avatar" />
                       <AvatarFallback className="font-semibold">
-                        {userName[0]}
+                        {(userName && userName[0]) || "U"}
                       </AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(userRole === "recruiter" || userRole === "company") && (
-                      <>
-                        {links.dashboard && (
-                          <DropdownMenuItem
-                            className={`p-0 ${
-                              isActive(links.dashboard) ? "text-[#2B7FD0]" : ""
-                            }`}
-                          >
-                            <Link
-                              href={links.dashboard}
-                              className="flex items-center w-full px-2 py-1.5"
-                            >
-                              <LayoutDashboard className="mr-2 h-4 w-4" />{" "}
-                              Dashboard
-                            </Link>
-                          </DropdownMenuItem>
-                        )}
-                        {links.elevatorPitch && (
-                          <DropdownMenuItem
-                            className={`p-0 ${
-                              isActive(links.elevatorPitch)
-                                ? "text-[#2B7FD0]"
-                                : ""
-                            }`}
-                          >
-                            <Link
-                              href={links.elevatorPitch}
-                              className="flex items-center w-full px-2 py-1.5"
-                            >
-                              <Video className="mr-2 h-4 w-4" /> Elevator Pitch
-                            </Link>
-                          </DropdownMenuItem>
-                        )}
-                        {links.settings && (
-                          <DropdownMenuItem
-                            className={`p-0 ${
-                              isActive(links.settings) ? "text-[#2B7FD0]" : ""
-                            }`}
-                          >
-                            <Link
-                              href={links.settings}
-                              className="flex items-center w-full px-2 py-1.5"
-                            >
-                              <Settings className="mr-2 h-4 w-4" /> Settings
-                            </Link>
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem className="p-0">
-                          <Link
-                            href={
-                              userRole === "recruiter"
-                                ? "/recruiter-pricing"
-                                : "/company-pricing"
-                            }
-                            className="flex items-center w-full px-2 py-1.5"
-                          >
-                            <CreditCard className="mr-2 h-4 w-4" /> My Plan
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    {userRole === "candidate" && (
-                      <>
-                        <DropdownMenuItem
-                          className={`p-0 ${
-                            isActive(getProfileLink()) ? "text-[#2B7FD0]" : ""
-                          }`}
-                        >
-                          <Link
-                            href={getProfileLink()}
-                            className="flex items-center w-full px-2 py-1.5"
-                          >
-                            <User className="mr-2 h-4 w-4" /> Profile
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          className={`p-0 ${
-                            isActive("/bookmarks") ? "text-[#2B7FD0]" : ""
-                          }`}
-                        >
-                          <Link
-                            href="/bookmarks"
-                            className="flex items-center w-full px-2 py-1.5"
-                          >
-                            <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="p-0">
-                          <Link
-                            href="/user-pricing"
-                            className="flex items-center w-full px-2 py-1.5"
-                          >
-                            <CreditCard className="mr-2 h-4 w-4" /> My Plan
-                          </Link>
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() =>
-                        signOut({
-                          callbackUrl: "/",
-                        })
-                      }
-                      className="cursor-pointer"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" /> Log Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <UserMenuContent />
+                </DropdownMenu>
+              </div>
+
+              {/* MOBILE Avatar (to the LEFT of hamburger, outside the Sheet) */}
+              <div className="lg:hidden">
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Avatar className="h-9 w-9 cursor-pointer">
+                      <AvatarImage src={userAvatar} alt="User Avatar" />
+                      <AvatarFallback className="font-semibold text-sm">
+                        {(userName && userName[0]) || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </DropdownMenuTrigger>
+                  <UserMenuContent />
                 </DropdownMenu>
               </div>
             </>
@@ -550,7 +534,7 @@ export function SiteHeader() {
           )}
 
           {/* Mobile Sheet */}
-          <Sheet>
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">
                 <Menu className="h-6 w-6" />
@@ -565,6 +549,7 @@ export function SiteHeader() {
               <div className="h-full flex flex-col overflow-hidden">
                 <Link
                   href="/"
+                  onClick={() => setSheetOpen(false)}
                   className="flex items-center gap-2 font-bold text-lg mb-6 px-4 pt-4"
                 >
                   <Image
@@ -585,7 +570,11 @@ export function SiteHeader() {
                 <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-24">
                   {status === "authenticated" && (
                     <div className="space-y-2 mb-6">
-                      <Link href="/notifications" className="relative block">
+                      <Link
+                        href="/notifications"
+                        className="relative block"
+                        onClick={() => setSheetOpen(false)}
+                      >
                         <Button
                           size="sm"
                           className="w-full bg-blue-500 text-white hover:bg-primary my-5"
@@ -602,7 +591,11 @@ export function SiteHeader() {
                           )}
                         </Button>
                       </Link>
-                      <Link href="/messages" className="block">
+                      <Link
+                        href="/messages"
+                        className="block"
+                        onClick={() => setSheetOpen(false)}
+                      >
                         <Button
                           size="sm"
                           className="w-full bg-blue-500 text-white hover:bg-primary mb-5"
@@ -618,6 +611,7 @@ export function SiteHeader() {
                   <nav className="grid gap-4 text-sm font-medium">
                     <Link
                       href="/"
+                      onClick={() => setSheetOpen(false)}
                       className={`transition-colors focus:outline-none ${
                         isActive("/")
                           ? "text-[#2B7FD0]"
@@ -628,6 +622,7 @@ export function SiteHeader() {
                     </Link>
                     <Link
                       href="/alljobs"
+                      onClick={() => setSheetOpen(false)}
                       className={`transition-colors focus:outline-none ${
                         isActive("/alljobs")
                           ? "text-[#2B7FD0]"
@@ -641,6 +636,7 @@ export function SiteHeader() {
                       userRole === "company") && (
                       <Link
                         href="/elevator-pitch-resume"
+                        onClick={() => setSheetOpen(false)}
                         className={`transition-colors focus:outline-none ${
                           isActive("/elevator-pitch-resume")
                             ? "text-[#2B7FD0]"
@@ -654,6 +650,7 @@ export function SiteHeader() {
                     {/* Blogs */}
                     <Link
                       href="/blogs"
+                      onClick={() => setSheetOpen(false)}
                       className={`transition-colors focus:outline-none ${
                         isActive("/blogs")
                           ? "text-[#2B7FD0]"
@@ -669,6 +666,7 @@ export function SiteHeader() {
                       getUpgradePath() && (
                         <Link
                           href={getUpgradePath()!}
+                          onClick={() => setSheetOpen(false)}
                           className={`transition-colors focus:outline-none ${
                             isActive(getUpgradePath()!)
                               ? "text-[#2B7FD0]"
@@ -682,6 +680,7 @@ export function SiteHeader() {
                     {/* About Us */}
                     <Link
                       href="/about-us"
+                      onClick={() => setSheetOpen(false)}
                       className={`transition-colors focus:outline-none ${
                         isActive("/about-us")
                           ? "text-[#2B7FD0]"
@@ -699,6 +698,7 @@ export function SiteHeader() {
                       <div className="pl-4 space-y-2">
                         <Link
                           href="/faq"
+                          onClick={() => setSheetOpen(false)}
                           className={`block transition-colors focus:outline-none ${
                             isActive("/faq")
                               ? "text-[#2B7FD0]"
@@ -709,6 +709,7 @@ export function SiteHeader() {
                         </Link>
                         <Link
                           href="/contact-us"
+                          onClick={() => setSheetOpen(false)}
                           className={`block transition-colors focus:outline-none ${
                             isActive("/contact-us")
                               ? "text-[#2B7FD0]"
@@ -726,6 +727,7 @@ export function SiteHeader() {
                       <div className="pl-4 space-y-2">
                         <Link
                           href="/careers"
+                          onClick={() => setSheetOpen(false)}
                           className={`block transition-colors focus:outline-none ${
                             isActive("/careers")
                               ? "text-[#2B7FD0]"
@@ -736,6 +738,7 @@ export function SiteHeader() {
                         </Link>
                         <Link
                           href="/privacy-policy"
+                          onClick={() => setSheetOpen(false)}
                           className={`block transition-colors focus:outline-none ${
                             isActive("/privacy-policy")
                               ? "text-[#2B7FD0]"
@@ -746,6 +749,7 @@ export function SiteHeader() {
                         </Link>
                         <Link
                           href="/terms-condition"
+                          onClick={() => setSheetOpen(false)}
                           className={`block transition-colors focus:outline-none ${
                             isActive("/terms-condition")
                               ? "text-[#2B7FD0]"
@@ -760,11 +764,10 @@ export function SiteHeader() {
                     {/* Auth button */}
                     {status === "authenticated" ? (
                       <Button
-                        onClick={() =>
-                          signOut({
-                            callbackUrl: "/",
-                          })
-                        }
+                        onClick={() => {
+                          setSheetOpen(false);
+                          signOut({ callbackUrl: "/" });
+                        }}
                         variant="outline"
                         className="w-full mt-4"
                       >
@@ -772,7 +775,7 @@ export function SiteHeader() {
                         Logout
                       </Button>
                     ) : (
-                      <Link href="/login">
+                      <Link href="/login" onClick={() => setSheetOpen(false)}>
                         <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
                           Login/Sign-Up
                         </Button>
