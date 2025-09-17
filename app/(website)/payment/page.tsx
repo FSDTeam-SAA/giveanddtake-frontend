@@ -84,7 +84,7 @@ const PayPalCheckoutContent = () => {
             }
 
             await response.json();
-            router.push("/success");
+            // router.push("/success");
           } catch (error) {
             console.error("PayPal Capture Error:", error);
             // Handle error appropriately

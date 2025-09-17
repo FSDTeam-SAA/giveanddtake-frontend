@@ -1,11 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import {
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,25 +9,15 @@ import { MessageBubble } from "./message-bubble";
 import { FileUpload } from "./file-upload";
 import { Send, Smile, ArrowLeft } from "lucide-react";
 import { Socket } from "socket.io-client";
-
-interface Message {
-  _id: string;
-  userId: string;
-  message: string;
-  file: Array<{
-    filename: string;
-    url: string;
-  }>;
-  roomId: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { toast } from "sonner";
+import type { ChatMessage, PagedMessages } from "./messaging";
 
 interface ChatAreaProps {
   roomId: string;
   userId?: string;
   socket?: Socket;
   roomName: string;
+  roomAvatarUrl?: string;
   onBackToList?: () => void;
 }
 
@@ -41,6 +27,7 @@ export function ChatArea({
   socket,
   onBackToList,
   roomName,
+  roomAvatarUrl,
 }: ChatAreaProps) {
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -49,17 +36,29 @@ export function ChatArea({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
+  const senderIdOf = (u: ChatMessage["userId"]) => (typeof u === "string" ? u : u?._id ?? "");
+
+  const isNearBottom = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return false;
+    const threshold = 80;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+  };
+
+  const scrollToBottom = () => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  };
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
-    useInfiniteQuery({
+    useInfiniteQuery<PagedMessages>({
       queryKey: ["messages", roomId],
       queryFn: async ({ pageParam = 1 }) => {
-        const response = await fetch(
-          `/api/message/${roomId}?page=${pageParam}&limit=20`
-        );
-        const data = await response.json();
-        return data.success
-          ? data
-          : { data: [], meta: { page: 1, totalPages: 1 } };
+        const response = await fetch(`/api/message/${roomId}?page=${pageParam}&limit=20`);
+        const json = await response.json();
+        if (!json?.success) return { data: [], meta: { page: 1, totalPages: 1 } };
+        return json as PagedMessages;
       },
       getNextPageParam: (lastPage) => {
         const { page, totalPages } = lastPage.meta;
@@ -67,58 +66,94 @@ export function ChatArea({
       },
       initialPageParam: 1,
       enabled: !!roomId,
+      staleTime: 5_000,
     });
 
-  const sendMessageMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await fetch("/api/message", {
-        method: "POST",
-        body: formData,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      setMessage("");
-      setFiles([]);
-      queryClient.invalidateQueries({
-        queryKey: ["message-rooms", userId],
-      });
-    },
-  });
+  const allMessages: ChatMessage[] = useMemo(
+    () => (data?.pages.flatMap((p) => p.data) ?? []).reverse(),
+    [data]
+  );
 
-  // Socket.io setup
+  // Join/leave rooms & realtime stream
   useEffect(() => {
     if (!socket || !roomId) return;
 
-    if (currentRoom && currentRoom !== roomId) {
-      socket.emit("leaveRoom", currentRoom);
-    }
-
+    if (currentRoom && currentRoom !== roomId) socket.emit("leaveRoom", currentRoom);
     socket.emit("joinRoom", roomId);
     setCurrentRoom(roomId);
 
-    const handleNewMessage = (newMessage: Message) => {
-      if (newMessage.roomId === roomId) {
-        queryClient.invalidateQueries({ queryKey: ["messages", roomId] });
+    const handleNewMessage = (newMessage: ChatMessage) => {
+      if (newMessage.roomId !== roomId) {
+        queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
+        return;
+      }
+
+      queryClient.setQueryData(
+        ["messages", roomId],
+        (oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined) => {
+          if (!oldData) {
+            return { pages: [{ data: [newMessage], meta: { page: 1, totalPages: 1 } }], pageParams: [1] };
+          }
+          const exists = oldData.pages.some((pg) => pg.data.some((m) => m._id === newMessage._id));
+          if (exists) return oldData;
+
+          const pages = [...oldData.pages];
+          const first = pages[0] ?? { data: [], meta: { page: 1, totalPages: 1 } };
+          pages[0] = { ...first, data: [newMessage, ...first.data] }; // newest page prepend
+          return { ...oldData, pages };
+        }
+      );
+
+      queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
+      if (isNearBottom() || senderIdOf(newMessage.userId) === userId) {
+        requestAnimationFrame(scrollToBottom);
       }
     };
 
     socket.on("newMessage", handleNewMessage);
 
+    // ✅ cleanup must return void
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, roomId, currentRoom, queryClient]);
+  }, [socket, roomId, currentRoom, queryClient, userId]);
 
-  // Auto scroll to bottom
+  // Scroll to bottom once loaded
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }, [data]);
+    if (!isLoading) requestAnimationFrame(scrollToBottom);
+  }, [isLoading, roomId]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  const appendLocalMessage = (created: ChatMessage) => {
+    queryClient.setQueryData(
+      ["messages", roomId],
+      (oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined) => {
+        if (!oldData) {
+          return { pages: [{ data: [created], meta: { page: 1, totalPages: 1 } }], pageParams: [1] };
+        }
+        const pages = [...oldData.pages];
+        const first = pages[0] ?? { data: [], meta: { page: 1, totalPages: 1 } };
+        pages[0] = { ...first, data: [created, ...first.data] };
+        return { ...oldData, pages };
+      }
+    );
+    queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
+  };
+
+  const sendMessageMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const response = await fetch("/api/message", { method: "POST", body: formData });
+      return response.json();
+    },
+    onSuccess: (resp) => {
+      if (resp?.success && resp?.data) appendLocalMessage(resp.data as ChatMessage);
+      else toast.error(resp?.message || "Failed to send message.");
+      setMessage("");
+      setFiles([]);
+    },
+    onError: () => toast.error("Failed to send message."),
+  });
+
+  const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() && files.length === 0) return;
 
@@ -126,84 +161,68 @@ export function ChatArea({
     formData.append("userId", userId || "");
     formData.append("roomId", roomId);
     formData.append("message", message);
-
-    files.forEach((file) => {
-      formData.append("files", file);
-    });
+    files.forEach((file) => formData.append("files", file));
 
     sendMessageMutation.mutate(formData);
-    queryClient.invalidateQueries({ queryKey: ["message-rooms"] });
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
-    if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
+    if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) fetchNextPage();
   };
-
-  const allMessages =
-    data?.pages
-      .flatMap((page) => (page as { data: Message[] }).data)
-      .reverse() || [];
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-[85vh]">
-      {/* Chat Header */}
+      {/* Header */}
       <div className="p-4 border-b bg-white flex items-center">
         {onBackToList && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBackToList}
-            className="mr-3 p-2"
-          >
+          <Button variant="ghost" size="sm" onClick={onBackToList} className="mr-3 p-2">
             <ArrowLeft className="w-5 h-5" />
           </Button>
         )}
         <Avatar className="w-10 h-10">
-          <AvatarImage src="/placeholder.svg?height=40&width=40&text=U" />
-          <AvatarFallback>U</AvatarFallback>
+          <AvatarImage
+            src={roomAvatarUrl || `/placeholder.svg?height=40&width=40&text=${roomName?.charAt(0) || "U"}`}
+          />
+          <AvatarFallback>{roomName?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
         <div className="ml-3 flex-1 min-w-0">
-          <h2 className="font-semibold truncate">{roomName}</h2>
+          <h2 className="font-semibold truncate">{roomName || "Conversation"}</h2>
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div
-        className="flex-1 overflow-y-auto p-4 space-y-4"
-        onScroll={handleScroll}
-        ref={messagesContainerRef}
-      >
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" onScroll={handleScroll} ref={messagesContainerRef}>
         {isFetchingNextPage && (
           <div className="flex justify-center py-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
           </div>
         )}
 
-        {allMessages.map((msg: Message, index) => (
-          <MessageBubble
-            key={msg._id}
-            message={msg}
-            isOwn={msg.userId === userId}
-            showAvatar={
-              index === 0 || allMessages[index - 1]?.userId !== msg.userId
-            }
-          />
-        ))}
+        {allMessages.map((msg, index) => {
+          const currSender = senderIdOf(msg.userId);
+          const prevSender = index > 0 ? senderIdOf(allMessages[index - 1].userId) : "";
+          return (
+            <MessageBubble
+              key={msg._id}
+              message={msg}
+              isOwn={currSender === userId}
+              showAvatar={index === 0 || prevSender !== currSender}
+            />
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input */}
+      {/* Input */}
       <div className="p-3 md:p-4 border-t bg-white">
         <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
           <div className="flex-1">
@@ -213,27 +232,20 @@ export function ChatArea({
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Type your message"
-                className="flex-1 text-base" // Prevent zoom on iOS
+                className="flex-1 text-base"
                 disabled={sendMessageMutation.isPending}
               />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="p-2 flex-shrink-0"
-              >
+              <Button type="button" variant="ghost" size="sm" className="p-2 flex-shrink-0" title="Emoji">
                 <Smile className="w-4 h-4" />
               </Button>
             </div>
           </div>
           <Button
             type="submit"
-            disabled={
-              sendMessageMutation.isPending ||
-              (!message.trim() && files.length === 0)
-            }
+            disabled={sendMessageMutation.isPending || (!message.trim() && files.length === 0)}
             className="bg-primary hover:bg-blue-700 flex-shrink-0"
             size="sm"
+            aria-label="Send"
           >
             <Send className="w-4 h-4" />
           </Button>
