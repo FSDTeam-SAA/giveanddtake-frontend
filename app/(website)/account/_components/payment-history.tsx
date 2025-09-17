@@ -148,35 +148,7 @@ export function PaymentHistory() {
     fetchPaymentData();
   }, [token, userId, currentPage]);
 
-  const handleDownload = async (transactionId: string) => {
-    if (!process.env.NEXT_PUBLIC_BASE_URL) {
-      setError("API base URL is not configured.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/payments/receipt/${transactionId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to download receipt.");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `receipt_${transactionId}.pdf`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to download receipt.");
-    }
-  };
+  
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -213,7 +185,6 @@ export function PaymentHistory() {
                 <TableHead scope="col">Date & Time</TableHead>
                 <TableHead scope="col">Plan Name</TableHead>
                 <TableHead scope="col">Amount Paid</TableHead>
-                <TableHead scope="col">Receipt</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -223,15 +194,6 @@ export function PaymentHistory() {
                   <TableCell>{format(new Date(payment.createdAt), "PPp")}</TableCell>
                   <TableCell>{payment.planTitle}</TableCell>
                   <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <Button 
-                      variant="link" 
-                      className="text-blue-600" 
-                      onClick={() => handleDownload(payment.transactionId)}
-                    >
-                      Download
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

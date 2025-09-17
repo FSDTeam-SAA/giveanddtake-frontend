@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   MapPin,
   Calendar,
-  Play,
   ExternalLink,
   Download,
 } from "lucide-react";
@@ -25,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import DOMPurify from "dompurify";
+
+import { toast } from "sonner";
 
 import { VideoPlayer } from "@/components/company/video-player";
 
@@ -166,13 +167,13 @@ export default function ApplicantDetailsPage() {
   const token = session?.accessToken;
   const applicationId = params.id as string;
   const resumeId = searchParams.get("resumeId");
-
   const applicatUserJobId = searchParams.get("applicationId");
 
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<string>("pending");
   const [statusLoading, setStatusLoading] = useState(false);
+  const [creatingRoom, setCreatingRoom] = useState(false);
 
   const fetchResumeData = async () => {
     if (!resumeId || !token) return;
@@ -218,7 +219,6 @@ export default function ApplicantDetailsPage() {
   const handleResumeDownload = () => {
     if (resumeData && resumeData.file.length > 0) {
       const fileUrl = resumeData.file[0].url;
-      console.log(fileUrl);
       const filename = resumeData.file[0].filename;
 
       const link = document.createElement("a");
@@ -268,8 +268,6 @@ export default function ApplicantDetailsPage() {
         url: normalizeUrl(link.url), // Normalize the URL while keeping other properties
       }))
       .filter((link) => isValidUrl(link.url));
-
-    console.log("Social Links (filtered):", validLinks); // Debug log
 
     return {
       resume: apiData.resume
@@ -334,14 +332,93 @@ export default function ApplicantDetailsPage() {
         ];
         if (allowedStatuses.includes(newStatus)) {
           setApplicationStatus(newStatus);
+          toast.success(`Status updated to ${newStatus}`);
         } else {
           console.error(`Invalid status: ${newStatus}`);
+          toast.error("Invalid application status.");
         }
+      } else {
+        toast.error("Failed to update status.");
       }
-    } catch (error) {
-      console.error("Failed to update status:", error);
+    } catch (e) {
+      console.error("Failed to update status:", e);
+      toast.error("Something went wrong while updating status.");
     } finally {
       setStatusLoading(false);
+    }
+  };
+
+  // Function to handle message room creation
+  const handleCreateMessageRoom = async () => {
+    if (!resume?.userId || !token) {
+      toast.error("Missing user or session. Please sign in again.");
+      console.error("Missing userId or token");
+      return;
+    }
+
+    try {
+      setCreatingRoom(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/message-room/create-message-room`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userId: resume.userId, // applicant user
+            recruiterId: MyId, // current recruiter
+          }),
+        }
+      );
+
+      // Try to read JSON even when response is not ok
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch {
+        /* no-op */
+      }
+
+      // If API says the room already exists, show toast + redirect gracefully
+      if (!response.ok) {
+        const message = (result?.message || "").toLowerCase();
+
+        if (message.includes("message room already exists")) {
+          toast.info("Message room already exists. Opening it…");
+          // If API doesn’t return roomId, fall back to userId navigation
+          const existingRoomId =
+            result?.data?.roomId || result?.data?.existingRoomId;
+          if (existingRoomId) {
+            router.push(`/messages?roomId=${existingRoomId}`);
+          } else {
+            router.push(`/messages?userId=${resume.userId}`);
+          }
+          return;
+        }
+
+        // Generic error path
+        toast.error(result?.message || "Failed to create message room.");
+        console.error("Failed to create message room:", result);
+        return;
+      }
+
+      // Success path
+      const roomId = result?.data?.roomId;
+      toast.success("Message room created.");
+      if (roomId) {
+        router.push(`/messages?roomId=${roomId}`);
+      } else {
+        // Fallback: open by userId if roomId isn’t provided
+        router.push(`/messages?userId=${resume.userId}`);
+      }
+    } catch (error) {
+      toast.error("Something went wrong creating the message room.");
+      console.error("Error creating message room:", error);
+    } finally {
+      setCreatingRoom(false);
     }
   };
 
@@ -457,12 +534,6 @@ export default function ApplicantDetailsPage() {
     );
   }
 
-
-  console.log("RRRTTTTTTTTT", resume.userId)
-
-
-  const userId = resume.userId
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="">
@@ -523,17 +594,6 @@ export default function ApplicantDetailsPage() {
                     <span className="font-medium">Years of Experience:</span>{" "}
                     {getYearsOfExperience(experiences)}
                   </div>
-                  {/* {resume.email && (
-                    <div>
-                      <span className="font-medium">Email:</span> {resume.email}
-                    </div>
-                  )}
-                  {resume.phoneNumber && (
-                    <div>
-                      <span className="font-medium">Contact:</span>{" "}
-                      {resume.phoneNumber}
-                    </div>
-                  )} */}
                 </div>
               </div>
             </div>
@@ -548,7 +608,6 @@ export default function ApplicantDetailsPage() {
             <CardContent>
               <div
                 className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
-                // Only sanitize when description exists
                 dangerouslySetInnerHTML={{
                   __html: resume.aboutUs
                     ? DOMPurify.sanitize(resume.aboutUs)
@@ -559,7 +618,7 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {elevatorPitch && (
+        {elevatorPitch && elevatorPitch.length > 0 && (
           <div className="rounded-lg py-6 bg-gray-50">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">
               Elevator Pitch
@@ -713,11 +772,14 @@ export default function ApplicantDetailsPage() {
 
         <div className="flex items-center justify-center gap-4 mt-6">
           <div>
-            <Link href={`/messages`}>
-              <Button variant="outline" className="bg-[#2B7FD0] text-white">
-                Message
-              </Button>
-            </Link>
+            <Button
+              variant="outline"
+              className="bg-[#2B7FD0] text-white"
+              onClick={handleCreateMessageRoom}
+              disabled={creatingRoom}
+            >
+              {creatingRoom ? "Opening…" : "Message"}
+            </Button>
           </div>
           <div>
             <Select

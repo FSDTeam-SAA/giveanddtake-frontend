@@ -7,7 +7,7 @@ export function useSocket() {
     const [socket, setSocket] = useState<Socket | null>(null)
 
     useEffect(() => {
-        const socketInstance = io('https://giveandtake-backend.onrender.com')
+        const socketInstance = io('http://localhost:5000')
         setSocket(socketInstance)
 
         return () => {
