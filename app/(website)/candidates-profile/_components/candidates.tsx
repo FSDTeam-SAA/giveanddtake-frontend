@@ -7,35 +7,31 @@ import {
   GraduationCap,
   Award as AwardIcon,
   MapPin,
-  GlobeIcon,
-  LinkedinIcon,
-  LinkIcon,
-  TwitterIcon,
 } from "lucide-react";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
 import { SocialIcon } from "@/components/company/social-icon";
+import CandidateShare from "./candidateShare";
+import CandidateSharePopover from "./candidateShare";
 
-// ✅ Icon mapping for social links
-const iconMap: { [key: string]: React.FC<{ size?: number }> } = {
-  website: (props) => <GlobeIcon {...props} />,
-  linkedin: (props) => <LinkedinIcon {...props} />,
-  twitter: (props) => <TwitterIcon {...props} />,
-  other: (props) => <LinkIcon {...props} />,
-};
-
-// ✅ Format date safely
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return "N/A";
-  const date = new Date(dateString);
-  return isNaN(date.getTime())
+// ---------- utils ----------
+const toMonthYear = (date?: string) => {
+  if (!date) return "N/A";
+  const d = new Date(date);
+  return isNaN(d.getTime())
     ? "Invalid Date"
-    : date.toLocaleDateString("en-US", { year: "numeric", month: "short" });
+    : d.toLocaleDateString("en-US", { year: "numeric", month: "short" });
 };
 
-// ✅ Type definition for API response
+const titleCase = (s?: string) =>
+  s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+const joinLocation = (...parts: (string | undefined)[]) =>
+  parts.filter((p) => (typeof p === "string" ? p.trim() : false)).join(", ") ||
+  "—";
+
+// ---------- types ----------
 interface ResumeResponse {
   success: boolean;
   message: string;
@@ -58,8 +54,9 @@ interface ResumeResponse {
     };
     experiences?: {
       _id: string;
+      company?: string;
+      position?: string;
       jobDescription?: string;
-      jobCategory?: string;
       startDate?: string;
       endDate?: string;
       city?: string;
@@ -71,131 +68,129 @@ interface ResumeResponse {
       fieldOfStudy?: string;
       city?: string;
       state?: string;
+      country?: string;
+      startDate?: string;
       graduationDate?: string;
     }[];
     awardsAndHonors?: {
       _id: string;
       title?: string;
       description?: string;
+      programeDate?: string; // from your payload
       createdAt?: string;
     }[];
   };
 }
 
-// ✅ Skeleton Loader Component
-const SkeletonLoader: React.FC = () => {
-  return (
-    <div className="py-24">
-      <Card className="border-0">
-        <CardContent className="p-0">
-          {/* Profile Section Skeleton */}
-          <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 animate-pulse">
-            <div className="col-span-4">
-              <div className="w-[170px] h-[170px] rounded-md bg-gray-300"></div>
-              <div className="mt-3">
-                <div className="h-6 bg-gray-300 rounded w-3/4"></div>
-                <div className="h-4 bg-gray-300 rounded w-1/2 mt-2"></div>
-              </div>
-              {/* Social Links Skeleton */}
-              <div className="flex gap-2 mt-3">
-                <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                <div className="w-10 h-10 bg-gray-300 rounded"></div>
-                <div className="w-10 h-10 bg-gray-300 rounded"></div>
-              </div>
+// ---------- skeleton ----------
+const SkeletonLoader: React.FC = () => (
+  <div className="py-24">
+    <Card className="border-0">
+      <CardContent className="p-0">
+        {/* Profile Section Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 animate-pulse">
+          <div className="col-span-4">
+            <div className="w-[170px] h-[170px] rounded-md bg-gray-300"></div>
+            <div className="mt-3">
+              <div className="h-6 bg-gray-300 rounded w-3/4"></div>
+              <div className="h-4 bg-gray-300 rounded w-1/2 mt-2"></div>
             </div>
-
-            {/* Contact Info Skeleton */}
-            <div className="col-span-6">
-              <div className="h-8 bg-gray-300 rounded w-1/3 mb-3"></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="h-5 bg-gray-300 rounded w-1/4 mb-1"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-5 bg-gray-300 rounded w-1/4 mt-4 mb-1"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                </div>
-                <div>
-                  <div className="h-5 bg-gray-300 rounded w-1/4 mb-1"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-5 bg-gray-300 rounded w-1/4 mt-4 mb-1"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                </div>
+            <div className="flex gap-2 mt-3">
+              <div className="w-10 h-10 bg-gray-300 rounded"></div>
+              <div className="w-10 h-10 bg-gray-300 rounded"></div>
+              <div className="w-10 h-10 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+          <div className="col-span-6">
+            <div className="h-8 bg-gray-300 rounded w-1/3 mb-3"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="h-5 bg-gray-300 rounded w-1/4 mb-1"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-300 rounded w-1/4 mt-4 mb-1"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+              </div>
+              <div>
+                <div className="h-5 bg-gray-300 rounded w-1/4 mb-1"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-300 rounded w-1/4 mt-4 mb-1"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/2"></div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* About Skeleton */}
-          <section className="border-b py-6 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
-            <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
-            <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-          </section>
+        {/* About */}
+        <section className="border-b py-6 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
+          <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+          <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+        </section>
 
-          {/* Skills Skeleton */}
-          <section className="border-b py-6 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
-            <div className="flex flex-wrap gap-2">
-              <div className="h-6 bg-gray-300 rounded w-20"></div>
-              <div className="h-6 bg-gray-300 rounded w-20"></div>
-              <div className="h-6 bg-gray-300 rounded w-20"></div>
-            </div>
-          </section>
+        {/* Skills */}
+        <section className="border-b py-6 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
+          <div className="flex flex-wrap gap-2">
+            <div className="h-6 bg-gray-300 rounded w-20"></div>
+            <div className="h-6 bg-gray-300 rounded w-20"></div>
+            <div className="h-6 bg-gray-300 rounded w-20"></div>
+          </div>
+        </section>
 
-          {/* Experience Skeleton */}
-          <section className="border-b py-6 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
-            <div className="space-y-8">
-              <div className="flex gap-4 items-start">
-                <div className="w-8 h-8 bg-gray-300 rounded"></div>
-                <div className="flex-1">
-                  <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mt-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
-                </div>
+        {/* Experience */}
+        <section className="border-b py-6 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
+          <div className="space-y-8">
+            <div className="flex gap-4 items-start">
+              <div className="w-8 h-8 bg-gray-300 rounded"></div>
+              <div className="flex-1">
+                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mt-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* Education Skeleton */}
-          <section className="border-b py-6 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
-            <div className="space-y-4">
-              <div className="flex gap-4 items-start">
-                <div className="w-16 h-16 bg-gray-300 rounded"></div>
-                <div className="flex-1">
-                  <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/3 mt-2"></div>
-                </div>
+        {/* Education */}
+        <section className="border-b py-6 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
+          <div className="space-y-4">
+            <div className="flex gap-4 items-start">
+              <div className="w-16 h-16 bg-gray-300 rounded"></div>
+              <div className="flex-1">
+                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/3 mt-2"></div>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* Awards Skeleton */}
-          <section className="py-6 animate-pulse">
-            <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
-            <div className="space-y-4">
-              <div className="flex gap-4 items-start">
-                <div className="w-16 h-16 bg-gray-300 rounded"></div>
-                <div className="flex-1">
-                  <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
-                  <div className="h-4 bg-gray-300 rounded w-3/4 mt-2"></div>
-                </div>
+        {/* Awards */}
+        <section className="py-6 animate-pulse">
+          <div className="h-8 bg-gray-300 rounded w-1/4 mb-3"></div>
+          <div className="space-y-4">
+            <div className="flex gap-4 items-start">
+              <div className="w-16 h-16 bg-gray-300 rounded"></div>
+              <div className="flex-1">
+                <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/4 mt-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4 mt-2"></div>
               </div>
             </div>
-          </section>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
+          </div>
+        </section>
+      </CardContent>
+    </Card>
+  </div>
+);
 
+// ---------- main ----------
 const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
-  const { data: session } = useSession();
-  const token = session?.accessToken;
+  const { data: session } = useSession(); // keep if you’ll need token later
 
-  // ✅ Fetch resume API
+  // --- data fetch (hook always called) ---
   const fetchResume = async (): Promise<ResumeResponse> => {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${userId}`
@@ -204,22 +199,56 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
     return res.json();
   };
 
-  // ✅ Query with React Query
   const {
     data: myresume,
     isLoading,
     isFetching,
   } = useQuery<ResumeResponse>({
-    queryKey: ["my-resume"],
+    queryKey: ["my-resume", userId],
     queryFn: fetchResume,
     enabled: !!userId,
   });
 
-  // ✅ Show skeleton loader while loading or fetching
-  if (isLoading || isFetching) return <SkeletonLoader />;
-  if (!myresume?.data?.resume) return <SkeletonLoader />;
+  // --- safe bases (work during loading too) ---
+  const resume = myresume?.data?.resume;
+  const experiences = myresume?.data?.experiences ?? [];
+  const education = myresume?.data?.education ?? [];
+  const awardsAndHonors = myresume?.data?.awardsAndHonors ?? [];
 
-  const { resume, experiences, education, awardsAndHonors } = myresume.data;
+  // --- ALWAYS call memos before any conditional return ---
+  const sortedExperiences = React.useMemo(
+    () =>
+      [...experiences].sort(
+        (a, b) =>
+          new Date(b.startDate || 0).getTime() -
+          new Date(a.startDate || 0).getTime()
+      ),
+    [experiences]
+  );
+
+  const sortedEducation = React.useMemo(
+    () =>
+      [...education].sort(
+        (a, b) =>
+          new Date(b.graduationDate || 0).getTime() -
+          new Date(a.graduationDate || 0).getTime()
+      ),
+    [education]
+  );
+
+  const sortedAwards = React.useMemo(
+    () =>
+      [...awardsAndHonors].sort(
+        (a, b) =>
+          new Date(b.programeDate || b.createdAt || 0).getTime() -
+          new Date(a.programeDate || a.createdAt || 0).getTime()
+      ),
+    [awardsAndHonors]
+  );
+
+  // --- conditional rendering happens AFTER hooks ---
+  if (isLoading || isFetching) return <SkeletonLoader />;
+  if (!resume) return <SkeletonLoader />;
 
   return (
     <div>
@@ -234,11 +263,11 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             className="w-full h-48 object-cover"
           />
         ) : (
-          <div className="w-full h-48 bg-gray-200" /> // fallback background color
+          <div className="w-full h-48 bg-gray-200" />
         )}
       </div>
 
-      {/* Profile Section */}
+      {/* Profile */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 px-6 mt-[-30px]">
         <div className="col-span-3">
           <div className="w-[170px] h-[170px] rounded-md bg-gray-200 overflow-hidden">
@@ -246,8 +275,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               <Image
                 src={resume.photo}
                 alt={`${resume.firstName} ${resume.lastName}`}
-                width={96}
-                height={96}
+                width={170}
+                height={170}
                 className="w-[170px] h-[170px] object-cover"
               />
             ) : (
@@ -257,13 +286,15 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               </div>
             )}
           </div>
+
           <h2 className="text-xl font-bold mt-3">
             {resume.firstName} {resume.lastName}
           </h2>
-          <p className="text-gray-600">{resume.title}</p>
+          {resume.title && <p className="text-gray-600">{resume.title}</p>}
+
           <p className="text-gray-600 flex items-center">
             <MapPin className="w-4 h-4 mr-1" />
-            {resume.country || "N/A"},{resume.city}
+            {joinLocation(resume.country, resume.city)}
           </p>
 
           {/* Social Links */}
@@ -272,23 +303,28 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               <SocialIcon key={link._id} url={link.url} />
             ))}
           </div>
-          <div className="mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 transition-colors text-white"
-            >
-              Follow
-            </Button>
-          </div>
         </div>
 
-        {/* Contact Info */}
+        {/* About */}
         <div className="col-span-7 lg:mt-[60px]">
-          <h3 className="font-semibold text-gray-800 mb-3 text-2xl border-b-2 pb-2">
-            About
-          </h3>
-          <div className="">
+          <div className="flex items-center justify-between border-b-2 pb-2">
+            <h3 className="font-semibold text-gray-800 mb-3 text-2xl">About</h3>
+            {userId ? (
+              <CandidateSharePopover
+                userId={userId}
+                title={`${resume.firstName} ${resume.lastName} — ${
+                  resume.title ?? "Candidate"
+                }`}
+                summary={
+                  resume.aboutUs
+                    ? resume.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
+                    : ""
+                }
+              />
+            ) : null}
+          </div>
+
+          <div>
             <p
               className="text-gray-600 leading-relaxed"
               dangerouslySetInnerHTML={{
@@ -305,96 +341,136 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         <div className="flex flex-wrap gap-2">
           {resume.skills?.length ? (
             resume.skills.map((skill, idx) => (
-              <p key={idx} className="bg-blue-600 text-white px-3 py-1 text-sm">
+              <p
+                key={idx}
+                className="bg-[#2B7FD0] text-white px-3 py-1 text-[18px] font-normal rounded"
+              >
                 {skill}
               </p>
             ))
           ) : (
-            <p>No skills listed</p>
+            <p className="text-gray-500">No skills listed</p>
           )}
         </div>
       </section>
 
-      {/* Experience */}
+      {/* Experience (show all) */}
       <section className="border-b py-6">
         <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
           Experience
         </h3>
-        <div className="space-y-8">
-          {experiences?.length ? (
-            experiences.map((exp) => (
-              <div key={exp._id} className="flex gap-4 items-start">
-                <div className="">
-                  <Briefcase className="text-blue-600 w-8 h-8" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold capitalize text-[20px] text-[#595959]">
-                    {exp.jobCategory || "N/A"}
-                  </h4>
-                  <div className="flex justify-between">
-                    <div>
-                      <p className="text-gray-600 text-sm">
-                        {exp.jobDescription || "No description"}
-                      </p>
-                      <p className="text-gray-500 text-sm">
-                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
-                      </p>
+
+        {sortedExperiences.length > 0 ? (
+          <div className="space-y-8">
+            {sortedExperiences.map((exp) => {
+              const when = `${toMonthYear(exp.startDate)} - ${
+                exp.endDate ? toMonthYear(exp.endDate) : "Present"
+              }`;
+              const loc = joinLocation(exp.city, exp.country);
+              return (
+                <div key={exp._id} className="flex gap-4 items-start">
+                  <div>
+                    <Briefcase className="text-blue-600 w-8 h-8" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <h4 className="font-bold text-[20px] text-[#595959]">
+                        {exp.position || "N/A"}
+                        {exp.company && (
+                          <span className="font-normal text-gray-700">
+                            {" "}
+                            · {exp.company}
+                          </span>
+                        )}
+                      </h4>
+                      <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                        {when}
+                      </span>
                     </div>
-                    <p className="text-gray-600 text-sm flex items-center gap-1">
+
+                    {exp.jobDescription && (
+                      <p className="text-gray-600 text-sm mt-1">
+                        {exp.jobDescription}
+                      </p>
+                    )}
+
+                    <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
                       <MapPin className="w-4 h-4" />
-                      {exp.city && `${exp.city}, `} {exp.country || "N/A"}
+                      {loc}
                     </p>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <p>No experience listed</p>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No experience listed</p>
+        )}
       </section>
 
-      {/* Education */}
+      {/* Education (show all) */}
       <section className="border-b py-6">
-        <h3 className="text-2xl font-semibold mb-3">Education</h3>
+        <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+          Education
+        </h3>
+
         <div className="space-y-4">
-          {education?.length ? (
-            education.map((edu) => (
-              <div
-                key={edu._id}
-                className="flex gap-4 items-start sm:items-center"
-              >
-                <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded">
-                  <GraduationCap className="text-blue-600 w-8 h-8" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-lg">
-                    {edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
-                  </h4>
-                  <p className="text-gray-600 text-sm">
-                    {formatDate(edu.graduationDate)}
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    {edu.city && `${edu.city}, `}
-                    {edu.state || ""}
-                  </p>
-                </div>
-              </div>
-            ))
+          {sortedEducation.length > 0 ? (
+            <ul className="space-y-6">
+              {sortedEducation.map((edu) => {
+                const degree = titleCase(edu.degree) || "Degree";
+                const field =
+                  typeof edu.fieldOfStudy === "string" &&
+                  edu.fieldOfStudy.trim().length
+                    ? edu.fieldOfStudy.trim()
+                    : "";
+                const loc = joinLocation(edu.city, edu.state, edu.country);
+
+                return (
+                  <li
+                    key={edu._id}
+                    className="flex gap-4 items-start sm:items-center"
+                  >
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
+                      <GraduationCap className="text-blue-600 w-7 h-7 sm:w-8 sm:h-8" />
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                        <h4 className="font-semibold text-lg text-[#595959]">
+                          {degree}
+                          {field && (
+                            <span className="font-normal"> in {field}</span>
+                          )}
+                        </h4>
+
+                        <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                          {toMonthYear(edu.startDate)} —{" "}
+                          {toMonthYear(edu.graduationDate)}
+                        </span>
+                      </div>
+
+                      <p className="text-gray-600 text-sm mt-1">{loc}</p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           ) : (
-            <p>No education listed</p>
+            <p className="text-gray-500 text-sm">No education listed</p>
           )}
         </div>
       </section>
 
-      {/* Awards */}
-
-      {(awardsAndHonors?.length ?? 0) > 0 &&(
+      {/* Awards (show all) */}
       <section className="py-6">
-        <h3 className="text-2xl font-semibold mb-3">Awards & Honours</h3>
-        <div className="space-y-4">
-          {awardsAndHonors?.length ? (
-            awardsAndHonors.map((award) => (
+        <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+          Awards & Honours
+        </h3>
+
+        {sortedAwards.length > 0 ? (
+          <div className="space-y-4">
+            {sortedAwards.map((award) => (
               <div
                 key={award._id}
                 className="flex gap-4 items-start sm:items-center"
@@ -403,24 +479,27 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                   <AwardIcon className="text-blue-600 w-8 h-8" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-semibold text-lg">
-                    {award.title || "N/A"}
-                  </h4>
-                  <p className="text-gray-500 text-sm">
-                    {formatDate(award.createdAt)}
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    {award.description || ""}
-                  </p>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <h4 className="font-semibold text-lg">
+                      {award.title || "N/A"}
+                    </h4>
+                    <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                      {toMonthYear(award.programeDate || award.createdAt)}
+                    </span>
+                  </div>
+                  {award.description && (
+                    <p className="text-gray-600 text-sm mt-1">
+                      {award.description}
+                    </p>
+                  )}
                 </div>
               </div>
-            ))
-          ) : (
-            <p>No awards listed</p>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">No awards listed</p>
+        )}
       </section>
-      )}
     </div>
   );
 };

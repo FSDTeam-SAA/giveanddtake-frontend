@@ -215,10 +215,10 @@ export function ProfileSidebar() {
           />
         </div>
         <h3 className="font-semibold text-lg sm:text-xl text-gray-900 text-center">
-          {userData.data.name || "User"}
+          {userData?.data.name || "User"}
         </h3>
         <p className="text-xs sm:text-sm text-gray-600 mt-1 text-center break-all">
-          {userData.data.email || "No email provided"}
+          {userData?.data.email || "No email provided"}
         </p>
       </div>
 
