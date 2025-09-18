@@ -253,17 +253,17 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div>
       {/* Banner */}
-      <div className="w-full h-48">
+      <div className="w-full h-[300px]">
         {resume.banner ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-48 object-cover"
+            className="w-full h-[300px] object-cover object-center"
           />
         ) : (
-          <div className="w-full h-48 bg-gray-200" />
+          <div className="w-full h-[300px] bg-gray-200" />
         )}
       </div>
 
@@ -312,6 +312,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             {userId ? (
               <CandidateSharePopover
                 userId={userId}
+                role="candidates-profile"
                 title={`${resume.firstName} ${resume.lastName} — ${
                   resume.title ?? "Candidate"
                 }`}
@@ -341,12 +342,12 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         <div className="flex flex-wrap gap-2">
           {resume.skills?.length ? (
             resume.skills.map((skill, idx) => (
-              <p
+              <span
                 key={idx}
-                className="bg-[#2B7FD0] text-white px-3 py-1 text-[18px] font-normal rounded"
+                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
               >
                 {skill}
-              </p>
+              </span>
             ))
           ) : (
             <p className="text-gray-500">No skills listed</p>

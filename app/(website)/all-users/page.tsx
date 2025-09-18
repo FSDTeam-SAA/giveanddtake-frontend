@@ -158,7 +158,7 @@ function AllUsersContent() {
         ? `/companies-profile/${id}`
         : role === "recruiter"
         ? `/recruiters-profile/${id}`
-        : `/candidate-profile/${id}`;
+        : `/candidates-profile/${id}`;
     router.push(profileUrl);
   };
 

@@ -597,7 +597,7 @@ export default function RecruiterDashboard() {
     }
   };
 
-  console.log(companiesData)
+  console.log(companiesData);
 
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
@@ -628,6 +628,20 @@ export default function RecruiterDashboard() {
                     </Button>
                   </div>
                 )}
+                <div>
+                  <Link
+                    href={`/recruiters-profile/${encodeURIComponent(
+                      recruiterAccount?.data?.userId ?? ""
+                    )}`}
+                  >
+                    <Button
+                      disabled={!recruiterAccount?.data?.userId}
+                      className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md"
+                    >
+                      Public view
+                    </Button>
+                  </Link>
+                </div>
 
                 <div>
                   <Link href="/add-job">
