@@ -122,6 +122,8 @@ export function PersonalInformation() {
 
   const { data: session } = useSession();
   const token = session?.accessToken || "";
+
+  console.log(token)
   const email = session?.user?.email || "";
 
   const queryClient = useQueryClient();
