@@ -12,6 +12,7 @@ import Image from "next/image";
 import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
+import CandidateSharePopover from "@/app/(website)/candidates-profile/_components/candidateShare";
 
 interface Honor {
   id: string;
@@ -133,63 +134,91 @@ export default function CompanyProfilePage() {
   return (
     <div className="container mx-auto">
       {/* Banner */}
-      <div className="w-full h-[200px] rounded-b-lg">
+      <div className="w-full h-[300px] rounded-b-lg">
         {company.banner ? (
           <Image
             src={company.banner}
             alt={`${company.cname} banner`}
             width={1200}
             height={200}
-            className="w-full h-[200px] object-cover rounded-b-lg"
+            className="w-full h-[300px] object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[200px] bg-gray-200 rounded-b-lg" />
+          <div className="w-full h-[300px] bg-gray-200" />
         )}
       </div>
 
       {/* Header Section */}
       <div className="px-4 md:px-6 lg:pl-10 mt-[-30px]">
-        <div className="">
-          <div className="w-[170px] h-[170px] flex-shrink-0">
-            <Image
-              src={
-                company.clogo && company.clogo.trim() !== ""
-                  ? company.clogo
-                  : "/placeholder.svg"
-              }
-              alt={company.cname}
-              width={170}
-              height={170}
-              className="w-[170px] h-[170px] object-cover rounded"
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
+          <div className="col-span-3">
+            <div className="w-[170px] h-[170px] flex-shrink-0">
+              <Image
+                src={
+                  company.clogo && company.clogo.trim() !== ""
+                    ? company.clogo
+                    : "/placeholder.svg"
+                }
+                alt={company.cname}
+                width={170}
+                height={170}
+                className="w-[170px] h-[170px] object-cover rounded"
+              />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold mb-2 text-gray-900">
+                {company.cname}
+              </h1>
+              <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {company.city}, {company.country}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {company.employeesId?.length || 0} employees
+                </div>
+              </div>
+              <div className="flex gap-4">
+                {links.slice(0, 3).map((link, index) => (
+                  <SocialIcon key={index} url={link} />
+                ))}
+              </div>
+              <div className="mt-4">
+                <Button variant="outline" size="sm">
+                  Follow
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2 text-gray-900">
-              {company.cname}
-            </h1>
-            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                {company.city}, {company.country}
-              </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                {company.employeesId?.length || 0} employees
-              </div>
-              <div className="flex items-center gap-1">
-                <span>📍</span>
-                <span>Contact</span>
-              </div>
+          <div className="col-span-7 lg:mt-[60px]">
+            <div className="flex items-center justify-between border-b-2 pb-2">
+              <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+                About
+              </h3>
+              {userId ? (
+                <CandidateSharePopover
+                  userId={userId}
+                  role="companies-profile"
+                  title={`${company.firstName} ${company.lastName} — ${
+                    company.title ?? "Candidate"
+                  }`}
+                  summary={
+                    company.aboutUs
+                      ? company.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
+                      : ""
+                  }
+                />
+              ) : null}
             </div>
-            <div className="flex gap-4">
-              {links.slice(0, 3).map((link, index) => (
-                <SocialIcon key={index} url={link} />
-              ))}
-            </div>
-            <div className="mt-4">
-              <Button variant="outline" size="sm">
-                Follow
-              </Button>
+
+            <div>
+              <p
+                className="text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: company.aboutUs || "No description provided",
+                }}
+              />
             </div>
           </div>
         </div>
@@ -279,16 +308,6 @@ export default function CompanyProfilePage() {
 
       {/* About Us */}
       <div className="space-y-12 pb-24 pt-8  mx-auto">
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
-          <div className="text-gray-700 leading-relaxed text-sm">
-            <div
-              className="text-gray-700 mt-2 prose"
-              dangerouslySetInnerHTML={{ __html: company.aboutUs }}
-            />
-          </div>
-        </div>
-
         {/* Awards and Honors */}
         {honors.length > 0 && (
           <div>

@@ -14,26 +14,28 @@ import {
   TelegramIcon,
 } from "next-share";
 import { RiShareForwardLine } from "react-icons/ri";
+import { useSession } from "next-auth/react";
 
 type Props = {
   userId: string;
   title?: string;
   summary?: string;
   className?: string;
+  role?: string;
 };
-
-const buildUrl = (userId: string) =>
-  `${process.env.NEXT_PUBLIC_BASE_URL}/candidates-profile/${userId}`;
 
 export default function CandidateSharePopover({
   userId,
   title = "Check out this candidate",
   summary = "Candidate profile",
   className = "",
+  role,
 }: Props) {
   const [open, setOpen] = React.useState(false);
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const buildUrl = (userId: string) =>
+    `${process.env.NEXT_PUBLIC_BASE_SHEAR_URL}/${role}/${userId}`;
 
   const url = buildUrl(userId);
 
@@ -43,9 +45,9 @@ export default function CandidateSharePopover({
   const [useMobileCenter, setUseMobileCenter] = React.useState(false);
 
   /** tune these if you change popup size/padding */
-  const POPUP_WIDTH = 280;   // px (approx; matches icon row + copy)
-  const POPUP_HEIGHT = 56;   // px (approx)
-  const EDGE_PAD = 8;        // px safe padding from viewport edge
+  const POPUP_WIDTH = 280; // px (approx; matches icon row + copy)
+  const POPUP_HEIGHT = 56; // px (approx)
+  const EDGE_PAD = 8; // px safe padding from viewport edge
 
   const recalcPlacement = React.useCallback(() => {
     const vw = window.innerWidth;
@@ -158,23 +160,45 @@ export default function CandidateSharePopover({
               ].join(" ")}
               style={{ maxWidth: 320 }}
             >
-              <FacebookShareButton url={url} quote={title} onClick={() => setOpen(false)}>
+              <FacebookShareButton
+                url={url}
+                quote={title}
+                onClick={() => setOpen(false)}
+              >
                 <FacebookIcon className="w-8 h-8" round />
               </FacebookShareButton>
 
-              <TwitterShareButton url={url} title={title} onClick={() => setOpen(false)}>
+              <TwitterShareButton
+                url={url}
+                title={title}
+                onClick={() => setOpen(false)}
+              >
                 <TwitterIcon className="w-8 h-8" round />
               </TwitterShareButton>
 
-              <WhatsappShareButton url={url} title={title} separator=" — " onClick={() => setOpen(false)}>
+              <WhatsappShareButton
+                url={url}
+                title={title}
+                separator=" — "
+                onClick={() => setOpen(false)}
+              >
                 <WhatsappIcon className="w-8 h-8" round />
               </WhatsappShareButton>
 
-              <LinkedinShareButton url={url} title={title} summary={summary} onClick={() => setOpen(false)}>
+              <LinkedinShareButton
+                url={url}
+                title={title}
+                summary={summary}
+                onClick={() => setOpen(false)}
+              >
                 <LinkedinIcon className="w-8 h-8" round />
               </LinkedinShareButton>
 
-              <TelegramShareButton url={url} title={title} onClick={() => setOpen(false)}>
+              <TelegramShareButton
+                url={url}
+                title={title}
+                onClick={() => setOpen(false)}
+              >
                 <TelegramIcon className="w-8 h-8" round />
               </TelegramShareButton>
 
@@ -199,23 +223,45 @@ export default function CandidateSharePopover({
                          flex flex-wrap items-center justify-center gap-2
                          w-[min(92vw, 360px)]"
             >
-              <FacebookShareButton url={url} quote={title} onClick={() => setOpen(false)}>
+              <FacebookShareButton
+                url={url}
+                quote={title}
+                onClick={() => setOpen(false)}
+              >
                 <FacebookIcon className="w-8 h-8" round />
               </FacebookShareButton>
 
-              <TwitterShareButton url={url} title={title} onClick={() => setOpen(false)}>
+              <TwitterShareButton
+                url={url}
+                title={title}
+                onClick={() => setOpen(false)}
+              >
                 <TwitterIcon className="w-8 h-8" round />
               </TwitterShareButton>
 
-              <WhatsappShareButton url={url} title={title} separator=" — " onClick={() => setOpen(false)}>
+              <WhatsappShareButton
+                url={url}
+                title={title}
+                separator=" — "
+                onClick={() => setOpen(false)}
+              >
                 <WhatsappIcon className="w-8 h-8" round />
               </WhatsappShareButton>
 
-              <LinkedinShareButton url={url} title={title} summary={summary} onClick={() => setOpen(false)}>
+              <LinkedinShareButton
+                url={url}
+                title={title}
+                summary={summary}
+                onClick={() => setOpen(false)}
+              >
                 <LinkedinIcon className="w-8 h-8" round />
               </LinkedinShareButton>
 
-              <TelegramShareButton url={url} title={title} onClick={() => setOpen(false)}>
+              <TelegramShareButton
+                url={url}
+                title={title}
+                onClick={() => setOpen(false)}
+              >
                 <TelegramIcon className="w-8 h-8" round />
               </TelegramShareButton>
 

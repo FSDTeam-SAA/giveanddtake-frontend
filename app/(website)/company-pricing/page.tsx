@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { Check } from "lucide-react";
@@ -14,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -43,7 +40,9 @@ interface ApiResponse {
 }
 
 const fetchCompanyPlans = async (): Promise<Plan[]> => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/subscription/plans`);
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/subscription/plans`
+  );
   if (!response.ok) {
     throw new Error("Network response was not ok");
   }
@@ -51,47 +50,72 @@ const fetchCompanyPlans = async (): Promise<Plan[]> => {
   return data.data.filter((plan) => plan.for === "company");
 };
 
-const transformApiPlanToLocalPlan = (apiPlan: Plan): {
-  name: string;
-  description: string;
-  features: Feature[];
-  buttonText: string;
-  planId: string;
-} => {
+const transformApiPlanToLocalPlan = (apiPlan: Plan) => {
   return {
     name: apiPlan.title,
     description: `$${apiPlan.price} ${apiPlan.description}`,
-    features: apiPlan.features.map(feature => ({
+    features: apiPlan.features.map((feature) => ({
       text: feature,
-      included: true
+      included: true,
     })),
-    buttonText: "Sign up to  bronze",
-    planId: apiPlan._id
+    buttonText: "Purchase",
+    planId: apiPlan._id,
   };
 };
 
 export default function PricingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
-  const [showPlanOptions, setShowPlanOptions] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<ReturnType<typeof transformApiPlanToLocalPlan> | null>(null);
+  const [selectedPlan, setSelectedPlan] =
+    useState<ReturnType<typeof transformApiPlanToLocalPlan> | null>(null);
+
+  // NEW: track the user's current plan id
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
   const { data: apiPlans, isLoading, error } = useQuery({
     queryKey: ["companyPlans"],
-    queryFn: fetchCompanyPlans
+    queryFn: fetchCompanyPlans,
   });
 
+  const { data: session, status } = useSession();
 
-  const session = useSession();
-
-  console.log("WWWWWWWWWWWWWWWWW", session)
-  const handlePlanSelect = (plan: ReturnType<typeof transformApiPlanToLocalPlan>) => {
+  const handlePlanSelect = (
+    plan: ReturnType<typeof transformApiPlanToLocalPlan>
+  ) => {
     // Extract price keeping the decimal point
     const priceMatch = plan.description.match(/\$(\d+\.\d{2}|\d+)/);
     setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
     setSelectedPlan(plan);
     setIsModalOpen(true);
   };
+
+  // NEW: fetch the user and set currentPlanId
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (status === "authenticated" && (session as any)?.accessToken) {
+        try {
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
+            {
+              headers: {
+                Authorization: `Bearer ${(session as any).accessToken}`,
+              },
+            }
+          );
+          const result = await response.json();
+          if (result?.success) {
+            setCurrentPlanId(result?.data?.plan?._id ?? null);
+          } else {
+            console.error("Failed to fetch user data:", result?.message);
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [session, status]);
 
   if (isLoading) {
     return (
@@ -107,7 +131,9 @@ export default function PricingPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-red-500">Error loading plans</h1>
+          <h1 className="text-2xl font-semibold text-red-500">
+            Error loading plans
+          </h1>
           <p className="text-gray-600">{(error as Error).message}</p>
         </div>
       </div>
@@ -135,49 +161,67 @@ export default function PricingPage() {
           </h1>
           <p className="text-xl text-gray-600">For Elevator Pitch</p>
         </div>
+
         <div className="grid w-full container grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 py-4">
-          {pricingPlans.map((plan, index) => (
-            <Card
-              key={index}
-              className={cn(
-                "flex flex-col justify-between overflow-hidden border-none rounded-lg shadow-sm",
-           
-              )}
-            >
-              <CardHeader className="space-y-2 p-6">
-                <CardTitle className="font-midium text-base text-[#2B7FD0]">
-                  {plan.name.toUpperCase()}
-                </CardTitle>
-                <CardDescription className="text-[32px] font-bold text-[#282828]">
-                  {plan.description}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow space-y-4 p-6 pt-0">
-                <h3 className="font-midium text-base text-[#8593A3]">
-                  What you will get
-                </h3>
-                <ul className="space-y-2 text-[#343434]">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start gap-2">
-                      <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
-                        <Check className="h-5 w-5 flex-shrink-0 text-white" />
-                      </div>
-                      <span className="text-base text-[#343434] font-medium">{feature.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="p-6 pt-0">
-                <Button
-                  className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
-                  variant="outline"
-                  onClick={() => handlePlanSelect(plan)}
-                >
-                  {plan.buttonText}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+          {pricingPlans.map((plan, index) => {
+            const isCurrent = currentPlanId === plan.planId;
+
+            return (
+              <Card
+                key={index}
+                className={cn(
+                  "flex flex-col justify-between overflow-hidden border-none rounded-lg shadow-sm"
+                )}
+              >
+                <CardHeader className="space-y-2 p-6">
+                  <CardTitle className="font-medium text-base text-[#2B7FD0]">
+                    {plan.name.toUpperCase()}
+                  </CardTitle>
+                  <CardDescription className="text-[32px] font-bold text-[#282828]">
+                    {plan.description}
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="flex-grow space-y-4 p-6 pt-0">
+                  <h3 className="font-medium text-base text-[#8593A3]">
+                    What you will get
+                  </h3>
+                  <ul className="space-y-2 text-[#343434]">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-2">
+                        <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
+                          <Check className="h-5 w-5 flex-shrink-0 text-white" />
+                        </div>
+                        <span className="text-base text-[#343434] font-medium">
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+
+                <CardFooter className="p-6 pt-0">
+                  {isCurrent ? (
+                    <Button
+                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold"
+                      variant="secondary"
+                      disabled
+                    >
+                      Current plan
+                    </Button>
+                  ) : (
+                    <Button
+                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
+                      variant="outline"
+                      onClick={() => handlePlanSelect(plan)}
+                    >
+                      {plan.buttonText}
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
       </div>
 

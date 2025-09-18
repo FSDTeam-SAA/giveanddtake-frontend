@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { VideoPlayer } from "@/components/company/video-player";
 import { SocialIcon } from "@/components/company/social-icon";
+import CandidateSharePopover from "../../candidates-profile/_components/candidateShare";
 
 interface SocialLink {
   label: string;
@@ -212,7 +213,7 @@ export default function Recruiters({ userId }: MydataProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] px-24">
+      <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] px-6">
         {/* Profile Section */}
         <div className="col-span-1 md:col-span-4 space-y-4">
           <div className="relative w-[170px] h-[170px]">
@@ -260,17 +261,31 @@ export default function Recruiters({ userId }: MydataProps) {
           </div>
         </div>
 
-        {/* Contact Info */}
-        <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
-          <h2 className="text-xl font-semibold border-b-2 border-gray-300 pb-1">
-            About
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4"></div>
-          {/* About */}
-          <div className="">
-            <div
-              className="text-gray-700 mt-2 prose"
-              dangerouslySetInnerHTML={{ __html: recruiterData.bio }}
+        <div className="ccol-span-1 md:col-span-6 pt-4 md:pt-24">
+          <div className="flex items-center justify-between border-b-2 pb-2">
+            <h3 className="font-semibold text-gray-800 mb-3 text-2xl">About</h3>
+            {userId ? (
+              <CandidateSharePopover
+                userId={userId}
+                role="recruiters-profile"
+                title={`${recruiterData.firstName} ${
+                  recruiterData.lastName
+                } — ${recruiterData.title ?? "Candidate"}`}
+                summary={
+                  recruiterData.bio
+                    ? recruiterData.bio.replace(/<[^>]*>/g, "").slice(0, 180)
+                    : ""
+                }
+              />
+            ) : null}
+          </div>
+
+          <div>
+            <p
+              className="text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{
+                __html: recruiterData.bio || "No description provided",
+              }}
             />
           </div>
         </div>

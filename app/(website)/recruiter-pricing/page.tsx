@@ -1,6 +1,3 @@
-
-
-
 "use client";
 
 import { Check } from "lucide-react";
@@ -12,9 +9,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal";
 import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 
 interface Feature {
   text: string;
@@ -56,33 +54,26 @@ const transformApiPlanToLocalPlan = (apiPlan: Plan): {
   buttonText: string;
   planId: string;
 } => {
-  // Determine if this is a pay-as-you-go plan
   const isPayAsYouGo = apiPlan.title.toLowerCase().includes("pay as you go");
 
   if (isPayAsYouGo) {
     return {
       name: apiPlan.title,
       description: `$${apiPlan.price.toFixed(2)} per Job Advert (30 Days Post)`,
-      features: apiPlan.features.map((feature) => ({
-        text: feature,
-      })),
-      buttonText: "Sign up",
+      features: apiPlan.features.map((feature) => ({ text: feature })),
+      buttonText: "Purchase",
       planId: apiPlan._id,
     };
   }
 
-  // Determine if the plan supports annual pricing (exclude "Basic" plans)
   const supportsAnnual = !apiPlan.title.toLowerCase().includes("basic");
-
-  // For subscription plans
   const monthlyPrice = apiPlan.price;
+
   return {
     name: apiPlan.title,
     monthlyPrice: `$${monthlyPrice.toFixed(2)} per month`,
     ...(supportsAnnual && { annualPrice: `$${(monthlyPrice * 12).toFixed(2)} per annum` }),
-    features: apiPlan.features.map((feature) => ({
-      text: feature,
-    })),
+    features: apiPlan.features.map((feature) => ({ text: feature })),
     buttonText: `Sign up to ${apiPlan.title.toLowerCase().split(" ")[0]}`,
     planId: apiPlan._id,
   };
@@ -94,23 +85,31 @@ export default function PricingPlans() {
   const [showPlanOptions, setShowPlanOptions] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<ReturnType<typeof transformApiPlanToLocalPlan> | null>(null);
 
+  // NEW: track user's current plan id
+  const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
+
   const { data: apiPlans, isLoading, error } = useQuery({
     queryKey: ["recruiterPlans"],
     queryFn: fetchRecruiterPlans,
   });
 
+  // session for auth to /user/single
+  const { data: session, status } = useSession();
+
   const handlePlanSelect = (plan: ReturnType<typeof transformApiPlanToLocalPlan>) => {
+    // Guard: don't open modal if this is already the current plan
+    if (currentPlanId === plan.planId) return;
+
     setSelectedPlan(plan);
     if (plan.description) {
-      // For Pay as You Go - extract price
-      const priceMatch = plan.description.match(/\$(\d+\.\d{2})/);
+      // Pay as You Go - extract price (supports 12 or 12.00)
+      const priceMatch = plan.description.match(/\$(\d+(?:\.\d{2})?)/);
       setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
       setIsModalOpen(true);
     } else {
-      // For subscription plans, show payment options modal if annual pricing is supported
-      // If no annual pricing, directly select monthly price
+      // Subscription plans
       if (!plan.annualPrice) {
-        const priceMatch = plan.monthlyPrice?.match(/\$(\d+\.\d{2})/);
+        const priceMatch = plan.monthlyPrice?.match(/\$(\d+(?:\.\d{2})?)/);
         setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
         setIsModalOpen(true);
       } else {
@@ -122,14 +121,38 @@ export default function PricingPlans() {
   const handlePaymentOptionSelect = (isMonthly: boolean) => {
     if (selectedPlan) {
       const priceStr = isMonthly ? selectedPlan.monthlyPrice : selectedPlan.annualPrice;
-      // Extract price without the '$' and text (e.g., 'per month')
-      const priceMatch = priceStr?.match(/\$(\d+\.\d{2})/);
+      const priceMatch = priceStr?.match(/\$(\d+(?:\.\d{2})?)/);
       const priceValue = priceMatch ? priceMatch[1] : "0.00";
       setSelectedPrice(priceValue);
       setIsModalOpen(true);
       setShowPlanOptions(false);
     }
   };
+
+  // NEW: fetch the user once authenticated and set currentPlanId
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (status === "authenticated" && (session as any)?.accessToken) {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/single`, {
+            headers: {
+              Authorization: `Bearer ${(session as any).accessToken}`,
+            },
+          });
+          const result = await response.json();
+          if (result?.success) {
+            setCurrentPlanId(result?.data?.plan?._id ?? null);
+          } else {
+            console.error("Failed to fetch user data:", result?.message);
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [session, status]);
 
   if (isLoading) {
     return (
@@ -167,41 +190,32 @@ export default function PricingPlans() {
   return (
     <div>
       <div className="mb-12 mt-[60px] text-center">
-        <h1 className="mb-2 text-4xl font-bold text-gray-800">
-          Recruiter Price List
-        </h1>
+        <h1 className="mb-2 text-4xl font-bold text-gray-800">Recruiter Price List</h1>
         <p className="text-xl text-gray-600">For Elevator Pitch</p>
       </div>
-      <div className="flex  items-center justify-center bg-gray-50 py-16">
+
+      <div className="flex items-center justify-center bg-gray-50 py-16">
         {/* Plan Options Modal */}
         {showPlanOptions && selectedPlan && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
             <div className="rounded-lg bg-white p-6 shadow-xl">
               <h3 className="mb-4 text-xl font-bold">
                 Select Payment Option for {selectedPlan.name}
               </h3>
               <div className="space-y-3">
                 {selectedPlan.monthlyPrice && (
-                  <Button
-                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                    onClick={() => handlePaymentOptionSelect(true)}
-                  >
+                  <Button className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
+                          onClick={() => handlePaymentOptionSelect(true)}>
                     Monthly: {selectedPlan.monthlyPrice}
                   </Button>
                 )}
                 {selectedPlan.annualPrice && (
-                  <Button
-                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                    onClick={() => handlePaymentOptionSelect(false)}
-                  >
+                  <Button className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
+                          onClick={() => handlePaymentOptionSelect(false)}>
                     Annual: {selectedPlan.annualPrice}
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => setShowPlanOptions(false)}
-                >
+                <Button variant="ghost" className="w-full" onClick={() => setShowPlanOptions(false)}>
                   Cancel
                 </Button>
               </div>
@@ -211,68 +225,77 @@ export default function PricingPlans() {
 
         {/* Pricing Cards */}
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pricingPlans.map((plan, index) => (
-            <Card
-              key={index}
-              className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden"
-            >
-              <CardHeader className="p-6 pb-0">
-                <CardTitle
-                  className={`font-medium ${
-                    plan.name.toLowerCase().includes("pay as you go")
-                      ? "text-gray-800"
-                      : "text-base text-[#2B7FD0]"
-                  }`}
-                >
-                  {plan.name}
-                </CardTitle>
-                <div className="mt-2">
-                  {plan.description ? (
-                    <p className="text-gray-500 text-sm">{plan.description}</p>
+          {pricingPlans.map((plan, index) => {
+            const isCurrent = currentPlanId === plan.planId;
+
+            return (
+              <Card key={index} className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden">
+                <CardHeader className="p-6 pb-0">
+                  <CardTitle
+                    className={`font-medium ${
+                      plan.name.toLowerCase().includes("pay as you go")
+                        ? "text-gray-800"
+                        : "text-base text-[#2B7FD0]"
+                    }`}
+                  >
+                    {plan.name}
+                  </CardTitle>
+                  <div className="mt-2">
+                    {plan.description ? (
+                      <p className="text-gray-500 text-sm">{plan.description}</p>
+                    ) : (
+                      <>
+                        {plan.monthlyPrice && (
+                          <p className="text-[32px] font-bold text-[#282828]">
+                            {plan.monthlyPrice}
+                          </p>
+                        )}
+                        {plan.annualPrice && (
+                          <p className="text-[32px] font-bold text-[#282828]">
+                            {plan.annualPrice}
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-6 pt-4 flex-grow">
+                  <h3 className="font-medium text-base text-[#8593A3] mb-3">What you will get</h3>
+                  <ul className="space-y-2">
+                    {plan.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-2">
+                        <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
+                          <Check className="h-5 w-5 flex-shrink-0 text-white" />
+                        </div>
+                        <span className="text-base text-[#343434] font-medium">{feature.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+
+                <CardFooter className="p-6 pt-0">
+                  {isCurrent ? (
+                    <Button
+                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold"
+                      variant="secondary"
+                      disabled
+                    >
+                      Current plan
+                    </Button>
                   ) : (
-                    <>
-                      {plan.monthlyPrice && (
-                        <p className="text-[32px] font-bold text-[#282828]">
-                          {plan.monthlyPrice}
-                        </p>
-                      )}
-                      {plan.annualPrice && (
-                        <p className="text-[32px] font-bold text-[#282828]">
-                          {plan.annualPrice}
-                        </p>
-                      )}
-                    </>
+                    <Button
+                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
+                      variant="outline"
+                      onClick={() => handlePlanSelect(plan)}
+                    >
+                      {plan.buttonText}
+                    </Button>
                   )}
-                </div>
-              </CardHeader>
-              <CardContent className="p-6 pt-4 flex-grow">
-                <h3 className="font-medium text-base text-[#8593A3] mb-3">
-                  What you will get
-                </h3>
-                <ul className="space-y-2">
-                  {plan.features.map((feature, featureIndex) => (
-                    <li key={featureIndex} className="flex items-start gap-2">
-                      <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
-                        <Check className="h-5 w-5 flex-shrink-0 text-white" />
-                      </div>
-                      <span className="text-base text-[#343434] font-medium">
-                        {feature.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter className="p-6 pt-0">
-                <Button
-                  className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
-                  variant="outline"
-                  onClick={() => handlePlanSelect(plan)}
-                >
-                  {plan.buttonText}
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                </CardFooter>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Payment Method Modal */}
