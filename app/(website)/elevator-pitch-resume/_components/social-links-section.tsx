@@ -1,7 +1,6 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   FormField,
@@ -10,9 +9,9 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Plus, X, Link } from "lucide-react";
-import { type UseFormReturn, useFieldArray } from "react-hook-form";
-import Image from "next/image";
+import { Link as LinkIcon } from "lucide-react";
+import { type UseFormReturn } from "react-hook-form";
+import { useEffect, useMemo } from "react";
 
 interface SocialLink {
   label: string;
@@ -23,123 +22,69 @@ interface SocialLinksSectionProps {
   form: UseFormReturn<any>;
 }
 
-const defaultSocialLinks = [
-  { label: "LinkedIn", url: "" },
-  { label: "GitHub", url: "" },
-  { label: "Portfolio", url: "" },
-  { label: "Twitter", url: "" },
-  { label: "Instagram", url: "" },
-  { label: "Facebook", url: "" },
-];
+const FIXED_PLATFORMS = [
+  "LinkedIn",
+  "Twitter",
+  "Upwork",
+  "Facebook",
+  "TikTok",
+  "Instagram",
+] as const;
 
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: "sLink",
-  });
+  // Ensure the form always has exactly 6 entries with fixed labels
+  const initialLinks: SocialLink[] = useMemo(() => {
+    const existing: SocialLink[] = form.getValues("sLink") ?? [];
+    return FIXED_PLATFORMS.map((label, i) => ({
+      label,
+      url: existing[i]?.url ?? "",
+    }));
+  }, [form]);
 
-  // Initialize with default social links if empty
-  if (fields.length === 0) {
-    defaultSocialLinks.forEach((link) => append(link));
-  }
-
-  const addSocialLink = () => {
-    append({ label: "", url: "" });
-  };
-
-  const removeSocialLink = (index: number) => {
-    // Don't allow removing if it's one of the first 6 default links, just clear them
-    if (index < 6) {
-      form.setValue(`sLink.${index}.label`, "");
-      form.setValue(`sLink.${index}.url`, "");
-    } else {
-      remove(index);
-    }
-  };
+  useEffect(() => {
+    form.setValue("sLink", initialLinks, {
+      shouldValidate: false,
+      shouldDirty: false,
+    });
+  }, [form, initialLinks]);
 
   return (
     <Card className="mt-6">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Link className="h-5 w-5 text-blue-600" />
+          <LinkIcon className="h-5 w-5 text-blue-600" />
           <div>
             <CardTitle className="text-lg font-medium">Social Links</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Add your social media profiles and professional links (optional)
+              Add URLs for your social and professional profiles (optional)
             </p>
           </div>
         </div>
       </CardHeader>
+
       <CardContent className="space-y-4">
-        {/* Social Icons Preview */}
-
-        {fields.map((field, index) => (
-          <div key={field.id} className="flex items-center gap-4">
-            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name={`sLink.${index}.label`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Platform</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={
-                          index < 6
-                            ? defaultSocialLinks[index]?.label ||
-                              "e.g. LinkedIn"
-                            : "e.g. YouTube, TikTok"
-                        }
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name={`sLink.${index}.url`}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>URL</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com/profile"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="mt-6"
-              onClick={() => removeSocialLink(index)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ))}
-
-        <Button
-          type="button"
-          variant="outline"
-          className="mt-4 bg-transparent"
-          onClick={addSocialLink}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add More Social Links
-        </Button>
-
-        <p className="text-xs text-gray-500 mt-2">
-          The first 6 fields are common social platforms. You can add more
-          custom links below.
-        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {FIXED_PLATFORMS.map((platform, index) => (
+            <FormField
+              // We only allow editing the URL; label is fixed
+              key={platform}
+              control={form.control}
+              name={`sLink.${index}.url`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{platform} URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={`https://${platform.toLowerCase()}.com/your-profile`}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

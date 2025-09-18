@@ -3,16 +3,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Video, Upload, Trash2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FileUpload } from "@/components/company/file-upload";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ElevatorPitchUploadProps {
   onFileSelect: (file: File | null) => void;
   selectedFile?: File | null;
-  uploadedVideoUrl?: string | null;
-  onDelete?: () => void;
-  isUploaded?: boolean;
+  uploadedVideoUrl?: string | null; // server URL after successful API upload
+  onDelete?: () => void; // parent triggers API delete
+  isUploaded?: boolean; // true only AFTER API upload succeeds
 }
 
+/**
+ * UX rules implemented per request:
+ * - Before API upload (isUploaded === false):
+ *    • Show preview (if chosen) and an "Upload Different Video" button to re-select locally.
+ *    • DO NOT show a Delete button (nothing on server yet).
+ * - After API upload (isUploaded === true):
+ *    • Show the Delete button (which calls parent onDelete for API deletion).
+ *    • Hide "Upload Different Video"; user must delete first, then choose a new file.
+ */
 export function ElevatorPitchUpload({
   onFileSelect,
   selectedFile,
@@ -22,25 +31,50 @@ export function ElevatorPitchUpload({
 }: ElevatorPitchUploadProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // Prefer the server URL when present; otherwise use local preview
+  const videoUrl = useMemo(
+    () => uploadedVideoUrl || previewUrl,
+    [uploadedVideoUrl, previewUrl]
+  );
+
   const handleFileSelect = (file: File | null) => {
+    // If a new local file is picked while not uploaded yet, create an object URL
     if (file) {
       const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
+      setPreviewUrl((prev) => {
+        if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        return url;
+      });
     } else {
+      // Clear local preview
+      if (previewUrl && previewUrl.startsWith("blob:"))
+        URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
     }
     onFileSelect(file);
   };
 
   const handleDelete = () => {
+    // Always clear local preview
+    if (previewUrl && previewUrl.startsWith("blob:"))
+      URL.revokeObjectURL(previewUrl);
     setPreviewUrl(null);
     onFileSelect(null);
-    if (onDelete) {
+
+    // Only call API delete if we actually have an uploaded video
+    if (isUploaded && onDelete) {
       onDelete();
     }
   };
 
-  const videoUrl = uploadedVideoUrl || previewUrl;
+  // Cleanup any blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <Card>
@@ -59,6 +93,7 @@ export function ElevatorPitchUpload({
           </div>
         </div>
       </CardHeader>
+
       <CardContent>
         {videoUrl ? (
           <div className="space-y-4">
@@ -68,41 +103,54 @@ export function ElevatorPitchUpload({
                 controls
                 className="w-full h-64 object-contain"
                 preload="metadata"
+                aria-label="Elevator pitch preview"
               >
                 Your browser does not support the video tag.
               </video>
             </div>
+
             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2">
-                <Play className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">
-                  {selectedFile?.name || "Uploaded Video"}
+              <div className="flex items-center gap-2 min-w-0">
+                <Play className="h-4 w-4 text-blue-600 shrink-0" />
+                <span className="text-sm font-medium text-blue-900 truncate">
+                  {selectedFile?.name ||
+                    (isUploaded ? "Uploaded Video" : "Selected Video")}
                 </span>
                 {selectedFile && (
-                  <span className="text-xs text-blue-600">
+                  <span className="text-xs text-blue-600 shrink-0">
                     ({(selectedFile.size / 1024 / 1024).toFixed(1)} MB)
                   </span>
                 )}
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                className="flex items-center gap-1"
-              >
-                <Trash2 className="h-3 w-3" />
-                Delete
-              </Button>
+
+              {/* After successful API upload: show Delete only */}
+              {isUploaded ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleDelete}
+                  className="flex items-center gap-1"
+                  aria-label="Delete uploaded video"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Delete
+                </Button>
+              ) : (
+                // Before upload: allow changing the local file; no Delete shown
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleFileSelect(null)}
+                  aria-label="Choose a different video file"
+                >
+                  Upload Different Video
+                </Button>
+              )}
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleFileSelect(null)}
-              className="w-full"
-            >
-              Upload Different Video
-            </Button>
+
+            {/* NOTE: The parent component should render the actual Upload button that calls the API. */}
           </div>
         ) : (
           <div className="rounded-lg bg-gradient-to-br from-gray-900 to-gray-800 p-6">

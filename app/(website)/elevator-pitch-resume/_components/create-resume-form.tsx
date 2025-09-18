@@ -85,50 +85,144 @@ const DUMMY_SKILLS = [
   "Web Design",
 ].sort();
 
-const resumeSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
-  title: z.string().optional(),
-  city: z.string().optional(),
-  zip: z.string().optional(),
-  country: z.string().optional(),
+const MAX_URL_LEN = 2048;
+
+export const resumeSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(1, "First name is required")
+    .max(50, "First name can be at most 50 characters"),
+  lastName: z
+    .string()
+    .trim()
+    .min(1, "Last name is required")
+    .max(50, "Last name can be at most 50 characters"),
+  email: z
+    .string()
+    .trim()
+    .email("Invalid email address")
+    .max(254, "Email can be at most 254 characters"),
+  phoneNumber: z
+    .string()
+    .trim()
+    .min(1, "Phone number is required")
+    .max(20, "Phone number can be at most 20 characters"),
+
+  title: z
+    .string()
+    .trim()
+    .max(100, "Title can be at most 100 characters")
+    .optional(),
+  city: z
+    .string()
+    .trim()
+    .max(100, "City can be at most 100 characters")
+    .optional(),
+  zip: z.string().trim().max(20, "ZIP can be at most 20 characters").optional(),
+  country: z
+    .string()
+    .trim()
+    .max(100, "Country can be at most 100 characters")
+    .optional(),
+
   aboutUs: z
     .string()
+    .trim()
     .min(1, "About section is required")
+    .max(1500, "About section can be at most 1500 characters")
     .refine(
       (value) => {
         const wordCount = value.trim().split(/\s+/).length;
         return wordCount <= 200;
       },
-      {
-        message: "About section cannot exceed 200 words",
-      }
+      { message: "About section cannot exceed 200 words" }
     ),
-  skills: z.array(z.string()).min(1, "At least one skill is required"),
+
+  skills: z
+    .array(
+      z
+        .string()
+        .trim()
+        .min(1)
+        .max(50, "Each skill can be at most 50 characters")
+    )
+    .min(1, "At least one skill is required")
+    .max(30, "You can list at most 30 skills"),
+
   sLink: z
     .array(
       z.object({
-        label: z.string().min(1, "Platform name is required"),
-        url: z.string().url("Invalid URL").or(z.string().length(0)),
+        label: z
+          .string()
+          .trim()
+          .min(1, "Platform name is required")
+          .max(50, "Platform name can be at most 50 characters"),
+        url: z
+          .string()
+          .trim()
+          .url("Invalid URL format")
+          .max(MAX_URL_LEN, `URL can be at most ${MAX_URL_LEN} characters`)
+          .or(z.string().length(0)), // allow empty string
       })
     )
+    .max(20, "You can add at most 20 social links")
     .optional(),
+
   experiences: z
     .array(
       z
         .object({
-          company: z.string().optional(),
-          position: z.string().optional(),
-          duration: z.string().optional(),
-          startDate: z.string().optional(),
-          endDate: z.string().optional(),
-          country: z.string().optional(),
-          city: z.string().optional(),
-          zip: z.string().optional(),
-          jobDescription: z.string().optional(),
-          jobCategory: z.string().optional(),
+          company: z
+            .string()
+            .trim()
+            .max(100, "Company can be at most 100 characters")
+            .optional(),
+          position: z
+            .string()
+            .trim()
+            .max(100, "Position can be at most 100 characters")
+            .optional(),
+          duration: z
+            .string()
+            .trim()
+            .max(50, "Duration can be at most 50 characters")
+            .optional(),
+          startDate: z
+            .string()
+            .trim()
+            .max(30, "Start date can be at most 30 characters")
+            .optional(),
+          endDate: z
+            .string()
+            .trim()
+            .max(30, "End date can be at most 30 characters")
+            .optional(),
+          country: z
+            .string()
+            .trim()
+            .max(100, "Country can be at most 100 characters")
+            .optional(),
+          city: z
+            .string()
+            .trim()
+            .max(100, "City can be at most 100 characters")
+            .optional(),
+          zip: z
+            .string()
+            .trim()
+            .max(20, "ZIP can be at most 20 characters")
+            .optional(),
+          jobDescription: z
+            .string()
+            .trim()
+            .max(2000, "Job description can be at most 2000 characters")
+            .optional(),
+          jobCategory: z
+            .string()
+            .trim()
+            .max(50, "Job category can be at most 50 characters")
+            .optional(),
           currentlyWorking: z.boolean().optional().default(false),
         })
         .refine(
@@ -136,48 +230,115 @@ const resumeSchema = z.object({
             !data.company ||
             !data.position ||
             data.currentlyWorking ||
-            (!data.currentlyWorking && data.endDate),
+            (!data.currentlyWorking && !!data.endDate),
           {
             message: "End date is required unless currently working",
             path: ["endDate"],
           }
         )
     )
+    .max(20, "You can add at most 20 experiences")
     .optional(),
-  educationList: z.array(
-    z
-      .object({
-        institutionName: z.string().min(1, "Institution name is required"),
-        degree: z.string().min(1, "Degree is required"),
-        fieldOfStudy: z.string().optional(),
-        startDate: z.string().optional(),
-        graduationDate: z.string().optional(),
-        currentlyStudying: z.boolean().optional().default(false),
-        city: z.string().optional(),
-        country: z.string().optional(),
-      })
-      .refine(
-        (data) =>
-          data.currentlyStudying ||
-          (!data.currentlyStudying && data.graduationDate),
-        {
-          message: "Graduation date is required unless currently studying",
-          path: ["graduationDate"],
-        }
-      )
-  ),
+
+  educationList: z
+    .array(
+      z
+        .object({
+          institutionName: z
+            .string()
+            .trim()
+            .min(1, "Institution name is required")
+            .max(150, "Institution name can be at most 150 characters"),
+          degree: z
+            .string()
+            .trim()
+            .min(1, "Degree is required")
+            .max(100, "Degree can be at most 100 characters"),
+          fieldOfStudy: z
+            .string()
+            .trim()
+            .max(100, "Field of study can be at most 100 characters")
+            .optional(),
+          startDate: z
+            .string()
+            .trim()
+            .max(30, "Start date can be at most 30 characters")
+            .optional(),
+          graduationDate: z
+            .string()
+            .trim()
+            .max(30, "Graduation date can be at most 30 characters")
+            .optional(),
+          currentlyStudying: z.boolean().optional().default(false),
+          city: z
+            .string()
+            .trim()
+            .max(100, "City can be at most 100 characters")
+            .optional(),
+          country: z
+            .string()
+            .trim()
+            .max(100, "Country can be at most 100 characters")
+            .optional(),
+        })
+        .refine(
+          (data) =>
+            data.currentlyStudying ||
+            (!data.currentlyStudying && !!data.graduationDate),
+          {
+            message: "Graduation date is required unless currently studying",
+            path: ["graduationDate"],
+          }
+        )
+    )
+    .min(1, "At least one education entry is required")
+    .max(20, "You can add at most 20 education entries"),
+
   awardsAndHonors: z
     .array(
       z.object({
-        title: z.string().optional(),
-        programName: z.string().optional(),
-        programeDate: z.string().optional(),
-        description: z.string().optional(),
+        title: z
+          .string()
+          .trim()
+          .max(150, "Title can be at most 150 characters")
+          .optional(),
+        programName: z
+          .string()
+          .trim()
+          .max(150, "Program name can be at most 150 characters")
+          .optional(),
+        programeDate: z
+          .string()
+          .trim()
+          .max(30, "Date can be at most 30 characters")
+          .optional(),
+        description: z
+          .string()
+          .trim()
+          .max(1000, "Description can be at most 1000 characters")
+          .optional(),
       })
     )
+    .max(20, "You can add at most 20 awards")
     .optional(),
-  certifications: z.array(z.string()).optional(),
-  languages: z.array(z.string()).optional(),
+
+  certifications: z
+    .array(
+      z
+        .string()
+        .trim()
+        .max(100, "Each certification can be at most 100 characters")
+    )
+    .max(50, "You can add at most 50 certifications")
+    .optional(),
+
+  languages: z
+    .array(
+      z.string().trim().max(50, "Each language can be at most 50 characters")
+    )
+    .max(20, "You can add at most 20 languages")
+    .optional(),
+
   immediatelyAvailable: z.boolean().optional().default(false),
 });
 
@@ -456,11 +617,9 @@ export default function CreateResumeForm() {
       setIsElevatorPitchUploaded(false);
       setUploadedVideoUrl(null);
       setElevatorPitchFile(null);
-      toast.success("Elevator pitch deleted successfully!");
     },
     onError: (error) => {
       console.error("Delete error:", error);
-      toast.error("Failed to delete elevator pitch. Please try again.");
     },
   });
 
@@ -703,11 +862,29 @@ export default function CreateResumeForm() {
       toast.error("Please select a video file first");
       return;
     }
+    if (isSubmitting) return; // prevent double click races
 
-    uploadElevatorPitchMutation.mutate({
-      videoFile: elevatorPitchFile,
-      userId: session.user.id,
-    });
+    try {
+      setIsSubmitting(true);
+
+      // 🔹 Step 1: try deleting any existing video (ignore errors)
+      try {
+        await deleteElevatorPitchMutation.mutateAsync(session.user.id);
+      } catch (_) {
+        // swallow — we don't care if there's nothing to delete
+      }
+
+      // 🔹 Step 2: upload the new video
+      await uploadElevatorPitchMutation.mutateAsync({
+        videoFile: elevatorPitchFile,
+        userId: session.user.id,
+      });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast.error("Could not upload your elevator pitch.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleElevatorPitchDelete = async () => {
@@ -867,12 +1044,24 @@ export default function CreateResumeForm() {
       }
 
       createResumeMutation.mutate(formData);
-      // console.log("Submitting form data:", formData);
+      // for (const [key, value] of formData.entries()) {
+      //   console.log(key, value);
+      // }
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onError = (errors: any) => {
+    // pick the first error message
+    const firstError = Object.values(errors)[0] as { message?: string };
+    if (firstError?.message) {
+      toast.error(firstError.message);
+    } else {
+      toast.error("Please check the form and fix the errors.");
     }
   };
 
@@ -886,7 +1075,10 @@ export default function CreateResumeForm() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form
+          onSubmit={form.handleSubmit(onSubmit, onError)}
+          className="space-y-8"
+        >
           <Card>
             <CardHeader>
               <CardTitle>Elevator Pitch</CardTitle>
@@ -1251,7 +1443,7 @@ export default function CreateResumeForm() {
               <SkillsSelector
                 selectedSkills={selectedSkills}
                 onSkillsChange={setSelectedSkills}
-                baseUrl={baseUrl}
+                error={form.formState.errors.skills?.message}
               />
             </CardContent>
           </Card>
@@ -1911,7 +2103,7 @@ export default function CreateResumeForm() {
                 }
                 className="flex items-center gap-2"
               >
-                add award
+                Add award
               </Button>
             </CardContent>
           </Card>
