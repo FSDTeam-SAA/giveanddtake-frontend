@@ -13,6 +13,7 @@ import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
 import CandidateSharePopover from "@/app/(website)/candidates-profile/_components/candidateShare";
+import SocialLinks from "@/app/(website)/elevator-pitch-resume/_components/SocialLinks";
 
 interface Honor {
   id: string;
@@ -180,9 +181,9 @@ export default function CompanyProfilePage() {
                 </div>
               </div>
               <div className="flex gap-4">
-                {links.slice(0, 3).map((link, index) => (
-                  <SocialIcon key={index} url={link} />
-                ))}
+                <div>
+                                <SocialLinks sLink={company.sLink} />
+                              </div>
               </div>
               <div className="mt-4">
                 <Button variant="outline" size="sm">
