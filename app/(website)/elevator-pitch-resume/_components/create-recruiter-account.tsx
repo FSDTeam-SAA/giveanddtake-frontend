@@ -1,5 +1,12 @@
 "use client";
 
+// =========================
+// CreateRecruiterAccountForm.tsx (UPDATED)
+// - sLink uses { label, url } (with legacy [link] back-compat in FormData)
+// - Delete-before-upload flow for Elevator Pitch
+// - Full-width upload button, spinner, success banner
+// =========================
+
 import type React from "react";
 import { useState, useEffect, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -28,7 +35,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Upload, X, ChevronsUpDown, Check } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
+import {
+  uploadElevatorPitch,
+  deleteElevatorPitchVideo,
+} from "@/lib/api-service";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { CompanySelector } from "@/components/company/company-selector";
@@ -55,22 +65,27 @@ interface Option {
   value: string;
   label: string;
 }
-
 interface Education {
   school: string;
   degree: string;
   year: string;
 }
-
 interface SocialLink {
   label: string;
-  link: string;
+  url?: string; // UPDATED
 }
-
 interface Country {
   country: string;
   cities: string[];
 }
+
+// ---------- Zod schema updates
+const urlOptional = z
+  .string()
+  .trim()
+  .transform((v) => (v === "" ? undefined : v))
+  .optional()
+  .pipe(z.string().url("Invalid URL").optional());
 
 const recruiterSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -100,7 +115,7 @@ const recruiterSchema = z.object({
     .array(
       z.object({
         label: z.string().min(1, "Platform name is required"),
-        link: z.string().url("Invalid URL").optional(), // Made link optional
+        url: urlOptional, // UPDATED key
       })
     )
     .optional(),
@@ -200,7 +215,7 @@ function Combobox({
 }
 
 export default function CreateRecruiterAccountForm() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
@@ -233,7 +248,14 @@ export default function CreateRecruiterAccountForm() {
       languages: [],
       companyRecruiters: [],
       educations: [{ school: "", degree: "", year: "" }],
-      sLink: [],
+      sLink: [
+        { label: "LinkedIn", url: "" },
+        { label: "Twitter", url: "" },
+        { label: "Upwork", url: "" },
+        { label: "Facebook", url: "" },
+        { label: "TikTok", url: "" },
+        { label: "Instagram", url: "" },
+      ],
       companyId: "",
       userId: userId || "",
     },
@@ -270,9 +292,7 @@ export default function CreateRecruiterAccountForm() {
         "https://countriesnow.space/api/v0.1/countries/cities",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ country: selectedCountry }),
         }
       );
@@ -288,14 +308,11 @@ export default function CreateRecruiterAccountForm() {
       const defaultCountry = countries[0].country;
       form.setValue("country", defaultCountry);
       setSelectedCountry(defaultCountry);
-    } else if (!countries) {
-      console.warn("Countries data is empty or not loaded");
     }
   }, [countries, form]);
 
   useEffect(() => {
     if (selectedCompany) {
-      console.log("Selected companyId:", selectedCompany);
       form.setValue("companyId", selectedCompany);
     }
   }, [selectedCompany, form]);
@@ -316,14 +333,22 @@ export default function CreateRecruiterAccountForm() {
         .forEach((el) => {
           el.removeAttribute("bis_skin_checked");
           el.removeAttribute("bis_register");
-          el.removeAttribute("__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__");
+          el.removeAttribute(
+            "__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__"
+          );
         });
     };
     cleanupAttributes();
   }, []);
 
   const uploadElevatorPitchMutation = useMutation({
-    mutationFn: async ({ videoFile, userId }: { videoFile: File; userId: string }) => {
+    mutationFn: async ({
+      videoFile,
+      userId,
+    }: {
+      videoFile: File;
+      userId: string;
+    }) => {
       return await uploadElevatorPitch({ videoFile, userId });
     },
     onSuccess: (data) => {
@@ -332,7 +357,9 @@ export default function CreateRecruiterAccountForm() {
       toast.success("Elevator pitch uploaded successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload elevator pitch");
+      toast.error(
+        error?.response?.data?.message || "Failed to upload elevator pitch"
+      );
     },
   });
 
@@ -347,31 +374,43 @@ export default function CreateRecruiterAccountForm() {
       toast.success("Elevator pitch deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete elevator pitch");
+      toast.error(
+        error?.response?.data?.message || "Failed to delete elevator pitch"
+      );
     },
   });
 
   const createRecruiterAccount = async (data: RecruiterFormData) => {
     const formData = new FormData();
+
     Object.entries(data).forEach(([key, value]) => {
       if (key === "sLink") {
-        (value as SocialLink[]).forEach((link, index) => {
-          if (link.label) {
-            formData.append(`sLink[${index}][label]`, link.label);
-            if (link.link) {
-              formData.append(`sLink[${index}][link]`, link.link);
-            }
+        (value as SocialLink[])?.forEach((item, index) => {
+          if (!item?.label) return;
+          formData.append(`sLink[${index}][label]`, item.label);
+          if (item.url) {
+            formData.append(`sLink[${index}][url]`, item.url); // new key
+            formData.append(`sLink[${index}][link]`, item.url); // optional: legacy back-compat
           }
         });
-      } else if (key === "educations") {
+        return;
+      }
+
+      if (key === "educations") {
         formData.append("educations", JSON.stringify(value));
-      } else if (
+        return;
+      }
+
+      if (
         key === "skills" ||
         key === "languages" ||
         key === "companyRecruiters"
       ) {
         formData.append(key, JSON.stringify(value));
-      } else if (value !== undefined && value !== null) {
+        return;
+      }
+
+      if (value !== undefined && value !== null) {
         formData.append(key, String(value));
       }
     });
@@ -379,17 +418,12 @@ export default function CreateRecruiterAccountForm() {
     if (photoFile) formData.append("photo", photoFile);
     if (bannerFile) formData.append("banner", bannerFile);
 
-    console.log("Submitting to URL:", "/recruiter/recruiter-account");
-    console.log("FormData entries:", Object.fromEntries(formData));
-
     try {
       const response = await apiClient.post(
         "/recruiter/recruiter-account",
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
       return response.data;
@@ -401,14 +435,16 @@ export default function CreateRecruiterAccountForm() {
 
   const mutation = useMutation({
     mutationFn: createRecruiterAccount,
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success("Recruiter account created successfully");
       queryClient.invalidateQueries({ queryKey: ["recruiter"] });
       queryClient.invalidateQueries({ queryKey: ["company-account"] });
       queryClient.invalidateQueries({ queryKey: ["my-resume"] });
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to create recruiter account");
+      toast.error(
+        error?.response?.data?.message || "Failed to create recruiter account"
+      );
     },
   });
 
@@ -436,6 +472,12 @@ export default function CreateRecruiterAccountForm() {
       return;
     }
 
+    // DELETE BEFORE UPLOAD
+    try {
+      // swallow deletion errors (no previous file etc.)
+      await deleteElevatorPitchMutation.mutateAsync(session.user.id);
+    } catch (_) {}
+
     uploadElevatorPitchMutation.mutate({
       videoFile: elevatorPitchFile,
       userId: session.user.id,
@@ -447,24 +489,20 @@ export default function CreateRecruiterAccountForm() {
       toast.error("User not authenticated");
       return;
     }
-
     deleteElevatorPitchMutation.mutate(session.user.id);
   };
 
   const getFirstErrorMessage = (errors: any): string | undefined => {
     for (const key in errors) {
       const error = errors[key];
-      if (error.message) {
-        return `${key}: ${error.message}`;
-      }
+      if (error?.message) return `${key}: ${error.message}`;
       if (typeof error === "object") {
         for (const subKey in error) {
-          if (error[subKey].message) {
+          if (error[subKey]?.message)
             return `${key}[${subKey}]: ${error[subKey].message}`;
-          }
           if (typeof error[subKey] === "object") {
             for (const subSubKey in error[subKey]) {
-              if (error[subKey][subSubKey].message) {
+              if (error[subKey][subSubKey]?.message) {
                 return `${key}[${subKey}].${subSubKey}: ${error[subKey][subSubKey].message}`;
               }
             }
@@ -476,8 +514,6 @@ export default function CreateRecruiterAccountForm() {
   };
 
   const onSubmit = async (data: RecruiterFormData) => {
-    console.log("Form submission data:", data);
-    console.log("isElevatorPitchUploaded:", isElevatorPitchUploaded);
     if (!isElevatorPitchUploaded) {
       toast.error("Please upload an elevator pitch video before submitting.");
       return;
@@ -498,7 +534,6 @@ export default function CreateRecruiterAccountForm() {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-semibold">Create Recruiter Account</h1>
-       
       </div>
 
       <Form {...form}>
@@ -508,18 +543,22 @@ export default function CreateRecruiterAccountForm() {
               await onSubmit(data);
             },
             (errors) => {
-              console.log("Validation errors:", errors);
               const errorMessage = getFirstErrorMessage(errors);
               toast.error(errorMessage || "Please fill in all required fields");
             }
           )}
           className="space-y-6"
         >
+          {/* Elevator Pitch (UPDATED UX) */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
                 Elevator Pitch
               </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Upload a short video introducing yourself. This is required
+                before submitting.
+              </p>
             </CardHeader>
             <CardContent>
               <ElevatorPitchUpload
@@ -529,16 +568,13 @@ export default function CreateRecruiterAccountForm() {
                 onDelete={handleElevatorPitchDelete}
                 isUploaded={isElevatorPitchUploaded}
               />
-              <div className="flex justify-center pt-4">
+
+              {elevatorPitchFile && !isElevatorPitchUploaded && (
                 <Button
                   type="button"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+                  className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
                   onClick={handleElevatorPitchUpload}
-                  disabled={
-                    !elevatorPitchFile ||
-                    uploadElevatorPitchMutation.isPending ||
-                    isElevatorPitchUploaded
-                  }
+                  disabled={uploadElevatorPitchMutation.isPending}
                 >
                   {uploadElevatorPitchMutation.isPending ? (
                     <div className="flex items-center gap-2">
@@ -555,12 +591,12 @@ export default function CreateRecruiterAccountForm() {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        ></circle>
+                        />
                         <path
                           className="opacity-75"
                           fill="currentColor"
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
+                        />
                       </svg>
                       Uploading...
                     </div>
@@ -568,10 +604,19 @@ export default function CreateRecruiterAccountForm() {
                     "Upload Elevator Pitch"
                   )}
                 </Button>
-              </div>
+              )}
+
+              {isElevatorPitchUploaded && (
+                <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ Elevator pitch uploaded successfully! You can now submit.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* Banner Upload */}
           <Card>
             <CardHeader>
               <div className="flex items-start justify-between">
@@ -634,6 +679,7 @@ export default function CreateRecruiterAccountForm() {
             </CardContent>
           </Card>
 
+          {/* Personal Info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
@@ -709,7 +755,12 @@ export default function CreateRecruiterAccountForm() {
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
-                          Word count: {field.value?.trim().split(/\s+/).length || 0}
+                          Word count:{" "}
+                          {(field.value ?? "").trim()
+                            ? (field.value ?? "")
+                                .trim()
+                                .split(/\s+/).length
+                            : 0}
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -817,10 +868,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Years of Experience*</FormLabel>
                       <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select Experience" />
                           </SelectTrigger>
@@ -847,9 +895,9 @@ export default function CreateRecruiterAccountForm() {
                       <FormLabel>Country*</FormLabel>
                       <FormControl>
                         <Combobox
-                          options={(countries || []).map((country) => ({
-                            value: country.country,
-                            label: country.country,
+                          options={(countries || []).map((c) => ({
+                            value: c.country,
+                            label: c.country,
                           }))}
                           value={field.value || ""}
                           onChange={(value) => {
@@ -903,7 +951,10 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Zip/Postal Code (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Zip/Postal Code" {...field} />
+                        <Input
+                          placeholder="Enter Zip/Postal Code"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -937,9 +988,12 @@ export default function CreateRecruiterAccountForm() {
             </CardContent>
           </Card>
 
+          {/* Education */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-medium">Education (Optional)</CardTitle>
+              <CardTitle className="text-lg font-medium">
+                Education (Optional)
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {educationFields.map((field, index) => (
@@ -1007,6 +1061,7 @@ export default function CreateRecruiterAccountForm() {
             </CardContent>
           </Card>
 
+          {/* Languages */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
@@ -1030,9 +1085,15 @@ export default function CreateRecruiterAccountForm() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              const trimmedInput = inputValue.trim();
-                              if (trimmedInput && !field.value?.includes(trimmedInput)) {
-                                field.onChange([...(field.value || []), trimmedInput]);
+                              const trimmed = inputValue.trim();
+                              if (
+                                trimmed &&
+                                !field.value?.includes(trimmed)
+                              ) {
+                                field.onChange([
+                                  ...(field.value || []),
+                                  trimmed,
+                                ]);
                                 setInputValue("");
                               }
                             }
@@ -1041,9 +1102,9 @@ export default function CreateRecruiterAccountForm() {
                       </FormControl>
                       {field.value && field.value.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-2">
-                          {field.value.map((language, index) => (
+                          {field.value.map((language: string, idx: number) => (
                             <div
-                              key={index}
+                              key={idx}
                               className="flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded"
                             >
                               {language}
@@ -1053,7 +1114,11 @@ export default function CreateRecruiterAccountForm() {
                                 size="sm"
                                 className="ml-2 h-4 w-4 p-0"
                                 onClick={() => {
-                                  field.onChange((field.value ?? []).filter((_, i) => i !== index));
+                                  field.onChange(
+                                    (field.value ?? []).filter(
+                                      (_: any, i: number) => i !== idx
+                                    )
+                                  );
                                 }}
                               >
                                 <X className="h-4 w-4" />
@@ -1070,13 +1135,13 @@ export default function CreateRecruiterAccountForm() {
             </CardContent>
           </Card>
 
-      
-
           <div className="flex justify-center pt-4">
             <Button
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
-              disabled={mutation.isPending || isSubmitting || !isElevatorPitchUploaded}
+              disabled={
+                mutation.isPending || isSubmitting || !isElevatorPitchUploaded
+              }
             >
               {mutation.isPending || isSubmitting ? (
                 <div className="flex items-center gap-2">
@@ -1093,12 +1158,12 @@ export default function CreateRecruiterAccountForm() {
                       r="10"
                       stroke="currentColor"
                       strokeWidth="4"
-                    ></circle>
+                    />
                     <path
                       className="opacity-75"
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                    />
                   </svg>
                   Saving...
                 </div>
