@@ -435,11 +435,6 @@ export function SiteHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuItem asChild>
-                <Link href="/careers" className="w-full px-2 py-1.5 block">
-                  Careers
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
                 <Link
                   href="/privacy-policy"
                   className="w-full px-2 py-1.5 block"
@@ -725,17 +720,6 @@ export function SiteHeader() {
                     <div className="space-y-2">
                       <div className="font-medium text-gray-900">More</div>
                       <div className="pl-4 space-y-2">
-                        <Link
-                          href="/careers"
-                          onClick={() => setSheetOpen(false)}
-                          className={`block transition-colors focus:outline-none ${
-                            isActive("/careers")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
-                        >
-                          Careers
-                        </Link>
                         <Link
                           href="/privacy-policy"
                           onClick={() => setSheetOpen(false)}

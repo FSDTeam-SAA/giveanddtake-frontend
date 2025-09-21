@@ -573,7 +573,7 @@ export default function RegisterPage() {
   const actuallySubmit = (data: RegisterData) => {
     const payload = {
       ...data,
-      dateOfBirth: dobISO || undefined,
+      dateOfbirth: dobISO || undefined,
     } as unknown as RegisterData;
     registerMutation.mutate(payload);
   };
