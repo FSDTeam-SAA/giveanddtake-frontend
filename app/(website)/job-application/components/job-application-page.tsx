@@ -92,7 +92,9 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
-    console.error("NEXT_PUBLIC_BASE_URL is not defined at 11:31 AM +06, 2025-09-14");
+    console.error(
+      "NEXT_PUBLIC_BASE_URL is not defined at 11:31 AM +06, 2025-09-14"
+    );
     toast.error("Application configuration error. Please contact support.");
   }
 
@@ -674,6 +676,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   aria-label="Upload resume"
                 />
                 <Button
+                  type="button"
                   variant="outline"
                   className="bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
                   onClick={() => fileInputRef.current?.click()}

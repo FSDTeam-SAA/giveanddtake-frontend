@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useState } from "react";
+import {  useState } from "react";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,22 +9,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   MapPin,
-  Clock,
   GraduationCap,
   Briefcase,
   AwardIcon,
   SquarePen,
-  X,
   Trash2,
-  Globe,
-  Linkedin,
-  Twitter,
-  LinkIcon,
-  ExternalLink,
 } from "lucide-react";
-import { FaUpwork } from "react-icons/fa6";
 import Image from "next/image";
-import Link from "next/link";
 import { toast } from "sonner";
 import { VideoPlayer } from "@/components/company/video-player";
 import {
@@ -32,13 +23,7 @@ import {
   uploadElevatorPitch,
 } from "@/lib/api-service";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import SocialLinks from "./SocialLinks";
 
 interface ResumeResponse {
   success: boolean;
@@ -120,38 +105,13 @@ interface ResumeAward {
   __v: number;
 }
 
-interface Social {
-  label: string;
-  href?: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-}
 
 interface MyResumeProps {
   resume: ResumeResponse["data"];
   onEdit: () => void;
 }
 
-function SocialIconLink({ href, label, icon: Icon }: Social) {
-  if (!href) return null;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition"
-          )}
-          aria-label={label}
-        >
-          <Icon className="h-4 w-4" />
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="top">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
+
 
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const { data: session } = useSession();
@@ -241,34 +201,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     });
   };
 
-  const allowedLinkTypes = [
-    "website",
-    "linkedin",
-    "twitter",
-    "upwork",
-    "other",
-  ];
 
-  const iconMap: Record<
-    string,
-    React.ComponentType<React.SVGProps<SVGSVGElement>>
-  > = {
-    github: LinkIcon,
-    website: Globe,
-    linkedin: Linkedin,
-    twitter: Twitter,
-    upwork: FaUpwork,
-    other: ExternalLink,
-  };
-
-  const socials: Social[] =
-    resume.resume.sLink
-      ?.filter((link) => allowedLinkTypes.includes(link.label.toLowerCase()))
-      .map((link) => ({
-        label: link.label,
-        href: link.url,
-        icon: iconMap[link.label.toLowerCase()] || iconMap.other,
-      })) || [];
 
   return (
     <main className="min-h-screen">
@@ -308,9 +241,9 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <Image
                         src={resume.resume.photo}
                         alt={`${resume.resume.firstName} ${resume.resume.lastName}`}
-                        height={170}
-                        width={170}
-                        className="w-full h-full object-cover"
+                        height={500}
+                        width={500}
+                        className="w-full h-full object-cover object-top"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
@@ -323,18 +256,9 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     {resume.resume.title ? `${resume.resume.title}. ` : ""}
                     {resume.resume.firstName} {resume.resume.lastName}
                   </h2>
-                  <TooltipProvider delayDuration={100}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {socials.map((s) => (
-                        <SocialIconLink
-                          key={s.label}
-                          href={s.href}
-                          label={s.label}
-                          icon={s.icon}
-                        />
-                      ))}
-                    </div>
-                  </TooltipProvider>
+                  <div>
+                    <SocialLinks sLink={resume.resume.sLink} />
+                  </div>
                 </div>
               </div>
 
@@ -507,7 +431,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 {resume.resume.skills?.map((skill, index) => (
                   <Badge
                     key={index}
-                    className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                   >
                     {skill}
                   </Badge>
@@ -523,7 +447,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 {resume.resume.certifications?.map((cert, index) => (
                   <Badge
                     key={index}
-                    className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                   >
                     {cert}
                   </Badge>
@@ -539,7 +463,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 {resume.resume.languages?.map((lang, index) => (
                   <Badge
                     key={index}
-                    className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
                   >
                     {lang}
                   </Badge>

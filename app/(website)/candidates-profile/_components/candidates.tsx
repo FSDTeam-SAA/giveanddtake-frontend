@@ -14,6 +14,7 @@ import { useSession } from "next-auth/react";
 import { SocialIcon } from "@/components/company/social-icon";
 import CandidateShare from "./candidateShare";
 import CandidateSharePopover from "./candidateShare";
+import SocialLinks from "../../elevator-pitch-resume/_components/SocialLinks";
 
 // ---------- utils ----------
 const toMonthYear = (date?: string) => {
@@ -288,9 +289,9 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
 
           <h2 className="text-xl font-bold mt-3">
-            {resume.firstName} {resume.lastName}
+            {resume.title && <p className="text-gray-600">{resume.title.charAt(0).toUpperCase() + resume.title.slice(1)}. {resume.firstName} {resume.lastName}</p>}
           </h2>
-          {resume.title && <p className="text-gray-600">{resume.title}</p>}
+          
 
           <p className="text-gray-600 flex items-center">
             <MapPin className="w-4 h-4 mr-1" />
@@ -299,9 +300,9 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
           {/* Social Links */}
           <div className="flex gap-2 mt-3">
-            {resume.sLink?.map((link) => (
-              <SocialIcon key={link._id} url={link.url} />
-            ))}
+            <div>
+              <SocialLinks sLink={resume.sLink} />
+            </div>
           </div>
         </div>
 

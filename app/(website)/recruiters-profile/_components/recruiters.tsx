@@ -10,6 +10,7 @@ import Link from "next/link";
 import { VideoPlayer } from "@/components/company/video-player";
 import { SocialIcon } from "@/components/company/social-icon";
 import CandidateSharePopover from "../../candidates-profile/_components/candidateShare";
+import SocialLinks from "../../elevator-pitch-resume/_components/SocialLinks";
 
 interface SocialLink {
   label: string;
@@ -243,12 +244,9 @@ export default function Recruiters({ userId }: MydataProps) {
               </p>
             </div>
             <div className="flex space-x-2 mt-2">
-              {recruiterData.sLink.map((link) => (
-                <SocialIcon
-                  key={link._id}
-                  url={link.url || `#${link.label.toLowerCase()}`}
-                />
-              ))}
+              <div>
+                <SocialLinks sLink={recruiterData.sLink} />
+              </div>
             </div>
           </div>
           <div>
