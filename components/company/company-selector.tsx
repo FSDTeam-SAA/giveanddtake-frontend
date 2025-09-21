@@ -42,9 +42,11 @@ export function CompanySelector({
   );
 
   const handleSelect = (companyId: string) => {
-    console.log(companyId);
-
-    onCompanyChange(companyId); // ✅ set single id
+    if (companyId === selectedCompany) {
+      onCompanyChange(""); // ✅ clear selection if clicked again
+    } else {
+      onCompanyChange(companyId); // ✅ set new selection
+    }
     setOpen(false); // close dropdown
   };
 
@@ -82,7 +84,7 @@ export function CompanySelector({
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0">
-            <Command value={selectedCompany}>
+            <Command>
               <CommandInput placeholder="Search companies..." />
               <CommandList>
                 <CommandEmpty>
@@ -93,7 +95,7 @@ export function CompanySelector({
                     <CommandItem
                       key={company.id}
                       value={company.id}
-                      onSelect={() => handleSelect(company.id)}
+                      onSelect={(val) => handleSelect(val)}
                     >
                       <Check
                         className={`mr-2 h-4 w-4 ${

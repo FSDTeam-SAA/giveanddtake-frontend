@@ -31,6 +31,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SocialLinksSection } from "./social-links-section";
 
 const CustomDateInput = ({
   value,
@@ -174,99 +175,35 @@ const SkillsSelector = ({
   );
 };
 
-const SocialLinksSection = ({
-  value,
-  onChange,
-}: {
-  value: any[];
-  onChange: (links: any[]) => void;
-}) => {
-  const updateLink = (index: number, field: string, newValue: string) => {
-    const updatedLinks = [...value];
-    updatedLinks[index] = { ...updatedLinks[index], [field]: newValue };
-    onChange(updatedLinks);
-  };
-
-  const addCustomLink = () => {
-    onChange([...value, { label: "", url: "", type: "create" }]);
-  };
-
-  const removeLink = (index: number) => {
-    const updatedLinks = value.filter((_, i) => i !== index);
-    onChange(updatedLinks);
-  };
-
-  return (
-    <div className="space-y-4">
-      {value.map((link, index) => (
-        <div
-          key={index}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg"
-        >
-          <div>
-            <FormLabel>Platform</FormLabel>
-            <Input
-              value={link.label || ""}
-              onChange={(e) => updateLink(index, "label", e.target.value)}
-              placeholder="Platform name"
-            />
-          </div>
-          <div>
-            <FormLabel>URL</FormLabel>
-            <Input
-              value={link.url || ""}
-              onChange={(e) => updateLink(index, "url", e.target.value)}
-              placeholder="https://example.com"
-              type="url"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => removeLink(index)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      ))}
-
-      <Button
-        type="button"
-        variant="outline"
-        onClick={addCustomLink}
-        className="flex items-center gap-2 bg-transparent"
-      >
-        <Plus className="h-4 w-4" />
-        Add Social Link
-      </Button>
-    </div>
-  );
-};
-
-const resumeFormSchema = z.object({
+export const resumeFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
+
   title: z.string().optional(),
   city: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().optional(),
   aboutUs: z.string().optional(),
-  skills: z.array(z.string()).optional(),
+
+  skills: z.array(z.string()).optional().default([]),
+
   sLink: z
     .array(
       z.object({
         _id: z.string().optional(),
         type: z.enum(["create", "update", "delete"]).optional(),
         label: z.string().min(1, "Platform name is required"),
-        url: z.string().url("Please enter a valid URL").optional(),
+        // allow empty string OR a valid URL
+        url: z.string().optional().transform((v) => v ?? "").pipe(
+          z.string().url("Please enter a valid URL").or(z.literal(""))
+        ),
       })
     )
-    .optional(),
+    .optional()
+    .default([]),
+
   experiences: z
     .array(
       z
@@ -287,41 +224,49 @@ const resumeFormSchema = z.object({
         })
         .refine(
           (data) =>
+            // only require endDate if we have both company & jobTitle,
+            // not currently working, and endDate is missing
             !data.company ||
             !data.jobTitle ||
-            data.currentlyWorking ||
-            (!data.currentlyWorking && data.endDate),
+            data.currentlyWorking === true ||
+            (!!data.endDate && data.currentlyWorking === false),
           {
             message: "End date is required unless currently working",
             path: ["endDate"],
           }
         )
     )
-    .optional(),
-  educationList: z.array(
-    z
-      .object({
-        _id: z.string().optional(),
-        type: z.enum(["create", "update", "delete"]).optional(),
-        instituteName: z.string().min(1, "Institute name is required"),
-        degree: z.string().min(1, "Degree is required"),
-        fieldOfStudy: z.string().optional(),
-        startDate: z.string().optional(),
-        graduationDate: z.string().optional(),
-        currentlyStudying: z.boolean().optional().default(false),
-        city: z.string().optional(),
-        country: z.string().optional(),
-      })
-      .refine(
-        (data) =>
-          data.currentlyStudying ||
-          (!data.currentlyStudying && data.graduationDate),
-        {
-          message: "Graduation date is required unless currently studying",
-          path: ["graduationDate"],
-        }
-      )
-  ),
+    .optional()
+    .default([]),
+
+  educationList: z
+    .array(
+      z
+        .object({
+          _id: z.string().optional(),
+          type: z.enum(["create", "update", "delete"]).optional(),
+          instituteName: z.string().min(1, "Institute name is required"),
+          degree: z.string().min(1, "Degree is required"),
+          fieldOfStudy: z.string().optional(),
+          startDate: z.string().optional(),
+          graduationDate: z.string().optional(),
+          currentlyStudying: z.boolean().optional().default(false),
+          city: z.string().optional(),
+          country: z.string().optional(),
+        })
+        .refine(
+          (data) =>
+            data.currentlyStudying === true ||
+            (!!data.graduationDate && data.currentlyStudying === false),
+          {
+            message: "Graduation date is required unless currently studying",
+            path: ["graduationDate"],
+          }
+        )
+    )
+    .optional()
+    .default([]),
+
   awardsAndHonors: z
     .array(
       z.object({
@@ -333,7 +278,8 @@ const resumeFormSchema = z.object({
         description: z.string().optional(),
       })
     )
-    .optional(),
+    .optional()
+    .default([]),
 });
 
 type ResumeFormData = z.infer<typeof resumeFormSchema>;
@@ -954,10 +900,7 @@ export default function UpdateResumeForm({
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <SocialLinksSection
-                            value={field.value || []}
-                            onChange={field.onChange}
-                          />
+                          <SocialLinksSection form={form} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
