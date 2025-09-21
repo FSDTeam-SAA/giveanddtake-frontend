@@ -497,7 +497,7 @@ export default function CreateCompanyPage() {
             buttonText="Add More"
           />
 
-          /* Social Links */
+          {/* /* Social Links */ }
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField

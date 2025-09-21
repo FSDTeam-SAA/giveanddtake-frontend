@@ -22,13 +22,13 @@ const socialIcons: Record<string, { icon: JSX.Element }> = {
 interface SocialLinksProps {
   sLink?: {
     label: string;
-    url: string;
+    url?: string; // ✅ fixed
     _id: string;
   }[];
 }
 
 export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
-  const linkMap = new Map(sLink.map((link) => [link.label, link.url]));
+  const linkMap = new Map(sLink.map((link) => [link.label, link.url ?? ""]));
 
   return (
     <div className="flex gap-3 mt-4">
