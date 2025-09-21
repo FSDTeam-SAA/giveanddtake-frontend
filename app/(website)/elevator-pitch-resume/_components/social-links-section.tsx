@@ -1,3 +1,10 @@
+
+// =========================
+// social-links-section.tsx (UPDATED)
+// - Fixed 6 platforms with {label, url}
+// - Writes to form.sLink[*].url only
+// =========================
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,10 +17,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Link as LinkIcon } from "lucide-react";
-import { type UseFormReturn } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 
-interface SocialLink {
+interface SocialLinkRow {
   label: string;
   url: string;
 }
@@ -32,20 +39,14 @@ const FIXED_PLATFORMS = [
 ] as const;
 
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
-  // Ensure the form always has exactly 6 entries with fixed labels
-  const initialLinks: SocialLink[] = useMemo(() => {
-    const existing: SocialLink[] = form.getValues("sLink") ?? [];
-    return FIXED_PLATFORMS.map((label, i) => ({
-      label,
-      url: existing[i]?.url ?? "",
-    }));
+  // Seed exactly 6 rows with fixed labels
+  const initialLinks: SocialLinkRow[] = useMemo(() => {
+    const existing: SocialLinkRow[] = form.getValues("sLink") ?? [];
+    return FIXED_PLATFORMS.map((label, i) => ({ label, url: existing[i]?.url ?? "" }));
   }, [form]);
 
   useEffect(() => {
-    form.setValue("sLink", initialLinks, {
-      shouldValidate: false,
-      shouldDirty: false,
-    });
+    form.setValue("sLink", initialLinks, { shouldValidate: false, shouldDirty: false });
   }, [form, initialLinks]);
 
   return (
@@ -66,7 +67,6 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {FIXED_PLATFORMS.map((platform, index) => (
             <FormField
-              // We only allow editing the URL; label is fixed
               key={platform}
               control={form.control}
               name={`sLink.${index}.url`}
@@ -79,6 +79,8 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
                       {...field}
                     />
                   </FormControl>
+                  {/* Keep label in the form state so backend gets it */}
+                  <input type="hidden" value={platform} {...form.register(`sLink.${index}.label`)} />
                   <FormMessage />
                 </FormItem>
               )}
