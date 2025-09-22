@@ -1065,6 +1065,24 @@ export default function CreateResumeForm() {
     }
   };
 
+  useEffect(() => {
+    if (!session?.user) return;
+    if (form.formState.isDirty) return;
+
+    const name = session.user.name ?? session.user.email?.split("@")[0] ?? "";
+    const [first = "", ...rest] = name.trim().split(/\s+/);
+
+    form.reset({
+      ...form.getValues(),
+      email: form.getValues("email") || (session.user.email ?? ""),
+      firstName: form.getValues("firstName") || first,
+      lastName: form.getValues("lastName") || rest.join(" "),
+      phoneNumber:
+        form.getValues("phoneNumber") || (session.user.phoneNumber ?? ""),
+      country: form.getValues("country") || (session.user.country ?? ""),
+    });
+  }, [session, form]);
+
   return (
     <div className=" mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
@@ -1268,7 +1286,7 @@ export default function CreateResumeForm() {
                   name="lastName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Last Name*</FormLabel>
+                      <FormLabel>Sur Name*</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter Your Last Name" {...field} />
                       </FormControl>
@@ -1356,6 +1374,7 @@ export default function CreateResumeForm() {
                         <Input
                           type="email"
                           placeholder="Enter Your Email Address"
+                          disabled
                           {...field}
                         />
                       </FormControl>
