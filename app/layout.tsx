@@ -5,6 +5,7 @@ import { Roboto } from "next/font/google";
 import Script from "next/script";
 import { Toaster } from "sonner";
 import { DynamicTitle } from "@/components/DynamicTitle";
+import TopLoader from "./TopLoader";
 
 const roboto = Roboto({
   weight: ["100", "300", "400", "500", "700", "900"],
@@ -30,6 +31,7 @@ export default function RootLayout({
     <html lang="en" className={roboto.variable}>
       <body className="font-sans">
         <DynamicTitle />
+        <TopLoader />
         <ReactQueryProvider>{children}</ReactQueryProvider>
         <Script
           src="https://www.paypal.com/sdk/js?client-id=AXmwL-mntKGqTAb6_DaY5o6qh5R0UTxuMkwDJsgUlHW72W-x5t4SZsgSNi9XOfbGYoxlAHiXlSsjnB_L&currency=USD&intent=capture&disable-funding=paylater,venmo"
