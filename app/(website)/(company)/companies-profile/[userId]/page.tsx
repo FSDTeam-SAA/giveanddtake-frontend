@@ -1,10 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails } from "@/lib/api-service";
 import { MapPin, Users, Calendar } from "lucide-react";
@@ -14,6 +13,8 @@ import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
 import CandidateSharePopover from "@/app/(website)/candidates-profile/_components/candidateShare";
 import SocialLinks from "@/app/(website)/elevator-pitch-resume/_components/SocialLinks";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface Honor {
   id: string;
@@ -27,6 +28,18 @@ interface Honor {
   isDeleted?: boolean;
 }
 
+// ------- helpers -------
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!;
+
+async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, { cache: "no-store", ...init });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || `Request failed: ${res.status}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 const fetchCompanyJobs = async (companyId: string) => {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/all-jobs/company/${companyId}`,
@@ -35,6 +48,7 @@ const fetchCompanyJobs = async (companyId: string) => {
       headers: {
         "Content-Type": "application/json",
       },
+      cache: "no-store",
     }
   );
 
@@ -45,8 +59,39 @@ const fetchCompanyJobs = async (companyId: string) => {
   return res.json(); // { success, message, data: Job[] }
 };
 
+// Response shape for /user/single
+interface SingleUserFollowingItem {
+  email: string;
+  name: string;
+  _id: string;
+}
+interface SingleUserResponse {
+  data?: { following?: Array<SingleUserFollowingItem | null> };
+}
+
 export default function CompanyProfilePage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const { data: session } = useSession();
+  const token = (session as any)?.accessToken as string | undefined;
+  const myId = session?.user?.id as string | undefined;
+
+  const queryClient = useQueryClient();
+
+  // ---- single user (source of truth for "already following") ----
+  const { data: singleUser } = useQuery<SingleUserResponse, Error>({
+    queryKey: ["single-user"],
+    queryFn: async () => {
+      const response = await fetch(`${BASE_URL}/user/single`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: "no-store",
+      });
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    },
+    enabled: !!token,
+    retry: 1,
+  });
 
   // NEW: pagination state (6 per page)
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -68,24 +113,152 @@ export default function CompanyProfilePage() {
       enabled: !!companyData?.companies[0]?._id,
     });
 
-  // NEW: derive only admin-approved jobs
+  // ---- derive IDs for follow API ----
+  // Assumption based on backend used in Recruiters.tsx:
+  //   recruiterId = the profile owner's userId
+  //   companyId    = the company object's _id (or its userId if your API expects that)
+  const company = companyData?.companies?.[0];
+  const targetRecruiterId = company?.userId as string | undefined; // owner user id (entity to follow)
+  const targetCompanyId = company?._id as string | undefined; // company object id
+
+  // ---- follow count/status (backup) ----
+  const { data: followInfo, isLoading: followInfoLoading } = useQuery({
+    queryKey: ["follow", "count", targetRecruiterId],
+    queryFn: async () => {
+      const raw = await fetchJSON<any>(
+        `${BASE_URL}/following/count?recruiterId=${targetRecruiterId}`
+      );
+      const parsed = raw?.data && typeof raw.data === "object" ? raw.data : raw;
+      const count =
+        typeof parsed?.count === "number"
+          ? parsed.count
+          : typeof parsed === "number"
+          ? parsed
+          : 0;
+      const isFollowing =
+        typeof parsed?.isFollowing === "boolean"
+          ? parsed.isFollowing
+          : undefined;
+      return { count, isFollowing } as { count: number; isFollowing?: boolean };
+    },
+    enabled: Boolean(targetRecruiterId),
+    staleTime: 15_000,
+  });
+
+  // Determine following from singleUser list (source of truth)
+  const followingIds = useMemo(
+    () =>
+      singleUser?.data?.following
+        ?.filter(Boolean)
+        .map((u) => (u as SingleUserFollowingItem)._id) ?? [],
+    [singleUser?.data?.following]
+  );
+  const isFollowing = targetRecruiterId
+    ? followingIds.includes(targetRecruiterId)
+    : false;
+
+  const canFollow = useMemo(() => {
+    if (!myId || !targetRecruiterId) return false;
+    return myId !== targetRecruiterId;
+  }, [myId, targetRecruiterId]);
+
+  // ---- Mutation: toggle follow ----
+  const toggleFollowMutation = useMutation({
+    mutationFn: async () => {
+      if (!myId || !targetRecruiterId || !targetCompanyId) {
+        throw new Error("Missing IDs for follow action");
+      }
+      const nextIsFollowing = !isFollowing; // true => /follow, false => /unfollow
+      const url = `${BASE_URL}/following/${
+        nextIsFollowing ? "follow" : "unfollow"
+      }`;
+      const method = nextIsFollowing ? "POST" : "DELETE";
+      const payload = {
+        userId: myId,
+        recruiterId: targetRecruiterId,
+        companyId: targetCompanyId,
+      };
+      return fetchJSON<any>(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({
+        queryKey: ["follow", "count", targetRecruiterId],
+      });
+      const prev = queryClient.getQueryData<{
+        count: number;
+        isFollowing?: boolean;
+      }>(["follow", "count", targetRecruiterId]);
+      const optimisticNext = !isFollowing;
+      const nextCount =
+        (prev?.count ?? followInfo?.count ?? 0) + (optimisticNext ? 1 : -1);
+      queryClient.setQueryData(["follow", "count", targetRecruiterId], {
+        count: Math.max(0, nextCount),
+        isFollowing: optimisticNext,
+      });
+      return { prev } as const;
+    },
+    onError: (err: any, _vars, ctx) => {
+      if (ctx?.prev)
+        queryClient.setQueryData(
+          ["follow", "count", targetRecruiterId],
+          ctx.prev
+        );
+      const msg =
+        typeof err?.message === "string" ? err.message : "Follow action failed";
+      if (/Already following/i.test(msg)) {
+        queryClient.invalidateQueries({ queryKey: ["single-user"] });
+        queryClient.invalidateQueries({
+          queryKey: ["follow", "count", targetRecruiterId],
+        });
+        toast.info("You're already following.");
+        return;
+      }
+      if (/Not following/i.test(msg) || /already unfollowed/i.test(msg)) {
+        queryClient.invalidateQueries({ queryKey: ["single-user"] });
+        queryClient.invalidateQueries({
+          queryKey: ["follow", "count", targetRecruiterId],
+        });
+        toast.info("You were not following.");
+        return;
+      }
+      toast.error(msg || "Something went wrong");
+    },
+    onSuccess: (_data, _vars, _ctx) => {
+      toast.success(
+        isFollowing ? "You've unfollowed." : "You're now following."
+      );
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["single-user"] });
+      queryClient.invalidateQueries({
+        queryKey: ["follow", "count", targetRecruiterId],
+      });
+    },
+  });
+
+  // ---------- jobs derivations ----------
   const approvedJobs = useMemo(() => {
     return (jobs?.data ?? []).filter((j: any) => j?.adminApprove === true);
   }, [jobs]);
 
-  // NEW: pagination derivations
   const totalPages = Math.max(1, Math.ceil(approvedJobs.length / PAGE_SIZE));
   const visibleJobs = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
     return approvedJobs.slice(start, start + PAGE_SIZE);
   }, [approvedJobs, currentPage]);
 
-  // Reset to page 1 if the job list changes and current page is now out of bounds
-  // (e.g., after filtering or refetch)
   if (currentPage > totalPages) {
     setTimeout(() => setCurrentPage(1), 0);
   }
 
+  // ---------- loading/empty ----------
   if (isLoadingCompany) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -102,7 +275,6 @@ export default function CompanyProfilePage() {
     );
   }
 
-  const company = companyData.companies[0];
   const honors = companyData.honors || [];
 
   const parseLinks = (linkString?: string): string[] => {
@@ -131,6 +303,17 @@ export default function CompanyProfilePage() {
   if (selectedJobId) {
     return <JobDetails jobId={selectedJobId} />;
   }
+
+  console.log(followInfo?.count, "followInfo");
+  const followersCount = followInfo?.count ?? 0;
+  const followBusy = toggleFollowMutation.isPending;
+  const disabled =
+    !myId ||
+    !targetRecruiterId ||
+    !targetCompanyId ||
+    followBusy ||
+    followInfoLoading ||
+    !canFollow;
 
   return (
     <div className="container mx-auto">
@@ -182,13 +365,36 @@ export default function CompanyProfilePage() {
               </div>
               <div className="flex gap-4">
                 <div>
-                                <SocialLinks sLink={company.sLink} />
-                              </div>
+                  <SocialLinks sLink={company.sLink} />
+                </div>
               </div>
               <div className="mt-4">
-                <Button variant="outline" size="sm">
-                  Follow
-                </Button>
+                {/* Follow / Unfollow with count */}
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={() => toggleFollowMutation.mutate()}
+                    disabled={disabled}
+                    className={`${
+                      isFollowing
+                        ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                        : "bg-blue-600 hover:bg-blue-700"
+                    } transition-colors`}
+                    aria-label={isFollowing ? "Unfollow" : "Follow"}
+                    title={!myId ? "Sign in to follow" : undefined}
+                  >
+                    {followBusy
+                      ? "Please wait…"
+                      : isFollowing
+                      ? "Unfollow"
+                      : "Follow"}
+                  </Button>
+
+                  {(followInfo?.count ?? 0) > 0 && (
+                    <span className="text-sm text-gray-600">
+                      {followersCount} follower{followersCount === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -250,7 +456,7 @@ export default function CompanyProfilePage() {
               ))}
             </div>
 
-            {/* NEW: Pagination (only if more than one page) */}
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-8 flex items-center justify-center gap-2">
                 <Button
@@ -262,7 +468,6 @@ export default function CompanyProfilePage() {
                   Prev
                 </Button>
 
-                {/* Numbered page buttons */}
                 {Array.from({ length: totalPages }).map((_, idx) => {
                   const pageNum = idx + 1;
                   const isActive = pageNum === currentPage;
