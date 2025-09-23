@@ -48,9 +48,9 @@ export default function LoginPage() {
         if (!hasResume) return router.push("/elevator-pitch-resume");
       } else if (role === "recruiter") {
         const res = await getRecruiterAccount(userId);
-        const recruiter = (res as any)?.data;
-        const exists = Boolean(recruiter);
-        if (!exists) return router.push("/elevator-pitch-resume");
+        if ((res as any)?.success === false) {
+          return router.push("/elevator-pitch-resume");
+        }
       } else {
         const res = await getCompanyAccount(userId);
         const company = (res as any)?.data;
