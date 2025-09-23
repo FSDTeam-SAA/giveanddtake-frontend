@@ -102,15 +102,7 @@ const recruiterSchema = z.object({
   skills: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
   companyRecruiters: z.array(z.string()).optional(),
-  educations: z
-    .array(
-      z.object({
-        school: z.string().min(1, "Institution name is required"),
-        degree: z.string().min(1, "Degree is required"),
-        year: z.string().min(1, "Year is required"),
-      })
-    )
-    .optional(),
+  
   sLink: z
     .array(
       z.object({
@@ -247,7 +239,6 @@ export default function CreateRecruiterAccountForm() {
       skills: [],
       languages: [],
       companyRecruiters: [],
-      educations: [{ school: "", degree: "", year: "" }],
       sLink: [
         { label: "LinkedIn", url: "" },
         { label: "Twitter", url: "" },
@@ -259,15 +250,6 @@ export default function CreateRecruiterAccountForm() {
       companyId: "",
       userId: userId || "",
     },
-  });
-
-  const {
-    fields: educationFields,
-    append: appendEducation,
-    remove: removeEducation,
-  } = useFieldArray({
-    control: form.control,
-    name: "educations",
   });
 
   const { data: countries, isLoading: isLoadingCountries } = useQuery<
@@ -987,154 +969,6 @@ export default function CreateRecruiterAccountForm() {
               <SocialLinksSection form={form} />
             </CardContent>
           </Card>
-
-          {/* Education */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Education (Optional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {educationFields.map((field, index) => (
-                <div key={field.id} className="space-y-4 border-b pb-4">
-                  <FormField
-                    control={form.control}
-                    name={`educations.${index}.school`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Institution Name</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter institution name"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`educations.${index}.degree`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Degree</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter degree" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`educations.${index}.year`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Year</FormLabel>
-                        <FormControl>
-                          <CustomDateInput {...field} placeholder="MM/YYYY" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={() => removeEducation(index)}
-                  >
-                    <X className="mr-2 h-4 w-4" /> Remove Education
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                onClick={() =>
-                  appendEducation({ school: "", degree: "", year: "" })
-                }
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add Education
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Languages */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Languages (Optional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="languages"
-                render={({ field }) => {
-                  const [inputValue, setInputValue] = useState("");
-                  return (
-                    <FormItem>
-                      <FormLabel>Languages</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter a language and press Enter"
-                          value={inputValue}
-                          onChange={(e) => setInputValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              const trimmed = inputValue.trim();
-                              if (
-                                trimmed &&
-                                !field.value?.includes(trimmed)
-                              ) {
-                                field.onChange([
-                                  ...(field.value || []),
-                                  trimmed,
-                                ]);
-                                setInputValue("");
-                              }
-                            }
-                          }}
-                        />
-                      </FormControl>
-                      {field.value && field.value.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {field.value.map((language: string, idx: number) => (
-                            <div
-                              key={idx}
-                              className="flex items-center bg-gray-200 text-gray-800 px-2 py-1 rounded"
-                            >
-                              {language}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="ml-2 h-4 w-4 p-0"
-                                onClick={() => {
-                                  field.onChange(
-                                    (field.value ?? []).filter(
-                                      (_: any, i: number) => i !== idx
-                                    )
-                                  );
-                                }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-            </CardContent>
-          </Card>
-
           <div className="flex justify-center pt-4">
             <Button
               type="submit"

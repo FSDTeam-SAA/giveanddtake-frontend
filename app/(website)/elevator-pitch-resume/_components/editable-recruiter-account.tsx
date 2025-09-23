@@ -1,38 +1,36 @@
 "use client";
 
 import type React from "react";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import {
-  ExternalLink,
-  Globe,
-  Linkedin,
-  MapPin,
-  BriefcaseBusiness,
-  Twitter,
-  Edit,
-  Save,
-  X,
-  Camera,
-} from "lucide-react";
+  Form,
+  FormField,
+  FormItem,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+
+import { ExternalLink, Globe, MapPin, Edit, Save, X, Camera } from "lucide-react";
 import DOMPurify from "dompurify";
-import { cn } from "@/lib/utils";
 import { editRecruiterAccount } from "@/lib/api-service";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { CompanySelector } from "@/components/company/company-selector";
+import SocialLinks from "./SocialLinks";
+import { SocialLinksSection } from "./social-links-section"; // ⬅️ uses your provided component
 
 type MaybeStringifiedArray = string[] | string | undefined;
 
@@ -40,9 +38,7 @@ type Company = {
   _id: string;
   userId: string;
   aboutUs?: string;
-  avatar?: {
-    url: string;
-  };
+  avatar?: { url: string };
   name?: string;
   country?: string;
   city?: string;
@@ -60,7 +56,8 @@ type Company = {
 
 type SLinkItem = {
   label: string;
-  url: string;
+  url?: string;
+  _id?: string;
 };
 
 export type Recruiter = {
@@ -99,25 +96,13 @@ export type Recruiter = {
 
 function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
   if (Array.isArray(input)) {
-    if (
-      input.length === 1 &&
-      typeof input[0] === "string" &&
-      input[0].trim().startsWith("[")
-    ) {
-      try {
-        return JSON.parse(input[0]) as string[];
-      } catch {
-        return input as string[];
-      }
+    if (input.length === 1 && typeof input[0] === "string" && input[0].trim().startsWith("[")) {
+      try { return JSON.parse(input[0]) as string[]; } catch { return input as string[]; }
     }
     return input as string[];
   }
   if (typeof input === "string") {
-    try {
-      return JSON.parse(input) as string[];
-    } catch {
-      return [input];
-    }
+    try { return JSON.parse(input) as string[]; } catch { return [input]; }
   }
   return [];
 }
@@ -130,38 +115,11 @@ function getInitials(first?: string, last?: string) {
 }
 
 function formatFollowerCount(n?: number) {
-  if (!n && n !== 0) return null;
-  if (n < 1000) return `${n}`;
-  if (n < 1_000_000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K`;
-  return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
-}
-
-type Social = {
-  label: string;
-  href?: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-};
-
-function SocialIconLink({ href, label, icon: Icon }: Social) {
-  if (!href) return null;
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Link
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={cn(
-            "inline-flex h-9 w-9 items-center justify-center rounded-md border border-[#9EC7DC] bg-background text-foreground hover:bg-accent hover:text-accent-foreground transition"
-          )}
-          aria-label={label}
-        >
-          <Icon className="h-4 w-4" />
-        </Link>
-      </TooltipTrigger>
-      <TooltipContent side="top">{label}</TooltipContent>
-    </Tooltip>
-  );
+  if (!Number.isFinite(n as number)) return null;
+  const num = Number(n);
+  if (num < 1000) return `${num}`;
+  if (num < 1_000_000) return `${(num / 1000).toFixed(num % 1000 === 0 ? 0 : 1)}K`;
+  return `${(num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1)}M`;
 }
 
 export default function EditableRecruiterAccount({
@@ -172,117 +130,100 @@ export default function EditableRecruiterAccount({
   onSave?: (updatedRecruiter: Recruiter) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>({
-    ...recruiter,
-  });
+  const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>({ ...recruiter });
   const [isSaving, setIsSaving] = useState(false);
+
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  // Initialize selectedCompany with recruiter.companyId._id
+
   const [selectedCompany, setSelectedCompany] = useState<string>(
     recruiter.companyId?._id || ""
   );
 
+  // --- react-hook-form just for sLink, as per your pattern ---
+  const form = useForm<{ sLink: SLinkItem[] }>({
+    defaultValues: { sLink: recruiter.sLink || [] },
+    mode: "onChange",
+  });
+
+  // Derived state for view/edit
+  const {
+    firstName,
+    lastName,
+    title,
+    bio,
+    country,
+    city,
+    location,
+    roleAtCompany,
+    companyId,
+    photo,
+    banner,
+    followerCount,
+    sLink,
+  } = isEditing ? editedRecruiter : recruiter;
+
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Recruiter";
+  const primaryLocation = location || [city, country].filter(Boolean).join(", ");
+  const displayPhoto = photoPreview || photo || "/placeholder.svg";
+  const displayBanner = bannerPreview || banner || "/placeholder-banner.svg";
+
   const followersText = useMemo(() => {
-    const formatted = formatFollowerCount(recruiter?.followerCount);
+    const formatted = formatFollowerCount(followerCount);
     return formatted ? `${formatted} followers` : null;
-  }, [recruiter?.followerCount]);
+  }, [followerCount]);
 
-  const companyLinks = parseMaybeStringifiedArray(recruiter?.companyId?.links);
-  const services = parseMaybeStringifiedArray(recruiter?.companyId?.service);
-
+  const companyLinks = parseMaybeStringifiedArray(companyId?.links);
   const websiteHref =
     companyLinks[0] ||
+    editedRecruiter?.OtherLink ||
+    editedRecruiter?.upworkUrl ||
     recruiter?.OtherLink ||
     recruiter?.upworkUrl ||
     undefined;
 
-  const taglineParts = [recruiter?.title, recruiter?.roleAtCompany].filter(
-    Boolean
-  );
+  const taglineParts = [title, roleAtCompany].filter(Boolean);
 
-  const socials: Social[] = useMemo(() => {
-    const sLinks = recruiter?.sLink || [];
-    const socialMap: {
-      [key: string]: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-    } = {
-      linkedin: Linkedin,
-      twitter: Twitter,
-      x: Twitter,
-      upwork: BriefcaseBusiness,
-      website: ExternalLink,
-      other: ExternalLink,
-    };
+  const readFileToDataURL = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve((e.target?.result as string) || "");
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
 
-    return sLinks.map((link) => ({
-      label: link.label,
-      href: link.url,
-      icon: socialMap[link.label.toLowerCase()] || ExternalLink,
-    }));
-  }, [recruiter?.sLink]);
-
-  const updateSLink = (
-    index: number,
-    field: "label" | "url",
-    value: string
-  ) => {
-    const newSLink = [...(editedRecruiter.sLink || [])];
-    if (newSLink[index]) {
-      newSLink[index] = { ...newSLink[index], [field]: value };
-    }
-    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
-  };
-
-  const addSLink = () => {
-    const newSLink = [...(editedRecruiter.sLink || []), { label: "", url: "" }];
-    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
-  };
-
-  const removeSLink = (index: number) => {
-    const newSLink = (editedRecruiter.sLink || []).filter(
-      (_, i) => i !== index
-    );
-    setEditedRecruiter({ ...editedRecruiter, sLink: newSLink });
-  };
-
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
-    if (file.size > maxSizeInBytes) {
+    if (file.size > 10 * 1024 * 1024) {
       toast.error("Photo file size exceeds 10 MB. Select a smaller file.");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setPhotoPreview(result);
+    try {
+      const dataURL = await readFileToDataURL(file);
+      setPhotoPreview(dataURL);
       setPhotoFile(file);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.error("Failed to read the selected photo.");
+    }
   };
 
-  const handleBannerUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    const maxSizeInBytes = 10 * 1024 * 1024; // 10 MB
-    if (file.size > maxSizeInBytes) {
+    if (file.size > 10 * 1024 * 1024) {
       toast.error("Banner file size exceeds 10 MB. Select a smaller file.");
       return;
     }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setBannerPreview(result);
+    try {
+      const dataURL = await readFileToDataURL(file);
+      setBannerPreview(dataURL);
       setBannerFile(file);
-    };
-    reader.readAsDataURL(file);
+    } catch {
+      toast.error("Failed to read the selected banner.");
+    }
   };
 
   const handleSave = async () => {
@@ -291,20 +232,35 @@ export default function EditableRecruiterAccount({
     setIsSaving(true);
     try {
       const formData = new FormData();
+
+      // Pull sLink from react-hook-form
+      const { sLink: formLinks } = form.getValues();
+      const cleanedLinks = (formLinks || []).filter(
+        (l) => (l.label?.trim() || "") && (l.url?.trim() || "")
+      );
+
+      // Append socials (indexed)
+      cleanedLinks.forEach((link, index) => {
+        formData.append(`sLink[${index}][label]`, link.label);
+        formData.append(`sLink[${index}][url]`, link.url || "");
+      });
+
+      // Append other edited fields
       Object.entries(editedRecruiter).forEach(([key, value]) => {
-        if (key === "sLink") {
-          (value as SLinkItem[]).forEach((link, index) => {
-            formData.append(`sLink[${index}][label]`, link.label);
-            formData.append(`sLink[${index}][url]`, link.url);
-          });
-        } else if (key === "photo" && photoFile) {
-          formData.append("photo", photoFile);
-        } else if (key === "banner" && bannerFile) {
-          formData.append("banner", bannerFile);
-        } else if (key === "companyId") {
-          // Send only the company ID as a string
-          formData.append("companyId", selectedCompany);
-        } else if (typeof value === "string" && value !== "") {
+        if (key === "sLink") return; // handled via form
+        if (key === "photo") {
+          if (photoFile) formData.append("photo", photoFile);
+          return;
+        }
+        if (key === "banner") {
+          if (bannerFile) formData.append("banner", bannerFile);
+          return;
+        }
+        if (key === "companyId") {
+          if (selectedCompany) formData.append("companyId", selectedCompany);
+          return;
+        }
+        if (typeof value === "string" && value.trim() !== "") {
           formData.append(key, value);
         }
       });
@@ -313,6 +269,8 @@ export default function EditableRecruiterAccount({
         editedRecruiter.userId,
         formData
       );
+
+      // Sync UI
       onSave?.(updatedRecruiter);
       setIsEditing(false);
       setPhotoPreview(null);
@@ -323,8 +281,10 @@ export default function EditableRecruiterAccount({
         ...updatedRecruiter,
         photo: updatedRecruiter.photo,
         banner: updatedRecruiter.banner,
-        companyId: updatedRecruiter.companyId, // Ensure companyId is updated
+        companyId: updatedRecruiter.companyId,
       });
+      form.reset({ sLink: updatedRecruiter.sLink || [] });
+
       toast.success("Profile updated successfully!");
     } catch (error) {
       console.error("Failed to save recruiter account:", error);
@@ -336,40 +296,14 @@ export default function EditableRecruiterAccount({
 
   const handleCancel = () => {
     setEditedRecruiter(recruiter);
-    setSelectedCompany(recruiter.companyId?._id || ""); // Reset to original company
+    setSelectedCompany(recruiter.companyId?._id || "");
     setIsEditing(false);
     setPhotoPreview(null);
     setBannerPreview(null);
     setPhotoFile(null);
     setBannerFile(null);
+    form.reset({ sLink: recruiter.sLink || [] });
   };
-
-  const {
-    firstName,
-    lastName,
-    title,
-    aboutUs,
-    photo,
-    bio,
-    country,
-    city,
-    location,
-    linkedIn,
-    xLink,
-    upworkUrl,
-    OtherLink,
-    roleAtCompany,
-    followerCount,
-    companyId,
-    banner,
-  } = isEditing ? editedRecruiter : recruiter;
-
-  const fullName =
-    [firstName, lastName].filter(Boolean).join(" ") || "Recruiter";
-  const primaryLocation =
-    location || [city, country].filter(Boolean).join(", ");
-  const displayPhoto = photoPreview || photo || "/placeholder.svg";
-  const displayBanner = bannerPreview || banner || "/placeholder-banner.svg";
 
   return (
     <div className="w-full bg-background">
@@ -429,10 +363,15 @@ export default function EditableRecruiterAccount({
                   </div>
                 )}
               </div>
+
               <div className="mb-4">
                 {!isEditing ? (
                   <Button
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      // prepare form values when entering edit mode
+                      form.reset({ sLink: editedRecruiter.sLink || recruiter.sLink || [] });
+                      setIsEditing(true);
+                    }}
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-2 bg-[#2B7FD0] hover:bg-[#2B7FD0] text-white hover:text-white"
@@ -471,201 +410,159 @@ export default function EditableRecruiterAccount({
             {/* Left: profile summary */}
             <div className="space-y-4">
               {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="banner-upload-form">Banner Image</Label>
-                    <div className="mt-2">
-                      <Label
-                        htmlFor="banner-upload-form"
-                        className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Camera className="h-4 w-4" />
-                        {bannerPreview ? "Change banner" : "Upload banner"}
-                      </Label>
-                      <Input
-                        id="banner-upload-form"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleBannerUpload}
-                        className="hidden"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="photo-upload-form">Profile Photo</Label>
-                    <div className="mt-2">
-                      <Label
-                        htmlFor="photo-upload-form"
-                        className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Camera className="h-4 w-4" />
-                        {photoPreview ? "Change photo" : "Upload photo"}
-                      </Label>
-                      <Input
-                        id="photo-upload-form"
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={editedRecruiter.firstName || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            firstName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={editedRecruiter.lastName || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            lastName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={editedRecruiter.title || ""}
-                      onChange={(e) =>
-                        setEditedRecruiter({
-                          ...editedRecruiter,
-                          title: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+                <Form {...form}>
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Select your company
-                    </h3>
-                    <CompanySelector
-                      selectedCompany={selectedCompany}
-                      onCompanyChange={(companyId) => {
-                        setSelectedCompany(companyId);
-                        setEditedRecruiter({
-                          ...editedRecruiter,
-                          companyId: { _id: companyId } as Company,
-                        });
-                      }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                    {/* Banner upload (form-agnostic) */}
                     <div>
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        value={editedRecruiter.city || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            city: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="country">Country</Label>
-                      <Input
-                        id="country"
-                        value={editedRecruiter.country || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter({
-                            ...editedRecruiter,
-                            country: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="bio" className="text-sm font-medium">
-                      Bio
-                    </Label>
-                    <TextEditor
-                      value={editedRecruiter.bio || ""}
-                      onChange={(value) =>
-                        setEditedRecruiter({ ...editedRecruiter, bio: value })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label>Social Links</Label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={addSLink}
-                        className="text-xs bg-transparent"
-                      >
-                        Add Link
-                      </Button>
-                    </div>
-                    {(editedRecruiter.sLink || []).map((link, index) => (
-                      <div
-                        key={index}
-                        className="grid grid-cols-3 gap-2 items-end"
-                      >
-                        <div>
-                          <Label htmlFor={`slink-label-${index}`}>
-                            Platform
-                          </Label>
-                          <Input
-                            id={`slink-label-${index}`}
-                            placeholder="e.g., LinkedIn"
-                            value={link.label}
-                            onChange={(e) =>
-                              updateSLink(index, "label", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`slink-url-${index}`}>URL</Label>
-                          <Input
-                            id={`slink-url-${index}`}
-                            placeholder="https://..."
-                            value={link.url}
-                            onChange={(e) =>
-                              updateSLink(index, "url", e.target.value)
-                            }
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeSLink(index)}
-                          className="text-red-600 hover:text-red-700"
+                      <Label htmlFor="banner-upload-form">Banner Image</Label>
+                      <div className="mt-2">
+                        <Label
+                          htmlFor="banner-upload-form"
+                          className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
+                          <Camera className="h-4 w-4" />
+                          {bannerPreview ? "Change banner" : "Upload banner"}
+                        </Label>
+                        <Input
+                          id="banner-upload-form"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleBannerUpload}
+                          className="hidden"
+                        />
                       </div>
-                    ))}
-                    {(!editedRecruiter.sLink ||
-                      editedRecruiter.sLink.length === 0) && (
-                      <p className="text-sm text-muted-foreground">
-                        No social links added yet.
-                      </p>
-                    )}
+                    </div>
+
+                    {/* Photo upload (form-agnostic) */}
+                    <div>
+                      <Label htmlFor="photo-upload-form">Profile Photo</Label>
+                      <div className="mt-2">
+                        <Label
+                          htmlFor="photo-upload-form"
+                          className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <Camera className="h-4 w-4" />
+                          {photoPreview ? "Change photo" : "Upload photo"}
+                        </Label>
+                        <Input
+                          id="photo-upload-form"
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="hidden"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Basic info */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">First Name</Label>
+                        <Input
+                          id="firstName"
+                          value={editedRecruiter.firstName || ""}
+                          onChange={(e) =>
+                            setEditedRecruiter((r) => ({ ...r, firstName: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">Last Name</Label>
+                        <Input
+                          id="lastName"
+                          value={editedRecruiter.lastName || ""}
+                          onChange={(e) =>
+                            setEditedRecruiter((r) => ({ ...r, lastName: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="title">Title</Label>
+                      <Input
+                        id="title"
+                        value={editedRecruiter.title || ""}
+                        onChange={(e) =>
+                          setEditedRecruiter((r) => ({ ...r, title: e.target.value }))
+                        }
+                      />
+                    </div>
+
+                    {/* Company selector */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Select your company</h3>
+                      <CompanySelector
+                        selectedCompany={selectedCompany}
+                        onCompanyChange={(companyId) => {
+                          setSelectedCompany(companyId);
+                          setEditedRecruiter((r) => ({
+                            ...r,
+                            companyId: { _id: companyId } as Company,
+                          }));
+                        }}
+                      />
+                    </div>
+
+                    {/* Location */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="city">City</Label>
+                        <Input
+                          id="city"
+                          value={editedRecruiter.city || ""}
+                          onChange={(e) =>
+                            setEditedRecruiter((r) => ({ ...r, city: e.target.value }))
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          value={editedRecruiter.country || ""}
+                          onChange={(e) =>
+                            setEditedRecruiter((r) => ({ ...r, country: e.target.value }))
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <div>
+                      <Label htmlFor="bio" className="text-sm font-medium">
+                        Bio
+                      </Label>
+                      <TextEditor
+                        value={editedRecruiter.bio || ""}
+                        onChange={(value) =>
+                          setEditedRecruiter((r) => ({ ...r, bio: value }))
+                        }
+                      />
+                    </div>
+
+                    {/* Social Links Section (your required pattern) */}
+                    <Card className="mt-6">
+                      <CardHeader>
+                        <CardTitle className="text-lg font-medium">Social Links</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <FormField
+                          control={form.control}
+                          name="sLink"
+                          render={() => (
+                            <FormItem>
+                              <FormControl>
+                                <SocialLinksSection form={form} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </CardContent>
+                    </Card>
                   </div>
-                </div>
+                </Form>
               ) : (
                 <div className="space-y-1">
                   <div className="space-y-1">
@@ -685,9 +582,7 @@ export default function EditableRecruiterAccount({
                       </p>
                     )}
                     {(country || city) && (
-                      <p className="text-base text-muted-foreground">
-                        {country || city}
-                      </p>
+                      <p className="text-base text-muted-foreground">{country || city}</p>
                     )}
                   </div>
 
@@ -703,36 +598,20 @@ export default function EditableRecruiterAccount({
                   />
 
                   {followersText && (
-                    <p className="text-sm text-muted-foreground">
-                      {followersText}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{followersText}</p>
                   )}
 
-                  <TooltipProvider delayDuration={100}>
-                    <div className="flex flex-wrap items-center gap-2 ">
-                      {socials.map((s, index) => (
-                        <SocialIconLink
-                          key={`${s.label}-${index}`}
-                          href={s.href}
-                          label={s.label}
-                          icon={s.icon}
-                        />
-                      ))}
-                    </div>
-                  </TooltipProvider>
+                  {/* View mode icons */}
+                  <div className="flex space-x-2 mt-2">
+                    <SocialLinks sLink={sLink || []} />
+                  </div>
 
-                  <div className=" pt-2">
+                  <div className="pt-2">
                     <p className="text-[14px] md:text-[20px] mb-4">
                       {"Try It Free — Post Your First Job at No Cost!"}
                     </p>
-                    <Link
-                      href="/add-job"
-                      className="text-blue-600 hover:underline capitalize"
-                    >
-                      <Button
-                        size="lg"
-                        className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]"
-                      >
+                    <Link href="/add-job" className="text-blue-600 hover:underline capitalize">
+                      <Button size="lg" className="w-full sm:w-auto bg-[#2B7FD0] hover:bg-[#2B7FD0]">
                         Post A Job
                       </Button>
                     </Link>
@@ -762,13 +641,12 @@ export default function EditableRecruiterAccount({
                       </Avatar>
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {companyId.name}
-                      </p>
+                      <p className="truncate text-sm font-medium">{companyId.name}</p>
                     </div>
                   </div>
                 )}
               </div>
+
               <div className="space-y-5">
                 {websiteHref && (
                   <div className="flex items-center gap-3">
@@ -779,10 +657,11 @@ export default function EditableRecruiterAccount({
                       rel="noopener noreferrer"
                       className="text-sm underline underline-offset-4"
                     >
-                      {"Website"}
+                      Website
                     </Link>
                   </div>
                 )}
+
                 {primaryLocation && (
                   <div className="flex items-center gap-3">
                     <MapPin className="h-6 w-6 text-muted-foreground" />

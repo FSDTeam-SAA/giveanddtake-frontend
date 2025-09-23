@@ -41,6 +41,7 @@ interface RecruiterData {
   phoneNumber: string;
   sLink: SocialLink[];
   createdAt: string;
+  elevatorPitch: PitchData;
   updatedAt: string;
   __v: number;
   companyId: RecruiterCompany; // company object with _id
@@ -200,7 +201,7 @@ export default function Recruiters({ userId }: MydataProps) {
   // ---- Mutation (toggle follow) with optimistic update + toasts ----
   const toggleFollowMutation = useMutation({
     mutationFn: async () => {
-      if (!myId || !recruiterId || !companyId) {
+      if (!myId || !recruiterId || companyId) {
         throw new Error("Missing IDs for follow action");
       }
       const nextIsFollowing = !isFollowing; // true => /follow, false => /unfollow
@@ -392,7 +393,6 @@ export default function Recruiters({ userId }: MydataProps) {
           <div className="flex items-center gap-3">
             <Button
               onClick={() => toggleFollowMutation.mutate()}
-              disabled={disabled}
               className={`${
                 isFollowing
                   ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
@@ -453,30 +453,11 @@ export default function Recruiters({ userId }: MydataProps) {
           Elevator Pitch
         </h2>
         <div className="rounded-lg">
-          {(() => {
-            const {
-              data: pitchData,
-              isLoading: pitchLoading,
-              isError: pitchIsError,
-              error: pitchError,
-            } = {} as any;
-            if (pitchLoading) return <div>Loading pitch...</div>;
-            if (pitchIsError)
-              return (
-                <div className="text-red-500">
-                  Error:{" "}
-                  {(pitchError as Error)?.message ?? "Failed to load pitch"}
-                </div>
-              );
-            if (pitchData)
-              return (
+          
                 <VideoPlayer
-                  pitchId={pitchData._id}
+                  pitchId={recruiterData.elevatorPitch._id}
                   className="w-full mx-auto"
                 />
-              );
-            return <div>No pitch available</div>;
-          })()}
         </div>
       </div>
 
