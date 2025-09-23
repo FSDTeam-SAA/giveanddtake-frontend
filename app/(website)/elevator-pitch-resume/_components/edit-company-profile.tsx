@@ -29,7 +29,6 @@ import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { useSession } from "next-auth/react";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
-import { VideoPlayer } from "@/components/company/video-player";
 
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -69,7 +68,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [companyData, setCompanyData] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
     { id: "1", url: "" },
@@ -86,7 +84,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     },
   ]);
   const [originalHonors, setOriginalHonors] = useState<Honor[]>([]);
-  // console.log(companyData.data?.companies[0].elevatorPitch._id);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -291,37 +288,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     return response.json();
   };
 
-  const uploadElevatorPitch = async (file: File) => {
-    const deletion = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/video?userId=${companyId}`,
-      {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    const formData = new FormData();
-    formData.append("videoFile", file);
-
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_BASE_URL}/elevator-pitch/video?userId=${companyId}`,
-      {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to upload elevator pitch");
-    }
-
-    return response.json();
-  };
-
   const onSubmit = async (data: FormData) => {
     try {
       setIsUpdating(true);
@@ -396,11 +362,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       await updateCompany(formData);
       toast.success("Company updated successfully!");
-
-      if (elevatorPitchFile) {
-        await uploadElevatorPitch(elevatorPitchFile);
-        toast.success("Elevator pitch updated successfully!");
-      }
     } catch (error: any) {
       console.error("Error updating company:", error);
       toast.error(error.message || "Failed to update company");
@@ -429,34 +390,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className=" rounded-lg ">
-                {companyData?.data?.companies[0].elevatorPitch && (
-                  <VideoPlayer
-                    pitchId={companyData.data?.companies[0].elevatorPitch._id}
-                    className="w-full mx-auto"
-                  />
-                )}
-              </div>
-              <div className="bg-blue-50 p-6 rounded-lg">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                      Update Company Elevator Pitch
-                    </h2>
-                    <p className="text-sm text-gray-600 max-w-2xl">
-                      Upload a 60-second elevator video pitch introducing your
-                      company and what should make candidates want to join you!
-                    </p>
-                  </div>
-                </div>
-
-                <FileUpload
-                  onFileSelect={setElevatorPitchFile}
-                  accept="video/*"
-                  maxSize={100 * 1024 * 1024}
-                  variant="dark"
-                />
-              </div>
               <div className="space-y-2 ">
                 <Label className="text-sm font-medium text-gray-900">
                   Company Banner
@@ -575,7 +508,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           Zip Code / Postal Code*
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Enter Zip/Postal Code" />
+                          <Input
+                            {...field}
+                            placeholder="Enter Zip/Postal Code"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

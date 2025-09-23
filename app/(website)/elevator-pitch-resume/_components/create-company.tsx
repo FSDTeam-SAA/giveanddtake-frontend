@@ -1,17 +1,17 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Combobox } from "@/components/ui/combo-box";
 import {
   Select,
   SelectContent,
@@ -32,8 +32,29 @@ import { EmployeeSelector } from "@/components/company/employee-selector";
 import { DynamicInputList } from "@/components/company/dynamic-input-list";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import CustomDateInput from "@/components/custom-date-input";
-import { createCompany, uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
+import {
+  createCompany,
+  uploadElevatorPitch,
+  deleteElevatorPitchVideo,
+} from "@/lib/api-service";
 
+// 👉 Add these imports (adjust paths if needed)
+import { SocialLinksSection } from "./social-links-section";
+import { AwardsSection } from "./resume/awards-section";
+
+// ---------- Types from the public APIs ----------
+interface Country {
+  country: string;
+  cities?: string[];
+}
+
+interface DialCode {
+  name: string; // country name
+  dial_code: string; // e.g. "+221"
+  code: string; // ISO alpha-2
+}
+
+// ---------- Form Schema ----------
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
   country: z.string().min(1, "Country is required"),
@@ -43,11 +64,28 @@ const formSchema = z.object({
   cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
   industry: z.string().min(1, "Industry is required"),
-  linkedin: z.string().optional().or(z.literal("")),
-  twitter: z.string().optional().or(z.literal("")),
-  upwork: z.string().optional().or(z.literal("")),
-  otherBusiness: z.string().optional().or(z.literal("")),
-  otherProfessional: z.string().optional().or(z.literal("")),
+
+  // Replaces individual social fields
+  sLink: z
+    .array(
+      z.object({
+        label: z.string(),
+        url: z.string().optional().or(z.literal("")),
+      })
+    )
+    .optional(),
+
+  // Awards form uses useFieldArray
+  awardsAndHonors: z
+    .array(
+      z.object({
+        title: z.string().optional().or(z.literal("")),
+        programeName: z.string().optional().or(z.literal("")),
+        programeDate: z.string().optional().or(z.literal("")),
+        description: z.string().optional().or(z.literal("")),
+      })
+    )
+    .optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -55,23 +93,138 @@ type FormData = z.infer<typeof formSchema>;
 export default function CreateCompanyPage() {
   const { data: session } = useSession();
   const queryClient = useQueryClient();
+
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [websites, setWebsites] = useState<string[]>([""]);
   const [services, setServices] = useState<string[]>([""]);
-  const [awards, setAwards] = useState([
-    {
-      title: "",
-      issuer: "",
-      issueDate: "",
-      description: "",
-    },
-  ]);
 
-  // Create company mutation
+  // ---------- React Query: Countries, Dial Codes, Cities ----------
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
+    Country[]
+  >({
+    queryKey: ["countries"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries"
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch countries");
+      return data.data as Country[];
+    },
+  });
+
+  const { data: dialCodesData, isLoading: isLoadingDialCodes } = useQuery<
+    DialCode[]
+  >({
+    queryKey: ["dialCodes"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/codes"
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch dial codes");
+      return data.data as DialCode[];
+    },
+  });
+
+  const { data: citiesData, isLoading: isLoadingCities } = useQuery<string[]>({
+    queryKey: ["cities", selectedCountry],
+    queryFn: async () => {
+      if (!selectedCountry) return [];
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: selectedCountry }),
+        }
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch cities");
+      return data.data as string[];
+    },
+    enabled: !!selectedCountry,
+  });
+
+  const countryOptions = useMemo(
+    () =>
+      countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
+    [countriesData]
+  );
+  const cityOptions = useMemo(
+    () => citiesData?.map((c) => ({ value: c, label: c })) || [],
+    [citiesData]
+  );
+
+  // Dial code placeholder for phone
+  const dialCodeByCountry = useMemo(() => {
+    const map = new Map<string, string>();
+    (dialCodesData || []).forEach((d) => map.set(d.name, d.dial_code));
+    return map;
+  }, [dialCodesData]);
+
+  // ---------- Form ----------
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      cname: "",
+      country: "",
+      city: "",
+      zipcode: "",
+      cemail: "",
+      cPhoneNumber: "",
+      aboutUs: "",
+      industry: "",
+      sLink: [], // SocialLinksSection seeds this to 6 fixed rows
+      awardsAndHonors: [],
+    },
+  });
+
+  // Tie Select country to city query
+  const watchedCountry = form.watch("country");
+  useEffect(() => {
+    setSelectedCountry(watchedCountry || "");
+  }, [watchedCountry]);
+
+  // Prefill from session once available
+  useEffect(() => {
+    if (!session?.user) return;
+
+    const sessCountry = (session.user as any)?.country ?? "";
+    const sessEmail = session.user.email ?? "";
+    const sessPhone = (session.user as any)?.phoneNumber ?? "";
+    const sessName = session.user.name ?? "";
+
+    // If your backend wants company name separate from user, leave cname empty.
+    // Otherwise we set cname from session name by default.
+    form.reset({
+      ...form.getValues(),
+      cname: sessName || form.getValues("cname"),
+      country: sessCountry || form.getValues("country"),
+      cemail: sessEmail || form.getValues("cemail"),
+      cPhoneNumber: sessPhone || form.getValues("cPhoneNumber"),
+    });
+  }, [session, form]);
+
+  // Awards (react-hook-form field array)
+  const {
+    fields: awardFields,
+    append: appendAward,
+    remove: removeAward,
+  } = useFieldArray({
+    control: form.control,
+    name: "awardsAndHonors",
+  });
+
+  // ---------- Mutations ----------
   const createCompanyMutation = useMutation({
     mutationFn: createCompany,
     onSuccess: () => {
@@ -83,9 +236,14 @@ export default function CreateCompanyPage() {
     },
   });
 
-  // Upload elevator pitch mutation
   const uploadElevatorPitchMutation = useMutation({
-    mutationFn: async ({ videoFile, userId }: { videoFile: File; userId: string }) => {
+    mutationFn: async ({
+      videoFile,
+      userId,
+    }: {
+      videoFile: File;
+      userId: string;
+    }) => {
       return await uploadElevatorPitch({ videoFile, userId });
     },
     onSuccess: (data) => {
@@ -98,7 +256,6 @@ export default function CreateCompanyPage() {
     },
   });
 
-  // Delete elevator pitch mutation
   const deleteElevatorPitchMutation = useMutation({
     mutationFn: async (userId: string) => {
       return await deleteElevatorPitchVideo(userId);
@@ -114,69 +271,48 @@ export default function CreateCompanyPage() {
     },
   });
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      cname: "",
-      country: "",
-      city: "",
-      zipcode: "",
-      cemail: "",
-      cPhoneNumber: "",
-      aboutUs: "",
-      industry: "",
-      linkedin: "",
-      twitter: "",
-      upwork: "",
-      otherBusiness: "",
-      otherProfessional: "",
-    },
-  });
-
-  const addAward = () => {
-    setAwards([
-      ...awards,
-      { title: "", issuer: "", issueDate: "", description: "" },
-    ]);
-  };
-
-  const removeAward = (index: number) => {
-    setAwards(awards.filter((_, i) => i !== index));
-  };
-
-  const updateAward = (index: number, field: string, value: string) => {
-    const newAwards = [...awards];
-    newAwards[index] = { ...newAwards[index], [field]: value };
-    setAwards(newAwards);
-  };
-
+  // ---------- Handlers ----------
   const handleElevatorPitchUpload = async () => {
-    if (!elevatorPitchFile || !session?.user?.id) {
-      toast.error("Please select a video file and ensure you are logged in");
-      return;
-    }
+    if (!elevatorPitchFile || !session?.user?.id) return;
+    if (isSubmitting) return;
 
-    uploadElevatorPitchMutation.mutate({
-      videoFile: elevatorPitchFile,
-      userId: session.user.id,
-    });
+    try {
+      setIsSubmitting(true);
+
+      // Always try delete first; ignore errors if nothing exists
+      try {
+        await deleteElevatorPitchMutation.mutateAsync(session.user.id);
+      } catch (_) {
+        // no-op
+      }
+
+      await uploadElevatorPitchMutation.mutateAsync({
+        videoFile: elevatorPitchFile,
+        userId: session.user.id,
+      });
+    } catch (err) {
+      console.error("Upload failed:", err);
+      toast.error("Could not upload your elevator pitch.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleElevatorPitchDelete = async () => {
-    if (!session?.user?.id) {
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       toast.error("User not authenticated");
       return;
     }
-
-    deleteElevatorPitchMutation.mutate(session.user.id);
+    deleteElevatorPitchMutation.mutate(userId);
   };
 
   const onSubmit = async (data: FormData) => {
-    if (!session?.user?.id) {
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       toast.error("Please log in to create a company");
       return;
     }
-
     if (!isElevatorPitchUploaded) {
       toast.error("Please upload an elevator pitch video before submitting.");
       return;
@@ -184,48 +320,67 @@ export default function CreateCompanyPage() {
 
     const formData = new FormData();
 
-    // Add logo file
     if (logoFile) {
       formData.append("clogo", logoFile);
     }
 
-    // Add basic company data
-    Object.entries(data).forEach(([key, value]) => {
-      if (value) {
-        formData.append(key, value);
-      }
-    });
+    // Basic fields
+    const base = {
+      cname: data.cname,
+      country: data.country,
+      city: data.city,
+      zipcode: data.zipcode,
+      cemail: data.cemail,
+      cPhoneNumber: data.cPhoneNumber,
+      aboutUs: data.aboutUs,
+      industry: data.industry,
+    };
+    Object.entries(base).forEach(([k, v]) => formData.append(k, v ?? ""));
 
-    // Add all links (websites + social media)
-    const allLinks = [
-      ...websites.filter(Boolean),
-      data.linkedin,
-      data.twitter,
-      data.upwork,
-      data.otherBusiness,
-      data.otherProfessional,
-    ].filter(Boolean);
+    // Links: websites + social links URLs
+    const sLinks = (data.sLink ?? [])
+      .filter((s) => s.label && (s.url || s.url === ""))
+      .map((s) => ({
+        label: s.label,
+        url: s.url || "",
+      }));
 
-    formData.append("links", JSON.stringify(allLinks));
 
-    // Add services
-    const filteredServices = services.filter((service) => service.trim());
+    const websiteLinks = (websites ?? []).filter(Boolean).map((url) => ({
+      label: "Website", // or however you want to label them
+      url,
+    }));
+
+    const allLinks = [...websiteLinks, ...sLinks];
+    formData.append("sLink", JSON.stringify(allLinks));
+
+    // Services
+    const filteredServices = services.map((s) => s.trim()).filter(Boolean);
     formData.append("service", JSON.stringify(filteredServices));
 
-    // Add employees
+    // Employees
     formData.append("employeesId", JSON.stringify(selectedEmployees));
 
-    // Add awards
-    const filteredAwards = awards.filter((award) => award.title.trim());
+    // Awards
+    const filteredAwards = (data.awardsAndHonors ?? []).filter((a) =>
+      (a.title ?? "").trim()
+    );
+    // Keep your backend key casing:
     formData.append("AwardsAndHonors", JSON.stringify(filteredAwards));
 
     try {
       await createCompanyMutation.mutateAsync(formData);
+      // for (const pair of formData.entries()) {
+      //   console.log(`${pair[0]}: ${pair[1]}`);
+      // }
     } catch (error) {
       console.error("Error creating company:", error);
       toast.error("An unexpected error occurred. Please try again.");
     }
   };
+
+  const phonePlaceholder =
+    dialCodeByCountry.get(form.getValues("country") || "") ?? "+1";
 
   return (
     <div className="container mx-auto py-6 space-y-8 bg-white">
@@ -361,88 +516,74 @@ export default function CreateCompanyPage() {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Country (dynamic) */}
               <FormField
                 control={form.control}
                 name="country"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Country*
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="usa">USA</SelectItem>
-                        <SelectItem value="canada">Canada</SelectItem>
-                        <SelectItem value="uk">United Kingdom</SelectItem>
-                        <SelectItem value="germany">Germany</SelectItem>
-                        <SelectItem value="france">France</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>Country*</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={countryOptions}
+                        value={field.value || ""}
+                        onChange={(val) => {
+                          field.onChange(val);
+                          form.setValue("city", ""); // reset city
+                        }}
+                        placeholder={
+                          isLoadingCountries
+                            ? "Loading countries..."
+                            : "Select Country"
+                        }
+                        disabled={isLoadingCountries}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* City (depends on country) */}
               <FormField
                 control={form.control}
                 name="city"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      City*
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="new-york">New York</SelectItem>
-                        <SelectItem value="los-angeles">Los Angeles</SelectItem>
-                        <SelectItem value="chicago">Chicago</SelectItem>
-                        <SelectItem value="houston">Houston</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>City*</FormLabel>
+                    <FormControl>
+                      <Combobox
+                        options={cityOptions}
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        placeholder={
+                          !form.getValues("country")
+                            ? "Select country first"
+                            : isLoadingCities
+                            ? "Loading cities..."
+                            : "Select City"
+                        }
+                        minSearchLength={2}
+                        disabled={isLoadingCities || !form.getValues("country")}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* Zipcode (input, not a select) */}
               <FormField
                 control={form.control}
                 name="zipcode"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-900">
-                      Zip Code / Postal Code
+                      Zip / Postal Code*
                     </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Enter Zip/Postal Code" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="10001">10001</SelectItem>
-                        <SelectItem value="90210">90210</SelectItem>
-                        <SelectItem value="60601">60601</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input {...field} placeholder="Enter Zip/Postal Code" />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -450,6 +591,7 @@ export default function CreateCompanyPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Email */}
               <FormField
                 control={form.control}
                 name="cemail"
@@ -463,6 +605,7 @@ export default function CreateCompanyPage() {
                         {...field}
                         type="email"
                         placeholder="Enter Your Email Address"
+                        disabled
                       />
                     </FormControl>
                     <FormMessage />
@@ -470,16 +613,20 @@ export default function CreateCompanyPage() {
                 )}
               />
 
+              {/* Phone */}
               <FormField
                 control={form.control}
                 name="cPhoneNumber"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-900">
-                      Phone number*
+                      Phone Number*
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="+1 (555) 234567 2340" />
+                      <Input
+                        {...field}
+                        placeholder={`${phonePlaceholder} 234567890`}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -488,7 +635,7 @@ export default function CreateCompanyPage() {
             </div>
           </div>
 
-          {/* Website Links */}
+          {/* Websites */}
           <DynamicInputList
             label="Website"
             placeholder="Enter Your Website Url"
@@ -497,251 +644,116 @@ export default function CreateCompanyPage() {
             buttonText="Add More"
           />
 
-          {/* /* Social Links */ }
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="linkedin"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      LinkedIn
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          {/* Social Links (fixed 6) */}
+          <SocialLinksSection form={form} />
 
-              <FormField
-                control={form.control}
-                name="twitter"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Twitter
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="upwork"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Upwork
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
+          {/* Industry */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="otherBusiness"
+              name="industry"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-900">
-                    Other Business
+                    Industry*
                   </FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter Your Website Url" />
-                  </FormControl>
-                  <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="otherProfessional"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-900">
-                        Other Professional Website*
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="Enter Your Website Address"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="industry"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium text-gray-900">
-                        Industry*
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Industry" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="technology">Technology</SelectItem>
-                          <SelectItem value="healthcare">Healthcare</SelectItem>
-                          <SelectItem value="finance">Finance</SelectItem>
-                          <SelectItem value="education">Education</SelectItem>
-                          <SelectItem value="retail">Retail</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* Services */}
-            <DynamicInputList
-              label="Services*"
-              placeholder="Add Here"
-              values={services}
-              onChange={setServices}
-            />
-
-            {/* Employee Selection */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                View your company employees
-              </h3>
-              <EmployeeSelector
-                selectedEmployees={selectedEmployees}
-                onEmployeesChange={setSelectedEmployees}
-              />
-            </div>
-
-            {/* Awards and Honours */}
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Company Awards and Honours
-              </h3>
-              {awards.map((award, index) => (
-                <div
-                  key={index}
-                  className="space-y-4 p-6 border border-gray-200 rounded-lg bg-gray-50"
-                >
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-medium text-gray-900">
-                      Award {index + 1}
-                    </h4>
-                    {awards.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => removeAward(index)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        Remove
-                      </Button>
-                    )}
-                  </div>
-
-                  <Input
-                    placeholder="Award Title"
-                    value={award.title}
-                    onChange={(e) => updateAward(index, "title", e.target.value)}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      placeholder="Issuer"
-                      value={award.issuer}
-                      onChange={(e) =>
-                        updateAward(index, "issuer", e.target.value)
-                      }
-                    />
-
-                    <CustomDateInput
-                      value={award.issueDate}
-                      onChange={(value) => updateAward(index, "issueDate", value)}
-                      placeholder="MM/YYYY"
-                    />
-                  </div>
-
-                  <Textarea
-                    placeholder="Award Short Description"
-                    value={award.description}
-                    onChange={(e) =>
-                      updateAward(index, "description", e.target.value)
-                    }
-                    className="resize-none"
-                  />
-                </div>
-              ))}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={addAward}
-                className="text-blue-600 border-blue-600 hover:bg-blue-50 bg-transparent"
-              >
-                Add More
-              </Button>
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
-              disabled={createCompanyMutation.isPending || !isElevatorPitchUploaded}
-            >
-              {createCompanyMutation.isPending ? (
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Creating...
-                </div>
-              ) : (
-                "Save"
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Industry" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="technology">Technology</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="retail">Retail</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
               )}
-            </Button>
-          </form>
-        </Form>
-      </div>
-    );
+            />
+          </div>
+
+          {/* Services */}
+          <DynamicInputList
+            label="Services*"
+            placeholder="Add Here"
+            values={services}
+            onChange={setServices}
+          />
+
+          {/* Employee Selection */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              View your company employees
+            </h3>
+            <EmployeeSelector
+              selectedEmployees={selectedEmployees}
+              onEmployeesChange={setSelectedEmployees}
+            />
+          </div>
+
+          {/* Awards & Honors (Field Array + Component) */}
+          <AwardsSection
+            form={form}
+            awardFields={awardFields}
+            appendAward={(value) =>
+              appendAward(
+                value ?? {
+                  title: "",
+                  programeName: "",
+                  programeDate: "",
+                  description: "",
+                }
+              )
+            }
+            removeAward={removeAward}
+          />
+
+          {/* Submit */}
+          <Button
+            type="submit"
+            className="w-full bg-primary hover:bg-blue-700 text-white py-3 text-lg font-medium"
+            disabled={
+              createCompanyMutation.isPending || !isElevatorPitchUploaded
+            }
+          >
+            {createCompanyMutation.isPending ? (
+              <div className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Creating...
+              </div>
+            ) : (
+              "Save"
+            )}
+          </Button>
+        </form>
+      </Form>
+    </div>
+  );
 }

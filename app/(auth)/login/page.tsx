@@ -28,42 +28,81 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const navigatingRef = { current: false };
+
   const checkProfileAndRedirect = async () => {
-    // Ensure we have the latest session after sign-in
+    if (navigatingRef.current) return; // prevent double navigations
+
     const session = await getSession();
     const role = (session as any)?.user?.role as string | undefined;
     const userId = (session as any)?.user?.id as string | undefined;
 
-    // Safety: if we can't read session, just go home
     if (!role || !userId) {
-      router.push("/");
-      return;
+      navigatingRef.current = true;
+      return router.replace("/");
     }
 
     try {
       if (role === "candidate") {
         const res = await getMyResume();
-        const data = (res as any)?.data;
+        const data = (res as any)?.data ?? res;
         const hasResume = Boolean(data?.resume);
-        if (!hasResume) return router.push("/elevator-pitch-resume");
+        if (!hasResume) {
+          navigatingRef.current = true;
+          return router.replace("/elevator-pitch-resume");
+        }
       } else if (role === "recruiter") {
-        const res = await getRecruiterAccount(userId);
-        if ((res as any)?.success === false) {
-          return router.push("/elevator-pitch-resume");
+        console.log("heloooooooooooooooooooo");
+        const res: any = await getRecruiterAccount(userId);
+
+        // Normalize shapes and types
+        const payload = res?.data ?? res;
+        const rawSuccess =
+          typeof res?.success !== "undefined"
+            ? res.success
+            : typeof res?.data?.success !== "undefined"
+            ? res.data.success
+            : payload?.success;
+
+        const success =
+          rawSuccess === true || rawSuccess === "true"
+            ? true
+            : rawSuccess === false || rawSuccess === "false"
+            ? false
+            : undefined;
+
+        // Try common locations for actual recruiter object
+        const recruiterData =
+          payload?.recruiter ?? payload?.data ?? payload?.result ?? null;
+
+        // If API explicitly says false OR we have no recruiterData, send to setup
+        if (success === false || !recruiterData) {
+          navigatingRef.current = true;
+          return router.replace("/elevator-pitch-resume");
         }
       } else {
         const res = await getCompanyAccount(userId);
-        const company = (res as any)?.data;
-        const hasCompany =
-          Array.isArray(company?.companies) && company.companies.length > 0;
-        if (!hasCompany) return router.push("/elevator-pitch-resume");
+        const data = (res as any)?.data ?? res;
+        const companies = data?.companies;
+        const hasCompany = Array.isArray(companies) && companies.length > 0;
+        if (!hasCompany) {
+          navigatingRef.current = true;
+          return router.replace("/elevator-pitch-resume");
+        }
       }
 
-      // Default: profile exists, proceed to home
-      router.push("/");
-    } catch (e) {
-      // On any error, don't block the user; fall back to home
-      router.push("/");
+      // Default: profile exists
+      navigatingRef.current = true;
+      return router.replace("/");
+    } catch (e: any) {
+      // If helper throws for not-found, send to setup for recruiter/company
+      const status = e?.response?.status ?? e?.status;
+      if (role !== "candidate" && status === 404) {
+        navigatingRef.current = true;
+        return router.replace("/elevator-pitch-resume");
+      }
+      navigatingRef.current = true;
+      return router.replace("/");
     }
   };
 
