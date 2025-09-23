@@ -6,6 +6,7 @@ import Script from "next/script";
 import { Toaster } from "sonner";
 import { DynamicTitle } from "@/components/DynamicTitle";
 import TopLoader from "./TopLoader";
+import { Suspense } from "react";
 
 const roboto = Roboto({
   weight: ["100", "300", "400", "500", "700", "900"],
@@ -30,8 +31,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={roboto.variable}>
       <body className="font-sans">
-        <DynamicTitle />
-        <TopLoader />
+        <Suspense fallback={null}>
+          <DynamicTitle />
+          <TopLoader />
+        </Suspense>
         <ReactQueryProvider>{children}</ReactQueryProvider>
         <Script
           src="https://www.paypal.com/sdk/js?client-id=AXmwL-mntKGqTAb6_DaY5o6qh5R0UTxuMkwDJsgUlHW72W-x5t4SZsgSNi9XOfbGYoxlAHiXlSsjnB_L&currency=USD&intent=capture&disable-funding=paylater,venmo"
