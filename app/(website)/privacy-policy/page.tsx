@@ -1,10 +1,13 @@
 import PageHeaders from "@/components/shared/PageHeaders";
+import { Suspense } from "react";
 
 const page = () => {
   return (
     <div className="w-full px-4 py-8 md:px-6 md:py-12 lg:py-16">
       <div className="container space-y-8">
-        <PageHeaders title="Privacy Policy" />
+         <Suspense fallback={null}>
+          <PageHeaders title="Privacy Policy" />
+        </Suspense>
         {/* <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
           Privacy Policy
         </h1> */}

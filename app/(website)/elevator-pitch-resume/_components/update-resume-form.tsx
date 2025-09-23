@@ -32,6 +32,9 @@ import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SocialLinksSection } from "./social-links-section";
+import { LanguageSelector } from "./resume/language-selector";
+import { CertificationSelector } from "./resume/certification-selector";
+import { UniversitySelector } from "./resume/university-selector";
 
 const CustomDateInput = ({
   value,
@@ -131,6 +134,7 @@ const SkillsSelector = ({
               setShowDropdown(true);
             }}
             onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
             className="pl-10"
           />
         </div>
@@ -186,8 +190,11 @@ export const resumeFormSchema = z.object({
   zipCode: z.string().optional(),
   country: z.string().optional(),
   aboutUs: z.string().optional(),
+  banner: z.string().optional(),
 
   skills: z.array(z.string()).optional().default([]),
+  languages: z.array(z.string()).optional().default([]),
+  certifications: z.array(z.string()).optional().default([]),
 
   sLink: z
     .array(
@@ -195,10 +202,11 @@ export const resumeFormSchema = z.object({
         _id: z.string().optional(),
         type: z.enum(["create", "update", "delete"]).optional(),
         label: z.string().min(1, "Platform name is required"),
-        // allow empty string OR a valid URL
-        url: z.string().optional().transform((v) => v ?? "").pipe(
-          z.string().url("Please enter a valid URL").or(z.literal(""))
-        ),
+        url: z
+          .string()
+          .optional()
+          .transform((v) => v ?? "")
+          .pipe(z.string().url("Please enter a valid URL").or(z.literal(""))),
       })
     )
     .optional()
@@ -211,7 +219,8 @@ export const resumeFormSchema = z.object({
           _id: z.string().optional(),
           type: z.enum(["create", "update", "delete"]).optional(),
           company: z.string().optional(),
-          jobTitle: z.string().optional(),
+          jobTitle: z.string().optional(), // Kept jobTitle for schema consistency
+          position: z.string().optional(), // Added position for API compatibility
           duration: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
@@ -246,6 +255,7 @@ export const resumeFormSchema = z.object({
           _id: z.string().optional(),
           type: z.enum(["create", "update", "delete"]).optional(),
           instituteName: z.string().min(1, "Institute name is required"),
+          university: z.string().optional(),
           degree: z.string().min(1, "Degree is required"),
           fieldOfStudy: z.string().optional(),
           startDate: z.string().optional(),
@@ -273,8 +283,9 @@ export const resumeFormSchema = z.object({
         _id: z.string().optional(),
         type: z.enum(["create", "update", "delete"]).optional(),
         title: z.string().optional(),
-        programName: z.string().optional(),
-        year: z.string().optional(),
+        programeName: z.string().optional(),
+        year: z.string().optional(), // Kept year for schema consistency
+        programeDate: z.string().optional(), // Added programeDate for API compatibility
         description: z.string().optional(),
       })
     )
@@ -308,6 +319,9 @@ export default function UpdateResumeForm({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>(
     resume.resume?.country || ""
@@ -318,6 +332,13 @@ export default function UpdateResumeForm({
   const [selectedEduCountries, setSelectedEduCountries] = useState<string[]>(
     resume.education?.map((edu: any) => edu.country || "") || []
   );
+
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
+    resume.resume?.languages || []
+  );
+  const [selectedCertifications, setSelectedCertifications] = useState<
+    string[]
+  >(resume.resume?.certifications || []);
 
   const [experienceCitiesData, setExperienceCitiesData] = useState<{
     [key: number]: string[];
@@ -393,6 +414,7 @@ export default function UpdateResumeForm({
       email: resume.resume?.email || "",
       phoneNumber: resume.resume?.phoneNumber || "",
       title: resume.resume?.title || "",
+      banner: resume.resume?.banner || "",
       city: resume.resume?.city || "",
       zipCode: resume.resume?.zipCode || "",
       country: resume.resume?.country || "",
@@ -418,7 +440,7 @@ export default function UpdateResumeForm({
             _id: exp._id || undefined,
             type: exp._id ? "update" : "create",
             company: exp.company || "",
-            jobTitle: exp.jobTitle || "",
+            jobTitle: exp.position || exp.jobTitle || "", // Handle both position and jobTitle fields
             duration: exp.duration || "",
             startDate: exp.startDate
               ? new Date(exp.startDate)
@@ -466,7 +488,7 @@ export default function UpdateResumeForm({
           return resume.education.map((edu: any) => ({
             _id: edu._id || undefined,
             type: edu._id ? "update" : "create",
-            instituteName: edu.instituteName || "",
+            instituteName: edu.instituteName || edu.university || "", // Handle both instituteName and university fields
             degree: edu.degree || "",
             fieldOfStudy: edu.fieldOfStudy || "",
             startDate: edu.startDate
@@ -513,8 +535,10 @@ export default function UpdateResumeForm({
             _id: award._id || undefined,
             type: award._id ? "update" : "create",
             title: award.title || "",
-            programName: award.programName || "",
-            year: award.year || "",
+            programeName: award.programeName || "",
+            year: award.programeDate
+              ? new Date(award.programeDate).getFullYear().toString()
+              : award.year || "", // Handle programeDate field
             description: award.description || "",
           }));
         }
@@ -522,12 +546,18 @@ export default function UpdateResumeForm({
           {
             type: "create",
             title: "",
-            programName: "",
+            programeName: "",
             year: "",
             description: "",
           },
         ];
       })(),
+      languages: Array.isArray(resume.resume?.languages)
+        ? resume.resume.languages
+        : [],
+      certifications: Array.isArray(resume.resume?.certifications)
+        ? resume.resume.certifications
+        : [],
     },
   });
 
@@ -572,6 +602,18 @@ export default function UpdateResumeForm({
     }
   };
 
+  const handleBannerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setBannerFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const onSubmit = async (data: ResumeFormData) => {
     try {
       setIsSubmitting(true);
@@ -585,7 +627,7 @@ export default function UpdateResumeForm({
       const formData = new FormData();
       const resumeObject = {
         type: "update",
-        _id: resume._id,
+        _id: resume.resume?._id, // Use resume._id from nested structure
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -596,6 +638,10 @@ export default function UpdateResumeForm({
         country: data.country || "",
         aboutUs: data.aboutUs,
         skills: Array.isArray(data.skills) ? data.skills.join(", ") : "",
+        languages: Array.isArray(data.languages) ? data.languages : [],
+        certifications: Array.isArray(data.certifications)
+          ? data.certifications
+          : [],
         sLink: (data.sLink || [])
           .filter((link) => link.url && link.url.trim() !== "")
           .map((link) => ({
@@ -617,6 +663,7 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
+        position: exp.jobTitle, // Map jobTitle to position for API compatibility
         startDate: exp.startDate ? formatDateForMongoDB(exp.startDate) : "",
         endDate: exp.currentlyWorking
           ? ""
@@ -632,6 +679,7 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
+        university: edu.instituteName, // Map instituteName to university for API compatibility
         startDate: edu.startDate ? formatDateForMongoDB(edu.startDate) : "",
         graduationDate: edu.currentlyStudying
           ? ""
@@ -647,6 +695,9 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
+        programeDate: award.year
+          ? new Date(`${award.year}-01-01`).toISOString()
+          : "", // Map year to programeDate
       }));
 
       formData.append("resume", JSON.stringify(resumeObject));
@@ -656,6 +707,10 @@ export default function UpdateResumeForm({
 
       if (photoFile) {
         formData.append("photo", photoFile);
+      }
+
+      if (bannerFile) {
+        formData.append("banner", bannerFile);
       }
 
       await onUpdate(formData);
@@ -680,6 +735,50 @@ export default function UpdateResumeForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {/* Personal Information Card */}
+          {/* Banner Field */}
+          <div className="flex-shrink-0 w-full">
+            <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
+              Banner
+            </FormLabel>
+
+            <div
+              className="w-full h-[400px] border-2 border-dashed border-gray-300 rounded-lg
+               flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 overflow-hidden"
+              onClick={() => document.getElementById("banner-upload")?.click()}
+            >
+              {bannerPreview || resume.resume?.banner ? (
+                <Image
+                  src={
+                    bannerPreview || resume.resume?.banner || "/placeholder.svg"
+                  }
+                  alt="Banner"
+                  width={1200}
+                  height={400}
+                  className="w-full h-full object-cover"
+                  priority
+                />
+              ) : (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Upload className="h-5 w-5" />
+                  <span>Click to upload banner (recommended 1200×400)</span>
+                </div>
+              )}
+            </div>
+
+            <Input
+              id="banner-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleBannerChange}
+            />
+
+            {/* Optional: small helper text */}
+            <p className="text-xs text-muted-foreground mt-2">
+              JPG/PNG, up to ~5MB. Wide images look best.
+            </p>
+          </div>
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-start gap-8">
@@ -698,6 +797,7 @@ export default function UpdateResumeForm({
                         src={
                           photoPreview ||
                           resume.resume?.photo ||
+                          "/placeholder.svg" ||
                           "/placeholder.svg"
                         }
                         alt="Profile photo"
@@ -784,6 +884,7 @@ export default function UpdateResumeForm({
                         <Input
                           type="email"
                           placeholder="Enter Your Email Address"
+                          disabled
                           {...field}
                         />
                       </FormControl>
@@ -940,6 +1041,58 @@ export default function UpdateResumeForm({
 
           <Card>
             <CardHeader>
+              <CardTitle>Languages</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="languages"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <LanguageSelector
+                        selectedLanguages={selectedLanguages}
+                        onLanguagesChange={(languages) => {
+                          setSelectedLanguages(languages);
+                          field.onChange(languages);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Certifications</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="certifications"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <CertificationSelector
+                        selectedCertifications={selectedCertifications}
+                        onCertificationsChange={(certifications) => {
+                          setSelectedCertifications(certifications);
+                          field.onChange(certifications);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Experience (Optional)</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Highlight your work journey and key achievements.
@@ -986,7 +1139,7 @@ export default function UpdateResumeForm({
                         )}
                       />
 
-                      <FormField
+                      {/* <FormField
                         control={form.control}
                         name={`experiences.${index}.duration`}
                         render={({ field }) => (
@@ -998,7 +1151,7 @@ export default function UpdateResumeForm({
                             <FormMessage />
                           </FormItem>
                         )}
-                      />
+                      /> */}
 
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
@@ -1169,9 +1322,10 @@ export default function UpdateResumeForm({
                           <FormItem>
                             <FormLabel>Institute Name*</FormLabel>
                             <FormControl>
-                              <Input
-                                placeholder="e.g. Harvard University"
-                                {...field}
+                              <UniversitySelector
+                                value={field.value || ""}
+                                onChange={field.onChange}
+                                placeholder="Search for university..."
                               />
                             </FormControl>
                             <FormMessage />
@@ -1194,14 +1348,14 @@ export default function UpdateResumeForm({
                                   <SelectValue placeholder="Select a degree" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="bachelor">
+                                  <SelectItem value="Bachelor">
                                     Bachelor's Degree
                                   </SelectItem>
-                                  <SelectItem value="master">
+                                  <SelectItem value="Master">
                                     Master's Degree
                                   </SelectItem>
                                   <SelectItem value="phd">PhD</SelectItem>
-                                  <SelectItem value="associate">
+                                  <SelectItem value="Associate">
                                     Associate Degree
                                   </SelectItem>
                                 </SelectContent>
@@ -1385,7 +1539,7 @@ export default function UpdateResumeForm({
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
-                          name={`awardsAndHonors.${index}.programName`}
+                          name={`awardsAndHonors.${index}.programeName`}
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Program Name</FormLabel>
@@ -1471,7 +1625,7 @@ export default function UpdateResumeForm({
                     {
                       type: "create",
                       title: "",
-                      programName: "",
+                      programeName: "",
                       year: "",
                       description: "",
                     },
