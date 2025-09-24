@@ -7,14 +7,23 @@ import Link from "next/link";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
-import { toast } from "sonner"; // ✅ correct Sonner import
+import { toast } from "sonner";
 import { useState } from "react";
 import clsx from "clsx";
+
+interface Recruiter {
+  _id: string;
+  firstName: string;
+  sureName: string;
+  photo?: string;
+  userId: string;
+}
 
 interface CompanyId {
   _id?: string;
   cname?: string;
   clogo?: string;
+  userId?: string;
 }
 
 interface Job {
@@ -24,24 +33,24 @@ interface Job {
   salaryRange: string;
   location: string;
   shift: string;
-  employement_Type?: string; // keeping the original field name for compatibility
+  employement_Type?: string;
   companyId?: CompanyId;
+  recruiterId?: Recruiter;
   vacancy: number;
   experience: number;
   compensation: string;
   createdAt: string;
+
 }
 
 interface JobCardProps {
   job: Job;
-  onSelect: () => void;
   variant: "suggested" | "list";
   className?: string;
 }
 
 export default function JobCard({
   job,
-  onSelect,
   variant,
   className,
 }: JobCardProps) {
@@ -53,18 +62,15 @@ export default function JobCard({
   const isCandidate = role === "candidate";
   const isRecruiterOrCompany = role === "recruiter" || role === "company";
 
-  // Show Apply for: unauthenticated OR candidate
-  // Hide Apply for: recruiter/company (and any other authenticated non-candidate roles)
   const canSeeApply = isUnauthed || isCandidate;
 
   const applicationLink = `/job-application?id=${job._id}`;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSelect();
   };
 
-  const TOAST_DURATION_MS = 2200; // how long the toast stays
+  const TOAST_DURATION_MS = 2200;
   const REDIRECT_DELAY_MS = 1800;
 
   const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -78,15 +84,13 @@ export default function JobCard({
       duration: TOAST_DURATION_MS,
     });
 
-    // let the toast sit for a moment before redirecting
     setTimeout(() => {
-      // default provider & callback back to the application page
       void signIn(undefined, { callbackUrl: applicationLink });
     }, REDIRECT_DELAY_MS);
   };
 
-  const getCompanyInitials = (title: string) => {
-    return title
+  const getInitials = (name: string) => {
+    return name
       .split(" ")
       .filter(Boolean)
       .map((word) => word[0])
@@ -118,12 +122,38 @@ export default function JobCard({
     } ago`;
   };
 
+  // Determine postedBy data
+  let postedByName = "Unknown";
+  let postedByLogo = "/default-logo.png";
+  let postedById = "#";
+  let postedByType = "company";
+  let postedByData = null;
+
+  if (job.recruiterId) {
+    postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
+    postedByLogo = job.recruiterId.photo || "/default-logo.png";
+    postedById = job.recruiterId.userId || "#";
+    postedByType = "recruiter";
+    postedByData = { recruiterId: job.recruiterId };
+  } else if (job.companyId) {
+    postedByName = job.companyId.cname || "Unknown Company";
+    postedByLogo = job.companyId.clogo || "/default-logo.png";
+    postedById = job.companyId.userId || "#";
+    postedByType = "company";
+    postedByData = { companyId: job.companyId };
+  }
+
+  // Log the appropriate data
+  console.log(postedByData);
+
   const CompanyAvatar = () => (
     <div className="relative shrink-0">
-      {job.companyId?.clogo ? (
+      {postedByLogo !== "/default-logo.png" ? (
         <Image
-          src={job.companyId.clogo}
-          alt={job.companyId.cname || "Company Logo"}
+          src={postedByLogo}
+          alt={
+            postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"
+          }
           width={56}
           height={56}
           className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover"
@@ -131,7 +161,7 @@ export default function JobCard({
         />
       ) : (
         <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg bg-blue-100 text-gray-700 grid place-items-center font-semibold">
-          {getCompanyInitials(job.title)}
+          {getInitials(postedByName)}
         </div>
       )}
     </div>
@@ -140,7 +170,6 @@ export default function JobCard({
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
 
-    // Unauthenticated: show button -> toast + redirect
     if (isUnauthed) {
       return (
         <Button
@@ -154,7 +183,6 @@ export default function JobCard({
       );
     }
 
-    // Candidate: normal link to application page
     return (
       <Link href={applicationLink} onClick={(e) => e.stopPropagation()}>
         <Button
@@ -175,15 +203,13 @@ export default function JobCard({
   );
 
   /**
-   * SUGGESTED VARIANT (now mobile-first)
+   * SUGGESTED VARIANT
    */
   if (variant === "suggested") {
     return (
       <Card
         role="article"
-        aria-label={`${job.title} — ${
-          job.companyId?.cname ?? "Unknown Company"
-        }`}
+        aria-label={`${job.title} — ${postedByName}`}
         className={clsx(
           "hover:shadow-md transition-shadow cursor-pointer",
           "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
@@ -192,7 +218,6 @@ export default function JobCard({
         onClick={handleClick}
       >
         <CardContent className="p-4 sm:p-5">
-          {/* Header: Avatar + Title/Company + Actions */}
           <div className="flex flex-col gap-3 sm:gap-4">
             <div className="flex items-start gap-3 sm:gap-4">
               <CompanyAvatar />
@@ -206,24 +231,21 @@ export default function JobCard({
                   </div>
                 </div>
                 <div className="mt-0.5">
-                  {job.companyId ? (
-                    <Link
-                      href={`/companies-profile/${job.companyId._id || "#"}`}
-                      className="text-primary text-sm hover:underline"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {job.companyId.cname || "Unknown Company"}
-                    </Link>
-                  ) : (
-                    <span className="text-muted-foreground text-sm">
-                      Unknown Company
-                    </span>
-                  )}
+                  <Link
+                    href={`/${
+                      postedByType === "recruiter"
+                        ? "recruiters-profile"
+                        : "companies-profile"
+                    }/${postedById}`}
+                    className="text-primary text-sm hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {postedByName}
+                  </Link>
                 </div>
               </div>
             </div>
 
-            {/* Actions (mobile first) */}
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
               <ApplyButton />
               <div className="sm:hidden">
@@ -231,7 +253,6 @@ export default function JobCard({
               </div>
             </div>
 
-            {/* Description */}
             <div
               className="prose prose-sm max-w-none text-gray-700 line-clamp-3 sm:line-clamp-2"
               dangerouslySetInnerHTML={{
@@ -239,20 +260,19 @@ export default function JobCard({
               }}
             />
 
-            {/* Meta */}
             <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
               <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                {job.companyId ? (
-                  <Link
-                    href={`/companies-profile/${job.companyId._id || "#"}`}
-                    className="text-[#707070]"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {job.companyId.cname || "Unknown Company"}
-                  </Link>
-                ) : (
-                  <span className="text-[#707070]">Unknown Company</span>
-                )}
+                <Link
+                  href={`/${
+                    postedByType === "recruiter"
+                      ? "recruiters-profile"
+                      : "companies-profile"
+                  }/${postedById}`}
+                  className="text-[#707070]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {postedByName}
+                </Link>
               </div>
               <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
                 <DollarSign className="h-4 w-4 mr-1" aria-hidden />
@@ -270,12 +290,12 @@ export default function JobCard({
   }
 
   /**
-   * LIST VARIANT (now mobile-first)
+   * LIST VARIANT
    */
   return (
     <Card
       role="article"
-      aria-label={`${job.title} — ${job.companyId?.cname ?? "Unknown Company"}`}
+      aria-label={`${job.title} — ${postedByName}`}
       className={clsx(
         "hover:shadow-md transition-shadow cursor-pointer",
         "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
@@ -285,7 +305,6 @@ export default function JobCard({
     >
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:gap-4">
-          {/* Row: Avatar + Title/Company + Apply */}
           <div className="flex items-start gap-3 sm:gap-4">
             <CompanyAvatar />
 
@@ -296,19 +315,17 @@ export default function JobCard({
                     {job.title}
                   </h3>
                   <div>
-                    {job.companyId ? (
-                      <Link
-                        href={`/companies-profile/${job.companyId._id || "#"}`}
-                        className="text-primary text-sm hover:underline"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {job.companyId.cname || "Unknown Company"}
-                      </Link>
-                    ) : (
-                      <span className="text-muted-foreground text-sm">
-                        Unknown Company
-                      </span>
-                    )}
+                    <Link
+                      href={`/${
+                        postedByType === "recruiter"
+                          ? "recruiters-profile"
+                          : "companies-profile"
+                      }/${postedById}`}
+                      className="text-primary text-sm hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {postedByName}
+                    </Link>
                   </div>
                 </div>
 
@@ -317,7 +334,6 @@ export default function JobCard({
                 </div>
               </div>
 
-              {/* Description */}
               <div className="mt-2 sm:mt-3">
                 <div
                   className="text-gray-700 text-sm sm:text-[15px] leading-relaxed line-clamp-3 sm:line-clamp-2 prose prose-sm max-w-none text-start"
@@ -327,7 +343,6 @@ export default function JobCard({
                 />
               </div>
 
-              {/* Meta Row */}
               <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">

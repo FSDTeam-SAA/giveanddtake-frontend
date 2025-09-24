@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VideoPlayer } from "@/components/company/video-player";
 import { fetchCompanyDetails } from "@/lib/api-service";
-import { MapPin, Users, Calendar } from "lucide-react";
+import { MapPin, Users, Calendar, Building2 } from "lucide-react";
 import Image from "next/image";
 import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
@@ -363,6 +363,10 @@ export default function CompanyProfilePage() {
                   {company.employeesId?.length || 0} employees
                 </div>
               </div>
+              <div className="flex items-center gap-1 text-sm text-gray-600">
+                <Building2 className="h-4 w-4" />
+                {company.industry}
+              </div>
               <div className="flex gap-4">
                 <div>
                   <SocialLinks sLink={company.sLink} />
@@ -433,70 +437,70 @@ export default function CompanyProfilePage() {
 
       {/* Company Jobs */}
       <div className="my-12">
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
-          Company Jobs
-        </h2>
+      {approvedJobs.length > 0 && (
+        <div>
+          <h2 className="text-xl font-semibold mb-6 text-gray-900">
+            Company Jobs
+          </h2>
 
-        {isLoadingJobs ? (
-          <div className="text-center py-10">Loading jobs...</div>
-        ) : approvedJobs.length === 0 ? (
-          <div className="text-center py-10 text-gray-600">
-            No approved jobs available.
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {visibleJobs.map((job: any) => (
-                <JobCard
-                  key={job._id}
-                  job={job}
-                  onSelect={() => setSelectedJobId(job._id)}
-                  variant="list"
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Prev
-                </Button>
-
-                {Array.from({ length: totalPages }).map((_, idx) => {
-                  const pageNum = idx + 1;
-                  const isActive = pageNum === currentPage;
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={isActive ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(pageNum)}
-                    >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
+          {isLoadingJobs ? (
+            <div className="text-center py-10">Loading jobs...</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {visibleJobs.map((job: any) => (
+                  <JobCard
+                    key={job._id}
+                    job={job}
+                    onSelect={() => setSelectedJobId(job._id)}
+                    variant="list"
+                  />
+                ))}
               </div>
-            )}
-          </>
-        )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </Button>
+
+                  {Array.from({ length: totalPages }).map((_, idx) => {
+                    const pageNum = idx + 1;
+                    const isActive = pageNum === currentPage;
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={isActive ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
       </div>
 
       {/* Elevator Pitch */}
