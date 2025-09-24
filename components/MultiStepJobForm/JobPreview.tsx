@@ -412,56 +412,6 @@ export default function JobPreview({
 
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Application Requirements
-          </h2>
-          <p className="text-xl text-gray-800 mb-6">
-            What personal info would you like to gather about each applicant?
-          </p>
-          <div className="space-y-4">
-            {applicationRequirements.map((requirement) => (
-              <div
-                key={requirement.id}
-                className="flex items-center justify-between py-2 border-b pb-6"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-[22px] h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center">
-                    <Check className="text-white w-4 h-4" />
-                  </div>
-                  <span className="text-xl text-gray-900 font-normal">
-                    {requirement.label}
-                  </span>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant={!requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      !requirement.required
-                        ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                        : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
-                    }`}
-                    disabled
-                  >
-                    Optional
-                  </Button>
-                  <Button
-                    variant={requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      requirement.required
-                        ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                        : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
-                    }`}
-                    disabled
-                  >
-                    Required
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Custom Questions
           </h2>
           <div className="space-y-4">

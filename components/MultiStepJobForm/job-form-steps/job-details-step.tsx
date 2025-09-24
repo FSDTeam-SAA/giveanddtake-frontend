@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,8 +56,23 @@ interface JobCategoriesResponse {
   };
 }
 
+// ---- Currency API types ----
+interface CurrencyApiItem {
+  _id: string;
+  code: string; // e.g., "USD"
+  currencyName: string; // e.g., "United States Dollar"
+  primaryCountry?: string;
+  symbol?: string; // e.g., "$"
+}
+
+// Form values
+type FormValues = JobFormData & {
+  compensationCurrency?: string;
+  compensation?: string | number;
+};
+
 interface JobDetailsStepProps {
-  form: UseFormReturn<JobFormData & { compensationCurrency?: "USD" | "EUR" }>;
+  form: UseFormReturn<FormValues>;
   onNext: () => void;
   onCancel: () => void;
   selectedCountry: string;
@@ -77,6 +92,10 @@ interface JobDetailsStepProps {
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
 const digitsOnly = (s: string) => s.replace(/[^0-9.]/g, "");
+const formatNumber = (n: number | string) =>
+  new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
+    typeof n === "string" ? Number(n) : n
+  );
 
 export default function JobDetailsStep({
   form,
@@ -94,21 +113,77 @@ export default function JobDetailsStep({
   cities,
   isLoadingCities,
 }: JobDetailsStepProps) {
-  // --- Compensation display state (allows $ / € and commas while storing a number) ---
-  const currency = form.watch("compensationCurrency") || "USD";
-  const initialComp = form.getValues("compensation");
-  const [compensationDisplay, setCompensationDisplay] = useState<string>(
-    typeof initialComp === "number" && !Number.isNaN(initialComp)
-      ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(
-          initialComp
-        )
-      : ""
+  // ---- Currency API state ----
+  const [currencies, setCurrencies] = useState<CurrencyApiItem[]>([]);
+  const [isLoadingCurrencies, setIsLoadingCurrencies] =
+    useState<boolean>(false);
+  const [currenciesError, setCurrenciesError] = useState<string | null>(null);
+
+  const loadCurrencies = useCallback(async () => {
+    const controller = new AbortController();
+    setIsLoadingCurrencies(true);
+    setCurrenciesError(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/courency`, {
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      const list: CurrencyApiItem[] = Array.isArray(json?.data)
+        ? json.data
+        : [];
+      setCurrencies(list);
+    } catch (err: any) {
+      if (err?.name !== "AbortError") {
+        setCurrenciesError("Failed to load currencies.");
+      }
+    } finally {
+      setIsLoadingCurrencies(false);
+    }
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    void loadCurrencies();
+  }, [loadCurrencies]);
+
+  // --- Compensation display state (amount only; form stores "SYMBOL 10000") ---
+  const selectedCurrencyCode = form.watch("compensationCurrency") || "";
+  const selectedCurrency = useMemo(
+    () => currencies.find((c) => c.code === selectedCurrencyCode),
+    [currencies, selectedCurrencyCode]
+  );
+  const currencySymbol = useMemo(
+    () => selectedCurrency?.symbol || "$",
+    [selectedCurrency]
   );
 
-  const currencySymbol = useMemo(
-    () => (currency === "EUR" ? "€" : "$"),
-    [currency]
-  );
+  const initialComp = form.getValues("compensation");
+  const [compensationDisplay, setCompensationDisplay] = useState<string>(() => {
+    if (typeof initialComp === "string" && initialComp.trim()) {
+      const numeric = digitsOnly(initialComp);
+      return numeric ? formatNumber(numeric) : "";
+    } else if (typeof initialComp === "number" && !Number.isNaN(initialComp)) {
+      return formatNumber(initialComp);
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    const digits = digitsOnly(compensationDisplay);
+    const sym = currencySymbol || "";
+    form.setValue("compensation", digits ? `${sym} ${digits}` : "", {
+      shouldValidate: true,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currencySymbol]);
+
+  // --- NEW: popover open states to auto-close on select ---
+  const [openCountry, setOpenCountry] = useState(false);
+  const [openCity, setOpenCity] = useState(false);
+  const [openCategory, setOpenCategory] = useState(false);
+  const [openRole, setOpenRole] = useState(false);
+  const [openCurrency, setOpenCurrency] = useState(false);
 
   return (
     <Card className="w-full mx-auto border-none shadow-none">
@@ -116,6 +191,7 @@ export default function JobDetailsStep({
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">
           Job Details
         </h2>
+
         {categoriesError && (
           <div className="text-red-600 mb-4 text-center">
             {categoriesError}
@@ -128,6 +204,7 @@ export default function JobDetailsStep({
             </Button>
           </div>
         )}
+
         <div className="space-y-6">
           {/* Job Title */}
           <FormField
@@ -173,6 +250,7 @@ export default function JobDetailsStep({
 
           {/* Country & City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Country (auto-close) */}
             <FormField
               control={form.control}
               name="country"
@@ -181,7 +259,7 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Country<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Popover>
+                  <Popover open={openCountry} onOpenChange={setOpenCountry}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -200,7 +278,7 @@ export default function JobDetailsStep({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
+                    <PopoverContent className="w-[220px] p-0">
                       <Command>
                         <CommandInput placeholder="Search country..." />
                         <CommandList>
@@ -222,6 +300,7 @@ export default function JobDetailsStep({
                                     shouldValidate: true,
                                   });
                                   setSelectedCountry(country.country);
+                                  setOpenCountry(false); // auto-close
                                 }}
                               >
                                 {country.country}
@@ -237,6 +316,7 @@ export default function JobDetailsStep({
               )}
             />
 
+            {/* City (auto-close) */}
             <FormField
               control={form.control}
               name="region"
@@ -245,7 +325,7 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     City<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Popover>
+                  <Popover open={openCity} onOpenChange={setOpenCity}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -265,7 +345,7 @@ export default function JobDetailsStep({
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[200px] p-0">
+                    <PopoverContent className="w-[220px] p-0">
                       <Command>
                         <CommandInput placeholder="Search city..." />
                         <CommandList>
@@ -279,6 +359,7 @@ export default function JobDetailsStep({
                                   form.setValue("region", city, {
                                     shouldValidate: true,
                                   });
+                                  setOpenCity(false); // auto-close
                                 }}
                               >
                                 {city}
@@ -295,7 +376,7 @@ export default function JobDetailsStep({
             />
           </div>
 
-          {/* Vacancies (clamped 1..50, never 0) */}
+          {/* Vacancies */}
           <FormField
             control={form.control}
             name="vacancy"
@@ -383,7 +464,7 @@ export default function JobDetailsStep({
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
+                      <SelectTrigger className="h-11 border-gray-300 focus-border-[#2B7FD0] focus:border-[#2B7FD0]">
                         <SelectValue placeholder="Select experience level" />
                       </SelectTrigger>
                     </FormControl>
@@ -463,7 +544,7 @@ export default function JobDetailsStep({
             />
           </div>
 
-          {/* Category */}
+          {/* Category (auto-close) */}
           <FormField
             control={form.control}
             name="categoryId"
@@ -472,7 +553,7 @@ export default function JobDetailsStep({
                 <FormLabel className="text-sm font-medium text-gray-700">
                   Job Category<span className="text-red-500 ml-1">*</span>
                 </FormLabel>
-                <Popover>
+                <Popover open={openCategory} onOpenChange={setOpenCategory}>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -516,6 +597,7 @@ export default function JobDetailsStep({
                                     shouldValidate: true,
                                   });
                                   setSelectedCategoryRoles(category.role || []);
+                                  setOpenCategory(false); // auto-close
                                 }}
                               >
                                 {category.name}
@@ -536,7 +618,7 @@ export default function JobDetailsStep({
             )}
           />
 
-          {/* Role (dependent) */}
+          {/* Role (dependent, auto-close) */}
           {selectedCategoryRoles.length > 0 && (
             <FormField
               control={form.control}
@@ -546,7 +628,7 @@ export default function JobDetailsStep({
                   <FormLabel className="text-sm font-medium text-gray-700">
                     Role<span className="text-red-500 ml-1">*</span>
                   </FormLabel>
-                  <Popover>
+                  <Popover open={openRole} onOpenChange={setOpenRole}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
@@ -576,6 +658,7 @@ export default function JobDetailsStep({
                                   form.setValue("role", role, {
                                     shouldValidate: true,
                                   });
+                                  setOpenRole(false); // auto-close
                                 }}
                               >
                                 {role}
@@ -592,37 +675,119 @@ export default function JobDetailsStep({
             />
           )}
 
-          {/* Compensation: currency + amount with commas; stores numeric amount in form.compensation */}
+          {/* Compensation: currency combobox (auto-close) + amount */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Currency selector */}
+            {/* Currency combobox (API-driven, searchable) */}
             <FormField
               control={form.control}
               name="compensationCurrency"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Currency
-                  </FormLabel>
-                  <Select
-                    onValueChange={(v) => field.onChange(v as "USD" | "EUR")}
-                    defaultValue={field.value || "USD"}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="USD">USD ($)</SelectItem>
-                      <SelectItem value="EUR">EUR (€)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const current = currencies.find((c) => c.code === field.value);
+                const label = current
+                  ? `${current.currencyName} (${current.code}) ${
+                      current.symbol || ""
+                    }`
+                  : "Select currency";
+                return (
+                  <FormItem className="flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <FormLabel className="text-sm font-medium text-gray-700">
+                        Currency
+                      </FormLabel>
+                      {currenciesError && (
+                        <button
+                          type="button"
+                          className="text-xs text-red-600 underline"
+                          onClick={() => loadCurrencies()}
+                        >
+                          Retry
+                        </button>
+                      )}
+                    </div>
+
+                    <Popover open={openCurrency} onOpenChange={setOpenCurrency}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            className={cn(
+                              "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
+                              !field.value && "text-muted-foreground"
+                            )}
+                            disabled={isLoadingCurrencies}
+                          >
+                            {label}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-[320px] p-0">
+                        <Command shouldFilter>
+                          <CommandInput placeholder="Search currency or code…" />
+                          <CommandList>
+                            <CommandEmpty>
+                              {isLoadingCurrencies
+                                ? "Loading currencies…"
+                                : "No currency found."}
+                            </CommandEmpty>
+                            {!isLoadingCurrencies && (
+                              <CommandGroup>
+                                {currencies.map((c) => {
+                                  const itemLabel = `${c.currencyName} (${
+                                    c.code
+                                  }) ${c.symbol || ""}`;
+                                  return (
+                                    <CommandItem
+                                      key={c.code}
+                                      value={`${c.code} ${c.currencyName} ${
+                                        c.symbol || ""
+                                      }`}
+                                      onSelect={() => {
+                                        field.onChange(c.code);
+                                        const digits = (
+                                          compensationDisplay || ""
+                                        ).replace(/[^0-9.]/g, "");
+                                        const sym = c.symbol || "";
+                                        form.setValue(
+                                          "compensation",
+                                          digits ? `${sym} ${digits}` : "",
+                                          { shouldValidate: true }
+                                        );
+                                        setOpenCurrency(false); // auto-close
+                                      }}
+                                    >
+                                      <div className="flex items-center justify-between w-full">
+                                        <span className="truncate">
+                                          {c.currencyName}
+                                        </span>
+                                        <span className="ml-2 shrink-0 text-muted-foreground">
+                                          ({c.code}) {c.symbol || ""}
+                                        </span>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            )}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    <FormMessage />
+                    {isLoadingCurrencies && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Fetching currencies…
+                      </p>
+                    )}
+                  </FormItem>
+                );
+              }}
             />
 
-            {/* Amount input with friendly formatting */}
+            {/* Amount input */}
             <FormField
               control={form.control}
               name="compensation"
@@ -638,48 +803,38 @@ export default function JobDetailsStep({
                     <Input
                       inputMode="decimal"
                       placeholder="e.g., 50,000"
-                      className="h-11 pl-8 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
+                      className="h-11 pl-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                       value={compensationDisplay}
                       onChange={(e) => {
                         const raw = e.target.value;
-                        // Allow user to type $/€ and commas but store number
                         const sanitized = digitsOnly(raw);
-                        const n = sanitized === "" ? NaN : Number(sanitized);
-                        if (!Number.isNaN(n)) {
-                          form.setValue("compensation", n, {
-                            shouldValidate: true,
-                          });
-                        } else {
-                          form.setValue("compensation", undefined, {
-                            shouldValidate: true,
-                          });
-                        }
-                        // Keep original characters but normalize commas/format
-                        // format only the digits part to pretty commas
-                        const pretty = sanitized
-                          ? new Intl.NumberFormat(undefined, {
-                              maximumFractionDigits: 2,
-                            }).format(Number(sanitized))
-                          : "";
-                        // If user typed a symbol, preserve it visually (we already show a prefix symbol)
+                        const pretty = sanitized ? formatNumber(sanitized) : "";
                         setCompensationDisplay(pretty);
+                        const toStore = sanitized
+                          ? `${currencySymbol} ${sanitized}`
+                          : "";
+                        form.setValue("compensation", toStore, {
+                          shouldValidate: true,
+                        });
                       }}
                       onBlur={() => {
-                        const current = form.getValues("compensation");
-                        if (
-                          typeof current === "number" &&
-                          !Number.isNaN(current)
-                        ) {
-                          setCompensationDisplay(
-                            new Intl.NumberFormat(undefined, {
-                              maximumFractionDigits: 2,
-                            }).format(current)
-                          );
-                        }
+                        const current = digitsOnly(compensationDisplay);
+                        setCompensationDisplay(
+                          current ? formatNumber(current) : ""
+                        );
+                        const toStore = current
+                          ? `${currencySymbol} ${current}`
+                          : "";
+                        form.setValue("compensation", toStore, {
+                          shouldValidate: true,
+                        });
                       }}
                     />
                   </div>
-
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Stored as: <code>{currencySymbol} 10000</code> (symbol +
+                    space + amount)
+                  </p>
                   <FormMessage />
                 </FormItem>
               )}
@@ -753,10 +908,9 @@ export default function JobDetailsStep({
             type="button"
             className="h-11 px-6 bg-[#2B7FD0] hover:bg-[#2B7FD0]/85"
             onClick={() => {
-              // Ensure vacancy is clamped before proceeding
-              const v = form.getValues("vacancy");
+              const v = form.getValues("vacancy") as number | undefined;
               if (typeof v === "number") {
-                form.setValue("vacancy", clamp(v, 1, 50), {
+                form.setValue("vacancy", clamp(v, 1, 50) as any, {
                   shouldValidate: true,
                 });
               }
