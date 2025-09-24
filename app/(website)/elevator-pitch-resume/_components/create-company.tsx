@@ -678,6 +678,7 @@ export default function CreateCompanyPage() {
                     </FormLabel>
                     <FormControl>
                       <Input
+                        disabled
                         {...field}
                         placeholder={`${phonePlaceholder} 234567890`}
                       />
