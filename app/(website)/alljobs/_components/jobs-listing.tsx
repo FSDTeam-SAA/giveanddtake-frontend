@@ -9,6 +9,7 @@ import JobCard from "@/components/shared/card/job-card";
 import { Pagination } from "@/components/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
+import Link from "next/link";
 
 interface Job {
   _id: string;
@@ -63,7 +64,6 @@ const JobCardSkeleton = () => (
 );
 
 export default function JobsListing() {
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -147,9 +147,9 @@ export default function JobsListing() {
     );
   }
 
-  if (selectedJobId) {
-    return <JobDetails jobId={selectedJobId} />;
-  }
+  // if (selectedJobId) {
+  //   return <JobDetails jobId={selectedJobId} />;
+  // }
 
   const jobs = jobsData?.data.jobs || [];
   const meta = jobsData?.data.meta || {
@@ -236,12 +236,9 @@ export default function JobsListing() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {recommended.map((job) => (
-                <JobCard
-                  key={job._id}
-                  job={job}
-                  onSelect={() => setSelectedJobId(job._id)}
-                  variant="suggested"
-                />
+                <Link href={`/alljobs/${job._id}`} key={job._id}>
+                  <JobCard key={job._id} job={job} variant="suggested" />
+                </Link>
               ))}
             </div>
           )}
@@ -261,12 +258,9 @@ export default function JobsListing() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {jobs.map((job) => (
-              <JobCard
-                key={job._id}
-                job={job}
-                onSelect={() => setSelectedJobId(job._id)}
-                variant="list"
-              />
+              <Link href={`/alljobs/${job._id}`} key={job._id}>
+                <JobCard key={job._id} job={job} variant="list" />
+              </Link>
             ))}
           </div>
         )}

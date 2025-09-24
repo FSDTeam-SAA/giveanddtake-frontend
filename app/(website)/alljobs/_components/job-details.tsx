@@ -12,10 +12,20 @@ import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
 
+interface Recruiter {
+  _id: string;
+  userId: string;
+  firstName: string;
+  sureName: string;
+  photo?: string;
+  emailAddress?: string;
+}
+
 interface CompanyData {
+  _id: string;
+  userId: string;
   clogo?: string;
   cname?: string;
-  userId: string;
 }
 
 interface JobDetailsData {
@@ -29,9 +39,10 @@ interface JobDetailsData {
   responsibilities: string[];
   educationExperience: string[];
   companyId?: CompanyData;
+  recruiterId?: Recruiter;
   benefits: string[];
   vacancy: number;
-  employement_Type?: string; // keeping API typo as-is
+  employement_Type?: string;
   experience: number;
   deadline: string;
   status: string;
@@ -82,19 +93,16 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const token = (session as any)?.accessToken as string | undefined;
   const queryClient = useQueryClient();
 
-  // role & auth
   const role = session?.user.role as string | undefined;
   const isUnauthed = sessionStatus === "unauthenticated";
   const isCandidate = role === "candidate";
   const isRecruiterOrCompany = role === "recruiter" || role === "company";
-  const canSeeApply = isUnauthed || isCandidate; // show Apply to guests & candidates
+  const canSeeApply = isUnauthed || isCandidate;
 
-  // toast + redirect timing
   const TOAST_DURATION_MS = 2200;
   const REDIRECT_DELAY_MS = 1800;
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
-  // Fetch job details
   const {
     data: jobData,
     isLoading,
@@ -116,7 +124,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     enabled: Boolean(jobId && jobId !== "undefined"),
   });
 
-  // Fetch bookmark status
   const { data: bookmarkData, isLoading: isBookmarkLoading } =
     useQuery<BookmarkResponse>({
       queryKey: ["bookmark", jobId, userId],
@@ -146,10 +153,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       enabled: Boolean(userId && token && jobId && jobId !== "undefined"),
     });
 
-  // Determine if the current job is bookmarked
   const bookmarked = bookmarkData?.data?.bookmarks?.[0]?.bookmarked ?? false;
 
-  // Toggle bookmark mutation
   const toggleBookmarkMutation = useMutation({
     mutationFn: async ({
       jobId,
@@ -295,6 +300,30 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const job = jobData.data;
   const applicationLink = `/job-application?id=${job._id}`;
 
+  // Determine postedBy data
+  let postedByName = "Unknown";
+  let postedByLogo = "/default-logo.png";
+  let postedById = "#";
+  let postedByType = "company";
+  let postedByData = null;
+
+  if (job.recruiterId) {
+    postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
+    postedByLogo = job.recruiterId.photo || "/default-logo.png";
+    postedById = job.recruiterId.userId || "#";
+    postedByType = "recruiter";
+    postedByData = { recruiterId: job.recruiterId };
+  } else if (job.companyId) {
+    postedByName = job.companyId.cname || "Unknown Company";
+    postedByLogo = job.companyId.clogo || "/default-logo.png";
+    postedById = job.companyId.userId || "#";
+    postedByType = "company";
+    postedByData = { companyId: job.companyId };
+  }
+
+  // Log the appropriate data
+  console.log(postedByData);
+
   const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (isRedirecting) return;
@@ -333,17 +362,13 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-4">
               <div className="flex items-center gap-4 sm:gap-6">
                 <Link
-                  href={
-                    job.companyId
-                      ? `/companies-profile/${job.companyId.userId}`
-                      : "#"
-                  }
-                  aria-label="Company profile"
+                  href={`/${postedByType === "recruiter" ? "recruiters-profile" : "companies-profile"}/${postedById}`}
+                  aria-label={postedByType === "recruiter" ? "Recruiter profile" : "Company profile"}
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
                     <Image
-                      src={job.companyId?.clogo || "/default-logo.png"}
-                      alt={job.companyId?.cname || "Company Logo"}
+                      src={postedByLogo}
+                      alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
                       fill
                       sizes="(max-width: 640px) 56px, 64px"
                       className="object-cover"
@@ -356,16 +381,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     {job.title}
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:text-base">
-                    {job.companyId ? (
-                      <Link
-                        href={`/companies-profile/${job.companyId.userId}`}
-                        className="font-medium truncate max-w-[16rem] sm:max-w-none"
-                      >
-                        {job.companyId.cname || "Unknown Company"}
-                      </Link>
-                    ) : (
-                      <span className="font-medium">Unknown Company</span>
-                    )}
+                    <Link
+                      href={`/${postedByType === "recruiter" ? "recruiters-profile" : "companies-profile"}/${postedById}`}
+                      className="font-medium truncate max-w-[16rem] sm:max-w-none"
+                    >
+                      {postedByName}
+                    </Link>
                     <span className="flex items-center text-[#707070]">
                       <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" />{" "}
                       {job.location}
@@ -427,7 +448,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     : "Save Job"}
                 </Button>
 
-                {/* Apply button logic */}
                 {canSeeApply && !isRecruiterOrCompany ? (
                   isUnauthed ? (
                     <Button
@@ -438,7 +458,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       {isRedirecting ? "Redirecting..." : "Apply Now"}
                     </Button>
                   ) : (
-                    // Candidate
                     <Button
                       asChild
                       className="w-full bg-primary hover:bg-blue-700"

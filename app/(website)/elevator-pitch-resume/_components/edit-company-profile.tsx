@@ -1,3 +1,4 @@
+// pages/EditCompanyPage.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,18 +19,24 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { useSession } from "next-auth/react";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
+import { SocialLinksSection } from "./social-links-section";
+import { useRouter } from "next/navigation";
 
+// Fixed platforms for SocialLinksSection
+const FIXED_PLATFORMS = [
+  "LinkedIn",
+  "Twitter",
+  "Upwork",
+  "Facebook",
+  "TikTok",
+  "Instagram",
+] as const;
+
+// Form schema with sLink
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
   country: z.string().min(1, "Country is required"),
@@ -38,17 +45,27 @@ const formSchema = z.object({
   cemail: z.string().email("Invalid email address"),
   cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
+  sLink: z
+    .array(
+      z.object({
+        _id: z.string().optional(),
+        type: z.enum(["create", "update", "delete"]).optional(),
+        label: z.string().min(1, "Platform name is required"),
+        url: z
+          .string()
+          .optional()
+          .transform((v) => v ?? "")
+          .pipe(z.string().url("Please enter a valid URL").or(z.literal(""))),
+      })
+    )
+    .optional()
+    .default([]),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 interface EditCompanyPageProps {
   companyId: string;
-}
-
-interface SocialLink {
-  id: string;
-  url: string;
 }
 
 interface Honor {
@@ -69,9 +86,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([
-    { id: "1", url: "" },
-  ]);
   const [services, setServices] = useState<string[]>([""]);
   const [honors, setHonors] = useState<Honor[]>([
     {
@@ -85,6 +99,8 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   ]);
   const [originalHonors, setOriginalHonors] = useState<Honor[]>([]);
 
+  const router = useRouter();
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -95,6 +111,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       cemail: "",
       cPhoneNumber: "",
       aboutUs: "",
+      sLink: FIXED_PLATFORMS.map((label) => ({
+        label,
+        url: "",
+      })),
     },
   });
 
@@ -130,6 +150,19 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     if (companyData?.data?.companies?.[0]) {
       const company = companyData.data.companies[0];
 
+      // Map API sLink to fixed platforms
+      const sLink = FIXED_PLATFORMS.map((label) => {
+        const matchingLink = company.sLink?.find(
+          (link: { label: string; url: string; _id: string }) => link.label === label
+        );
+        return {
+          _id: matchingLink?._id,
+          label,
+          url: matchingLink?.url || "",
+          type: matchingLink?._id ? "update" : "create",
+        };
+      });
+
       form.reset({
         cname: company.cname || "",
         country: company.country || "",
@@ -138,16 +171,8 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         cemail: company.cemail || "",
         cPhoneNumber: company.cPhoneNumber || "",
         aboutUs: company.aboutUs || "",
+        sLink,
       });
-
-      if (company.links && company.links.length > 0) {
-        setSocialLinks(
-          company.links.map((link: string, index: number) => ({
-            id: `${index + 1}`,
-            url: link,
-          }))
-        );
-      }
 
       if (company.service && company.service.length > 0) {
         setServices(company.service);
@@ -176,22 +201,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       setOriginalHonors([...loadedHonors]);
     }
   }, [companyData, form]);
-
-  const addSocialLink = () => {
-    setSocialLinks([...socialLinks, { id: Date.now().toString(), url: "" }]);
-  };
-
-  const removeSocialLink = (id: string) => {
-    if (socialLinks.length > 1) {
-      setSocialLinks(socialLinks.filter((link) => link.id !== id));
-    }
-  };
-
-  const updateSocialLink = (id: string, url: string) => {
-    setSocialLinks(
-      socialLinks.map((link) => (link.id === id ? { ...link, url } : link))
-    );
-  };
 
   const addService = () => {
     setServices([...services, ""]);
@@ -253,7 +262,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     const formData = new FormData();
 
     Object.keys(data).forEach((key) => {
-      if (key === "honors") {
+      if (key === "honors" || key === "sLink") {
         formData.append(key, JSON.stringify(data[key]));
       } else if (Array.isArray(data[key])) {
         formData.append(key, JSON.stringify(data[key]));
@@ -291,10 +300,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const onSubmit = async (data: FormData) => {
     try {
       setIsUpdating(true);
-
-      const slinks = socialLinks
-        .map((link) => link.url.trim())
-        .filter((url) => url !== "");
 
       const filteredServices = services
         .map((service) => service.trim())
@@ -352,9 +357,27 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       const allHonors = [...processedHonors, ...deletedHonors];
 
+      // Process social links
+      const originalSLinks = companyData?.data?.companies[0]?.sLink || [];
+      const processedSocialLinks = data.sLink.map((link) => {
+        const originalLink = originalSLinks.find(
+          (orig: { _id: string; label: string; url: string }) => orig._id === link._id || orig.label === link.label
+        );
+        return {
+          _id: link._id,
+          type: link._id
+            ? link.url
+              ? "update"
+              : "delete"
+            : "create",
+          label: link.label,
+          url: link.url || "",
+        };
+      });
+
       const formData = {
         ...data,
-        links: slinks,
+        sLink: processedSocialLinks,
         service: filteredServices,
         employeesId: selectedEmployees,
         honors: allHonors,
@@ -362,6 +385,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       await updateCompany(formData);
       toast.success("Company updated successfully!");
+      router.push("/elevator-pitch-resume");
     } catch (error: any) {
       console.error("Error updating company:", error);
       toast.error(error.message || "Failed to update company");
@@ -390,7 +414,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="space-y-2 ">
+              <div className="space-y-2">
                 <Label className="text-sm font-medium text-gray-900">
                   Company Banner
                 </Label>
@@ -561,52 +585,8 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Social Links
-                  </h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addSocialLink}
-                    className="flex items-center gap-2 bg-transparent"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Link
-                  </Button>
-                </div>
-
-                <div className="space-y-3">
-                  {socialLinks.map((link, index) => (
-                    <div key={link.id} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <Input
-                          value={link.url}
-                          onChange={(e) =>
-                            updateSocialLink(link.id, e.target.value)
-                          }
-                          placeholder={`Social Link ${
-                            index + 1
-                          } (e.g., https://linkedin.com/company/yourcompany)`}
-                        />
-                      </div>
-                      {socialLinks.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeSocialLink(link.id)}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Social Links Section */}
+              <SocialLinksSection form={form} />
 
               <div className="space-y-4">
                 <div className="">
@@ -730,11 +710,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                               <Input
                                 value={honor.issuer}
                                 onChange={(e) =>
-                                  updateHonor(
-                                    honor.id,
-                                    "issuer",
-                                    e.target.value
-                                  )
+                                  updateHonor(honor.id, "issuer", e.target.value)
                                 }
                                 placeholder="Award/Honor Issuer"
                               />
@@ -747,11 +723,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                 type="date"
                                 value={honor.programeDate}
                                 onChange={(e) =>
-                                  updateHonor(
-                                    honor.id,
-                                    "programeDate",
-                                    e.target.value
-                                  )
+                                  updateHonor(honor.id, "programeDate", e.target.value)
                                 }
                               />
                             </div>
@@ -764,11 +736,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                             <Textarea
                               value={honor.description}
                               onChange={(e) =>
-                                updateHonor(
-                                  honor.id,
-                                  "description",
-                                  e.target.value
-                                )
+                                updateHonor(honor.id, "description", e.target.value)
                               }
                               placeholder="Description of the award/honor"
                               className="min-h-[80px]"

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   FaLinkedin,
   FaTwitter,
@@ -8,39 +9,54 @@ import {
   FaTiktok,
   FaUpwork,
 } from "react-icons/fa6";
-import Link from "next/link";
 
-const socialIcons: Record<string, { icon: JSX.Element }> = {
+// Supported platforms + icons
+const socialIcons = {
   LinkedIn: { icon: <FaLinkedin /> },
   Twitter: { icon: <FaTwitter /> },
   Upwork: { icon: <FaUpwork /> },
   Facebook: { icon: <FaFacebook /> },
   TikTok: { icon: <FaTiktok /> },
   Instagram: { icon: <FaInstagram /> },
-};
+} as const;
+
+type SocialLabel = keyof typeof socialIcons;
+
+// Type guard to narrow arbitrary strings to our supported labels
+function isSocialLabel(label: string): label is SocialLabel {
+  return label in socialIcons;
+}
 
 interface SocialLinksProps {
+  // Accept the loose upstream shape (don't reuse the upstream SLinkItem name)
   sLink?: {
-    label: string;
-    url?: string; // ✅ fixed
-    _id: string;
+    label: string;   // note: loose
+    url?: string;
+    _id?: string;
   }[];
 }
 
 export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
-  const linkMap = new Map(sLink.map((link) => [link.label, link.url ?? ""]));
+  // Build a map only for supported labels, ignoring unknown ones safely
+  const linkMap = new Map<SocialLabel, string>();
+  for (const item of sLink) {
+    if (isSocialLabel(item.label)) {
+      linkMap.set(item.label, item.url ?? "");
+    }
+  }
+
+  const baseClasses =
+    "w-10 h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-2xl transition-all duration-300 ease-in-out";
 
   return (
     <div className="flex gap-3 mt-4">
       {Object.entries(socialIcons).map(([label, { icon }]) => {
-        const url = linkMap.get(label);
-
-        const baseClasses =
-          "w-10 h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-2xl transition-all duration-300 ease-in-out";
+        const typedLabel = label as SocialLabel;
+        const url = linkMap.get(typedLabel);
 
         return url ? (
           <Link
-            key={label}
+            key={typedLabel}
             href={url}
             target="_blank"
             rel="noopener noreferrer"
@@ -50,8 +66,10 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
           </Link>
         ) : (
           <span
-            key={label}
+            key={typedLabel}
             className={`${baseClasses} text-gray-400 border-gray-300 opacity-50 cursor-not-allowed`}
+            aria-disabled="true"
+            title={`${typedLabel} link not provided`}
           >
             {icon}
           </span>
