@@ -89,7 +89,6 @@ const urlOptional = z
 
 const recruiterSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
   sureName: z.string().optional(),
   emailAddress: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
@@ -102,7 +101,7 @@ const recruiterSchema = z.object({
   skills: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
   companyRecruiters: z.array(z.string()).optional(),
-  
+
   sLink: z
     .array(
       z.object({
@@ -226,7 +225,6 @@ export default function CreateRecruiterAccountForm() {
     resolver: zodResolver(recruiterSchema),
     defaultValues: {
       firstName: "",
-      lastName: "",
       sureName: "",
       emailAddress: "",
       phoneNumber: "",
@@ -310,7 +308,7 @@ export default function CreateRecruiterAccountForm() {
     const cleanupAttributes = () => {
       document
         .querySelectorAll(
-          '[bis_skin_checked], [bis_register], [__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__]'
+          "[bis_skin_checked], [bis_register], [__processed_b668fbb6-84d8-4f67-8dbe-4c6dc7981cbf__]"
         )
         .forEach((el) => {
           el.removeAttribute("bis_skin_checked");
@@ -353,12 +351,9 @@ export default function CreateRecruiterAccountForm() {
       setIsElevatorPitchUploaded(false);
       setUploadedVideoUrl(null);
       setElevatorPitchFile(null);
-      toast.success("Elevator pitch deleted successfully");
     },
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to delete elevator pitch"
-      );
+      console.log(error);
     },
   });
 
@@ -511,6 +506,25 @@ export default function CreateRecruiterAccountForm() {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!session?.user) return;
+    if (form.formState.isDirty) return;
+
+    const name = session.user.name ?? session.user.email?.split("@")[0] ?? "";
+    const [first = "", ...rest] = name.trim().split(/\s+/);
+
+    form.reset({
+      ...form.getValues(),
+      emailAddress:
+        form.getValues("emailAddress") || (session.user.email ?? ""),
+      firstName: form.getValues("firstName") || first,
+      sureName: form.getValues("sureName") || rest.join(" "),
+      phoneNumber:
+        form.getValues("phoneNumber") || (session.user.phoneNumber ?? ""),
+      country: form.getValues("country") || (session.user.country ?? ""),
+    });
+  }, [session, form]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -739,9 +753,7 @@ export default function CreateRecruiterAccountForm() {
                         <p className="text-sm text-muted-foreground">
                           Word count:{" "}
                           {(field.value ?? "").trim()
-                            ? (field.value ?? "")
-                                .trim()
-                                .split(/\s+/).length
+                            ? (field.value ?? "").trim().split(/\s+/).length
                             : 0}
                         </p>
                         <FormMessage />
@@ -751,7 +763,7 @@ export default function CreateRecruiterAccountForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="firstName"
@@ -760,19 +772,6 @@ export default function CreateRecruiterAccountForm() {
                       <FormLabel>First Name*</FormLabel>
                       <FormControl>
                         <Input placeholder="Enter first name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name*</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter last name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -802,6 +801,7 @@ export default function CreateRecruiterAccountForm() {
                       <FormLabel>Email Address*</FormLabel>
                       <FormControl>
                         <Input
+                        disabled
                           type="email"
                           placeholder="Enter email address"
                           {...field}
@@ -818,7 +818,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Phone Number*</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter phone number" {...field} />
+                        <Input disabled placeholder="Enter phone number" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -850,7 +850,10 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Years of Experience*</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger className="mt-1">
                             <SelectValue placeholder="Select Experience" />
                           </SelectTrigger>
@@ -933,10 +936,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Zip/Postal Code (Optional)</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter Zip/Postal Code"
-                          {...field}
-                        />
+                        <Input placeholder="Enter Zip/Postal Code" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
