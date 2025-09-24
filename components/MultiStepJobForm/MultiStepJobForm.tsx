@@ -67,7 +67,9 @@ async function fetchJobCategories(retries = 2): Promise<JobCategoriesResponse> {
   } catch (error) {
     console.error("[v0] Failed to fetch job categories:", error);
     if (retries > 0) {
-      console.warn(`[v0] Retrying fetch job categories... (${retries} attempts left)`);
+      console.warn(
+        `[v0] Retrying fetch job categories... (${retries} attempts left)`
+      );
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return fetchJobCategories(retries - 1);
     }
@@ -87,8 +89,14 @@ async function postJob(data: any, retries = 2): Promise<any> {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: "Unknown error" }));
-      throw new Error(`Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"}`);
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Unknown error" }));
+      throw new Error(
+        `Failed to publish job: ${response.status} - ${
+          errorData.message || "Unknown error"
+        }`
+      );
     }
 
     return await response.json();
@@ -112,7 +120,9 @@ export default function MultiStepJobForm() {
   const [publishNow, setPublishNow] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedCategoryRoles, setSelectedCategoryRoles] = useState<string[]>([]);
+  const [selectedCategoryRoles, setSelectedCategoryRoles] = useState<string[]>(
+    []
+  );
   const [jobCategories, setJobCategories] = useState<JobCategoriesResponse>({
     success: false,
     message: "",
@@ -145,9 +155,11 @@ export default function MultiStepJobForm() {
       companyUrl: "",
       jobDescription: "",
       publishDate: new Date().toISOString(),
+      // NEW shape: requirement/status
       applicationRequirements: [
-        { id: "resume", label: "Resume", required: true },
-        { id: "visa", label: "Valid visa for this job location?", required: true },
+        { requirement: "Resume", status: "" },
+        { requirement: "Valid visa for this job location?", status: "" },
+        { requirement: "noticePeriod", status: "" }, // noticePeriod present by default (status empty)
       ],
       customQuestions: [{ id: "1", question: "" }],
       userId,
@@ -162,7 +174,9 @@ export default function MultiStepJobForm() {
         const data = await fetchJobCategories();
         setJobCategories(data);
       } catch (error) {
-        setCategoriesError(error instanceof Error ? error.message : "Failed to load categories");
+        setCategoriesError(
+          error instanceof Error ? error.message : "Failed to load categories"
+        );
         toast.error("Failed to load job categories");
       } finally {
         setCategoriesLoading(false);
@@ -175,7 +189,9 @@ export default function MultiStepJobForm() {
     const loadCountries = async () => {
       setIsLoadingCountries(true);
       try {
-        const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries"
+        );
         const data = await response.json();
         if (data.error) throw new Error("Failed to fetch countries");
         setCountries(data.data as Country[]);
@@ -197,11 +213,14 @@ export default function MultiStepJobForm() {
       }
       setIsLoadingCities(true);
       try {
-        const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country: selectedCountry }),
-        });
+        const response = await fetch(
+          "https://countriesnow.space/api/v0.1/countries/cities",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ country: selectedCountry }),
+          }
+        );
         const data = await response.json();
         if (data.error) throw new Error("Failed to fetch cities");
         setCities(data.data as string[]);
@@ -237,6 +256,7 @@ export default function MultiStepJobForm() {
       "categoryId",
       "role",
       "expirationDate",
+      "companyUrl",
     ],
     2: ["jobDescription"],
     3: [],
@@ -258,7 +278,10 @@ export default function MultiStepJobForm() {
         if (!isValid) {
           const errors = form.formState.errors;
           const firstError = Object.values(errors)[0];
-          toast.error(firstError?.message || `Please complete step ${step} before proceeding.`);
+          toast.error(
+            firstError?.message ||
+              `Please complete step ${step} before proceeding.`
+          );
           canNavigate = false;
           break;
         }
@@ -279,7 +302,9 @@ export default function MultiStepJobForm() {
       } else {
         const errors = form.formState.errors;
         const firstError = Object.values(errors)[0];
-        toast.error(firstError?.message || "Please fill in all required fields.");
+        toast.error(
+          firstError?.message || "Please fill in all required fields."
+        );
       }
     } else {
       setCurrentStep((prev) => Math.min(prev + 1, 5));
@@ -358,24 +383,35 @@ export default function MultiStepJobForm() {
         role: DOMPurify.sanitize(data.role),
         compensation: data.compensation ? "Monthly" : "Negotiable",
         archivedJob: false,
-        applicationRequirement: data.applicationRequirements
-          ?.filter((req) => req.required)
-          .map((req) => ({ requirement: `${DOMPurify.sanitize(req.label)} required` })) || [],
-        customQuestion: data.customQuestions
-          ?.filter((q) => q.question)
-          .map((q) => ({ question: DOMPurify.sanitize(q.question!) })) || [],
+        // Map to backend shape and only include items with a non-empty status
+        applicationRequirement:
+          data.applicationRequirements
+            ?.filter((req) => req.status && req.status.trim() !== "")
+            .map((req) => ({
+              requirement: DOMPurify.sanitize(req.requirement),
+              status: DOMPurify.sanitize(req.status || ""),
+            })) || [],
+        customQuestion:
+          data.customQuestions
+            ?.filter((q) => q.question)
+            .map((q) => ({ question: DOMPurify.sanitize(q.question!) })) || [],
         employmentType: data.employmentType,
-        websiteUrl: data.companyUrl ? DOMPurify.sanitize(data.companyUrl) : undefined,
+        websiteUrl: data.companyUrl
+          ? DOMPurify.sanitize(data.companyUrl)
+          : undefined,
         publishDate: getPublishDate(),
         careerStage: data.careerStage,
         locationType: data.locationType,
       };
 
       await postJob(postData);
+      console.log(postData);
       toast.success("Job published successfully!");
       router.push("/recruiter-dashboard");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to publish job");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to publish job"
+      );
     } finally {
       setIsPending(false);
     }
@@ -399,15 +435,22 @@ export default function MultiStepJobForm() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Job Preview</h1>
-            <p className="text-gray-600">Review your job posting before publishing</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Job Preview
+            </h1>
+            <p className="text-gray-600">
+              Review your job posting before publishing
+            </p>
           </div>
           <form onSubmit={form.handleSubmit(handlePublish)}>
             <JobPreview
               formData={{
                 ...formData,
                 category: selectedCategory?.name ?? "",
-                compensation: formData.compensation !== undefined ? String(formData.compensation) : undefined,
+                compensation:
+                  formData.compensation !== undefined
+                    ? String(formData.compensation)
+                    : undefined,
               }}
               companyUrl={safeCompanyUrl}
               applicationRequirements={formData.applicationRequirements ?? []}
@@ -428,7 +471,9 @@ export default function MultiStepJobForm() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-[#131313] text-center mb-8">Create Job Posting</h1>
+        <h1 className="text-3xl font-bold text-[#131313] text-center mb-8">
+          Create Job Posting
+        </h1>
         {categoriesError && (
           <div className="text-red-600 mb-4 text-center">
             {categoriesError}
@@ -439,7 +484,13 @@ export default function MultiStepJobForm() {
                 setCategoriesLoading(true);
                 fetchJobCategories()
                   .then((data) => setJobCategories(data))
-                  .catch((error) => setCategoriesError(error instanceof Error ? error.message : "Failed to load categories"))
+                  .catch((error) =>
+                    setCategoriesError(
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to load categories"
+                    )
+                  )
                   .finally(() => setCategoriesLoading(false));
               }}
               className="ml-4"
@@ -449,8 +500,15 @@ export default function MultiStepJobForm() {
           </div>
         )}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handlePublish)} className="space-y-6">
-            <StepIndicator steps={steps} currentStep={currentStep} onStepClick={handleStepClick} />
+          <form
+            onSubmit={form.handleSubmit(handlePublish)}
+            className="space-y-6"
+          >
+            <StepIndicator
+              steps={steps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+            />
             {currentStep === 1 && (
               <JobDetailsStep
                 form={form}
@@ -481,10 +539,18 @@ export default function MultiStepJobForm() {
               />
             )}
             {currentStep === 3 && (
-              <ApplicationRequirementsStep form={form} onNext={handleNext} onCancel={handleCancel} />
+              <ApplicationRequirementsStep
+                form={form}
+                onNext={handleNext}
+                onCancel={handleCancel}
+              />
             )}
             {currentStep === 4 && (
-              <CustomQuestionsStep form={form} onNext={handleNext} onCancel={handleCancel} />
+              <CustomQuestionsStep
+                form={form}
+                onNext={handleNext}
+                onCancel={handleCancel}
+              />
             )}
             {currentStep === 5 && (
               <FinishStep

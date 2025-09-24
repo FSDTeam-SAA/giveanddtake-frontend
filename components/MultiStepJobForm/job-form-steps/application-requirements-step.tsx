@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { type UseFormReturn, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import type { JobFormData } from "@/types/job";
 import {
   Select,
@@ -13,12 +13,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-
-interface ApplicationRequirement {
-  id: string;
-  label: string;
-  required: boolean;
-}
 
 interface ApplicationRequirementsStepProps {
   form: UseFormReturn<JobFormData>;
@@ -35,46 +29,47 @@ export default function ApplicationRequirementsStep({
     fields: applicationRequirements,
     update: updateRequirement,
     remove,
+    append,
   } = useFieldArray({
     control: form.control,
     name: "applicationRequirements",
   });
 
-  // Ensure all requirements are optional by default and remove PII/duplicated fields
-  useEffect(() => {
-    if (!applicationRequirements?.length) return;
+  const findNoticeIndex = () =>
+    applicationRequirements.findIndex((r) => r.requirement === "noticePeriod");
 
-    // 1) Make every field optional by default
-    applicationRequirements.forEach((req, i) => {
-      if (req.required) {
-        updateRequirement(i, { ...req, required: false });
+  useEffect(() => {
+    if (!applicationRequirements || applicationRequirements.length === 0) {
+      append({ requirement: "Resume", status: undefined });
+      append({
+        requirement: "Valid visa for this job location?",
+        status: undefined,
+      });
+      append({ requirement: "noticePeriod", status: undefined });
+      return;
+    }
+
+    const noticeIdx = findNoticeIndex();
+    if (noticeIdx === -1) {
+      append({ requirement: "noticePeriod", status: undefined });
+    }
+
+    applicationRequirements.forEach((req, idx) => {
+      if ((req as any).label && !(req as any).requirement) {
+        updateRequirement(idx, {
+          requirement: (req as any).label,
+          status: (req as any).status ?? undefined,
+        } as any);
       }
     });
-
-    // 2) Remove fields we don't want on this page
-    const labelsToRemove = new Set([
-      "Name",
-      "Email",
-      "Phone Number",
-      // We are replacing Start Date with a dedicated Notice Period dropdown
-      "Start Date",
-    ]);
-
-    const indicesToRemove = applicationRequirements
-      .map((req, i) => (labelsToRemove.has(req.label) ? i : -1))
-      .filter((i) => i !== -1)
-      // remove from the end to avoid index shifting
-      .sort((a, b) => b - a);
-
-    if (indicesToRemove.length) remove(indicesToRemove);
-
-    // 3) Initialize noticePeriod if not already set
-    const current = form.getValues("noticePeriod");
-    if (current === undefined) {
-      form.setValue("noticePeriod", "");
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationRequirements.length]);
+
+  const humanLabel = (req: { requirement?: string }) => {
+    if (!req?.requirement) return "";
+    if (req.requirement === "noticePeriod") return "Availability";
+    return req.requirement;
+  };
 
   return (
     <Card className="w-full mx-auto border-none shadow-none">
@@ -88,85 +83,96 @@ export default function ApplicationRequirementsStep({
           What personal info would you like to gather about each applicant?
         </p>
 
-        {/* Requirements list (all optional by default) */}
         <div className="space-y-4">
-          {applicationRequirements.map((requirement, index) => (
-            <div
-              key={requirement.id}
-              className="flex items-center justify-between py-2 border-b pb-6"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-[22px] h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center">
-                  <Check className="text-white w-4 h-4" />
+          {applicationRequirements.map((requirement, index) => {
+            const isNotice = requirement.requirement === "noticePeriod";
+            const label = humanLabel(requirement);
+
+            return (
+              <div
+                key={requirement.id}
+                className="flex items-start justify-between py-2 border-b pb-6"
+              >
+                <div className="flex items-start space-x-3">
+                  <div className="w-[22px] h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center mt-1">
+                    <Check className="text-white w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xl text-[#000000] font-normal">
+                      {label}
+                    </div>
+
+                    {!isNotice && requirement.status ? (
+                      <div className="text-sm text-gray-500 mt-1">
+                        {requirement.status}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-                <span className="text-xl text-[#000000] font-normal">
-                  {requirement.label}
-                </span>
+
+                <div className="flex items-center space-x-2">
+                  {isNotice ? (
+                    <div className="w-60">
+                      <Select
+                        value={requirement.status ?? undefined}
+                        onValueChange={(val) =>
+                          updateRequirement(index, {
+                            ...requirement,
+                            status: val,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full h-11">
+                          <SelectValue placeholder="Select notice period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Immediate">Immediate</SelectItem>
+                          <SelectItem value="One-month">One month</SelectItem>
+                          <SelectItem value="Three-months">
+                            Three months
+                          </SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <Select
+                        value={requirement.status ?? undefined}
+                        onValueChange={(val) =>
+                          updateRequirement(index, {
+                            ...requirement,
+                            status: val,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-48 h-9">
+                          <SelectValue placeholder="Set status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Required">Required</SelectItem>
+                          <SelectItem value="Optional">Optional</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 w-9 p-0"
+                        onClick={() => remove(index)}
+                        aria-label={`Remove ${label}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-gray-600" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant={!requirement.required ? "default" : "outline"}
-                  className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                    !requirement.required
-                      ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                      : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
-                  }`}
-                  onClick={() =>
-                    updateRequirement(index, {
-                      ...requirement,
-                      required: false,
-                    })
-                  }
-                >
-                  Optional
-                </Button>
-                <Button
-                  type="button"
-                  variant={requirement.required ? "default" : "outline"}
-                  className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                    requirement.required
-                      ? "bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90"
-                      : "border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent"
-                  }`}
-                  onClick={() =>
-                    updateRequirement(index, { ...requirement, required: true })
-                  }
-                >
-                  Required
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Notice Period (replaces Start Date) */}
-        <div className="mt-8">
-          <label className="block text-xl text-[#000000] mb-3">
-            Availibility
-          </label>
-          <Select
-            value={form.watch("noticePeriod") || ""}
-            onValueChange={(val) =>
-              form.setValue("noticePeriod", val, {
-                shouldValidate: true,
-                shouldDirty: true,
-              })
-            }
-          >
-            <SelectTrigger className="w-full h-11">
-              <SelectValue placeholder="Select notice period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Immediate">Immediate</SelectItem>
-              <SelectItem value="One month">One month</SelectItem>
-              <SelectItem value="Three months">Three months</SelectItem>
-              <SelectItem value="Other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="mt-8 flex justify-end gap-4">
           <Button
             type="button"
             variant="outline"
