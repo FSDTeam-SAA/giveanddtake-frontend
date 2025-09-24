@@ -41,6 +41,7 @@ import {
 // 👉 Add these imports (adjust paths if needed)
 import { SocialLinksSection } from "./social-links-section";
 import { AwardsSection } from "./resume/awards-section";
+import { BannerUpload } from "./banner-upload";
 
 // ---------- Types from the public APIs ----------
 interface Country {
@@ -56,26 +57,48 @@ interface DialCode {
 
 // ---------- Form Schema ----------
 const formSchema = z.object({
-  cname: z.string().min(1, "Company name is required"),
-  country: z.string().min(1, "Country is required"),
-  city: z.string().min(1, "City is required"),
-  zipcode: z.string().min(1, "Zip code is required"),
-  cemail: z.string().email("Invalid email address"),
-  cPhoneNumber: z.string().min(1, "Phone number is required"),
-  aboutUs: z.string().min(1, "About us is required"),
-  industry: z.string().min(1, "Industry is required"),
+  cname: z
+    .string()
+    .min(1, "Company name is required")
+    .max(100, "Company name is too long"),
+  country: z
+    .string()
+    .min(1, "Country is required")
+    .max(50, "Country name is too long"),
+  city: z.string().min(1, "City is required").max(50, "City name is too long"),
+  zipcode: z
+    .string()
+    .min(1, "Zip code is required")
+    .max(20, "Zip code is too long"),
+  cemail: z
+    .string()
+    .email("Invalid email address")
+    .max(100, "Email is too long"),
+  cPhoneNumber: z
+    .string()
+    .min(1, "Phone number is required")
+    .max(20, "Phone number is too long"),
+  aboutUs: z
+    .string()
+    .min(1, "About us is required")
+    .max(1000, "About us is too long"),
+  industry: z
+    .string()
+    .min(1, "Industry is required")
+    .max(100, "Industry is too long"),
+  banner: z.any().optional(),
 
-  // Replaces individual social fields
+  // Social links
   sLink: z
     .array(
       z.object({
-        label: z.string(),
+        label: z.string().max(50, "Label is too long"),
         url: z.string().optional().or(z.literal("")),
       })
     )
     .optional(),
 
-  // Awards form uses useFieldArray
+  // Awards remain unchanged
   awardsAndHonors: z
     .array(
       z.object({
@@ -101,8 +124,9 @@ export default function CreateCompanyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [websites, setWebsites] = useState<string[]>([""]);
   const [services, setServices] = useState<string[]>([""]);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
 
   // ---------- React Query: Countries, Dial Codes, Cities ----------
   const [selectedCountry, setSelectedCountry] = useState<string>("");
@@ -181,6 +205,7 @@ export default function CreateCompanyPage() {
       zipcode: "",
       cemail: "",
       cPhoneNumber: "",
+      banner: null,
       aboutUs: "",
       industry: "",
       sLink: [], // SocialLinksSection seeds this to 6 fixed rows
@@ -307,6 +332,22 @@ export default function CreateCompanyPage() {
     deleteElevatorPitchMutation.mutate(userId);
   };
 
+  useEffect(() => {
+    if (bannerFile) {
+      const objectUrl = URL.createObjectURL(bannerFile);
+      setBannerPreviewUrl(objectUrl);
+
+      // Cleanup
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setBannerPreviewUrl(null);
+    }
+  }, [bannerFile]);
+  const handleBannerSelect = (file: File | null) => {
+    setBannerFile(file);
+    form.setValue("banner", file);
+  };
+
   const onSubmit = async (data: FormData) => {
     const userId = (session?.user as any)?.id;
     if (!userId) {
@@ -320,6 +361,9 @@ export default function CreateCompanyPage() {
 
     const formData = new FormData();
 
+    if (bannerFile) {
+      formData.append("banner", bannerFile);
+    }
     if (logoFile) {
       formData.append("clogo", logoFile);
     }
@@ -345,13 +389,14 @@ export default function CreateCompanyPage() {
         url: s.url || "",
       }));
 
+    // const websiteLinks = (websites ?? []).filter(Boolean).map((url) => ({
+    //   label: "Website", // or however you want to label them
+    //   url,
+    // }));
 
-    const websiteLinks = (websites ?? []).filter(Boolean).map((url) => ({
-      label: "Website", // or however you want to label them
-      url,
-    }));
+    // const allLinks = [...websiteLinks, ...sLinks];
+    const allLinks = [...sLinks];
 
-    const allLinks = [...websiteLinks, ...sLinks];
     formData.append("sLink", JSON.stringify(allLinks));
 
     // Services
@@ -369,10 +414,10 @@ export default function CreateCompanyPage() {
     formData.append("AwardsAndHonors", JSON.stringify(filteredAwards));
 
     try {
-      await createCompanyMutation.mutateAsync(formData);
-      // for (const pair of formData.entries()) {
-      //   console.log(`${pair[0]}: ${pair[1]}`);
-      // }
+      // await createCompanyMutation.mutateAsync(formData);
+      for (const pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+      }
     } catch (error) {
       console.error("Error creating company:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -456,6 +501,15 @@ export default function CreateCompanyPage() {
           </div>
 
           {/* Company Logo and About */}
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Company Banner
+            </h2>
+            <BannerUpload
+              onFileSelect={handleBannerSelect}
+              previewUrl={bannerPreviewUrl}
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-900">
@@ -636,13 +690,13 @@ export default function CreateCompanyPage() {
           </div>
 
           {/* Websites */}
-          <DynamicInputList
+          {/* <DynamicInputList
             label="Website"
             placeholder="Enter Your Website Url"
             values={websites}
             onChange={setWebsites}
             buttonText="Add More"
-          />
+          /> */}
 
           {/* Social Links (fixed 6) */}
           <SocialLinksSection form={form} />
@@ -678,15 +732,14 @@ export default function CreateCompanyPage() {
                 </FormItem>
               )}
             />
+            {/* Services */}
+            <DynamicInputList
+              label="Services*"
+              placeholder="Add Here"
+              values={services}
+              onChange={setServices}
+            />
           </div>
-
-          {/* Services */}
-          <DynamicInputList
-            label="Services*"
-            placeholder="Add Here"
-            values={services}
-            onChange={setServices}
-          />
 
           {/* Employee Selection */}
           <div className="space-y-4">
