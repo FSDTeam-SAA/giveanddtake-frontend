@@ -68,7 +68,6 @@ export type Recruiter = {
   title?: string;
   aboutUs?: string;
   firstName?: string;
-  lastName?: string;
   sureName?: string;
   country?: string;
   city?: string;
@@ -151,7 +150,7 @@ export default function EditableRecruiterAccount({
   // Derived state for view/edit
   const {
     firstName,
-    lastName,
+    sureName,
     title,
     bio,
     country,
@@ -165,7 +164,7 @@ export default function EditableRecruiterAccount({
     sLink,
   } = isEditing ? editedRecruiter : recruiter;
 
-  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Recruiter";
+  const fullName = [firstName, sureName].filter(Boolean).join(" ") || "Recruiter";
   const primaryLocation = location || [city, country].filter(Boolean).join(", ");
   const displayPhoto = photoPreview || photo || "/placeholder.svg";
   const displayBanner = bannerPreview || banner || "/placeholder-banner.svg";
@@ -345,7 +344,7 @@ export default function EditableRecruiterAccount({
                 <Avatar className="h-full w-full rounded-lg">
                   <AvatarImage src={displayPhoto} alt={`${fullName} photo`} />
                   <AvatarFallback className="rounded-lg">
-                    {getInitials(firstName, lastName)}
+                    {getInitials(firstName, sureName)}
                   </AvatarFallback>
                 </Avatar>
                 {isEditing && (
@@ -467,12 +466,12 @@ export default function EditableRecruiterAccount({
                         />
                       </div>
                       <div>
-                        <Label htmlFor="lastName">Last Name</Label>
+                        <Label htmlFor="sureName">Last Name</Label>
                         <Input
-                          id="lastName"
-                          value={editedRecruiter.lastName || ""}
+                          id="sureName"
+                          value={editedRecruiter.sureName || ""}
                           onChange={(e) =>
-                            setEditedRecruiter((r) => ({ ...r, lastName: e.target.value }))
+                            setEditedRecruiter((r) => ({ ...r, sureName: e.target.value }))
                           }
                         />
                       </div>
