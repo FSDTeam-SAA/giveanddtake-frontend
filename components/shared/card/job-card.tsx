@@ -352,7 +352,7 @@ export default function JobCard({
                     <span className="truncate">{job.location}</span>
                   </div>
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
-                    {job.employementType || "Not Specified"}
+                    {job.employement_Type || "Not Specified"}
                   </div>
                 </div>
 
