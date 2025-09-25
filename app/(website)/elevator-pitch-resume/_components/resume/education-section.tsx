@@ -376,7 +376,7 @@ export function EducationSection({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Education</CardTitle>
+        <CardTitle>Education*</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {educationFields.map((field, index) => (
