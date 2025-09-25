@@ -42,6 +42,7 @@ import {
 import { SocialLinksSection } from "./social-links-section";
 import { AwardsSection } from "./resume/awards-section";
 import { BannerUpload } from "./banner-upload";
+import { convertToISODate } from "@/lib/date-utils";
 
 // ---------- Types from the public APIs ----------
 interface Country {
@@ -93,7 +94,11 @@ const formSchema = z.object({
     .array(
       z.object({
         label: z.string().max(50, "Label is too long"),
-        url: z.string().optional().or(z.literal("")),
+        url: z
+          .string()
+          .url("Please enter a valid URL")
+          .optional()
+          .or(z.literal("")),
       })
     )
     .optional(),
@@ -255,6 +260,10 @@ export default function CreateCompanyPage() {
     onSuccess: () => {
       toast.success("Company created successfully!");
       queryClient.invalidateQueries({ queryKey: ["company"] });
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to create company");
@@ -289,7 +298,6 @@ export default function CreateCompanyPage() {
       setIsElevatorPitchUploaded(false);
       setUploadedVideoUrl(null);
       setElevatorPitchFile(null);
-      toast.success("Elevator pitch deleted successfully!");
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to delete video");
@@ -407,17 +415,23 @@ export default function CreateCompanyPage() {
     formData.append("employeesId", JSON.stringify(selectedEmployees));
 
     // Awards
-    const filteredAwards = (data.awardsAndHonors ?? []).filter((a) =>
-      (a.title ?? "").trim()
-    );
+    const awardsWithISODates = (data.awardsAndHonors ?? [])
+      // Filter out completely empty awards
+      .filter((a) => (a.title ?? "").trim())
+      .map((award) => ({
+        ...award,
+        // 🎯 CONVERT MM/YYYY to ISO 8601 HERE
+        programeDate: convertToISODate(award.programeDate || ""),
+      }));
+
     // Keep your backend key casing:
-    formData.append("AwardsAndHonors", JSON.stringify(filteredAwards));
+    formData.append("AwardsAndHonors", JSON.stringify(awardsWithISODates));
 
     try {
-      // await createCompanyMutation.mutateAsync(formData);
-      for (const pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
-      }
+      await createCompanyMutation.mutateAsync(formData);
+      // for (const pair of formData.entries()) {
+      //   console.log(`${pair[0]}: ${pair[1]}`);
+      // }
     } catch (error) {
       console.error("Error creating company:", error);
       toast.error("An unexpected error occurred. Please try again.");

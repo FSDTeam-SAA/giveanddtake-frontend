@@ -123,7 +123,7 @@ export function PersonalInformation() {
   const { data: session } = useSession();
   const token = session?.accessToken || "";
 
-  console.log(token)
+  console.log(token);
   const email = session?.user?.email || "";
 
   const queryClient = useQueryClient();
@@ -353,6 +353,7 @@ export function PersonalInformation() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* First Name */}
         <div>
           <Label
             htmlFor="firstName"
@@ -363,12 +364,18 @@ export function PersonalInformation() {
           <Input
             id="firstName"
             value={formData.firstName}
-            onChange={(e) => handleInputChange("firstName", e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.length <= 50) {
+                handleInputChange("firstName", e.target.value);
+              }
+            }}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
+            maxLength={50}
           />
         </div>
 
+        {/* Surname */}
         <div>
           <Label
             htmlFor="surname"
@@ -379,12 +386,18 @@ export function PersonalInformation() {
           <Input
             id="surname"
             value={formData.surname}
-            onChange={(e) => handleInputChange("surname", e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.length <= 50) {
+                handleInputChange("surname", e.target.value);
+              }
+            }}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
+            maxLength={50}
           />
         </div>
 
+        {/* Email Address */}
         <div>
           <Label
             htmlFor="email"
@@ -396,11 +409,13 @@ export function PersonalInformation() {
             id="email"
             type="email"
             value={formData.email}
-            disabled /* Email is not editable */
+            disabled
             className="bg-gray-50 border-gray-200"
+            maxLength={254}
           />
         </div>
 
+        {/* Phone */}
         <div>
           <Label
             htmlFor="phone"
@@ -410,13 +425,25 @@ export function PersonalInformation() {
           </Label>
           <Input
             id="phone"
+            type="tel"
             value={formData.phone}
-            onChange={(e) => handleInputChange("phone", e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.length <= 20) {
+                handleInputChange("phone", e.target.value);
+              }
+            }}
+            onInput={(e) => {
+              // Remove any non-digit characters except +, -, (, )
+              e.target.value = e.target.value.replace(/[^\d+\-()\s]/g, "");
+            }}
+            pattern="[\d+\-()\s]{10,}"
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
+            maxLength={20}
           />
         </div>
 
+        {/* Country */}
         <div>
           <Label
             htmlFor="country"
@@ -427,9 +454,14 @@ export function PersonalInformation() {
           <Input
             id="country"
             value={formData.country}
-            onChange={(e) => handleInputChange("country", e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.length <= 56) {
+                handleInputChange("country", e.target.value);
+              }
+            }}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
+            maxLength={56}
           />
         </div>
       </div>
@@ -510,6 +542,7 @@ export function PersonalInformation() {
                 value={email}
                 disabled
                 className="bg-gray-50 border-gray-200"
+                maxLength={254}
               />
             </div>
             <div>
@@ -525,8 +558,13 @@ export function PersonalInformation() {
                   type={showDisablePassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={disablePassword}
-                  onChange={(e) => setDisablePassword(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 128) {
+                      setDisablePassword(e.target.value);
+                    }
+                  }}
                   className="bg-gray-50 border-gray-200 pr-10"
+                  maxLength={128}
                 />
                 <button
                   type="button"
@@ -592,6 +630,7 @@ export function PersonalInformation() {
                 value={email}
                 disabled
                 className="bg-gray-50 border-gray-200"
+                maxLength={254}
               />
             </div>
             <div>
@@ -607,8 +646,13 @@ export function PersonalInformation() {
                   type={showDeletePassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 128) {
+                      setDeletePassword(e.target.value);
+                    }
+                  }}
                   className="bg-gray-50 border-gray-200 pr-10"
+                  maxLength={128}
                 />
                 <button
                   type="button"
