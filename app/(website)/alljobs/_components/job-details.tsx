@@ -43,7 +43,7 @@ interface JobDetailsData {
   benefits: string[];
   vacancy: number;
   employement_Type?: string;
-  experience: number;
+  experience: string;
   deadline: string;
   status: string;
   compensation: string;
@@ -397,7 +397,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
               <div className="flex flex-col items-start sm:items-end gap-2">
                 <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
-                  <DollarSign className="h-4 w-4 mr-1" /> {job.salaryRange}
+                  {job.salaryRange}
                 </div>
                 <div className="inline-flex items-center bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
                   {job.employement_Type || "Not specified"}
@@ -534,7 +534,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <CardContent className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Experience</span>
-                  <span className="font-medium">{job.experience}+ years</span>
+                  <span className="font-medium">{job.experience.charAt(0).toUpperCase() + job.experience.slice(1)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Positions</span>

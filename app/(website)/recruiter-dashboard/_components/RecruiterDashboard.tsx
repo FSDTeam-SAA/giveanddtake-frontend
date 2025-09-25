@@ -713,7 +713,7 @@ export default function RecruiterDashboard() {
                       <div className="space-y-3">
                         <div>
                           <div className="font-medium text-xl text-[#000000]">
-                            {`${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.lastName}`}
+                            {`${recruiterAccount?.data?.firstName} ${recruiterAccount?.data?.sureName}`}
                           </div>
                           {recruiterAccount?.data?.companyId && (
                             <div className="text-base text-blue-600">
@@ -729,39 +729,6 @@ export default function RecruiterDashboard() {
                               {recruiterAccount?.data?.emailAddress ??
                                 "No email available"}
                             </p>
-                          </div>
-                          {/* Website */}
-                          <div className="flex items-center gap-3">
-                            <Globe className="text-gray-700 h-5 w-5" />
-                            {recruiterAccount?.data?.companyId?.links?.length &&
-                            typeof recruiterAccount.data.companyId.links[0] ===
-                              "string" ? (
-                              <Link
-                                href={recruiterAccount.data.companyId.links[0]}
-                                className="text-base text-gray-700 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`Visit ${recruiterAccount.data.companyId.cname} website`}
-                              >
-                                {recruiterAccount.data.companyId.links[0]}
-                              </Link>
-                            ) : recruiterAccount?.data?.sLink?.length &&
-                              typeof recruiterAccount.data.sLink[0].url ===
-                                "string" ? (
-                              <Link
-                                href={recruiterAccount.data.sLink[0].url}
-                                className="text-base text-gray-700 hover:underline"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                aria-label={`Visit ${recruiterAccount.data.sLink[0].label}`}
-                              >
-                                {recruiterAccount.data.sLink[0].url}
-                              </Link>
-                            ) : (
-                              <p className="text-base text-gray-700">
-                                No website available
-                              </p>
-                            )}
                           </div>
                         </div>
                       </div>
