@@ -144,7 +144,7 @@ export default function MultiStepJobForm() {
       country: "",
       region: "",
       vacancy: 1,
-      employmentType: undefined,
+      employement_Type: undefined,
       experience: undefined,
       locationType: undefined,
       careerStage: undefined,
@@ -249,7 +249,7 @@ export default function MultiStepJobForm() {
       "country",
       "region",
       "vacancy",
-      "employmentType",
+      "employement_Type",
       "experience",
       "locationType",
       "careerStage",
@@ -370,12 +370,12 @@ export default function MultiStepJobForm() {
         description: DOMPurify.sanitize(data.jobDescription),
         salaryRange: data.compensation ? String(data.compensation) : "$0 - $0",
         location: DOMPurify.sanitize(`${data.country}, ${data.region}`),
-        shift: data.employmentType === "full-time" ? "Day" : "Flexible",
+        shift: data.employement_Type === "full-time" ? "Day" : "Flexible",
         responsibilities,
         educationExperience: requirements,
         benefits: [],
         vacancy: data.vacancy,
-        experience: 0,
+        experience: data.experience || "Not Specified",
         deadline: getExpirationDate(),
         status: "active" as const,
         jobCategoryId: data.categoryId,
@@ -395,7 +395,7 @@ export default function MultiStepJobForm() {
           data.customQuestions
             ?.filter((q) => q.question)
             .map((q) => ({ question: DOMPurify.sanitize(q.question!) })) || [],
-        employmentType: data.employmentType,
+        employement_Type: data.employement_Type,
         websiteUrl: data.companyUrl
           ? DOMPurify.sanitize(data.companyUrl)
           : undefined,
@@ -405,7 +405,7 @@ export default function MultiStepJobForm() {
       };
 
       await postJob(postData);
-      console.log(postData);
+      // console.log(postData);
       toast.success("Job published successfully!");
       router.push("/recruiter-dashboard");
     } catch (error) {

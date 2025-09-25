@@ -26,7 +26,7 @@ export const jobSchema = z.object({
     .min(1, "Vacancy must be at least 1")
     .max(50, "Vacancy cannot exceed 50"),
 
-  employmentType: z.enum([
+  employement_Type: z.enum([
     "full-time",
     "part-time",
     "internship",

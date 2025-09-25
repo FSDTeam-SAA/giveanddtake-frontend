@@ -421,7 +421,7 @@ export default function JobDetailsStep({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="employmentType"
+              name="employement_Type"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-gray-700">

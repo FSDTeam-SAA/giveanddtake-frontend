@@ -275,7 +275,6 @@ export default function JobCard({
                 </Link>
               </div>
               <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                <DollarSign className="h-4 w-4 mr-1" aria-hidden />
                 <span className="truncate">{job.salaryRange}</span>
               </div>
               <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
@@ -346,7 +345,6 @@ export default function JobCard({
               <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                    <DollarSign className="h-4 w-4 mr-1" aria-hidden />
                     <span className="truncate">{job.salaryRange}</span>
                   </div>
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
@@ -354,7 +352,7 @@ export default function JobCard({
                     <span className="truncate">{job.location}</span>
                   </div>
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
-                    {job.employement_Type || "Not Specified"}
+                    {job.employementType || "Not Specified"}
                   </div>
                 </div>
 

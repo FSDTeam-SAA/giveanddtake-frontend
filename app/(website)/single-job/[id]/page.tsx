@@ -43,7 +43,7 @@ interface JobPostData {
   publishDate: string;
   status: string;
   jobCategoryId: string;
-  employment_Type: string;
+  employement_Type: string;
   compensation: string;
   arcrivedJob: boolean;
   applicationRequirement: { requirement: string }[];
@@ -155,7 +155,7 @@ export default function JobPreview() {
         country: jobData.location?.split(", ")[0] || "N/A",
         region: jobData.location?.split(", ")[1] || "N/A",
         employmentType: jobData.shift?.toLowerCase() || "N/A",
-        experience: jobData.experience ? `${jobData.experience} years` : "N/A",
+        experience: jobData.experience ? `${jobData.experience}` : "N/A",
         category: "N/A", // Assuming category is not in jobData, or needs to be derived
         categoryId: jobData.jobCategoryId || "N/A",
         compensation: jobData.salaryRange
@@ -300,7 +300,7 @@ export default function JobPreview() {
         : selectedDate?.toISOString() || jobData.createdAt, // Use selectedDate or existing createdAt
       status: jobData.status, // Keep existing status
       jobCategoryId: formData.categoryId,
-      employment_Type: formData.employmentType,
+      employement_Type: formData.employmentType,
       compensation: formData.compensation.split(" ")[1] || "Negotiable",
       arcrivedJob: jobData.arcrivedJob, // Keep existing archived status
       applicationRequirement: applicationRequirements

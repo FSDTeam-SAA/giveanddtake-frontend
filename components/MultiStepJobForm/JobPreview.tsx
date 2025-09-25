@@ -40,7 +40,7 @@ interface JobPostData {
   publishDate: string;
   status: string;
   jobCategoryId: string;
-  employmentType: string;
+  employement_Type: string;
   compensation: string;
   archivedJob: boolean;
   applicationRequirement: { requirement: string }[];
@@ -55,7 +55,7 @@ interface JobPreviewProps {
     department?: string;
     country: string;
     region: string;
-    employmentType: string;
+    employement_Type: string;
     experience: string;
     category: string;
     categoryId: string;
@@ -181,7 +181,7 @@ export default function JobPreview({
       location: DOMPurify.sanitize(
         `${formData.country || "N/A"}, ${formData.region || "N/A"}`
       ),
-      shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
+      shift: formData.employement_Type === "full-time" ? "Day" : "Flexible",
       companyUrl: companyUrl ? DOMPurify.sanitize(companyUrl) : undefined,
       responsibilities,
       educationExperience,
@@ -193,7 +193,7 @@ export default function JobPreview({
         : formData.publishDate || selectedDate.toISOString(),
       status: "active",
       jobCategoryId: formData.categoryId || "",
-      employmentType: formData.employmentType || "N/A",
+      employement_Type: formData.employement_Type || "N/A",
       compensation: formData.compensation ? "Monthly" : "Negotiable",
       archivedJob: false,
       applicationRequirement: applicationRequirements
@@ -266,7 +266,7 @@ export default function JobPreview({
                 Employment Type
               </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                {formData.employmentType || "N/A"}
+                {formData.employement_Type || "N/A"}
               </div>
             </div>
             <div className="space-y-2">
