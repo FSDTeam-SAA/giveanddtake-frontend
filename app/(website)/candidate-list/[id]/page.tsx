@@ -423,7 +423,7 @@ export default function JobApplicantsPage() {
                       </TableCell>
                     )}
                     <TableCell>
-                      <div className="flex gap-2 flex-wrap items-center">
+                      <div className="flex gap-2 items-center">
                         {STATUS_OPTIONS.map((opt) => {
                           const active = normalized === opt.value;
                           return (

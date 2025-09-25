@@ -492,52 +492,15 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                 className="rounded mb-4 object-cover w-[170px] h-[170px]"
               />
               <div className="mb-4">
-                <h2 className="text-[40px] font-semibold">
+                <h2 className="text-[25px] font-semibold">
                   {userData.name || "Unknown User"}
                 </h2>
                 <p className="text-[#131313] text-[18px] font-normal">
-                  {userData.role || "Not provided"}
+                  {userData.role
+                    ? userData.role.charAt(0).toUpperCase() +
+                      userData.role.slice(1)
+                    : "Unknown"}
                 </p>
-              </div>
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex gap-2">
-                  {[
-                    {
-                      Icon: Linkedin,
-                      href: userData.linkedinUrl || "#",
-                      label: "LinkedIn",
-                    },
-                    {
-                      Icon: Twitter,
-                      href: userData.twitterUrl || "#",
-                      label: "Twitter",
-                    },
-                    {
-                      Icon: Dribbble,
-                      href: userData.dribbbleUrl || "#",
-                      label: "Dribbble",
-                    },
-                    {
-                      Icon: Facebook,
-                      href: userData.facebookUrl || "#",
-                      label: "Facebook",
-                    },
-                    {
-                      Icon: Instagram,
-                      href: userData.instagramUrl || "#",
-                      label: "Instagram",
-                    },
-                  ].map(({ Icon, href, label }) => (
-                    <div
-                      key={label}
-                      className="border border-[#9EC7DC] rounded p-2 hover:bg-[#9EC7DC]"
-                    >
-                      <Link href={href} aria-label={label}>
-                        <Icon className="h-5 w-5 text-gray-500 hover:text-blue-600" />
-                      </Link>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
