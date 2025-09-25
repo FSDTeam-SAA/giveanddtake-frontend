@@ -135,9 +135,15 @@ export function SecurityQuestionsForm() {
 
               {selectedQuestions[index] && (
                 <Input
-                  placeholder="Write here"
+                  placeholder="Write here (text only, max 50 characters)"
                   value={answers[index]}
-                  onChange={(e) => handleAnswerChange(index, e.target.value)}
+                  onChange={(e) => {
+                    // Remove numbers and limit to 50 characters
+                    const textOnly = e.target.value.replace(/[0-9]/g, "");
+                    const truncated = textOnly.slice(0, 50);
+                    handleAnswerChange(index, truncated);
+                  }}
+                  maxLength={50}
                   className="mt-2"
                 />
               )}

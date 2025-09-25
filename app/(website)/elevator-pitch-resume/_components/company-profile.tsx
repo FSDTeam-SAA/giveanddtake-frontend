@@ -7,7 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload"; // Assumed component
-import { fetchCompanyDetails, uploadElevatorPitch, deleteElevatorPitchVideo } from "@/lib/api-service";
+import {
+  fetchCompanyDetails,
+  uploadElevatorPitch,
+  deleteElevatorPitchVideo,
+} from "@/lib/api-service";
 import {
   MapPin,
   Users,
@@ -117,7 +121,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState<boolean>(false);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
+    useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -297,7 +302,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       setElevatorPitchFile(null);
       setIsDeleteModalOpen(false);
       setPitchData(null); // Clear pitch data
-      queryClient.invalidateQueries({ queryKey: ["company", userId]}); // Invalidate to refetch pitch data
+      queryClient.invalidateQueries({ queryKey: ["company", userId] }); // Invalidate to refetch pitch data
     },
     onError: (error: any) => {
       toast.error(error?.message || "Failed to delete elevator pitch.");
@@ -540,7 +545,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   type="button"
                   className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleElevatorPitchUpload}
-                  disabled={uploadElevatorPitchMutation.isPending || !elevatorPitchFile}
+                  disabled={
+                    uploadElevatorPitchMutation.isPending || !elevatorPitchFile
+                  }
                 >
                   {uploadElevatorPitchMutation.isPending ? (
                     <div className="flex items-center gap-2">
@@ -592,7 +599,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
             <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete your elevator pitch? This action cannot be undone.
+              Are you sure you want to delete your elevator pitch? This action
+              cannot be undone.
             </p>
             <div className="flex justify-end gap-4">
               <Button
@@ -707,9 +715,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       Phone Number
                     </TableHead>
                     <TableHead className="font-medium text-gray-700">
-                      Total Skills
-                    </TableHead>
-                    <TableHead className="font-medium text-gray-700">
                       Action
                     </TableHead>
                   </TableRow>
@@ -746,9 +751,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       </TableCell>
                       <TableCell className="text-gray-600">
                         {recruiter.phoneNum}
-                      </TableCell>
-                      <TableCell className="text-gray-600">
-                        {recruiter.skills.length}
                       </TableCell>
                       <TableCell>
                         <Button

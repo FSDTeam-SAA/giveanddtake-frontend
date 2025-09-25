@@ -10,7 +10,7 @@ type Role = "candidate" | "recruiter" | "company";
 interface SearchUser {
   _id?: string;
   name?: string;
-  role?: Role | string; // allow unknown strings from backend
+  role?: Role | string;
   phoneNum?: string;
   address?: string;
   avatar?: {
@@ -48,6 +48,8 @@ export function GlobalSearch() {
         setIsOpen(false);
         return;
       }
+      // open dropdown immediately while we search
+      setIsOpen(true);
       await searchUsers(q);
     };
 
@@ -82,7 +84,8 @@ export function GlobalSearch() {
       if (!base) {
         console.error("Missing NEXT_PUBLIC_BASE_URL");
         setResults([]);
-        setIsOpen(false);
+        // keep dropdown open so "no results" can be shown if desired
+        setIsOpen(true);
         return;
       }
 
@@ -114,16 +117,19 @@ export function GlobalSearch() {
 
         const limited = filteredResults.slice(0, 8);
         setResults(limited);
-        setIsOpen(limited.length > 0);
+        // always open the dropdown if there's a query (we show either results or "no results")
+        setIsOpen(true);
       } else {
         setResults([]);
-        setIsOpen(false);
+        // still open to show "No results..."
+        setIsOpen(true);
       }
     } catch (err: any) {
       if (err?.name !== "AbortError") {
         console.error("Search error:", err);
         setResults([]);
-        setIsOpen(false);
+        // open so user can see error / no results
+        setIsOpen(true);
       }
     } finally {
       setIsLoading(false);
@@ -138,7 +144,7 @@ export function GlobalSearch() {
         ? `/companies-profile/${id}`
         : role === "recruiter"
         ? `/recruiters-profile/${id}`
-        : `/candidates-profile/${id}`; // keep your existing route shape
+        : `/candidates-profile/${id}`;
 
     router.push(profileUrl);
     setQuery("");
@@ -179,7 +185,11 @@ export function GlobalSearch() {
           type="text"
           placeholder="Search people, companies..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            // open dropdown as soon as user types something (helps show "Searching..." / "No results")
+            if (e.target.value.trim().length > 0) setIsOpen(true);
+          }}
           onFocus={() => query.trim().length > 0 && setIsOpen(true)}
           aria-label="Global search"
           className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent transition-all duration-200 text-sm"
@@ -202,7 +212,14 @@ export function GlobalSearch() {
           role="listbox"
           aria-label="Search results"
         >
-          {results.length > 0 ? (
+          {isLoading ? (
+            <div className="px-4 py-8 text-center text-gray-500">
+              <div className="inline-flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-[#4B98DE] border-t-transparent rounded-full" />
+                <span className="text-sm">Searching...</span>
+              </div>
+            </div>
+          ) : results.length > 0 ? (
             <>
               <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
                 {results.length} result{results.length !== 1 ? "s" : ""} found

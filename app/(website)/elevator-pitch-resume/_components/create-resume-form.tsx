@@ -66,15 +66,14 @@ export const resumeSchema = z.object({
   city: z
     .string()
     .trim()
-    .max(100, "City can be at most 100 characters")
-    .optional(),
+    .min(1, "City is required")
+    .max(100, "City can be at most 100 characters"),
   zip: z.string().trim().max(20, "ZIP can be at most 20 characters").optional(),
   country: z
     .string()
     .trim()
-    .max(100, "Country can be at most 100 characters")
-    .optional(),
-
+    .min(1, "Country is required")
+    .max(100, "Country can be at most 100 characters"),
   aboutUs: z
     .string()
     .trim()
@@ -305,6 +304,7 @@ export default function CreateResumeForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const { data: session } = useSession();
+  console.log(session);
 
   const form = useForm<ResumeFormData>({
     resolver: zodResolver(resumeSchema),
@@ -320,21 +320,7 @@ export default function CreateResumeForm() {
       aboutUs: "",
       skills: [],
       sLink: [],
-      experiences: [
-        {
-          company: "",
-          position: "",
-          duration: "",
-          startDate: "",
-          endDate: "",
-          country: "",
-          city: "",
-          zip: "",
-          jobDescription: "",
-          jobCategory: "",
-          currentlyWorking: false,
-        },
-      ],
+      experiences: [],
       educationList: [
         {
           instituteName: "",
@@ -347,14 +333,7 @@ export default function CreateResumeForm() {
           country: "",
         },
       ],
-      awardsAndHonors: [
-        {
-          title: "",
-          programName: "",
-          programeDate: "",
-          description: "",
-        },
-      ],
+      awardsAndHonors: [],
       certifications: [],
       languages: [],
       immediatelyAvailable: false,
@@ -559,10 +538,10 @@ export default function CreateResumeForm() {
         formData.append("banner", bannerFile);
       }
 
-      // for (const [key, value] of formData.entries()) {
-      //   console.log(key, value);
-      // }
-      createResumeMutation.mutate(formData);
+      for (const [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+      // createResumeMutation.mutate(formData);
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -584,17 +563,24 @@ export default function CreateResumeForm() {
     if (!session?.user) return;
     if (form.formState.isDirty) return;
 
-    const name = session.user.name ?? session.user.email?.split("@")[0] ?? "";
+    // Type assertion to access custom properties like phoneNumber and country
+    const customUser = session.user as typeof session.user & {
+      phoneNumber?: string | null;
+      country?: string | null;
+    };
+
+    const name = customUser.name ?? customUser.email?.split("@")[0] ?? "";
     const [first = "", ...rest] = name.trim().split(/\s+/);
 
     form.reset({
       ...form.getValues(),
-      email: form.getValues("email") || (session.user.email ?? ""),
+      email: form.getValues("email") || (customUser.email ?? ""),
       firstName: form.getValues("firstName") || first,
       lastName: form.getValues("lastName") || rest.join(" "),
+      // Using the asserted customUser to safely access phoneNumber and country
       phoneNumber:
-        form.getValues("phoneNumber") || (session.user.phoneNumber ?? ""),
-      country: form.getValues("country") || (session.user.country ?? ""),
+        form.getValues("phoneNumber") || (customUser.phoneNumber ?? ""),
+      country: form.getValues("country") || (customUser.country ?? ""),
     });
   }, [session, form]);
 

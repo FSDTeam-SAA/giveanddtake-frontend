@@ -900,7 +900,11 @@ export default function UpdateResumeForm({
                     <FormItem>
                       <FormLabel>Phone Number*</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Phone Number" {...field} />
+                        <Input
+                          disabled
+                          placeholder="Enter Phone Number"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

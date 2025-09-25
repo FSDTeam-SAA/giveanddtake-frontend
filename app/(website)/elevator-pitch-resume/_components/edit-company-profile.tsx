@@ -153,7 +153,8 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       // Map API sLink to fixed platforms
       const sLink = FIXED_PLATFORMS.map((label) => {
         const matchingLink = company.sLink?.find(
-          (link: { label: string; url: string; _id: string }) => link.label === label
+          (link: { label: string; url: string; _id: string }) =>
+            link.label === label
         );
         return {
           _id: matchingLink?._id,
@@ -361,15 +362,12 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       const originalSLinks = companyData?.data?.companies[0]?.sLink || [];
       const processedSocialLinks = data.sLink.map((link) => {
         const originalLink = originalSLinks.find(
-          (orig: { _id: string; label: string; url: string }) => orig._id === link._id || orig.label === link.label
+          (orig: { _id: string; label: string; url: string }) =>
+            orig._id === link._id || orig.label === link.label
         );
         return {
           _id: link._id,
-          type: link._id
-            ? link.url
-              ? "update"
-              : "delete"
-            : "create",
+          type: link._id ? (link.url ? "update" : "delete") : "create",
           label: link.label,
           url: link.url || "",
         };
@@ -554,6 +552,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled
                             {...field}
                             type="email"
                             placeholder="Enter Your Email Address"
@@ -574,6 +573,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         </FormLabel>
                         <FormControl>
                           <Input
+                            disabled
                             {...field}
                             placeholder="+1 (555) 234567 2340"
                           />
@@ -710,7 +710,11 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                               <Input
                                 value={honor.issuer}
                                 onChange={(e) =>
-                                  updateHonor(honor.id, "issuer", e.target.value)
+                                  updateHonor(
+                                    honor.id,
+                                    "issuer",
+                                    e.target.value
+                                  )
                                 }
                                 placeholder="Award/Honor Issuer"
                               />
@@ -723,7 +727,11 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                 type="date"
                                 value={honor.programeDate}
                                 onChange={(e) =>
-                                  updateHonor(honor.id, "programeDate", e.target.value)
+                                  updateHonor(
+                                    honor.id,
+                                    "programeDate",
+                                    e.target.value
+                                  )
                                 }
                               />
                             </div>
@@ -736,7 +744,11 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                             <Textarea
                               value={honor.description}
                               onChange={(e) =>
-                                updateHonor(honor.id, "description", e.target.value)
+                                updateHonor(
+                                  honor.id,
+                                  "description",
+                                  e.target.value
+                                )
                               }
                               placeholder="Description of the award/honor"
                               className="min-h-[80px]"

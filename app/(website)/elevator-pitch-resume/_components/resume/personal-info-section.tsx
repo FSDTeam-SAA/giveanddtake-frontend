@@ -160,7 +160,10 @@ export function PersonalInfoSection({
   photoPreview,
   onPhotoUpload,
 }: PersonalInfoSectionProps) {
-  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const formCountry = form.watch("country");
+  const [selectedCountry, setSelectedCountry] = useState<string>(
+    formCountry || ""
+  );
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -227,33 +230,50 @@ export function PersonalInfoSection({
 
   // Handle country data side effects
   useEffect(() => {
-    if (countriesData && countriesData.length > 0 && !selectedCountry) {
-      setSelectedCountry(countriesData[0].country);
-      form.setValue("country", countriesData[0].country);
+    // Only set the default country if the form value is empty AND the local state is empty
+    if (
+      countriesData &&
+      countriesData.length > 0 &&
+      !formCountry &&
+      !selectedCountry
+    ) {
+      const defaultCountry = countriesData[0].country;
+      setSelectedCountry(defaultCountry);
+      form.setValue("country", defaultCountry);
+      // This is still risky, a better way is to rely on form.watch, but for now, it's safer to check both
     }
-  }, [countriesData, form, selectedCountry]);
+    // If the form has a value, ensure selectedCountry is synchronized for city fetching
+    if (formCountry && formCountry !== selectedCountry) {
+      setSelectedCountry(formCountry);
+    }
+  }, [countriesData, form, formCountry, selectedCountry]);
 
   // Handle dial codes data side effects
-  useEffect(() => {
-    if (dialCodesData && dialCodesData.length > 0) {
-      const defaultDialCode = dialCodesData[0].dial_code;
-      form.setValue("phoneNumber", defaultDialCode);
-    }
-  }, [dialCodesData, form]);
+  // useEffect(() => {
+  //   const currentPhoneNumber = form.getValues("phoneNumber");
+
+  //   // Only set a *default* dial code if the current phone number is empty (meaning no session data was loaded or it was cleared)
+  //   if (dialCodesData && dialCodesData.length > 0 && !currentPhoneNumber) {
+  //     const defaultDialCode = dialCodesData[0].dial_code;
+  //     form.setValue("phoneNumber", defaultDialCode);
+  //   }
+  //   // This is where your session data should stick if it exists.
+  //   // The issue with your existing logic was it set a default unconditionally.
+  // }, [dialCodesData, form]);
 
   // Update phone number with dial code when country changes
-  useEffect(() => {
-    if (selectedCountry && dialCodesData?.length) {
-      const selectedDialCode = dialCodesData.find(
-        (dc) => dc.name === selectedCountry
-      )?.dial_code;
-      if (selectedDialCode) {
-        const currentPhone = form.getValues("phoneNumber");
-        const phoneWithoutDial = currentPhone.replace(/^\+\d+/, "");
-        form.setValue("phoneNumber", selectedDialCode + phoneWithoutDial);
-      }
-    }
-  }, [selectedCountry, dialCodesData, form]);
+  // useEffect(() => {
+  //   if (selectedCountry && dialCodesData?.length) {
+  //     const selectedDialCode = dialCodesData.find(
+  //       (dc) => dc.name === selectedCountry
+  //     )?.dial_code;
+  //     if (selectedDialCode) {
+  //       const currentPhone = form.getValues("phoneNumber");
+  //       const phoneWithoutDial = currentPhone.replace(/^\+\d+/, "");
+  //       form.setValue("phoneNumber", selectedDialCode + phoneWithoutDial);
+  //     }
+  //   }
+  // }, [selectedCountry, dialCodesData, form]);
 
   return (
     <>
@@ -477,6 +497,7 @@ export function PersonalInfoSection({
                   <FormLabel>Phone Number*</FormLabel>
                   <FormControl>
                     <Input
+                      disabled
                       placeholder={
                         isLoadingDialCodes
                           ? "Loading..."
