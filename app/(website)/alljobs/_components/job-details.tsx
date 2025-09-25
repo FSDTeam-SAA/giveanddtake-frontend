@@ -534,7 +534,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <CardContent className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Experience</span>
-                  <span className="font-medium">{job.experience?.charAt(0).toUpperCase() + job.experience?.slice(1)}</span>
+                  <span className="font-medium">{job.experience.charAt(0).toUpperCase() + job.experience.slice(1)} level</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Positions</span>
