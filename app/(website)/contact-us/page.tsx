@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, MapPin, Clock, Search, Lock } from "lucide-react";
 import PageHeaders from "@/components/shared/PageHeaders";
+import { toast } from "sonner";
 
 // Define interface for form data
 interface ContactFormData {
@@ -67,12 +68,17 @@ export default function ContactForm() {
         subject: "",
         message: "",
       });
+      // Add success toast
+      toast.success("Message sent successfully!", {
+        description: "We'll get back to you soon.",
+        duration: 5000,
+      });
     },
     onError: (error: Error) => {
-      // toast.error("Failed to send message. Please try again.", {
-      //   description: error.message,
-      //   duration: 5000,
-      // })
+      toast.error("Failed to send message. Please try again.", {
+        description: error.message,
+        duration: 5000,
+      });
     },
   });
 
@@ -141,11 +147,9 @@ export default function ContactForm() {
                 Address
               </Label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
                   id="address"
                   placeholder="Enter Your Address"
-                  className="pl-10"
                   value={formData.address}
                   onChange={handleInputChange}
                   required

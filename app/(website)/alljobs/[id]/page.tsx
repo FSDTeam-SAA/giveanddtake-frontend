@@ -16,7 +16,7 @@ export default function Page({ params }: PageProps) {
   return (
     <div>
       <div
-        style={{ backgroundImage: "url('/assets/jobsDetails.jpg')" }}
+        style={{ backgroundImage: "linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.5)),  url('/assets/jobsDetails.jpg')" }}
         className="bg-cover bg-center py-16"
       >
         <div className="container mx-auto px-4 text-white">
