@@ -466,10 +466,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 <Users className="h-4 w-4" />
                 {company.employeesId?.length || 0} employees
               </div>
-              <div className="flex items-center gap-1">
-                <span>📍</span>
-                <span>Contact</span>
-              </div>
             </div>
 
             <div className="flex gap-2">

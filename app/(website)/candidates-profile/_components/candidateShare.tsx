@@ -14,7 +14,6 @@ import {
   TelegramIcon,
 } from "next-share";
 import { RiShareForwardLine } from "react-icons/ri";
-import { useSession } from "next-auth/react";
 
 type Props = {
   userId: string;
