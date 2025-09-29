@@ -362,7 +362,7 @@ export function ExperienceSection({
                         <CustomDateInput
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="MM/YYYY"
+                          placeholder="MMYYYY"
                         />
                       </FormControl>
                       <FormMessage />
@@ -379,7 +379,7 @@ export function ExperienceSection({
                         <CustomDateInput
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="MM/YYYY"
+                          placeholder="MMYYYY"
                           disabled={form.watch(
                             `experiences.${index}.currentlyWorking`
                           )}

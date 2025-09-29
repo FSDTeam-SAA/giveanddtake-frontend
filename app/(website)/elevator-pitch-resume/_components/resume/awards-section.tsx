@@ -60,7 +60,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
                     <FormItem>
                       <FormLabel>Program Date</FormLabel>
                       <FormControl>
-                        <CustomDateInput value={field.value} onChange={field.onChange} placeholder="MM/YYYY" />
+                        <CustomDateInput value={field.value} onChange={field.onChange} placeholder="MMYYYY" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

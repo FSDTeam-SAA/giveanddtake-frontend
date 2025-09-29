@@ -540,7 +540,7 @@ export function EducationSection({
                         <CustomDateInput
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="MM/YYYY"
+                          placeholder="MMYYYY"
                         />
                       </FormControl>
                       <FormMessage />
@@ -557,7 +557,7 @@ export function EducationSection({
                         <CustomDateInput
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="MM/YYYY"
+                          placeholder="MMYYYY"
                           disabled={form.watch(
                             `educationList.${index}.currentlyStudying`
                           )}
