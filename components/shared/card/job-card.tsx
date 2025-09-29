@@ -3,13 +3,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, DollarSign } from "lucide-react";
-import Link from "next/link";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { useState } from "react";
 import clsx from "clsx";
+import { useRouter } from "next/navigation";
 
 interface Recruiter {
   _id: string;
@@ -40,7 +40,6 @@ interface Job {
   experience: number;
   compensation: string;
   createdAt: string;
-
 }
 
 interface JobCardProps {
@@ -49,13 +48,10 @@ interface JobCardProps {
   className?: string;
 }
 
-export default function JobCard({
-  job,
-  variant,
-  className,
-}: JobCardProps) {
+export default function JobCard({ job, variant, className }: JobCardProps) {
   const { data: session, status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const router = useRouter();
 
   const role = session?.user.role as string | undefined;
   const isUnauthed = status === "unauthenticated";
@@ -67,6 +63,7 @@ export default function JobCard({
   const applicationLink = `/job-application?id=${job._id}`;
 
   const handleClick = (e: React.MouseEvent) => {
+    // Keep card-level behavior unchanged: just stop propagation here.
     e.stopPropagation();
   };
 
@@ -87,6 +84,11 @@ export default function JobCard({
     setTimeout(() => {
       void signIn(undefined, { callbackUrl: applicationLink });
     }, REDIRECT_DELAY_MS);
+  };
+
+  const handleProgrammaticApply = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(applicationLink);
   };
 
   const getInitials = (name: string) => {
@@ -167,6 +169,27 @@ export default function JobCard({
     </div>
   );
 
+  const navigateToProfile = (e: React.MouseEvent | React.KeyboardEvent) => {
+    // Prevent outer click behavior when clicking the profile name
+    if ("stopPropagation" in e) {
+      // MouseEvent or KeyboardEvent
+      // @ts-ignore
+      e.stopPropagation?.();
+    }
+    const profilePath =
+      postedByType === "recruiter"
+        ? `/recruiters-profile/${postedById}`
+        : `/companies-profile/${postedById}`;
+
+    // If keyboard Enter/Space pressed, ensure it's activated
+    if ("key" in (e as any)) {
+      const key = (e as any).key;
+      if (key !== "Enter" && key !== " ") return;
+    }
+
+    router.push(profilePath);
+  };
+
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
 
@@ -183,16 +206,22 @@ export default function JobCard({
       );
     }
 
+    // Authenticated candidate: programmatic navigation to avoid inner <a>
     return (
-      <Link href={applicationLink} onClick={(e) => e.stopPropagation()}>
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
-        >
-          Apply
-        </Button>
-      </Link>
+      <button
+        type="button"
+        onClick={handleProgrammaticApply}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            handleProgrammaticApply(e as any);
+          }
+        }}
+        className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent"
+      >
+        <span className="sr-only">Apply to {job.title}</span>
+        <span aria-hidden>Apply</span>
+      </button>
     );
   };
 
@@ -231,17 +260,16 @@ export default function JobCard({
                   </div>
                 </div>
                 <div className="mt-0.5">
-                  <Link
-                    href={`/${
-                      postedByType === "recruiter"
-                        ? "recruiters-profile"
-                        : "companies-profile"
-                    }/${postedById}`}
-                    className="text-primary text-sm hover:underline"
-                    onClick={(e) => e.stopPropagation()}
+                  {/* programmatic profile navigation (no <a>) */}
+                  <span
+                    role="link"
+                    tabIndex={0}
+                    onClick={(e) => navigateToProfile(e)}
+                    onKeyDown={(e) => navigateToProfile(e)}
+                    className="text-primary text-sm hover:underline cursor-pointer"
                   >
                     {postedByName}
-                  </Link>
+                  </span>
                 </div>
               </div>
             </div>
@@ -262,17 +290,16 @@ export default function JobCard({
 
             <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
               <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                <Link
-                  href={`/${
-                    postedByType === "recruiter"
-                      ? "recruiters-profile"
-                      : "companies-profile"
-                  }/${postedById}`}
-                  className="text-[#707070]"
-                  onClick={(e) => e.stopPropagation()}
+                {/* small chip: programmatic navigation */}
+                <span
+                  role="link"
+                  tabIndex={0}
+                  onClick={(e) => navigateToProfile(e)}
+                  onKeyDown={(e) => navigateToProfile(e)}
+                  className="text-[#707070] cursor-pointer"
                 >
                   {postedByName}
-                </Link>
+                </span>
               </div>
               <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
                 <span className="truncate">{job.salaryRange}</span>
@@ -314,17 +341,16 @@ export default function JobCard({
                     {job.title}
                   </h3>
                   <div>
-                    <Link
-                      href={`/${
-                        postedByType === "recruiter"
-                          ? "recruiters-profile"
-                          : "companies-profile"
-                      }/${postedById}`}
-                      className="text-primary text-sm hover:underline"
-                      onClick={(e) => e.stopPropagation()}
+                    {/* programmatic profile navigation */}
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={(e) => navigateToProfile(e)}
+                      onKeyDown={(e) => navigateToProfile(e)}
+                      className="text-primary text-sm hover:underline cursor-pointer"
                     >
                       {postedByName}
-                    </Link>
+                    </span>
                   </div>
                 </div>
 

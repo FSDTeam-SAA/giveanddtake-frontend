@@ -88,7 +88,7 @@ export function ScrollingInfoBar() {
           x: {
             repeat: Infinity,
             repeatType: "loop",
-            duration: 40,
+            duration: 70,
             ease: "linear",
           },
         }}

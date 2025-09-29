@@ -536,7 +536,7 @@ export default function CreateCompanyPage() {
                   className="h-full"
                 >
                   <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
-                    photo/recruiter logo
+                    Company logo
                   </div>
                 </FileUpload>
               </div>

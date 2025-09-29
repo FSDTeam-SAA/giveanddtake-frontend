@@ -13,15 +13,6 @@ interface ElevatorPitchUploadProps {
   isUploaded?: boolean; // true only AFTER API upload succeeds
 }
 
-/**
- * UX rules implemented per request:
- * - Before API upload (isUploaded === false):
- *    • Show preview (if chosen) and an "Upload Different Video" button to re-select locally.
- *    • DO NOT show a Delete button (nothing on server yet).
- * - After API upload (isUploaded === true):
- *    • Show the Delete button (which calls parent onDelete for API deletion).
- *    • Hide "Upload Different Video"; user must delete first, then choose a new file.
- */
 export function ElevatorPitchUpload({
   onFileSelect,
   selectedFile,
@@ -157,7 +148,7 @@ export function ElevatorPitchUpload({
             <FileUpload
               onFileSelect={handleFileSelect}
               accept="video/*"
-              maxSize={100 * 1024 * 1024}
+              maxSize={32 * 1024 * 1024}
               variant="dark"
               className="min-h-[200px]"
             >
@@ -173,7 +164,7 @@ export function ElevatorPitchUpload({
                     Drop your video here or click to browse
                   </p>
                   <p className="text-xs text-gray-400">
-                    Supports MP4, MOV, AVI • Max 100MB
+                     Maximum size 24mb and 30 seconds or 60 seconds long (if upgraded)
                   </p>
                 </div>
                 <Button

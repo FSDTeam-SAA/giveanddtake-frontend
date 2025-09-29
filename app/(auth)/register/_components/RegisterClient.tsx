@@ -474,7 +474,7 @@ export default function RegisterPage() {
         <RoleSelector setRole={setSelectedRole} />
       </Suspense>
 
-      <Card className="w-full max-w-xl">
+      <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
             Create Your Account
@@ -608,7 +608,7 @@ export default function RegisterPage() {
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
-              <Label className="mr-5">Date of Birth (MM/YYYY)</Label>
+              <Label className="mr-5">Date of Birth</Label>
 
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -640,7 +640,7 @@ export default function RegisterPage() {
 
                     setDob(normalized);
                   }}
-                  placeholder="MM/YYYY"
+                  placeholder="MMYYYY"
                   className="pl-10 h-11"
                 />
               </div>
@@ -783,7 +783,7 @@ export default function RegisterPage() {
               <Label htmlFor="terms" className="text-sm">
                 I agree to the{" "}
                 <Link
-                  href="/terms"
+                  href="/terms-condition"
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   Terms &amp; Conditions

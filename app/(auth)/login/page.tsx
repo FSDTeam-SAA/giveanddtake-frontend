@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState } from "react";
-import { signIn, getSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,13 +12,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
 
-// API helpers used exactly like in your ElevatorPitchAndResume component
-import {
-  getCompanyAccount,
-  getMyResume,
-  getRecruiterAccount,
-} from "@/lib/api-service";
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,84 +20,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
-
-  const navigatingRef = { current: false };
-
-  const checkProfileAndRedirect = async () => {
-    if (navigatingRef.current) return; // prevent double navigations
-
-    const session = await getSession();
-    const role = (session as any)?.user?.role as string | undefined;
-    const userId = (session as any)?.user?.id as string | undefined;
-
-    if (!role || !userId) {
-      navigatingRef.current = true;
-      return router.replace("/");
-    }
-
-    try {
-      if (role === "candidate") {
-        const res = await getMyResume();
-        const data = (res as any)?.data ?? res;
-        const hasResume = Boolean(data?.resume);
-        if (!hasResume) {
-          navigatingRef.current = true;
-          return router.replace("/elevator-pitch-resume");
-        }
-      } else if (role === "recruiter") {
-        console.log("heloooooooooooooooooooo");
-        const res: any = await getRecruiterAccount(userId);
-
-        // Normalize shapes and types
-        const payload = res?.data ?? res;
-        const rawSuccess =
-          typeof res?.success !== "undefined"
-            ? res.success
-            : typeof res?.data?.success !== "undefined"
-            ? res.data.success
-            : payload?.success;
-
-        const success =
-          rawSuccess === true || rawSuccess === "true"
-            ? true
-            : rawSuccess === false || rawSuccess === "false"
-            ? false
-            : undefined;
-
-        // Try common locations for actual recruiter object
-        const recruiterData =
-          payload?.recruiter ?? payload?.data ?? payload?.result ?? null;
-
-        // If API explicitly says false OR we have no recruiterData, send to setup
-        if (success === false || !recruiterData) {
-          navigatingRef.current = true;
-          return router.replace("/elevator-pitch-resume");
-        }
-      } else {
-        const res = await getCompanyAccount(userId);
-        const data = (res as any)?.data ?? res;
-        const companies = data?.companies;
-        const hasCompany = Array.isArray(companies) && companies.length > 0;
-        if (!hasCompany) {
-          navigatingRef.current = true;
-          return router.replace("/elevator-pitch-resume");
-        }
-      }
-
-      // Default: profile exists
-      navigatingRef.current = true;
-      return router.replace("/");
-    } catch (e: any) {
-      // If helper throws for not-found, send to setup for recruiter/company
-      const status = e?.response?.status ?? e?.status;
-      if (role !== "candidate" && status === 404) {
-        navigatingRef.current = true;
-        return router.replace("/elevator-pitch-resume");
-      }
-      navigatingRef.current = true;
-      return router.replace("/");
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,14 +36,12 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password. Please try again.");
       } else if (result?.ok) {
-        // Optional: persist rememberMe locally (depends on your auth strategy)
         try {
           if (rememberMe) localStorage.setItem("rememberedEmail", email);
           else localStorage.removeItem("rememberedEmail");
         } catch {}
 
-        // After successful sign-in, check for profile existence and redirect accordingly
-        await checkProfileAndRedirect();
+        window.location.href = "/elevator-pitch-resume";
       }
     } catch (error) {
       setError("Something went wrong. Please try again.");
