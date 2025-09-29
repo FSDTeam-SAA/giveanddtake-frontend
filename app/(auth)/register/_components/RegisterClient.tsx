@@ -396,9 +396,11 @@ export default function RegisterPage() {
       return false;
     }
 
-    const sanitizedPhone = sanitizePhone(formData.phoneNum);
-    if (!/^\+\d{4,}$/.test(sanitizedPhone)) {
-      toast.error("Please enter a valid phone number (e.g., +123456789).");
+    const sanitizedPhone = sanitizePhone(formData.phoneNum); // Regex: Start with '+', followed by 4 to 15 digits.
+    if (!/^\+\d{4,15}$/.test(sanitizedPhone)) {
+      toast.error(
+        "Please enter a valid phone number (e.g., +123456789) with a maximum of 15 digits."
+      );
       return false;
     }
 
@@ -596,6 +598,7 @@ export default function RegisterPage() {
                   }
                   className="pl-10"
                   required
+                  maxLength={15}
                 />
               </div>
               <p className="text-[11px] text-muted-foreground">

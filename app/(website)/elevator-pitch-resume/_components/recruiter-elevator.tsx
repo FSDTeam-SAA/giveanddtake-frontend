@@ -5,7 +5,10 @@ import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import { VideoPlayer } from "@/components/company/video-player";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
-import { deleteElevatorPitchVideo, uploadElevatorPitch } from "@/lib/api-service";
+import {
+  deleteElevatorPitchVideo,
+  uploadElevatorPitch,
+} from "@/lib/api-service";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
@@ -42,7 +45,8 @@ export default function RecruiterElevator({
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState<boolean>(false);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
+    useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const { data: session } = useSession();
@@ -188,8 +192,6 @@ export default function RecruiterElevator({
               />
             ) : loading ? (
               <div>Loading pitch...</div>
-            ) : error ? (
-              <div className="text-red-500">Error: {error}</div>
             ) : (
               <>
                 <ElevatorPitchUpload
@@ -264,11 +266,10 @@ export default function RecruiterElevator({
       {isDeleteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
-            <h3 className="text-lg font-semibold mb-4">
-              Confirm Delete
-            </h3>
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete your elevator pitch? This action cannot be undone.
+              Are you sure you want to delete your elevator pitch? This action
+              cannot be undone.
             </p>
             <div className="flex justify-end gap-4">
               <Button
