@@ -18,7 +18,7 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
     {
       value = "",
       onChange,
-      placeholder = "MM/YYYY",
+      placeholder = "MMYYYY",
       disabled,
       className,
       ...props

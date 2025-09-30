@@ -574,6 +574,7 @@ export function EducationSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
+<<<<<<< HEAD
                           onChange={(value) => {
                             field.onChange(value);
                             // Trigger validation for graduation date
@@ -601,6 +602,10 @@ export function EducationSection({
                             }
                           }}
                           placeholder="MM/YYYY"
+=======
+                          onChange={field.onChange}
+                          placeholder="MMYYYY"
+>>>>>>> 4f353b159ae991fcfaf19d52c2e8370821ac2f60
                         />
                       </FormControl>
                       <FormMessage />
@@ -616,6 +621,7 @@ export function EducationSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
+<<<<<<< HEAD
                           onChange={(value) => {
                             field.onChange(value);
                             // Validate against start date
@@ -643,6 +649,10 @@ export function EducationSection({
                             }
                           }}
                           placeholder="MM/YYYY"
+=======
+                          onChange={field.onChange}
+                          placeholder="MMYYYY"
+>>>>>>> 4f353b159ae991fcfaf19d52c2e8370821ac2f60
                           disabled={form.watch(
                             `educationList.${index}.currentlyStudying`
                           )}

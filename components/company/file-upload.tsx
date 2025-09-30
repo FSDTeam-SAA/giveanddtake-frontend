@@ -3,8 +3,13 @@
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { Upload, X } from "lucide-react";
+// Assuming you have the Sonner package installed and a Toaster component set up in your layout
+import { toast } from "sonner"; // 👈 New import for toast
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+// 32 MB in bytes: 32 * 1024 * 1024
+const MAX_FILE_SIZE_BYTES = 32 * 1024 * 1024; // 👈 Constant for 32MB
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -13,13 +18,13 @@ interface FileUploadProps {
   className?: string;
   children?: React.ReactNode;
   variant?: "default" | "dark";
-  defaultUrl?: string; // 👈 added for edit mode (existing file preview)
+  defaultUrl?: string;
 }
 
 export function FileUpload({
   onFileSelect,
   accept = "*/*",
-  maxSize = 10 * 1024 * 1024,
+  maxSize = MAX_FILE_SIZE_BYTES, // 👈 Updated default value to 32MB
   className,
   children,
   variant = "default",
@@ -72,11 +77,17 @@ export function FileUpload({
 
   const handleFileSelect = (file: File) => {
     if (file.size > maxSize) {
-      alert(`File size must be less than ${maxSize / 1024 / 1024}MB`);
+      // 👈 Changed from alert to toast.error
+      toast.error(`File size must be less than ${maxSize / 1024 / 1024}MB`, {
+        description: `The file "${file.name}" is too large.`,
+        duration: 5000,
+      });
       return;
     }
     setSelectedFile(file);
     onFileSelect(file);
+    // Optional: Show success toast
+    // toast.success(`File "${file.name}" selected successfully.`);
   };
 
   const removeFile = () => {

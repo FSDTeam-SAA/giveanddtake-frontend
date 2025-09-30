@@ -1168,7 +1168,7 @@ export default function UpdateResumeForm({
                                 <CustomDateInput
                                   value={field.value || ""}
                                   onChange={field.onChange}
-                                  placeholder="MM/YYYY"
+                                  placeholder="MMYYYY"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1186,7 +1186,7 @@ export default function UpdateResumeForm({
                                   <CustomDateInput
                                     value={field.value || ""}
                                     onChange={field.onChange}
-                                    placeholder="MM/YYYY"
+                                    placeholder="MMYYYY"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1398,7 +1398,7 @@ export default function UpdateResumeForm({
                                 <CustomDateInput
                                   value={field.value || ""}
                                   onChange={field.onChange}
-                                  placeholder="MM/YYYY"
+                                  placeholder="MMYYYY"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1416,7 +1416,7 @@ export default function UpdateResumeForm({
                                   <CustomDateInput
                                     value={field.value || ""}
                                     onChange={field.onChange}
-                                    placeholder="MM/YYYY"
+                                    placeholder="MMYYYY"
                                   />
                                 </FormControl>
                                 <FormMessage />
