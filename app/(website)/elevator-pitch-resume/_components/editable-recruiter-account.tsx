@@ -1,11 +1,11 @@
+
 "use client";
 
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,15 +22,16 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-
-import { ExternalLink, Globe, MapPin, Edit, Save, X, Camera } from "lucide-react";
+import { ExternalLink, Globe, MapPin, Edit, Save, X, Camera, Upload } from "lucide-react";
 import DOMPurify from "dompurify";
 import { editRecruiterAccount } from "@/lib/api-service";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { CompanySelector } from "@/components/company/company-selector";
-import SocialLinks from "./SocialLinks";
-import { SocialLinksSection } from "./social-links-section"; // ⬅️ uses your provided component
+import SocialLinks from "./SocialLinks"; // Revert to using SocialLinks in view mode
+import { SocialLinksSection } from "./social-links-section";
+import Cropper, { Area } from "react-easy-crop";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type MaybeStringifiedArray = string[] | string | undefined;
 
@@ -93,6 +94,383 @@ export type Recruiter = {
   banner?: string;
 };
 
+interface BannerUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+  onUploadSuccess: () => void;
+  isEditing: boolean;
+}
+
+function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess, isEditing }: BannerUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) return;
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) return;
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removeBanner = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputHeight = 300;
+    const scale = outputHeight / pixelCrop.height;
+    const outputWidth = pixelCrop.width * scale;
+
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-banner.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      setIsProcessing(true);
+      try {
+        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        onFileSelect(croppedImage);
+        setCropModalOpen(false);
+        setSelectedImage(null);
+        onUploadSuccess();
+      } catch (error) {
+        toast.error("Failed to process image");
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  return (
+    <>
+      <div
+        className={`relative h-36 sm:h-44 md:h-56 lg:h-[300px] bg-muted ${
+          isEditing ? "cursor-pointer" : ""
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <Image
+          src={previewUrl || "/placeholder-banner.svg"}
+          alt="Cover image"
+          width={1600}
+          height={900}
+          className="object-cover opacity-80 w-full h-full"
+          priority
+        />
+        {isEditing && (
+          <div
+            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+            onClick={() => document.getElementById("banner-upload")?.click()}
+          >
+            <Camera className="h-6 w-6 text-white" />
+          </div>
+        )}
+        <input
+          id="banner-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleInputChange}
+          className="hidden"
+          disabled={!isEditing}
+        />
+      </div>
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Crop Banner Image</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[400px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={5 / 1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm} disabled={isProcessing}>
+              Confirm Crop
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+interface PhotoUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+  onUploadSuccess: () => void;
+  isEditing: boolean;
+}
+
+function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess, isEditing }: PhotoUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) return;
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isEditing) return;
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removePhoto = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputSize = 150;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-photo.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      setIsProcessing(true);
+      try {
+        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        onFileSelect(croppedImage);
+        setCropModalOpen(false);
+        setSelectedImage(null);
+        onUploadSuccess();
+      } catch (error) {
+        toast.error("Failed to process image");
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  return (
+    <>
+      <div
+        className={`relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted ${
+          isEditing ? "cursor-pointer" : ""
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+      >
+        <Avatar className="h-full w-full rounded-lg">
+          <AvatarImage src={previewUrl || "/placeholder.svg"} alt="Profile photo" />
+          <AvatarFallback className="rounded-lg">
+            {getInitials()}
+          </AvatarFallback>
+        </Avatar>
+        {isEditing && (
+          <div
+            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+            onClick={() => document.getElementById("photo-upload")?.click()}
+          >
+            <Camera className="h-6 w-6 text-white" />
+          </div>
+        )}
+        <input
+          id="photo-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleInputChange}
+          className="hidden"
+          disabled={!isEditing}
+        />
+      </div>
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[300px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm} disabled={isProcessing}>
+              Confirm Crop
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
   if (Array.isArray(input)) {
     if (input.length === 1 && typeof input[0] === "string" && input[0].trim().startsWith("[")) {
@@ -131,23 +509,21 @@ export default function EditableRecruiterAccount({
   const [isEditing, setIsEditing] = useState(false);
   const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>({ ...recruiter });
   const [isSaving, setIsSaving] = useState(false);
-
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-
   const [selectedCompany, setSelectedCompany] = useState<string>(
     recruiter.companyId?._id || ""
   );
+  const [isBannerUploaded, setIsBannerUploaded] = useState(false);
+  const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
 
-  // --- react-hook-form just for sLink, as per your pattern ---
   const form = useForm<{ sLink: SLinkItem[] }>({
     defaultValues: { sLink: recruiter.sLink || [] },
     mode: "onChange",
   });
 
-  // Derived state for view/edit
   const {
     firstName,
     sureName,
@@ -158,16 +534,14 @@ export default function EditableRecruiterAccount({
     location,
     roleAtCompany,
     companyId,
-    photo,
-    banner,
-    followerCount,
     sLink,
+    followerCount,
   } = isEditing ? editedRecruiter : recruiter;
 
   const fullName = [firstName, sureName].filter(Boolean).join(" ") || "Recruiter";
   const primaryLocation = location || [city, country].filter(Boolean).join(", ");
-  const displayPhoto = photoPreview || photo || "/placeholder.svg";
-  const displayBanner = bannerPreview || banner || "/placeholder-banner.svg";
+  const displayPhoto = photoPreview || recruiter.photo || "/placeholder.svg";
+  const displayBanner = bannerPreview || recruiter.banner || "/placeholder-banner.svg";
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(followerCount);
@@ -185,68 +559,24 @@ export default function EditableRecruiterAccount({
 
   const taglineParts = [title, roleAtCompany].filter(Boolean);
 
-  const readFileToDataURL = (file: File) =>
-    new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve((e.target?.result as string) || "");
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Photo file size exceeds 10 MB. Select a smaller file.");
-      return;
-    }
-    try {
-      const dataURL = await readFileToDataURL(file);
-      setPhotoPreview(dataURL);
-      setPhotoFile(file);
-    } catch {
-      toast.error("Failed to read the selected photo.");
-    }
-  };
-
-  const handleBannerUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Banner file size exceeds 10 MB. Select a smaller file.");
-      return;
-    }
-    try {
-      const dataURL = await readFileToDataURL(file);
-      setBannerPreview(dataURL);
-      setBannerFile(file);
-    } catch {
-      toast.error("Failed to read the selected banner.");
-    }
-  };
-
   const handleSave = async () => {
     if (!editedRecruiter.userId) return;
 
     setIsSaving(true);
     try {
       const formData = new FormData();
-
-      // Pull sLink from react-hook-form
       const { sLink: formLinks } = form.getValues();
       const cleanedLinks = (formLinks || []).filter(
         (l) => (l.label?.trim() || "") && (l.url?.trim() || "")
       );
 
-      // Append socials (indexed)
       cleanedLinks.forEach((link, index) => {
         formData.append(`sLink[${index}][label]`, link.label);
         formData.append(`sLink[${index}][url]`, link.url || "");
       });
 
-      // Append other edited fields
       Object.entries(editedRecruiter).forEach(([key, value]) => {
-        if (key === "sLink") return; // handled via form
+        if (key === "sLink") return;
         if (key === "photo") {
           if (photoFile) formData.append("photo", photoFile);
           return;
@@ -269,13 +599,14 @@ export default function EditableRecruiterAccount({
         formData
       );
 
-      // Sync UI
       onSave?.(updatedRecruiter);
       setIsEditing(false);
       setPhotoPreview(null);
       setBannerPreview(null);
       setPhotoFile(null);
       setBannerFile(null);
+      setIsBannerUploaded(false);
+      setIsPhotoUploaded(false);
       setEditedRecruiter({
         ...updatedRecruiter,
         photo: updatedRecruiter.photo,
@@ -301,73 +632,51 @@ export default function EditableRecruiterAccount({
     setBannerPreview(null);
     setPhotoFile(null);
     setBannerFile(null);
+    setIsBannerUploaded(false);
+    setIsPhotoUploaded(false);
     form.reset({ sLink: recruiter.sLink || [] });
   };
 
   return (
     <div className="w-full bg-background">
-      {/* Cover */}
-      <div className="w-full">
-        <div className="relative h-36 sm:h-44 md:h-56 lg:h-80 bg-muted">
-          <Image
-            src={displayBanner}
-            alt="Cover image"
-            fill
-            className="object-cover opacity-80"
-            priority
-            sizes="100vw"
-          />
-          {isEditing && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-              <Label htmlFor="banner-upload" className="cursor-pointer">
-                <Camera className="h-6 w-6 text-white" />
-                <Input
-                  id="banner-upload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleBannerUpload}
-                  className="hidden"
-                />
-              </Label>
-            </div>
-          )}
-        </div>
-      </div>
+      <BannerUpload
+        onFileSelect={(file) => {
+          setBannerFile(file);
+          if (file) {
+            const url = URL.createObjectURL(file);
+            setBannerPreview(url);
+          } else {
+            setBannerPreview(null);
+          }
+        }}
+        previewUrl={displayBanner}
+        onUploadSuccess={() => setIsBannerUploaded(true)}
+        isEditing={isEditing}
+      />
 
-      {/* Content */}
       <div className="border-b-2">
         <div className="mx-auto max-w-7xl lg:pb-10 pb-6">
-          {/* Avatar row */}
           <div className="relative -mt-10 sm:-mt-14 md:-mt-16">
             <div className="flex items-end justify-between gap-4">
-              <div className="relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted">
-                <Avatar className="h-full w-full rounded-lg">
-                  <AvatarImage src={displayPhoto} alt={`${fullName} photo`} />
-                  <AvatarFallback className="rounded-lg">
-                    {getInitials(firstName, sureName)}
-                  </AvatarFallback>
-                </Avatar>
-                {isEditing && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer">
-                    <Label htmlFor="photo-upload" className="cursor-pointer">
-                      <Camera className="h-6 w-6 text-white" />
-                      <Input
-                        id="photo-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                    </Label>
-                  </div>
-                )}
-              </div>
+              <PhotoUpload
+                onFileSelect={(file) => {
+                  setPhotoFile(file);
+                  if (file) {
+                    const url = URL.createObjectURL(file);
+                    setPhotoPreview(url);
+                  } else {
+                    setPhotoPreview(null);
+                  }
+                }}
+                previewUrl={displayPhoto}
+                onUploadSuccess={() => setIsPhotoUploaded(true)}
+                isEditing={isEditing}
+              />
 
               <div className="mb-4">
                 {!isEditing ? (
                   <Button
                     onClick={() => {
-                      // prepare form values when entering edit mode
                       form.reset({ sLink: editedRecruiter.sLink || recruiter.sLink || [] });
                       setIsEditing(true);
                     }}
@@ -404,56 +713,11 @@ export default function EditableRecruiterAccount({
             </div>
           </div>
 
-          {/* Main grid */}
           <div className="mt-6 grid gap-8 md:grid-cols-[1fr_300px]">
-            {/* Left: profile summary */}
             <div className="space-y-4">
               {isEditing ? (
                 <Form {...form}>
                   <div className="space-y-4">
-                    {/* Banner upload (form-agnostic) */}
-                    <div>
-                      <Label htmlFor="banner-upload-form">Banner Image</Label>
-                      <div className="mt-2">
-                        <Label
-                          htmlFor="banner-upload-form"
-                          className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Camera className="h-4 w-4" />
-                          {bannerPreview ? "Change banner" : "Upload banner"}
-                        </Label>
-                        <Input
-                          id="banner-upload-form"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleBannerUpload}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Photo upload (form-agnostic) */}
-                    <div>
-                      <Label htmlFor="photo-upload-form">Profile Photo</Label>
-                      <div className="mt-2">
-                        <Label
-                          htmlFor="photo-upload-form"
-                          className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          <Camera className="h-4 w-4" />
-                          {photoPreview ? "Change photo" : "Upload photo"}
-                        </Label>
-                        <Input
-                          id="photo-upload-form"
-                          type="file"
-                          accept="image/*"
-                          onChange={handlePhotoUpload}
-                          className="hidden"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Basic info */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name</Label>
@@ -488,7 +752,6 @@ export default function EditableRecruiterAccount({
                       />
                     </div>
 
-                    {/* Company selector */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900">Select your company</h3>
                       <CompanySelector
@@ -503,7 +766,6 @@ export default function EditableRecruiterAccount({
                       />
                     </div>
 
-                    {/* Location */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="city">City</Label>
@@ -527,7 +789,6 @@ export default function EditableRecruiterAccount({
                       </div>
                     </div>
 
-                    {/* Bio */}
                     <div>
                       <Label htmlFor="bio" className="text-sm font-medium">
                         Bio
@@ -540,7 +801,6 @@ export default function EditableRecruiterAccount({
                       />
                     </div>
 
-                    {/* Social Links Section (your required pattern) */}
                     <Card className="mt-6">
                       <CardHeader>
                         <CardTitle className="text-lg font-medium">Social Links</CardTitle>
@@ -600,9 +860,8 @@ export default function EditableRecruiterAccount({
                     <p className="text-sm text-muted-foreground">{followersText}</p>
                   )}
 
-                  {/* View mode icons */}
                   <div className="flex space-x-2 mt-2">
-                    <SocialLinks sLink={sLink || []} />
+                    <SocialLinks sLink={sLink || []} /> {/* Revert to SocialLinks in view mode */}
                   </div>
 
                   <div className="pt-2">
@@ -619,7 +878,6 @@ export default function EditableRecruiterAccount({
               )}
             </div>
 
-            {/* Right: meta sidebar */}
             <aside className="space-y-8 md:pl-4">
               <div className="space-y-3">
                 {companyId?.name && (
