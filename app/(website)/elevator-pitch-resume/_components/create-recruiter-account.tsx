@@ -1,3 +1,4 @@
+
 "use client";
 
 // =========================
@@ -5,10 +6,11 @@
 // - sLink uses { label, url } (with legacy [link] back-compat in FormData)
 // - Delete-before-upload flow for Elevator Pitch
 // - Full-width upload button, spinner, success banner
+// - Integrated react-easy-crop for banner and photo uploads
 // =========================
 
 import type React from "react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -60,6 +62,8 @@ import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import { SocialLinksSection } from "./social-links-section";
 import CustomDateInput from "@/components/custom-date-input";
 import apiClient from "@/lib/api-service";
+import Cropper, { Area } from "react-easy-crop";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface Option {
   value: string;
@@ -72,14 +76,521 @@ interface Education {
 }
 interface SocialLink {
   label: string;
-  url?: string; // UPDATED
+  url?: string;
 }
 interface Country {
   country: string;
   cities: string[];
 }
 
-// ---------- Zod schema updates
+interface BannerUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+  onUploadSuccess: () => void;
+}
+
+function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File size must be less than 10MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removeBanner = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputHeight = 300;
+    const scale = outputHeight / pixelCrop.height;
+    const outputWidth = pixelCrop.width * scale;
+
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-banner.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      setIsProcessing(true);
+      try {
+        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        onFileSelect(croppedImage);
+        setCropModalOpen(false);
+        setSelectedImage(null);
+        onUploadSuccess();
+      } catch (error) {
+        toast.error("Failed to process image");
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg font-medium">
+              Upload Banner (Optional)
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Upload and crop a banner image to enhance your profile.
+            </p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+            dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+          }`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => document.getElementById("banner-upload")?.click()}
+        >
+          {previewUrl ? (
+            <div className="relative">
+              <Image
+                src={previewUrl}
+                alt="Banner preview"
+                width={600}
+                height={200}
+                className="mx-auto rounded-lg object-cover"
+              />
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeBanner();
+                }}
+                className="absolute top-2 right-2"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <p className="text-lg mb-2">Drop image here</p>
+              <p className="text-sm mb-4 text-gray-400">or</p>
+              <Button
+                type="button"
+                variant="secondary"
+                className="bg-gray-700 hover:bg-gray-600 text-white"
+                onClick={() => document.getElementById("banner-upload")?.click()}
+              >
+                Choose File
+              </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                Supports JPG, PNG • Max 10MB • Will be cropped to 300px height
+              </p>
+            </>
+          )}
+          <input
+            id="banner-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleInputChange}
+            className="hidden"
+          />
+        </div>
+        {selectedImage && (
+          <Button
+            type="button"
+            className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+            onClick={() => setCropModalOpen(true)}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <div className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Processing...
+              </div>
+            ) : (
+              "Crop Banner"
+            )}
+          </Button>
+        )}
+        {previewUrl && (
+          <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+            <p className="text-sm text-green-600 font-medium">
+              ✓ Banner uploaded successfully!
+            </p>
+          </div>
+        )}
+      </CardContent>
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Crop Banner Image</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[400px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={5 / 1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm} disabled={isProcessing}>
+              Confirm Crop
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+interface PhotoUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+  onUploadSuccess: () => void;
+}
+
+function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removePhoto = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputSize = 150;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-photo.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      setIsProcessing(true);
+      try {
+        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        onFileSelect(croppedImage);
+        setCropModalOpen(false);
+        setSelectedImage(null);
+        onUploadSuccess();
+      } catch (error) {
+        toast.error("Failed to process image");
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
+
+  return (
+    <>
+      <div
+        className={`w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
+          dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById("photo-upload")?.click()}
+      >
+        {previewUrl ? (
+          <div className="relative w-full h-full">
+            <Image
+              src={previewUrl}
+              alt="Photo preview"
+              fill
+              className="object-cover rounded-lg"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                removePhoto();
+              }}
+              className="absolute top-1 right-1 h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Upload className="h-8 w-8 text-gray-400" />
+        )}
+      </div>
+      <input
+        id="photo-upload"
+        type="file"
+        accept="image/*"
+        onChange={handleInputChange}
+        className="hidden"
+      />
+      <p className="text-xs text-muted-foreground mt-2">
+        JPG/PNG, up to 5MB. Square images work best.
+      </p>
+      {selectedImage && (
+        <Button
+          type="button"
+          className="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-lg font-medium"
+          onClick={() => setCropModalOpen(true)}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <div className="flex items-center gap-2">
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              Processing...
+            </div>
+          ) : (
+            "Crop Photo"
+          )}
+        </Button>
+      )}
+      {previewUrl && (
+        <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+          <p className="text-sm text-green-600 font-medium">
+            ✓ Profile photo uploaded successfully!
+          </p>
+        </div>
+      )}
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[300px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm} disabled={isProcessing}>
+              Confirm Crop
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 const urlOptional = z
   .string()
   .trim()
@@ -101,12 +612,11 @@ const recruiterSchema = z.object({
   skills: z.array(z.string()).optional(),
   languages: z.array(z.string()).optional(),
   companyRecruiters: z.array(z.string()).optional(),
-
   sLink: z
     .array(
       z.object({
         label: z.string().min(1, "Platform name is required"),
-        url: urlOptional, // UPDATED key
+        url: urlOptional,
       })
     )
     .optional(),
@@ -220,6 +730,8 @@ export default function CreateRecruiterAccountForm() {
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isBannerUploaded, setIsBannerUploaded] = useState(false);
+  const [isPhotoUploaded, setIsPhotoUploaded] = useState(false);
 
   const form = useForm<RecruiterFormData>({
     resolver: zodResolver(recruiterSchema),
@@ -303,7 +815,6 @@ export default function CreateRecruiterAccountForm() {
     }
   }, [userId, form]);
 
-  // Cleanup browser extension attributes to prevent hydration mismatch
   useEffect(() => {
     const cleanupAttributes = () => {
       document
@@ -366,8 +877,8 @@ export default function CreateRecruiterAccountForm() {
           if (!item?.label) return;
           formData.append(`sLink[${index}][label]`, item.label);
           if (item.url) {
-            formData.append(`sLink[${index}][url]`, item.url); // new key
-            formData.append(`sLink[${index}][link]`, item.url); // optional: legacy back-compat
+            formData.append(`sLink[${index}][url]`, item.url);
+            formData.append(`sLink[${index}][link]`, item.url);
           }
         });
         return;
@@ -425,21 +936,25 @@ export default function CreateRecruiterAccountForm() {
     },
   });
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleBannerSelect = (file: File | null) => {
+    setBannerFile(file);
     if (file) {
-      setPhotoFile(file);
       const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
+      setBannerPreview(url);
+    } else {
+      setBannerPreview(null);
+      setIsBannerUploaded(false);
     }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handlePhotoSelect = (file: File | null) => {
+    setPhotoFile(file);
     if (file) {
-      setBannerFile(file);
       const url = URL.createObjectURL(file);
-      setBannerPreview(url);
+      setPhotoPreview(url);
+    } else {
+      setPhotoPreview(null);
+      setIsPhotoUploaded(false);
     }
   };
 
@@ -449,9 +964,7 @@ export default function CreateRecruiterAccountForm() {
       return;
     }
 
-    // DELETE BEFORE UPLOAD
     try {
-      // swallow deletion errors (no previous file etc.)
       await deleteElevatorPitchMutation.mutateAsync(session.user.id);
     } catch (_) {}
 
@@ -545,7 +1058,6 @@ export default function CreateRecruiterAccountForm() {
           )}
           className="space-y-6"
         >
-          {/* Elevator Pitch (UPDATED UX) */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
@@ -564,7 +1076,6 @@ export default function CreateRecruiterAccountForm() {
                 onDelete={handleElevatorPitchDelete}
                 isUploaded={isElevatorPitchUploaded}
               />
-
               {elevatorPitchFile && !isElevatorPitchUploaded && (
                 <Button
                   type="button"
@@ -601,7 +1112,6 @@ export default function CreateRecruiterAccountForm() {
                   )}
                 </Button>
               )}
-
               {isElevatorPitchUploaded && (
                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-green-600 font-medium">
@@ -612,70 +1122,12 @@ export default function CreateRecruiterAccountForm() {
             </CardContent>
           </Card>
 
-          {/* Banner Upload */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg font-medium">
-                    Upload Banner (Optional)
-                  </CardTitle>
-                </div>
-                <Button
-                  type="button"
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  onClick={() =>
-                    document.getElementById("banner-upload")?.click()
-                  }
-                >
-                  Upload/Change Banner
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-16 text-center bg-gray-900 text-white">
-                {bannerPreview ? (
-                  <div className="space-y-4">
-                    <Image
-                      src={bannerPreview}
-                      alt="Banner preview"
-                      width={600}
-                      height={200}
-                      className="mx-auto rounded-lg object-cover"
-                    />
-                    <p className="text-sm text-green-400">
-                      Banner uploaded: {bannerFile?.name}
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <Upload className="mx-auto h-12 w-12 mb-4 text-gray-400" />
-                    <p className="text-lg mb-2">Drop image here</p>
-                    <p className="text-sm mb-4 text-gray-400">or</p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      className="bg-gray-700 hover:bg-gray-600 text-white"
-                      onClick={() =>
-                        document.getElementById("banner-upload")?.click()
-                      }
-                    >
-                      Choose File
-                    </Button>
-                  </>
-                )}
-                <Input
-                  id="banner-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleBannerUpload}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <BannerUpload
+            onFileSelect={handleBannerSelect}
+            previewUrl={bannerPreview}
+            onUploadSuccess={() => setIsBannerUploaded(true)}
+          />
 
-          {/* Personal Info */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
@@ -683,57 +1135,14 @@ export default function CreateRecruiterAccountForm() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="mt-[-130px]">
-                  <Label className="text-sm font-medium">Profile Photo</Label>
-                  <div>
-                    {photoPreview ? (
-                      <div>
-                        <Image
-                          src={photoPreview}
-                          alt="Profile preview"
-                          width={170}
-                          height={170}
-                          className="rounded bg-gray-100 border-2 border-dashed border-gray-300"
-                        />
-                        <div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="mt-1 bg-transparent"
-                            onClick={() =>
-                              document.getElementById("photo-upload")?.click()
-                            }
-                          >
-                            Change Photo
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="w-[170px] h-[170px] rounded bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
-                          <Upload className="h-6 w-6 text-gray-400" />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() =>
-                            document.getElementById("photo-upload")?.click()
-                          }
-                        >
-                          Upload Photo
-                        </Button>
-                      </div>
-                    )}
-                    <Input
-                      id="photo-upload"
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handlePhotoUpload}
-                    />
-                  </div>
+              <div className="flex items-start gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Profile Photo (Optional)</Label>
+                  <PhotoUpload
+                    onFileSelect={handlePhotoSelect}
+                    previewUrl={photoPreview}
+                    onUploadSuccess={() => setIsPhotoUploaded(true)}
+                  />
                 </div>
                 <div className="flex-1">
                   <FormField
@@ -801,7 +1210,7 @@ export default function CreateRecruiterAccountForm() {
                       <FormLabel>Email Address*</FormLabel>
                       <FormControl>
                         <Input
-                        disabled
+                          disabled
                           type="email"
                           placeholder="Enter email address"
                           {...field}

@@ -1,7 +1,8 @@
+
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -10,7 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, Upload, Search } from "lucide-react";
+import { X, Plus, Upload, Search, ImageIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -19,13 +27,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -35,6 +36,20 @@ import { SocialLinksSection } from "./social-links-section";
 import { LanguageSelector } from "./resume/language-selector";
 import { CertificationSelector } from "./resume/certification-selector";
 import { UniversitySelector } from "./resume/university-selector";
+import Cropper, { Area } from "react-easy-crop";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+
+// Utility function to compare dates (format: MM/YYYY)
+const isDateValid = (startDate: string, endDate: string): boolean => {
+  if (!startDate || !endDate) return true; // Skip if either date is empty
+
+  const [startMonth, startYear] = startDate.split("/").map(Number);
+  const [endMonth, endYear] = endDate.split("/").map(Number);
+
+  if (startYear > endYear) return false;
+  if (startYear === endYear && startMonth > endMonth) return false;
+  return true;
+};
 
 const CustomDateInput = ({
   value,
@@ -184,18 +199,15 @@ export const resumeFormSchema = z.object({
   lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   phoneNumber: z.string().min(1, "Phone number is required"),
-
   title: z.string().optional(),
   city: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().optional(),
   aboutUs: z.string().optional(),
   banner: z.string().optional(),
-
   skills: z.array(z.string()).optional().default([]),
   languages: z.array(z.string()).optional().default([]),
   certifications: z.array(z.string()).optional().default([]),
-
   sLink: z
     .array(
       z.object({
@@ -211,7 +223,6 @@ export const resumeFormSchema = z.object({
     )
     .optional()
     .default([]),
-
   experiences: z
     .array(
       z
@@ -219,8 +230,8 @@ export const resumeFormSchema = z.object({
           _id: z.string().optional(),
           type: z.enum(["create", "update", "delete"]).optional(),
           company: z.string().optional(),
-          jobTitle: z.string().optional(), // Kept jobTitle for schema consistency
-          position: z.string().optional(), // Added position for API compatibility
+          jobTitle: z.string().optional(),
+          position: z.string().optional(),
           duration: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
@@ -233,8 +244,6 @@ export const resumeFormSchema = z.object({
         })
         .refine(
           (data) =>
-            // only require endDate if we have both company & jobTitle,
-            // not currently working, and endDate is missing
             !data.company ||
             !data.jobTitle ||
             data.currentlyWorking === true ||
@@ -244,10 +253,20 @@ export const resumeFormSchema = z.object({
             path: ["endDate"],
           }
         )
+        .refine(
+          (data) =>
+            data.currentlyWorking === true ||
+            !data.startDate ||
+            !data.endDate ||
+            isDateValid(data.startDate, data.endDate),
+          {
+            message: "End date cannot be earlier than start date",
+            path: ["endDate"],
+          }
+        )
     )
     .optional()
     .default([]),
-
   educationList: z
     .array(
       z
@@ -267,6 +286,17 @@ export const resumeFormSchema = z.object({
         .refine(
           (data) =>
             data.currentlyStudying === true ||
+            !data.startDate ||
+            !data.graduationDate ||
+            isDateValid(data.startDate, data.graduationDate),
+          {
+            message: "Graduation date cannot be earlier than start date",
+            path: ["graduationDate"],
+          }
+        )
+        .refine(
+          (data) =>
+            data.currentlyStudying === true ||
             (!!data.graduationDate && data.currentlyStudying === false),
           {
             message: "Graduation date is required unless currently studying",
@@ -276,7 +306,6 @@ export const resumeFormSchema = z.object({
     )
     .optional()
     .default([]),
-
   awardsAndHonors: z
     .array(
       z.object({
@@ -284,8 +313,8 @@ export const resumeFormSchema = z.object({
         type: z.enum(["create", "update", "delete"]).optional(),
         title: z.string().optional(),
         programeName: z.string().optional(),
-        year: z.string().optional(), // Kept year for schema consistency
-        programeDate: z.string().optional(), // Added programeDate for API compatibility
+        year: z.string().optional(),
+        programeDate: z.string().optional(),
         description: z.string().optional(),
       })
     )
@@ -307,6 +336,395 @@ interface UpdateResumeFormProps {
   onDelete?: (id: string, type: string) => Promise<void>;
 }
 
+interface BannerUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+}
+
+function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File size must be less than 10MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removeBanner = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputHeight = 300;
+    const scale = outputHeight / pixelCrop.height;
+    const outputWidth = pixelCrop.width * scale;
+
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputWidth,
+      outputHeight
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-banner.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      onFileSelect(croppedImage);
+      setCropModalOpen(false);
+      setSelectedImage(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <ImageIcon className="h-5 w-5 text-green-600" />
+          <div>
+            <CardTitle>Upload Banner</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Upload and crop a banner image to enhance your resume profile.
+            </p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {previewUrl ? (
+          <div className="relative">
+            <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+              <Image
+                src={previewUrl || "/placeholder.svg"}
+                alt="Banner preview"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={removeBanner}
+              className="absolute top-2 right-2"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <div
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+              dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById("banner-upload")?.click()}
+          >
+            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-gray-600 mb-2">Drop your banner image here</p>
+            <Button type="button" variant="outline">
+              Choose Image
+            </Button>
+            <p className="text-xs text-gray-500 mt-2">
+              Supports JPG, PNG • Max 10MB • Will be cropped to 300px height
+            </p>
+          </div>
+        )}
+        <input
+          id="banner-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleInputChange}
+          className="hidden"
+        />
+      </CardContent>
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[800px]">
+          <DialogHeader>
+            <DialogTitle>Crop Banner Image</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[400px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={5 / 1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm}>Confirm Crop</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
+interface PhotoUploadProps {
+  onFileSelect: (file: File | null) => void;
+  previewUrl?: string | null;
+}
+
+function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
+  const [dragActive, setDragActive] = useState(false);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileSelect(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const removePhoto = () => {
+    onFileSelect(null);
+    setSelectedImage(null);
+    setCropModalOpen(false);
+  };
+
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputSize = 150;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-photo.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (selectedImage && croppedAreaPixels) {
+      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      onFileSelect(croppedImage);
+      setCropModalOpen(false);
+      setSelectedImage(null);
+    }
+  };
+
+  return (
+    <>
+      <div
+        className={`w-full h-[250px] border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
+          dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+        }`}
+        onDragEnter={handleDrag}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById("photo-upload")?.click()}
+      >
+        {previewUrl ? (
+          <div className="relative w-full h-full">
+            <Image
+              src={previewUrl || "/placeholder.svg"}
+              alt="Photo preview"
+              width={500}
+              height={500}
+              className="w-full h-full rounded-lg"
+            />
+            <Button
+              type="button"
+              variant="destructive"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                removePhoto();
+              }}
+              className="absolute top-1 right-1 h-6 w-6"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <Upload className="h-8 w-8 text-gray-400" />
+        )}
+      </div>
+      <input
+        id="photo-upload"
+        type="file"
+        accept="image/*"
+        onChange={handleInputChange}
+        className="hidden"
+      />
+      <p className="text-xs text-muted-foreground mt-2">
+        JPG/PNG, up to 5MB. Square images work best.
+      </p>
+
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Crop Profile Photo</DialogTitle>
+          </DialogHeader>
+          <div className="relative h-[300px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
+              />
+            )}
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCropConfirm}>Confirm Crop</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export default function UpdateResumeForm({
   resume,
   onCancel,
@@ -317,41 +735,24 @@ export default function UpdateResumeForm({
     resume.resume?.skills || []
   );
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(
+    resume.resume?.photo || null
+  );
   const [bannerFile, setBannerFile] = useState<File | null>(null);
-  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
-
+  const [bannerPreview, setBannerPreview] = useState<string | null>(
+    resume.resume?.banner || null
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyUrlSuccess, setCopyUrlSuccess] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>(
     resume.resume?.country || ""
   );
-  const [selectedExpCountries, setSelectedExpCountries] = useState<string[]>(
-    resume.experiences?.map((exp: any) => exp.country || "") || []
-  );
-  const [selectedEduCountries, setSelectedEduCountries] = useState<string[]>(
-    resume.education?.map((edu: any) => edu.country || "") || []
-  );
-
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(
     resume.resume?.languages || []
   );
   const [selectedCertifications, setSelectedCertifications] = useState<
     string[]
   >(resume.resume?.certifications || []);
-
-  const [experienceCitiesData, setExperienceCitiesData] = useState<{
-    [key: number]: string[];
-  }>({});
-  const [educationCitiesData, setEducationCitiesData] = useState<{
-    [key: number]: string[];
-  }>({});
-  const [experienceCitiesLoading, setExperienceCitiesLoading] = useState<{
-    [key: number]: boolean;
-  }>({});
-  const [educationCitiesLoading, setEducationCitiesLoading] = useState<{
-    [key: number]: boolean;
-  }>({});
 
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
     Country[]
@@ -404,8 +805,6 @@ export default function UpdateResumeForm({
     return new Date(yearNum, monthNum - 1, 1).toISOString();
   };
 
-  // ... existing code for form setup and handlers ...
-
   const form = useForm<ResumeFormData>({
     resolver: zodResolver(resumeFormSchema),
     defaultValues: {
@@ -440,7 +839,7 @@ export default function UpdateResumeForm({
             _id: exp._id || undefined,
             type: exp._id ? "update" : "create",
             company: exp.company || "",
-            jobTitle: exp.position || exp.jobTitle || "", // Handle both position and jobTitle fields
+            jobTitle: exp.position || exp.jobTitle || "",
             duration: exp.duration || "",
             startDate: exp.startDate
               ? new Date(exp.startDate)
@@ -488,7 +887,7 @@ export default function UpdateResumeForm({
           return resume.education.map((edu: any) => ({
             _id: edu._id || undefined,
             type: edu._id ? "update" : "create",
-            instituteName: edu.instituteName || edu.university || "", // Handle both instituteName and university fields
+            instituteName: edu.instituteName || edu.university || "",
             degree: edu.degree || "",
             fieldOfStudy: edu.fieldOfStudy || "",
             startDate: edu.startDate
@@ -538,7 +937,7 @@ export default function UpdateResumeForm({
             programeName: award.programeName || "",
             year: award.programeDate
               ? new Date(award.programeDate).getFullYear().toString()
-              : award.year || "", // Handle programeDate field
+              : award.year || "",
             description: award.description || "",
           }));
         }
@@ -561,7 +960,59 @@ export default function UpdateResumeForm({
     },
   });
 
-  // ... existing code for field arrays and handlers ...
+  useEffect(() => {
+    const experiences = form.watch("experiences") || [];
+
+    experiences.forEach((experience, index) => {
+      if (experience.type === "delete") return;
+
+      const startDate = experience.startDate;
+      const endDate = experience.endDate;
+      const currentlyWorking = experience.currentlyWorking;
+
+      if (!currentlyWorking && startDate && endDate) {
+        if (!isDateValid(startDate, endDate)) {
+          form.setError(`experiences.${index}.endDate`, {
+            type: "manual",
+            message: "End date cannot be earlier than start date",
+          });
+        } else {
+          const currentError =
+            form.formState.errors.experiences?.[index]?.endDate;
+          if (currentError?.type === "manual") {
+            form.clearErrors(`experiences.${index}.endDate`);
+          }
+        }
+      }
+    });
+  }, [form, form.watch("experiences")]);
+
+  useEffect(() => {
+    const educationList = form.watch("educationList") || [];
+
+    educationList.forEach((education, index) => {
+      if (education.type === "delete") return;
+
+      const startDate = education.startDate;
+      const graduationDate = education.graduationDate;
+      const currentlyStudying = education.currentlyStudying;
+
+      if (!currentlyStudying && startDate && graduationDate) {
+        if (!isDateValid(startDate, graduationDate)) {
+          form.setError(`educationList.${index}.graduationDate`, {
+            type: "manual",
+            message: "Graduation date cannot be earlier than start date",
+          });
+        } else {
+          const currentError =
+            form.formState.errors.educationList?.[index]?.graduationDate;
+          if (currentError?.type === "manual") {
+            form.clearErrors(`educationList.${index}.graduationDate`);
+          }
+        }
+      }
+    });
+  }, [form, form.watch("educationList")]);
 
   const {
     fields: experienceFields,
@@ -590,27 +1041,29 @@ export default function UpdateResumeForm({
     name: "awardsAndHonors",
   });
 
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleBannerSelect = (file: File | null) => {
+    setBannerFile(file);
     if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleBannerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setBannerFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setBannerPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
+    } else {
+      setBannerPreview(null);
+    }
+  };
+
+  const handlePhotoSelect = (file: File | null) => {
+    setPhotoFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhotoPreview(null);
     }
   };
 
@@ -627,7 +1080,7 @@ export default function UpdateResumeForm({
       const formData = new FormData();
       const resumeObject = {
         type: "update",
-        _id: resume.resume?._id, // Use resume._id from nested structure
+        _id: resume.resume?._id,
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -663,7 +1116,7 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
-        position: exp.jobTitle, // Map jobTitle to position for API compatibility
+        position: exp.jobTitle,
         startDate: exp.startDate ? formatDateForMongoDB(exp.startDate) : "",
         endDate: exp.currentlyWorking
           ? ""
@@ -679,7 +1132,7 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
-        university: edu.instituteName, // Map instituteName to university for API compatibility
+        university: edu.instituteName,
         startDate: edu.startDate ? formatDateForMongoDB(edu.startDate) : "",
         graduationDate: edu.currentlyStudying
           ? ""
@@ -697,7 +1150,7 @@ export default function UpdateResumeForm({
           : "create",
         programeDate: award.year
           ? new Date(`${award.year}-01-01`).toISOString()
-          : "", // Map year to programeDate
+          : "",
       }));
 
       formData.append("resume", JSON.stringify(resumeObject));
@@ -734,50 +1187,10 @@ export default function UpdateResumeForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Personal Information Card */}
-          {/* Banner Field */}
-          <div className="flex-shrink-0 w-full">
-            <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
-              Banner
-            </FormLabel>
-
-            <div
-              className="w-full h-[400px] border-2 border-dashed border-gray-300 rounded-lg
-               flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100 overflow-hidden"
-              onClick={() => document.getElementById("banner-upload")?.click()}
-            >
-              {bannerPreview || resume.resume?.banner ? (
-                <Image
-                  src={
-                    bannerPreview || resume.resume?.banner || "/placeholder.svg"
-                  }
-                  alt="Banner"
-                  width={1200}
-                  height={400}
-                  className="w-full h-full object-cover"
-                  priority
-                />
-              ) : (
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Upload className="h-5 w-5" />
-                  <span>Click to upload banner (recommended 1200×400)</span>
-                </div>
-              )}
-            </div>
-
-            <Input
-              id="banner-upload"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleBannerChange}
-            />
-
-            {/* Optional: small helper text */}
-            <p className="text-xs text-muted-foreground mt-2">
-              JPG/PNG, up to ~5MB. Wide images look best.
-            </p>
-          </div>
+          <BannerUpload
+            onFileSelect={handleBannerSelect}
+            previewUrl={bannerPreview}
+          />
 
           <Card>
             <CardContent className="pt-6">
@@ -786,35 +1199,9 @@ export default function UpdateResumeForm({
                   <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
                     Photo
                   </FormLabel>
-                  <div
-                    className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
-                    onClick={() =>
-                      document.getElementById("photo-upload")?.click()
-                    }
-                  >
-                    {photoPreview || resume.resume?.photo ? (
-                      <Image
-                        src={
-                          photoPreview ||
-                          resume.resume?.photo ||
-                          "/placeholder.svg" ||
-                          "/placeholder.svg"
-                        }
-                        alt="Profile photo"
-                        width={100}
-                        height={100}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <Upload className="h-8 w-8 text-gray-400" />
-                    )}
-                  </div>
-                  <Input
-                    id="photo-upload"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoChange}
+                  <PhotoUpload
+                    onFileSelect={handlePhotoSelect}
+                    previewUrl={photoPreview}
                   />
                 </div>
 
@@ -842,7 +1229,6 @@ export default function UpdateResumeForm({
             </CardContent>
           </Card>
 
-          {/* Basic Information */}
           <Card>
             <CardContent className="pt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -991,7 +1377,6 @@ export default function UpdateResumeForm({
                 />
               </div>
 
-              {/* Social Links Section */}
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="text-lg font-medium">
@@ -1016,7 +1401,6 @@ export default function UpdateResumeForm({
             </CardContent>
           </Card>
 
-          {/* Skills Section */}
           <Card>
             <CardHeader>
               <CardTitle>Skills</CardTitle>
@@ -1143,20 +1527,6 @@ export default function UpdateResumeForm({
                         )}
                       />
 
-                      {/* <FormField
-                        control={form.control}
-                        name={`experiences.${index}.duration`}
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Duration</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g. 2 years" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      /> */}
-
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -1167,14 +1537,39 @@ export default function UpdateResumeForm({
                               <FormControl>
                                 <CustomDateInput
                                   value={field.value || ""}
-                                  onChange={field.onChange}
-                                  placeholder="MMYYYY"
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                    const endDate = form.getValues(
+                                      `experiences.${index}.endDate`
+                                    );
+                                    const currentlyWorking = form.getValues(
+                                      `experiences.${index}.currentlyWorking`
+                                    );
+                                    if (!currentlyWorking && endDate && value) {
+                                      if (!isDateValid(value, endDate)) {
+                                        form.setError(
+                                          `experiences.${index}.endDate`,
+                                          {
+                                            type: "manual",
+                                            message:
+                                              "End date cannot be earlier than start date",
+                                          }
+                                        );
+                                      } else {
+                                        form.clearErrors(
+                                          `experiences.${index}.endDate`
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  placeholder="MM/YYYY"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
+
                         {!experience.currentlyWorking && (
                           <FormField
                             control={form.control}
@@ -1185,8 +1580,29 @@ export default function UpdateResumeForm({
                                 <FormControl>
                                   <CustomDateInput
                                     value={field.value || ""}
-                                    onChange={field.onChange}
-                                    placeholder="MMYYYY"
+                                    onChange={(value) => {
+                                      field.onChange(value);
+                                      const startDate = form.getValues(
+                                        `experiences.${index}.startDate`
+                                      );
+                                      if (startDate && value) {
+                                        if (!isDateValid(startDate, value)) {
+                                          form.setError(
+                                            `experiences.${index}.endDate`,
+                                            {
+                                              type: "manual",
+                                              message:
+                                                "End date cannot be earlier than start date",
+                                            }
+                                          );
+                                        } else {
+                                          form.clearErrors(
+                                            `experiences.${index}.endDate`
+                                          );
+                                        }
+                                      }
+                                    }}
+                                    placeholder="MM/YYYY"
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1210,6 +1626,9 @@ export default function UpdateResumeForm({
                                     form.setValue(
                                       `experiences.${index}.endDate`,
                                       ""
+                                    );
+                                    form.clearErrors(
+                                      `experiences.${index}.endDate`
                                     );
                                   }
                                 }}
@@ -1336,7 +1755,6 @@ export default function UpdateResumeForm({
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
                         name={`educationList.${index}.degree`}
@@ -1369,7 +1787,6 @@ export default function UpdateResumeForm({
                           </FormItem>
                         )}
                       />
-
                       <FormField
                         control={form.control}
                         name={`educationList.${index}.fieldOfStudy`}
@@ -1386,46 +1803,92 @@ export default function UpdateResumeForm({
                           </FormItem>
                         )}
                       />
+                      <FormField
+                        control={form.control}
+                        name={`educationList.${index}.startDate`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Start Date</FormLabel>
+                            <FormControl>
+                              <CustomDateInput
+                                value={field.value || ""}
+                                onChange={(value) => {
+                                  field.onChange(value);
+                                  const graduationDate = form.getValues(
+                                    `educationList.${index}.graduationDate`
+                                  );
+                                  const currentlyStudying = form.getValues(
+                                    `educationList.${index}.currentlyStudying`
+                                  );
+                                  if (
+                                    !currentlyStudying &&
+                                    graduationDate &&
+                                    value
+                                  ) {
+                                    if (!isDateValid(value, graduationDate)) {
+                                      form.setError(
+                                        `educationList.${index}.graduationDate`,
+                                        {
+                                          type: "manual",
+                                          message:
+                                            "Graduation date cannot be earlier than start date",
+                                        }
+                                      );
+                                    } else {
+                                      form.clearErrors(
+                                        `educationList.${index}.graduationDate`
+                                      );
+                                    }
+                                  }
+                                }}
+                                placeholder="MM/YYYY"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                      <div className="grid grid-cols-2 gap-4">
+                      {!education.currentlyStudying && (
                         <FormField
                           control={form.control}
-                          name={`educationList.${index}.startDate`}
+                          name={`educationList.${index}.graduationDate`}
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Start Date</FormLabel>
+                              <FormLabel>Graduation Date</FormLabel>
                               <FormControl>
                                 <CustomDateInput
                                   value={field.value || ""}
-                                  onChange={field.onChange}
-                                  placeholder="MMYYYY"
+                                  onChange={(value) => {
+                                    field.onChange(value);
+                                    const startDate = form.getValues(
+                                      `educationList.${index}.startDate`
+                                    );
+                                    if (startDate && value) {
+                                      if (!isDateValid(startDate, value)) {
+                                        form.setError(
+                                          `educationList.${index}.graduationDate`,
+                                          {
+                                            type: "manual",
+                                            message:
+                                              "Graduation date cannot be earlier than start date",
+                                          }
+                                        );
+                                      } else {
+                                        form.clearErrors(
+                                          `educationList.${index}.graduationDate`
+                                        );
+                                      }
+                                    }
+                                  }}
+                                  placeholder="MM/YYYY"
                                 />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                        {!education.currentlyStudying && (
-                          <FormField
-                            control={form.control}
-                            name={`educationList.${index}.graduationDate`}
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Graduation Date</FormLabel>
-                                <FormControl>
-                                  <CustomDateInput
-                                    value={field.value || ""}
-                                    onChange={field.onChange}
-                                    placeholder="MMYYYY"
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-                      </div>
-
+                      )}
                       <FormField
                         control={form.control}
                         name={`educationList.${index}.currentlyStudying`}
@@ -1452,7 +1915,6 @@ export default function UpdateResumeForm({
                         )}
                       />
                     </div>
-
                     {educationFields.length > 1 && (
                       <Button
                         type="button"
@@ -1462,7 +1924,6 @@ export default function UpdateResumeForm({
                           const currentEducation =
                             form.getValues("educationList") || [];
                           const educationToRemove = currentEducation[index];
-
                           if (educationToRemove._id) {
                             const updatedEducation = [...currentEducation];
                             updatedEducation[index] = {
@@ -1643,7 +2104,6 @@ export default function UpdateResumeForm({
             </CardContent>
           </Card>
 
-          {/* Submit Button */}
           <div className="flex gap-4">
             <Button
               type="submit"

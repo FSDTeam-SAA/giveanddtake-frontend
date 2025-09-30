@@ -776,33 +776,8 @@ export default function ApplicantDetailsPage() {
               {creatingRoom ? "Opening…" : "Message"}
             </Button>
           </div>
-          <div>
-            <Select
-              value={applicationStatus}
-              onValueChange={handleStatusUpdate}
-              disabled={statusLoading}
-            >
-              <SelectTrigger className="w-40 border text-blue-600 border-blue-600">
-                <SelectValue placeholder="Change Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {["pending", "shortlisted", "rejected"].map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
-        <div>
-          <Link href="/recruiter-dashboard">
-            <Button variant="outline" className="bg-[#2B7FD0] text-white">
-              Return To Dashboard
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   );
