@@ -867,10 +867,10 @@ export default function RegisterPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm your sign-up role</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to create an account as{" "}
+              You are about to create a {" "}
               <span className="font-semibold">
                 {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
-              </span>
+              </span> account
               .
             </AlertDialogDescription>
           </AlertDialogHeader>
