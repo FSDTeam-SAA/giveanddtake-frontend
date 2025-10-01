@@ -622,10 +622,10 @@ const page = () => {
           <p className="mb-2 text-[#424242] text-base font-normal">
             You can contact us via our email address at{" "}
             <a
-              href="mailto:info@elevatorvideopitch.com"
+              href="mailto:info@evpitch.com"
               className="text-blue-600 hover:underline dark:text-blue-400"
             >
-              info@elevatorvideopitch.com
+              info@evpitch.com
             </a>{" "}
             or via our Contact Form or at our address on our website.
           </p>
