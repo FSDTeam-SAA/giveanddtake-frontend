@@ -51,6 +51,7 @@ interface RecommendedJobsResponse {
   data: {
     jobs?: Job[];
     fallbackJobs?: Job[];
+    exactMatches?: Job[];
   };
 }
 
@@ -158,7 +159,7 @@ export default function JobsListing() {
     totalItems: 0,
     itemsPerPage: 10,
   };
-  const recommended = recommendedData?.data.fallbackJobs || [];
+  const recommended = recommendedData?.data.exactMatches || [];
 
   // Function to handle filter button click
   const handleFilter = () => {
