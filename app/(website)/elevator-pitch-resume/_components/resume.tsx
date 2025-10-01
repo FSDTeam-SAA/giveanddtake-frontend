@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import {  useState } from "react";
+import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,7 @@ interface Resume {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  immediatelyAvailable: boolean;
 }
 
 interface Experience {
@@ -105,13 +106,10 @@ interface ResumeAward {
   __v: number;
 }
 
-
 interface MyResumeProps {
   resume: ResumeResponse["data"];
   onEdit: () => void;
 }
-
-
 
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const { data: session } = useSession();
@@ -201,8 +199,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     });
   };
 
-
-
   return (
     <main className="min-h-screen">
       <div className="container">
@@ -286,6 +282,12 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
                     </div>
+                    {resume.resume.immediatelyAvailable && (
+                      <div>
+                        <p className="font-semibold text-base">Availibility</p>
+                        <p className="text-gray-600">Immediately Available</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
