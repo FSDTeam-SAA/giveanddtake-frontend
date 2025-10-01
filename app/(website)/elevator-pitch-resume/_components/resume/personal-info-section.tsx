@@ -451,10 +451,10 @@ export function PersonalInfoSection({
                         <SelectValue placeholder="Select Salutaion" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mr">Mr.</SelectItem>
-                        <SelectItem value="mrs">Mrs.</SelectItem>
-                        <SelectItem value="ms">Ms.</SelectItem>
-                        <SelectItem value="dr">Dr.</SelectItem>
+                        <SelectItem value="Mr.">Mr.</SelectItem>
+                        <SelectItem value="Mrs.">Mrs.</SelectItem>
+                        <SelectItem value="Ms.">Ms.</SelectItem>
+                        <SelectItem value="Dr.">Dr.</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>

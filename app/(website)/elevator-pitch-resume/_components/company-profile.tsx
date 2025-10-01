@@ -44,6 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner"; // For toast notifications
+import SocialLinks from "./SocialLinks";
 
 interface PitchData {
   _id: string;
@@ -469,9 +470,16 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             </div>
 
             <div className="flex gap-2">
-              {links.map((link: string, index: number) => (
-                <SocialIcon key={index} url={link} />
-              ))}
+              <div>
+                <SocialLinks sLink={company.sLink} />
+              </div>
+            </div>
+            <div className="mt-4">
+              <Link href="/add-job">
+                <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
+                  Post A Job
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -483,7 +491,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               Easily post your company job openings and reach the right talent
               fast. Get quality applications in no time.
             </p>
-            <Link href="/manage-jobs">
+            <Link href={`/manage-jobs/${company._id}`}>
               <Button className="bg-primary hover:bg-primary/90 text-white px-6 mr-2">
                 Manage Jobs
               </Button>

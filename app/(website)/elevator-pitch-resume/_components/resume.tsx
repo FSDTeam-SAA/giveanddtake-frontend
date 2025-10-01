@@ -249,9 +249,19 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     )}
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">
-                    {resume.resume.title ? `${resume.resume.title}. ` : ""}
-                    {resume.resume.firstName} {resume.resume.lastName}
+                    {resume.resume.title
+                      ? `${resume.resume.title
+                          .charAt(0)
+                          .toUpperCase()}${resume.resume.title.slice(1)} `
+                      : ""}
+                    {`${resume.resume.firstName
+                      .charAt(0)
+                      .toUpperCase()}${resume.resume.firstName.slice(1)} `}
+                    {`${resume.resume.lastName
+                      .charAt(0)
+                      .toUpperCase()}${resume.resume.lastName.slice(1)}`}
                   </h2>
+
                   <div>
                     <SocialLinks sLink={resume.resume.sLink} />
                   </div>

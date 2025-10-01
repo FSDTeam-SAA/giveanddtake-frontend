@@ -1,360 +1,406 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRouter } from "next/navigation";
-import { format } from "date-fns";
-import DOMPurify from "dompurify";
-import * as React from "react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import Link from "next/link";
 
-interface JobRequest {
-  id: string;
-  name: string;
-  role: string;
-  company?: string;
-  date: string;
-  jobTitle: string;
-  jobDescription: string;
-  avatar?: { url: string };
-  adminApprove: boolean; // from API
-  jobApprove?: "approved" | "rejected" | "pending";
+// Types based on your API response
+interface Company {
+  _id: string;
+  userId: string;
+  clogo: string;
+  banner: string;
+  aboutUs: string;
+  cname: string;
+  country: string;
+  city: string;
+  zipcode: string;
+  cemail: string;
+  cPhoneNumber: string;
+  sLink: Array<{
+    label: string;
+    url: string;
+    _id: string;
+  }>;
+  industry: string;
+  service: string[];
+  employeesId: string[];
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
-type AdminFilter = "all" | "approved" | "not-approved";
+interface ApplicationRequirement {
+  requirement: string;
+  status: string;
+  _id: string;
+}
 
-async function fetchJobRequests(token: string): Promise<JobRequest[]> {
+interface CustomQuestion {
+  question: string;
+  _id: string;
+}
+
+interface Job {
+  _id: string;
+  userId: string;
+  companyId: Company;
+  title: string;
+  description: string;
+  salaryRange: string;
+  location: string;
+  shift: string;
+  responsibilities: string[];
+  educationExperience: string[];
+  benefits: string[];
+  vacancy: number;
+  applicantCount: number;
+  experience: string;
+  derivedStatus: string;
+  deadline: string;
+  status: string;
+  jobCategoryId: string;
+  name: string;
+  role: string;
+  compensation: string;
+  arcrivedJob: boolean;
+  applicationRequirement: ApplicationRequirement[];
+  customQuestion: CustomQuestion[];
+  jobApprove: string;
+  adminApprove: boolean;
+  publishDate: string;
+  employement_Type: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface ApiResponse {
+  success: boolean;
+  message: string;
+  data: Job[];
+}
+
+interface ManagePageProps {
+  userId: string;
+}
+
+// Fetch function
+const fetchJobs = async (userId: string): Promise<Job[]> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/pending/job/company`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    }
+    `${process.env.NEXT_PUBLIC_BASE_URL}/all-jobs-for-company/company/${userId}`
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch job requests");
+    throw new Error("Failed to fetch jobs");
   }
 
-  const json = await response.json();
+  const data: ApiResponse = await response.json();
+  return data.data;
+};
 
-  return (json?.data ?? []).map((item: any) => ({
-    id: item._id,
-    name: item?.userId?.name ?? "Unknown",
-    role: item?.userId?.role ?? "Unknown",
-    company: item?.userId?.company || "N/A",
-    date: item?.createdAt ?? item?.publishDate ?? new Date().toISOString(),
-    jobTitle: item?.title ?? "Untitled",
-    jobDescription: item?.description ?? "",
-    avatar: item?.userId?.avatar,
-    adminApprove: Boolean(item?.adminApprove),
-    jobApprove: item?.jobApprove ?? "pending",
-  }));
-}
-
-function JobRequestSkeletonRow() {
+// Skeleton loader component
+const JobTableSkeleton = () => {
   return (
-    <tr className="border-b">
-      <td className="p-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div>
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-20 mt-1" />
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>
+                  <Skeleton className="h-4 w-24" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-32" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-24" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-20" />
+                </TableHead>
+                <TableHead>
+                  <Skeleton className="h-4 w-16" />
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-full" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-6 w-16" />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex space-x-2">
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-9 w-9" />
           </div>
         </div>
-      </td>
-      <td className="p-3">
-        <Skeleton className="h-4 w-24" />
-      </td>
-      <td className="p-3">
-        <Skeleton className="h-4 w-56" />
-      </td>
-      <td className="p-3">
-        <Skeleton className="h-4 w-24" />
-      </td>
-      <td className="p-3">
-        <Skeleton className="h-6 w-24" />
-      </td>
-      <td className="p-3">
-        <div className="flex gap-2">
-          <Skeleton className="h-9 w-20" />
-        </div>
-      </td>
-    </tr>
+      </CardContent>
+    </Card>
   );
-}
+};
 
-export default function ManagePage() {
-  const { data: session, status } = useSession();
-  const token = session?.accessToken as string;
-  const router = useRouter();
-
-  // UI state for filtering & pagination
-  const [adminFilter, setAdminFilter] = React.useState<AdminFilter>("all");
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(10);
+function ManagePage({ userId }: ManagePageProps) {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const itemsPerPage = 10;
 
   const {
-    data: allJobRequests = [],
+    data: jobs = [],
     isLoading,
-    isError,
     error,
-  } = useQuery<JobRequest[]>({
-    queryKey: ["jobRequests", token],
-    queryFn: () => fetchJobRequests(token),
-    enabled: !!token && status === "authenticated",
+  } = useQuery({
+    queryKey: ["jobs", userId],
+    queryFn: () => fetchJobs(userId),
+    enabled: !!userId, // Only run query if userId exists
   });
 
-  // Filter by adminApprove
-  const filtered = React.useMemo(() => {
-    switch (adminFilter) {
-      case "approved":
-        return allJobRequests.filter((j) => j.adminApprove === true);
-      case "not-approved":
-        return allJobRequests.filter((j) => j.adminApprove === false);
-      default:
-        return allJobRequests;
-    }
-  }, [allJobRequests, adminFilter]);
+  // Pagination calculations
+  const totalPages = Math.ceil(jobs.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedJobs = jobs.slice(startIndex, startIndex + itemsPerPage);
 
-  // Pagination
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const paged = React.useMemo(() => {
-    const start = (currentPage - 1) * pageSize;
-    return filtered.slice(start, start + pageSize);
-  }, [filtered, currentPage, pageSize]);
-
-  React.useEffect(() => {
-    setPage(1); // reset page on filter/pageSize changes
-  }, [adminFilter, pageSize]);
-
-  const handleJobDetails = (id: string) => {
-    router.push(`/single-job/${id}`);
-  };
-
-  if (status === "loading" || isLoading) {
+  if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
-        <Card className="p-0 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-muted/50 text-left">
-              <tr>
-                <th className="p-3">Recruiter</th>
-                <th className="p-3">Role</th>
-                <th className="p-3">Job Title & Description</th>
-                <th className="p-3">Created</th>
-                <th className="p-3">Admin Approved</th>
-                <th className="p-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...Array(5)].map((_, i) => (
-                <JobRequestSkeletonRow key={i} />
-              ))}
-            </tbody>
-          </table>
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-red-600">
+              Error loading jobs: {(error as Error).message}
+            </div>
+          </CardContent>
         </Card>
       </div>
     );
   }
 
-  if (isError) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
-        <div className="text-center py-12 text-red-500">
-          Error: {(error as Error).message}
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-8">Manage Job Post Requests</h1>
-        <div className="text-center py-12">
-          Please sign in to view job requests.
-        </div>
-      </div>
-    );
-  }
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-[40px] font-bold mb-6">Manage Job Post Requests</h1>
-
-      {/* Controls */}
-      <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Admin filter:</span>
-          <select
-            value={adminFilter}
-            onChange={(e) => setAdminFilter(e.target.value as AdminFilter)}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="all">All</option>
-            <option value="approved">Approved</option>
-            <option value="not-approved">Not approved</option>
-          </select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Rows per page:</span>
-          <select
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="border rounded-md px-3 py-2 text-sm"
-          >
-            {[5, 10, 20, 50].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Manage Jobs</h1>
+        <p className="text-muted-foreground">
+          View and manage all your job postings
+        </p>
       </div>
 
-      {/* Table */}
-      <Card className="p-0 overflow-x-auto">
-        <table className="w-full text-sm table-fixed">
-          <thead className="bg-muted/50 text-left">
-            <tr>
-              <th className="p-3 w-[25%]">Recruiter</th>
-              <th className="p-3 w-[35%]">Job Title & Description</th>
-              <th className="p-3 w-[15%]">Created</th>
-              <th className="p-3 w-[15%]">Admin Approved</th>
-              <th className="p-3 w-[10%]">Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {paged.map((request) => (
-              <tr key={request.id} className="border-b align-top">
-                {/* Recruiter */}
-                <td className="p-3 w-[25%]">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      {request.avatar?.url ? (
-                        <AvatarImage
-                          src={request.avatar.url}
-                          alt={request.name}
-                        />
-                      ) : (
-                        <AvatarFallback>
-                          {request?.name?.charAt(0) ?? "?"}
-                        </AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <div className="font-medium line-clamp-1">
-                        {request.name}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-
-                {/* Job Title & Description */}
-                <td className="p-3 w-[35%]">
-                  <div className="font-medium line-clamp-1">
-                    {request.jobTitle}
-                  </div>
-                  <div
-                    className="text-xs text-muted-foreground line-clamp-1"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(request.jobDescription),
-                    }}
-                  />
-                </td>
-
-                {/* Created */}
-                <td className="p-3 w-[15%]">
-                  {format(new Date(request.date), "MMM d, yyyy")}
-                </td>
-
-                {/* Admin Approved */}
-                <td className="p-3 w-[15%]">
-                  {request.adminApprove ? (
-                    <span className="inline-flex items-center rounded-full border border-green-600/40 text-green-700 bg-green-50 px-2 py-1 text-[11px] font-medium">
-                      Approved
-                    </span>
+      {isLoading ? (
+        <JobTableSkeleton />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Job Postings</CardTitle>
+            <CardDescription>
+              {jobs.length} job posting{jobs.length !== 1 ? "s" : ""} found
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Experience</TableHead>
+                    <TableHead>Deadline</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-base text-[#2B7FD0] font-bold">
+                      Applicants list
+                    </TableHead>
+                    <TableHead>Vacancy</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedJobs.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        No job postings found
+                      </TableCell>
+                    </TableRow>
                   ) : (
-                    <span className="inline-flex items-center rounded-full border border-amber-600/40 text-amber-700 bg-amber-50 px-2 py-1 text-[11px] font-medium">
-                      Not approved
-                    </span>
+                    paginatedJobs.map((job) => (
+                      <TableRow key={job._id}>
+                        <TableCell className="font-medium">
+                          {job.title}
+                        </TableCell>
+                        <TableCell>{job.role}</TableCell>
+                        <TableCell>{job.location}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">
+                            {job.experience}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDate(job.deadline)}</TableCell>
+                        <TableCell>{job.derivedStatus}</TableCell>
+                        <TableCell>
+                        <Link
+                          href={`/candidate-list/${job._id}`}
+                          className="text-blue-600 hover:underline"
+                        >
+                          View{" "}
+                          <span className="text-gray-500">
+                            ({job.applicantCount})
+                          </span>
+                        </Link>
+                      </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{job.vacancy}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
                   )}
-                </td>
+                </TableBody>
+              </Table>
+            </div>
 
-                {/* Actions */}
-                <td className="p-3 w-[10%]">
-                  <Button
-                    onClick={() => handleJobDetails(request.id)}
-                    variant="outline"
-                    className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                  >
-                    Details
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                  Showing {startIndex + 1} to{" "}
+                  {Math.min(startIndex + itemsPerPage, jobs.length)} of{" "}
+                  {jobs.length} entries
+                </div>
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage((prev) => Math.max(prev - 1, 1));
+                        }}
+                        className={
+                          currentPage === 1
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
+                    </PaginationItem>
 
-      {/* Pagination controls with numbered page buttons */}
-      <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="text-sm text-muted-foreground">
-          Showing{" "}
-          <span className="font-medium">
-            {total === 0 ? 0 : (currentPage - 1) * pageSize + 1}
-          </span>{" "}
-          to{" "}
-          <span className="font-medium">
-            {Math.min(currentPage * pageSize, total)}
-          </span>{" "}
-          of <span className="font-medium">{total}</span> jobs
-        </div>
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
 
-        <div className="flex items-center flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            Prev
-          </Button>
+                      return (
+                        <PaginationItem key={pageNum}>
+                          <PaginationLink
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setCurrentPage(pageNum);
+                            }}
+                            isActive={currentPage === pageNum}
+                          >
+                            {pageNum}
+                          </PaginationLink>
+                        </PaginationItem>
+                      );
+                    })}
 
-          {/* numbered buttons */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-            <Button
-              key={n}
-              variant={n === currentPage ? "default" : "outline"}
-              onClick={() => setPage(n)}
-              className={n === currentPage ? "" : "hover:bg-muted/60"}
-            >
-              {n}
-            </Button>
-          ))}
+                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
 
-          <Button
-            variant="outline"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages)
+                          );
+                        }}
+                        className={
+                          currentPage === totalPages
+                            ? "pointer-events-none opacity-50"
+                            : ""
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
+
+export default ManagePage;
