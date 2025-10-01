@@ -160,7 +160,6 @@ export default function MultiStepJobForm() {
       applicationRequirements: [
         { requirement: "Resume", status: "" },
         { requirement: "Valid visa for this job location?", status: "" },
-        { requirement: "noticePeriod", status: "" }, // noticePeriod present by default (status empty)
       ],
       customQuestions: [{ id: "1", question: "" }],
       userId,

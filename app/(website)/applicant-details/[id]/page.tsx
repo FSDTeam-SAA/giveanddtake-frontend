@@ -562,7 +562,9 @@ export default function ApplicantDetailsPage() {
                 <div className="flex items-start justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {resume.title.charAt(0).toUpperCase() + resume.title.slice(1)} {resume.firstName} {resume.lastName}
+                      {resume.title.charAt(0).toUpperCase() +
+                        resume.title.slice(1)}{" "}
+                      {resume.firstName} {resume.lastName}
                     </h1>
                     <div className="space-y-1 text-gray-600 mb-4">
                       {resume.country && (
@@ -642,9 +644,9 @@ export default function ApplicantDetailsPage() {
                         <h3 className="font-semibold text-lg">
                           {exp.jobTitle || "Unknown Position"}
                         </h3>
-                        <p className="text-gray-600">
+                        {/* <p className="text-gray-600">
                           {exp.employer || "Unknown Employer"}
-                        </p>
+                        </p> */}
                       </div>
                       <div className="text-gray-500 text-sm">
                         {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
@@ -777,7 +779,6 @@ export default function ApplicantDetailsPage() {
             </Button>
           </div>
         </div>
-
       </div>
     </div>
   );

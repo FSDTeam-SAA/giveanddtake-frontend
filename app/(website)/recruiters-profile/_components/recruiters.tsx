@@ -448,21 +448,19 @@ export default function Recruiters({ userId }: MydataProps) {
       </div>
 
       {/* Elevator Pitch */}
-      {
-        recruiterData?.elevatorPitch &&
-         <div className="lg:py-12 pb-5">
-        <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
-          Elevator Pitch
-        </h2>
-        <div className="rounded-lg">
-          <VideoPlayer
-            pitchId={recruiterData?.elevatorPitch._id}
-            className="w-full mx-auto"
-          />
+      {recruiterData?.elevatorPitch && (
+        <div className="lg:py-12 pb-5">
+          <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
+            Elevator Pitch
+          </h2>
+          <div className="rounded-lg">
+            <VideoPlayer
+              pitchId={recruiterData?.elevatorPitch._id}
+              className="w-full mx-auto"
+            />
+          </div>
         </div>
-      </div>
-      }
-     
+      )}
 
       <div className="border-t border-gray-300 mt-6" />
 
@@ -483,37 +481,6 @@ export default function Recruiters({ userId }: MydataProps) {
               {skill}
             </span>
           ))}
-        </div>
-      </section>
-
-      {/* Experience */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold">Experience</h2>
-        <div className="mt-2">
-          <p className="text-gray-700 font-medium">Product Designer</p>
-          <p className="text-gray-600">Various Startups, Remote</p>
-          <p className="text-gray-600">Jan 2015 - Present | 10+ years</p>
-        </div>
-      </section>
-
-      {/* Education */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold">Education</h2>
-        <div className="mt-2">
-          <p className="text-gray-700 font-medium">Bachelor in Design</p>
-          <p className="text-gray-600">University of Yerevan</p>
-          <p className="text-gray-600">Sep 2009 - Jun 2013 | 4 years</p>
-        </div>
-      </section>
-
-      {/* Awards & Honours */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow mb-24">
-        <h2 className="text-xl font-semibold">Awards & Honours</h2>
-        <div className="mt-2">
-          <p className="text-gray-700 font-medium">Best UX Design Award</p>
-          <p className="text-gray-600">
-            For outstanding user-centric design, 2023
-          </p>
         </div>
       </section>
     </div>
