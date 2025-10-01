@@ -228,16 +228,6 @@ export function SiteHeader() {
               </Link>
             </DropdownMenuItem>
           )}
-          {links.elevatorPitch && (
-            <DropdownMenuItem asChild>
-              <Link
-                href={links.elevatorPitch}
-                className="flex items-center w-full px-2 py-1.5"
-              >
-                <Video className="mr-2 h-4 w-4" /> Elevator Pitch
-              </Link>
-            </DropdownMenuItem>
-          )}
           {links.settings && (
             <DropdownMenuItem asChild>
               <Link

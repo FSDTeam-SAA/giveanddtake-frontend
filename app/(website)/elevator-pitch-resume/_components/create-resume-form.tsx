@@ -410,17 +410,21 @@ export default function CreateResumeForm() {
     },
   });
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+
+  setPhotoFile(file);
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (e.target?.result) {
+      setPhotoPreview(e.target.result as string);
     }
   };
+  reader.readAsDataURL(file);
+};
+
 
   const handleBannerUpload = (file: File | null) => {
     setBannerFile(file);
@@ -541,7 +545,7 @@ export default function CreateResumeForm() {
       for (const [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      // createResumeMutation.mutate(formData);
+      createResumeMutation.mutate(formData);
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error("An unexpected error occurred. Please try again.");

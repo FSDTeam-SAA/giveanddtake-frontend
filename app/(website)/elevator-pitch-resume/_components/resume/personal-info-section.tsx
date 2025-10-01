@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Cropper from "react-easy-crop";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { SocialLinksSection } from "../social-links-section";
 import type { UseFormReturn } from "react-hook-form";
@@ -164,6 +164,11 @@ export function PersonalInfoSection({
   const [selectedCountry, setSelectedCountry] = useState<string>(
     formCountry || ""
   );
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -230,7 +235,6 @@ export function PersonalInfoSection({
 
   // Handle country data side effects
   useEffect(() => {
-    // Only set the default country if the form value is empty AND the local state is empty
     if (
       countriesData &&
       countriesData.length > 0 &&
@@ -240,40 +244,95 @@ export function PersonalInfoSection({
       const defaultCountry = countriesData[0].country;
       setSelectedCountry(defaultCountry);
       form.setValue("country", defaultCountry);
-      // This is still risky, a better way is to rely on form.watch, but for now, it's safer to check both
     }
-    // If the form has a value, ensure selectedCountry is synchronized for city fetching
     if (formCountry && formCountry !== selectedCountry) {
       setSelectedCountry(formCountry);
     }
   }, [countriesData, form, formCountry, selectedCountry]);
 
-  // Handle dial codes data side effects
-  // useEffect(() => {
-  //   const currentPhoneNumber = form.getValues("phoneNumber");
+  // Function to handle image upload and initiate cropping
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImageSrc(reader.result as string);
+        setShowCropper(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
-  //   // Only set a *default* dial code if the current phone number is empty (meaning no session data was loaded or it was cleared)
-  //   if (dialCodesData && dialCodesData.length > 0 && !currentPhoneNumber) {
-  //     const defaultDialCode = dialCodesData[0].dial_code;
-  //     form.setValue("phoneNumber", defaultDialCode);
-  //   }
-  //   // This is where your session data should stick if it exists.
-  //   // The issue with your existing logic was it set a default unconditionally.
-  // }, [dialCodesData, form]);
+  // Function to crop image
+  const onCropComplete = useCallback(
+    (croppedArea: any, croppedAreaPixels: any) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    []
+  );
 
-  // Update phone number with dial code when country changes
-  // useEffect(() => {
-  //   if (selectedCountry && dialCodesData?.length) {
-  //     const selectedDialCode = dialCodesData.find(
-  //       (dc) => dc.name === selectedCountry
-  //     )?.dial_code;
-  //     if (selectedDialCode) {
-  //       const currentPhone = form.getValues("phoneNumber");
-  //       const phoneWithoutDial = currentPhone.replace(/^\+\d+/, "");
-  //       form.setValue("phoneNumber", selectedDialCode + phoneWithoutDial);
-  //     }
-  //   }
-  // }, [selectedCountry, dialCodesData, form]);
+  // Function to generate cropped image
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: { x: number; y: number; width: number; height: number }
+  ): Promise<string> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => {
+      image.onload = resolve;
+    });
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas context not available");
+
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
+    );
+
+    return canvas.toDataURL("image/jpeg");
+  };
+
+  // Handle crop confirmation
+  const handleCropConfirm = async () => {
+    if (imageSrc && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
+        // Call the original onPhotoUpload with a synthetic event
+        onPhotoUpload({
+          target: { files: [dataURLtoFile(croppedImage, "profile.jpg")] },
+        } as any);
+        setShowCropper(false);
+        setImageSrc(null);
+      } catch (e) {
+        console.error("Error cropping image:", e);
+      }
+    }
+  };
+
+  // Convert data URL to File object
+  const dataURLtoFile = (dataUrl: string, filename: string): File => {
+    const arr = dataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mime });
+  };
 
   return (
     <>
@@ -281,7 +340,7 @@ export function PersonalInfoSection({
       <Card className="border-2 border-blue-500">
         <CardContent className="pt-6">
           <div className="flex items-start gap-8">
-            {/* Photo Upload */}
+            {/* Photo Upload with Cropper */}
             <div className="flex-shrink-0">
               <Label className="text-sm font-medium text-blue-600 mb-2 block">
                 Photo
@@ -307,8 +366,37 @@ export function PersonalInfoSection({
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={onPhotoUpload}
+                onChange={handleImageUpload}
               />
+              {showCropper && imageSrc && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white p-4 rounded-lg w-[90vw] max-w-[500px]">
+                    <div className="relative w-full h-[300px]">
+                      <Cropper
+                        image={imageSrc}
+                        crop={crop}
+                        zoom={zoom}
+                        aspect={1}
+                        onCropChange={setCrop}
+                        onZoomChange={setZoom}
+                        onCropComplete={onCropComplete}
+                      />
+                    </div>
+                    <div className="mt-4 flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowCropper(false);
+                          setImageSrc(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="button" onClick={handleCropConfirm}>Crop & Save</Button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* About Us Text Area */}

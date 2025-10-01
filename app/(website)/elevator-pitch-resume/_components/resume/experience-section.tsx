@@ -31,6 +31,7 @@ import { cn } from "@/lib/utils";
 import CustomDateInput from "@/components/custom-date-input";
 import type { UseFormReturn, FieldArrayWithId } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
+import { Combobox } from "@/components/ui/combo-box";
 
 interface Country {
   country: string;
@@ -42,94 +43,18 @@ interface Option {
   label: string;
 }
 
-function Combobox({
-  options,
-  value,
-  onChange,
-  placeholder,
-  minSearchLength = 0,
-  disabled = false,
-}: {
-  options: Option[];
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-  minSearchLength?: number;
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
+// Utility function to compare dates (format: MM/YYYY)
+const isDateValid = (startDate: string, endDate: string): boolean => {
+  if (!startDate || !endDate) return true; // Skip if either date is empty
+  const [startMonth, startYear] = startDate.split("/").map(Number);
+  const [endMonth, endYear] = endDate.split("/").map(Number);
 
-  const filteredOptions = useMemo(() => {
-    return options.filter((option) =>
-      option.label.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [search, options]);
+  if (startYear > endYear) return false;
+  if (startYear === endYear && startMonth > endMonth) return false;
+  return true;
+};
 
-  const displayedOptions = filteredOptions.slice(0, 100);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between bg-transparent"
-          disabled={disabled}
-        >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : placeholder}
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command>
-          <CommandInput
-            placeholder="Search..."
-            value={search}
-            onValueChange={setSearch}
-          />
-          <CommandList>
-            {search.length < minSearchLength ? (
-              <CommandEmpty>
-                Type at least {minSearchLength} characters to search.
-              </CommandEmpty>
-            ) : displayedOptions.length === 0 ? (
-              <CommandEmpty>No results found.</CommandEmpty>
-            ) : null}
-            <CommandGroup>
-              {displayedOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={(currentValue) => {
-                    onChange(currentValue === value ? "" : currentValue);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-            {filteredOptions.length > 100 && (
-              <CommandItem disabled>
-                More results available. Refine your search.
-              </CommandItem>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
+// ... (keep your existing Combobox component as is)
 
 interface ExperienceSectionProps {
   form: UseFormReturn<any>;
@@ -144,24 +69,15 @@ export function ExperienceSection({
   appendExperience,
   removeExperience,
 }: ExperienceSectionProps) {
-  const [selectedExperienceCountries, setSelectedExperienceCountries] =
-    useState<string[]>([]);
-  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>(
-    []
-  );
-  const [loadingExperienceCities, setLoadingExperienceCities] = useState<
-    boolean[]
-  >([]);
+  const [selectedExperienceCountries, setSelectedExperienceCountries] = useState<string[]>([]);
+  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>([]);
+  const [loadingExperienceCities, setLoadingExperienceCities] = useState<boolean[]>([]);
 
   // Fetch countries
-  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
-    Country[]
-  >({
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<Country[]>({
     queryKey: ["countries"],
     queryFn: async () => {
-      const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries"
-      );
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries");
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
       return data.data as Country[];
@@ -171,16 +87,11 @@ export function ExperienceSection({
   const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
     if (!country) return [];
     try {
-      const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ country }),
-        }
-      );
+      const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ country }),
+      });
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch cities");
       return data.data as string[];
@@ -222,9 +133,28 @@ export function ExperienceSection({
     );
   }, [experienceFields]);
 
+  // Validate dates whenever startDate or endDate changes
+  useEffect(() => {
+    experienceFields.forEach((_, index) => {
+      const startDate = form.getValues(`experiences.${index}.startDate`);
+      const endDate = form.getValues(`experiences.${index}.endDate`);
+      const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+
+      if (!currentlyWorking && startDate && endDate) {
+        if (!isDateValid(startDate, endDate)) {
+          form.setError(`experiences.${index}.endDate`, {
+            type: "manual",
+            message: "End date cannot be earlier than start date",
+          });
+        } else {
+          form.clearErrors(`experiences.${index}.endDate`);
+        }
+      }
+    });
+  }, [form, experienceFields]);
+
   const countryOptions = useMemo(
-    () =>
-      countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
+    () => countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
     [countriesData]
   );
 
@@ -243,6 +173,7 @@ export function ExperienceSection({
         {experienceFields.map((field, index) => (
           <div key={field.id} className="border rounded-lg p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Position Field */}
               <FormField
                 control={form.control}
                 name={`experiences.${index}.position`}
@@ -256,6 +187,8 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
+              
+              {/* Company Field */}
               <FormField
                 control={form.control}
                 name={`experiences.${index}.company`}
@@ -269,6 +202,8 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
+              
+              {/* Country Field */}
               <FormField
                 control={form.control}
                 name={`experiences.${index}.country`}
@@ -287,11 +222,7 @@ export function ExperienceSection({
                             return newCountries;
                           });
                         }}
-                        placeholder={
-                          isLoadingCountries
-                            ? "Loading countries..."
-                            : "Select Country"
-                        }
+                        placeholder={isLoadingCountries ? "Loading countries..." : "Select Country"}
                         minSearchLength={0}
                         disabled={isLoadingCountries}
                       />
@@ -300,6 +231,8 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
+              
+              {/* City Field */}
               <FormField
                 control={form.control}
                 name={`experiences.${index}.city`}
@@ -319,16 +252,15 @@ export function ExperienceSection({
                             : "Select City"
                         }
                         minSearchLength={2}
-                        disabled={
-                          loadingExperienceCities[index] ||
-                          !selectedExperienceCountries[index]
-                        }
+                        disabled={loadingExperienceCities[index] || !selectedExperienceCountries[index]}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              {/* Date Fields */}
               <div className="space-y-4">
                 <FormField
                   control={form.control}
@@ -342,16 +274,16 @@ export function ExperienceSection({
                             field.onChange(checked);
                             if (checked) {
                               form.setValue(`experiences.${index}.endDate`, "");
+                              form.clearErrors(`experiences.${index}.endDate`);
                             }
                           }}
                         />
                       </FormControl>
-                      <FormLabel className="font-normal">
-                        Currently Working
-                      </FormLabel>
+                      <FormLabel className="font-normal">Currently Working</FormLabel>
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={form.control}
                   name={`experiences.${index}.startDate`}
@@ -361,14 +293,30 @@ export function ExperienceSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
-                          onChange={field.onChange}
-                          placeholder="MMYYYY"
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Trigger validation for end date
+                            const endDate = form.getValues(`experiences.${index}.endDate`);
+                            const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+                            if (!currentlyWorking && endDate && value) {
+                              if (!isDateValid(value, endDate)) {
+                                form.setError(`experiences.${index}.endDate`, {
+                                  type: "manual",
+                                  message: "End date cannot be earlier than start date",
+                                });
+                              } else {
+                                form.clearErrors(`experiences.${index}.endDate`);
+                              }
+                            }
+                          }}
+                          placeholder="MM/YYYY"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={form.control}
                   name={`experiences.${index}.endDate`}
@@ -378,11 +326,24 @@ export function ExperienceSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
-                          onChange={field.onChange}
-                          placeholder="MMYYYY"
-                          disabled={form.watch(
-                            `experiences.${index}.currentlyWorking`
-                          )}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Validate against start date
+                            const startDate = form.getValues(`experiences.${index}.startDate`);
+                            const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+                            if (!currentlyWorking && startDate && value) {
+                              if (!isDateValid(startDate, value)) {
+                                form.setError(`experiences.${index}.endDate`, {
+                                  type: "manual",
+                                  message: "End date cannot be earlier than start date",
+                                });
+                              } else {
+                                form.clearErrors(`experiences.${index}.endDate`);
+                              }
+                            }
+                          }}
+                          placeholder="MM/YYYY"
+                          disabled={form.watch(`experiences.${index}.currentlyWorking`)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -391,6 +352,8 @@ export function ExperienceSection({
                 />
               </div>
             </div>
+            
+            {/* Job Description */}
             <FormField
               control={form.control}
               name={`experiences.${index}.jobDescription`}
@@ -407,6 +370,8 @@ export function ExperienceSection({
                 </FormItem>
               )}
             />
+            
+            {/* Remove Button */}
             <Button
               type="button"
               variant="destructive"
@@ -417,6 +382,8 @@ export function ExperienceSection({
             </Button>
           </div>
         ))}
+        
+        {/* Add More Button */}
         <Button
           type="button"
           variant="outline"

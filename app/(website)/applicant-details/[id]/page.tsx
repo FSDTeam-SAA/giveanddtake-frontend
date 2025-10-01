@@ -13,6 +13,8 @@ import {
   Calendar,
   ExternalLink,
   Download,
+  Mail,
+  PhoneOutgoing,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -28,13 +30,14 @@ import DOMPurify from "dompurify";
 import { toast } from "sonner";
 
 import { VideoPlayer } from "@/components/company/video-player";
+import Image from "next/image";
 
 interface Resume {
   _id: string;
   userId: string;
   photo?: string;
   aboutUs?: string;
-  title?: string;
+  title: string;
   firstName?: string;
   lastName?: string;
   country?: string;
@@ -545,24 +548,23 @@ export default function ApplicantDetailsPage() {
         <Card className="mb-6">
           <CardContent className="p-6">
             <div className="flex items-start gap-6">
-              <Avatar className="h-24 w-24">
-                <AvatarImage
+              <div className="h-[170px] w-[170px] overflow-hidden">
+                <Image
                   src={resume?.photo || "/placeholder.svg"}
-                  alt={`${resume.firstName || ""} ${resume.lastName || ""}`}
+                  alt={`${resume?.firstName ?? ""} ${resume?.lastName ?? ""}`}
+                  width={170}
+                  height={170}
+                  className="object-cover"
                 />
-                <AvatarFallback className="text-2xl">
-                  {resume.firstName?.[0] || ""}
-                  {resume.lastName?.[0] || ""}
-                </AvatarFallback>
-              </Avatar>
+              </div>
 
               <div className="flex-1">
                 <div className="flex items-start justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {resume.firstName} {resume.lastName}
+                      {resume.title.charAt(0).toUpperCase() + resume.title.slice(1)} {resume.firstName} {resume.lastName}
                     </h1>
-                    <div className="flex items-center gap-4 text-gray-600 mb-4">
+                    <div className="space-y-1 text-gray-600 mb-4">
                       {resume.country && (
                         <div className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
@@ -570,8 +572,12 @@ export default function ApplicantDetailsPage() {
                         </div>
                       )}
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{getYearsOfExperience(experiences)}</span>
+                        <Mail className="h-4 w-4" />
+                        <span>{resume.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <PhoneOutgoing className="h-4 w-4" />
+                        <span>{resume.phoneNumber}</span>
                       </div>
                     </div>
                   </div>
@@ -583,17 +589,6 @@ export default function ApplicantDetailsPage() {
                     <Download className="h-4 w-4 mr-2" />
                     {resumeLoading ? "Loading..." : "Resume"}
                   </Button>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Current Role:</span>{" "}
-                    {resume.title || "Not specified"}
-                  </div>
-                  <div>
-                    <span className="font-medium">Years of Experience:</span>{" "}
-                    {getYearsOfExperience(experiences)}
-                  </div>
                 </div>
               </div>
             </div>
@@ -781,33 +776,8 @@ export default function ApplicantDetailsPage() {
               {creatingRoom ? "Opening…" : "Message"}
             </Button>
           </div>
-          <div>
-            <Select
-              value={applicationStatus}
-              onValueChange={handleStatusUpdate}
-              disabled={statusLoading}
-            >
-              <SelectTrigger className="w-40 border text-blue-600 border-blue-600">
-                <SelectValue placeholder="Change Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {["pending", "shortlisted", "rejected"].map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status.charAt(0).toUpperCase() + status.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
-        <div>
-          <Link href="/recruiter-dashboard">
-            <Button variant="outline" className="bg-[#2B7FD0] text-white">
-              Return To Dashboard
-            </Button>
-          </Link>
-        </div>
       </div>
     </div>
   );

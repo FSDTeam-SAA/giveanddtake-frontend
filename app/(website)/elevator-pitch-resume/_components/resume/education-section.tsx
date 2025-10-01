@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -276,6 +275,17 @@ interface EducationSectionProps {
   removeEducation: (index: number) => void;
 }
 
+// Utility function to compare dates (format: MM/YYYY)
+const isDateValid = (startDate: string, graduationDate: string): boolean => {
+  if (!startDate || !graduationDate) return true; // Skip if either date is empty
+  const [startMonth, startYear] = startDate.split("/").map(Number);
+  const [gradMonth, gradYear] = graduationDate.split("/").map(Number);
+
+  if (startYear > gradYear) return false;
+  if (startYear === gradYear && startMonth > gradMonth) return false;
+  return true;
+};
+
 export function EducationSection({
   form,
   educationFields,
@@ -285,12 +295,10 @@ export function EducationSection({
   const [selectedEducationCountries, setSelectedEducationCountries] = useState<
     string[]
   >([]);
-  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>(
+  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>([]);
+  const [loadingEducationCities, setLoadingEducationCities] = useState<boolean[]>(
     []
   );
-  const [loadingEducationCities, setLoadingEducationCities] = useState<
-    boolean[]
-  >([]);
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -360,6 +368,30 @@ export function EducationSection({
       educationFields.map((field) => field.country || "")
     );
   }, [educationFields]);
+
+  // Validate dates whenever startDate or graduationDate changes
+  useEffect(() => {
+    educationFields.forEach((_, index) => {
+      const startDate = form.getValues(`educationList.${index}.startDate`);
+      const graduationDate = form.getValues(
+        `educationList.${index}.graduationDate`
+      );
+      const currentlyStudying = form.getValues(
+        `educationList.${index}.currentlyStudying`
+      );
+
+      if (!currentlyStudying && startDate && graduationDate) {
+        if (!isDateValid(startDate, graduationDate)) {
+          form.setError(`educationList.${index}.graduationDate`, {
+            type: "manual",
+            message: "Graduation date cannot be earlier than start date",
+          });
+        } else {
+          form.clearErrors(`educationList.${index}.graduationDate`);
+        }
+      }
+    });
+  }, [form, educationFields]);
 
   const countryOptions = useMemo(
     () =>
@@ -520,6 +552,9 @@ export function EducationSection({
                                 `educationList.${index}.graduationDate`,
                                 ""
                               );
+                              form.clearErrors(
+                                `educationList.${index}.graduationDate`
+                              );
                             }
                           }}
                         />
@@ -539,8 +574,33 @@ export function EducationSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
-                          onChange={field.onChange}
-                          placeholder="MMYYYY"
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Trigger validation for graduation date
+                            const gradDate = form.getValues(
+                              `educationList.${index}.graduationDate`
+                            );
+                            const currentlyStudying = form.getValues(
+                              `educationList.${index}.currentlyStudying`
+                            );
+                            if (!currentlyStudying && gradDate && value) {
+                              if (!isDateValid(value, gradDate)) {
+                                form.setError(
+                                  `educationList.${index}.graduationDate`,
+                                  {
+                                    type: "manual",
+                                    message:
+                                      "Graduation date cannot be earlier than start date",
+                                  }
+                                );
+                              } else {
+                                form.clearErrors(
+                                  `educationList.${index}.graduationDate`
+                                );
+                              }
+                            }
+                          }}
+                          placeholder="MM/YYYY"
                         />
                       </FormControl>
                       <FormMessage />
@@ -556,8 +616,33 @@ export function EducationSection({
                       <FormControl>
                         <CustomDateInput
                           value={field.value}
-                          onChange={field.onChange}
-                          placeholder="MMYYYY"
+                          onChange={(value) => {
+                            field.onChange(value);
+                            // Validate against start date
+                            const startDate = form.getValues(
+                              `educationList.${index}.startDate`
+                            );
+                            const currentlyStudying = form.getValues(
+                              `educationList.${index}.currentlyStudying`
+                            );
+                            if (!currentlyStudying && startDate && value) {
+                              if (!isDateValid(startDate, value)) {
+                                form.setError(
+                                  `educationList.${index}.graduationDate`,
+                                  {
+                                    type: "manual",
+                                    message:
+                                      "Graduation date cannot be earlier than start date",
+                                  }
+                                );
+                              } else {
+                                form.clearErrors(
+                                  `educationList.${index}.graduationDate`
+                                );
+                              }
+                            }
+                          }}
+                          placeholder="MM/YYYY"
                           disabled={form.watch(
                             `educationList.${index}.currentlyStudying`
                           )}
