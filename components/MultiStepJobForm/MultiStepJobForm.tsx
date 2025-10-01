@@ -114,6 +114,7 @@ async function postJob(data: any, retries = 2): Promise<any> {
 export default function MultiStepJobForm() {
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const role = session?.user?.role;
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
@@ -407,7 +408,11 @@ export default function MultiStepJobForm() {
       await postJob(postData);
       // console.log(postData);
       toast.success("Job published successfully!");
-      router.push("/recruiter-dashboard");
+      if (role === "company") {
+        router.push("/elevator-pitch-resume");
+      } else if (role === "recruiter") {
+        router.push("/recruiter-dashboard");
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to publish job"

@@ -356,9 +356,6 @@ export default function JobApplicantsPage() {
                           <div className="font-medium">
                             {application.userId.name}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {application.userId.email}
-                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -527,14 +524,6 @@ export default function JobApplicantsPage() {
           </div>
         </div>
       )}
-
-      <div className="mt-6 text-center">
-        <Link href="/recruiter-dashboard">
-          <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white">
-            Return To Dashboard
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }
