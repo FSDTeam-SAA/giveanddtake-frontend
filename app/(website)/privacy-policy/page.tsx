@@ -207,7 +207,7 @@ const page = () => {
               not result in a final deletion of your account.
             </li>
             <li>
-              You could also send an email to info@elevatorvideopitch.com or via
+              You could also send an email to info@evpitch.com or via
               our contact form to request the deletion of your data. Once a
               request to delete your data has been received, Elevator Video
               Pitch recordings and resumes deletion would be completed within 30
@@ -315,7 +315,7 @@ const page = () => {
           <h2 className="text-2xl font-bold">Contacting Us</h2>
           <p className="text-gray-700 dark:text-gray-300">
             If you have any questions about our site or this Privacy Policy,
-            please contact us by email at info@elevatorvideopitch.com or through
+            please contact us by email at info@evpitch.com or through
             our contact form. Please ensure that your query is clear,
             particularly if it is a request for information about the data we
             hold about you.

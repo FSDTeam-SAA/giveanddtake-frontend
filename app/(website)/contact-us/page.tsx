@@ -227,10 +227,10 @@ export default function ContactForm() {
                   <Mail className="w-5 h-5" />
                 </div>
                 <a
-                  href="mailto:info@elevatorvideopitch.com"
+                  href="mailto:info@evpitch.com"
                   className="text-gray-700 hover:underline"
                 >
-                  info@elevatorvideopitch.com
+                  info@evpitch.com
                 </a>
               </div>
               <div className="flex items-center gap-16">
