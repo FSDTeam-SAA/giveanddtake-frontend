@@ -175,14 +175,14 @@ export default function CandidateSharePopover({
                 <TwitterIcon className="w-8 h-8" round />
               </TwitterShareButton>
 
-              <WhatsappShareButton
+              {/* <WhatsappShareButton
                 url={url}
                 title={title}
                 separator=" — "
                 onClick={() => setOpen(false)}
               >
                 <WhatsappIcon className="w-8 h-8" round />
-              </WhatsappShareButton>
+              </WhatsappShareButton> */}
 
               <LinkedinShareButton
                 url={url}

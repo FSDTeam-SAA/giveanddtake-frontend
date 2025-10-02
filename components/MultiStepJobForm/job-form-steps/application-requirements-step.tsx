@@ -35,9 +35,6 @@ export default function ApplicationRequirementsStep({
     name: "applicationRequirements",
   });
 
-  const findNoticeIndex = () =>
-    applicationRequirements.findIndex((r) => r.requirement === "noticePeriod");
-
   useEffect(() => {
     if (!applicationRequirements || applicationRequirements.length === 0) {
       append({ requirement: "Resume", status: undefined });
@@ -45,15 +42,10 @@ export default function ApplicationRequirementsStep({
         requirement: "Valid visa for this job location?",
         status: undefined,
       });
-      append({ requirement: "noticePeriod", status: undefined });
       return;
     }
 
-    const noticeIdx = findNoticeIndex();
-    if (noticeIdx === -1) {
-      append({ requirement: "noticePeriod", status: undefined });
-    }
-
+    // Normalize old format {label, status} → {requirement, status}
     applicationRequirements.forEach((req, idx) => {
       if ((req as any).label && !(req as any).requirement) {
         updateRequirement(idx, {
@@ -64,12 +56,6 @@ export default function ApplicationRequirementsStep({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applicationRequirements.length]);
-
-  const humanLabel = (req: { requirement?: string }) => {
-    if (!req?.requirement) return "";
-    if (req.requirement === "noticePeriod") return "Availability";
-    return req.requirement;
-  };
 
   return (
     <Card className="w-full mx-auto border-none shadow-none">
@@ -85,8 +71,7 @@ export default function ApplicationRequirementsStep({
 
         <div className="space-y-4">
           {applicationRequirements.map((requirement, index) => {
-            const isNotice = requirement.requirement === "noticePeriod";
-            const label = humanLabel(requirement);
+            const label = requirement.requirement ?? "";
 
             return (
               <div
@@ -102,7 +87,7 @@ export default function ApplicationRequirementsStep({
                       {label}
                     </div>
 
-                    {!isNotice && requirement.status ? (
+                    {requirement.status ? (
                       <div className="text-sm text-gray-500 mt-1">
                         {requirement.status}
                       </div>
@@ -111,61 +96,33 @@ export default function ApplicationRequirementsStep({
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  {isNotice ? (
-                    <div className="w-60">
-                      <Select
-                        value={requirement.status ?? undefined}
-                        onValueChange={(val) =>
-                          updateRequirement(index, {
-                            ...requirement,
-                            status: val,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="w-full h-11">
-                          <SelectValue placeholder="Select notice period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Immediate">Immediate</SelectItem>
-                          <SelectItem value="One-month">One month</SelectItem>
-                          <SelectItem value="Three-months">
-                            Three months
-                          </SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <Select
-                        value={requirement.status ?? undefined}
-                        onValueChange={(val) =>
-                          updateRequirement(index, {
-                            ...requirement,
-                            status: val,
-                          })
-                        }
-                      >
-                        <SelectTrigger className="w-48 h-9">
-                          <SelectValue placeholder="Set status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Required">Required</SelectItem>
-                          <SelectItem value="Optional">Optional</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <Select
+                    value={requirement.status ?? undefined}
+                    onValueChange={(val) =>
+                      updateRequirement(index, {
+                        ...requirement,
+                        status: val,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-48 h-9">
+                      <SelectValue placeholder="Set status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Required">Required</SelectItem>
+                      <SelectItem value="Optional">Optional</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-9 w-9 p-0"
-                        onClick={() => remove(index)}
-                        aria-label={`Remove ${label}`}
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-600" />
-                      </Button>
-                    </div>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-9 w-9 p-0"
+                    onClick={() => remove(index)}
+                    aria-label={`Remove ${label}`}
+                  >
+                    <Trash2 className="w-4 h-4 text-gray-600" />
+                  </Button>
                 </div>
               </div>
             );
