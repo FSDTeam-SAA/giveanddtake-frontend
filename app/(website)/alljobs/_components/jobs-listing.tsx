@@ -50,8 +50,8 @@ interface RecommendedJobsResponse {
   message: string;
   data: {
     jobs?: Job[];
-    fallbackJobs?: Job[];
     exactMatches?: Job[];
+    partialMatches?: Job[];
   };
 }
 
@@ -159,7 +159,14 @@ export default function JobsListing() {
     totalItems: 0,
     itemsPerPage: 10,
   };
-  const recommended = recommendedData?.data.exactMatches || [];
+  const recommended =
+    recommendedData?.data?.exactMatches &&
+    recommendedData.data.exactMatches.length > 0
+      ? recommendedData.data.exactMatches
+      : recommendedData?.data?.partialMatches || [];
+
+  console.log(recommended);
+  console.log(jobs);
 
   // Function to handle filter button click
   const handleFilter = () => {
@@ -238,7 +245,7 @@ export default function JobsListing() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {recommended.map((job) => (
                 <Link href={`/alljobs/${job._id}`} key={job._id}>
-                  <JobCard key={job._id} job={job} variant="suggested" />
+                  <JobCard key={job.job._id} job={job.job} variant="list" />
                 </Link>
               ))}
             </div>

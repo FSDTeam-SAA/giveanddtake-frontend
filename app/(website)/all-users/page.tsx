@@ -1,6 +1,14 @@
 "use client";
 import { useState, useEffect, useMemo, Suspense } from "react";
-import { Search, User, Building2, UserCheck, MapPin } from "lucide-react";
+import {
+  Search,
+  User,
+  Building2,
+  UserCheck,
+  MapPin,
+  CheckCircle,
+  Clock,
+} from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,10 +21,12 @@ interface SearchUser {
   role: "candidate" | "recruiter" | "company";
   phoneNum: string | null;
   address: string | null;
-  position?: string | null; // kept in type but not rendered
+  position?: string | null;
   avatar?: {
     url?: string | null;
   } | null;
+  // from API
+  immediatelyAvailable?: boolean | null;
 }
 
 interface SearchResult {
@@ -27,7 +37,6 @@ interface SearchResult {
 
 const PAGE_SIZE = 12;
 
-// ---- Inner component that uses useSearchParams (wrapped by Suspense below)
 function AllUsersContent() {
   const [users, setUsers] = useState<SearchUser[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<SearchUser[]>([]);
@@ -35,51 +44,56 @@ function AllUsersContent() {
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState<number>(1);
+  const [onlyImmediate, setOnlyImmediate] = useState<boolean>(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Read initial params (s, role, page)
+  // Read initial params (run only on mount)
   useEffect(() => {
     const s = searchParams.get("s") ?? "";
     const role = searchParams.get("role") ?? "all";
     const p = Number(searchParams.get("page") ?? "1");
+    const immediate = searchParams.get("immediate") === "1";
     setSearchQuery(s);
     setSelectedRole(
       ["candidate", "recruiter", "company"].includes(role) ? role : "all"
     );
     setPage(Number.isFinite(p) && p >= 1 ? p : 1);
+    setOnlyImmediate(immediate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // only on first mount
+  }, []);
 
   // Fetch all users once
   useEffect(() => {
     fetchAllUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Apply filters whenever dependencies change
   useEffect(() => {
     filterUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users, searchQuery, selectedRole]);
+  }, [users, searchQuery, selectedRole, onlyImmediate]);
 
-  // Keep URL params in sync (s, role, page). Debounce typing lightly.
+  // Keep URL params in sync (s, role, page, immediate) with light debounce
   useEffect(() => {
     const id = setTimeout(() => {
       const params = new URLSearchParams();
       if (searchQuery.trim()) params.set("s", searchQuery.trim());
       if (selectedRole !== "all") params.set("role", selectedRole);
-      params.set("page", String(page)); // always include page for consistency
+      params.set("page", String(page));
+      if (onlyImmediate) params.set("immediate", "1");
       router.replace(`${pathname}?${params.toString()}`);
     }, 200);
     return () => clearTimeout(id);
-  }, [searchQuery, selectedRole, page, router, pathname]);
+  }, [searchQuery, selectedRole, page, onlyImmediate, router, pathname]);
 
-  // Reset to page 1 when search or role changes
+  // Reset to page 1 when search or role or immediate toggle changes
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, selectedRole]);
+  }, [searchQuery, selectedRole, onlyImmediate]);
 
   const fetchAllUsers = async () => {
     setIsLoading(true);
@@ -91,7 +105,7 @@ function AllUsersContent() {
       const result: SearchResult = await response.json();
 
       if (result?.success && Array.isArray(result?.data)) {
-        // Filter out null/undefined and obviously malformed entries
+        // Clean, filter out null/undefined and malformed
         const safe = result.data
           .filter(
             (u): u is SearchUser => !!u && typeof u === "object" && !!u._id
@@ -102,6 +116,10 @@ function AllUsersContent() {
             phoneNum: u.phoneNum ?? null,
             address: u.address ?? null,
             avatar: u.avatar ?? null,
+            immediatelyAvailable:
+              typeof u.immediatelyAvailable === "boolean"
+                ? u.immediatelyAvailable
+                : null,
           }));
         setUsers(safe);
         setFilteredUsers(safe);
@@ -121,14 +139,14 @@ function AllUsersContent() {
   const filterUsers = () => {
     let filtered = users.slice();
 
-    // Filter by search query
+    // Filter by search query (if query is empty we show nothing per your earlier logic)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((user) => {
         const name = user?.name?.toLowerCase() ?? "";
         const role = user?.role?.toLowerCase() ?? "";
         const address = user?.address?.toLowerCase() ?? "";
-        const position = user?.position?.toLowerCase() ?? ""; // safe access, still usable for search
+        const position = user?.position?.toLowerCase() ?? "";
         return (
           name.includes(q) ||
           address.includes(q) ||
@@ -137,7 +155,6 @@ function AllUsersContent() {
         );
       });
     } else {
-      // If no query, show nothing (respect "only show when user types")
       filtered = [];
     }
 
@@ -145,6 +162,20 @@ function AllUsersContent() {
     if (selectedRole !== "all") {
       filtered = filtered.filter((user) => user?.role === selectedRole);
     }
+
+    // Filter by immediate toggle (only relevant for candidates)
+    if (onlyImmediate) {
+      filtered = filtered.filter(
+        (u) => u.role === "candidate" && u.immediatelyAvailable === true
+      );
+    }
+
+    // Sort: immediate candidates first (keeps original relative order)
+    filtered.sort((a, b) => {
+      const aAvail = a.immediatelyAvailable === true ? 1 : 0;
+      const bAvail = b.immediatelyAvailable === true ? 1 : 0;
+      return bAvail - aAvail;
+    });
 
     setFilteredUsers(filtered);
   };
@@ -175,13 +206,19 @@ function AllUsersContent() {
     }
   };
 
-  // Pagination calculations
+  // Pagination calc
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const paginatedUsers = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
     return filteredUsers.slice(start, end).filter(Boolean);
   }, [filteredUsers, page]);
+
+  // counts
+  const totalResults = filteredUsers.length;
+  const immediateCount = filteredUsers.filter(
+    (u) => u.role === "candidate" && u.immediatelyAvailable === true
+  ).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -190,20 +227,20 @@ function AllUsersContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">All Users</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
               <p className="text-gray-600 mt-1">
                 {isLoading
                   ? "Loading..."
                   : searchQuery.trim()
-                  ? `${filteredUsers.length} user${
-                      filteredUsers.length === 1 ? "" : "s"
-                    } found`
+                  ? `${totalResults} user${
+                      totalResults === 1 ? "" : "s"
+                    } found · ${immediateCount} immediate`
                   : "Type to search users"}
               </p>
             </div>
 
-            {/* Search and Filter Controls */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -212,25 +249,54 @@ function AllUsersContent() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-full sm:w-64"
+                  aria-label="Search users"
                 />
               </div>
 
-              <select
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent"
-              >
-                <option value="all">All Roles</option>
-                <option value="candidate">Candidates</option>
-                <option value="recruiter">Recruiters</option>
-                <option value="company">Companies</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent"
+                  aria-label="Filter by role"
+                >
+                  <option value="all">All Roles</option>
+                  <option value="candidate">Candidates</option>
+                  <option value="recruiter">Recruiters</option>
+                  <option value="company">Companies</option>
+                </select>
+
+                {/* Immediate-only toggle */}
+                <button
+                  type="button"
+                  onClick={() => setOnlyImmediate((v) => !v)}
+                  className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border ${
+                    onlyImmediate
+                      ? "bg-green-50 border-green-300 text-green-800"
+                      : "bg-white border-gray-200 text-gray-700"
+                  } focus:outline-none`}
+                  aria-pressed={onlyImmediate}
+                  aria-label="Toggle only immediately available candidates"
+                >
+                  {onlyImmediate ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Immediate only
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-4 w-4" />
+                      Immediate (off)
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Users Grid */}
+      {/* Grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -256,6 +322,8 @@ function AllUsersContent() {
                   key={user._id}
                   className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-[#4B98DE] hover:border-l-[#3a7bc8]"
                   onClick={() => handleUserClick(user)}
+                  role="button"
+                  aria-label={`Open profile for ${user.name}`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
@@ -277,10 +345,35 @@ function AllUsersContent() {
                           <h3 className="font-semibold text-gray-900 truncate">
                             {user?.name ?? "Unknown"}
                           </h3>
+
+                          {/* Immediate badge for candidates */}
+                          {user.role === "candidate" &&
+                            user.immediatelyAvailable === true && (
+                              <span
+                                className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800"
+                                aria-label="Immediately available"
+                                title="Immediately available"
+                              >
+                                <span className="h-2 w-2 rounded-full bg-green-600 inline-block" />
+                                Immediate
+                              </span>
+                            )}
+
+                          {user.role === "candidate" &&
+                            user.immediatelyAvailable === false && (
+                              <span
+                                className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-gray-50 text-gray-600"
+                                aria-label="Not immediately available"
+                                title="Not immediately available"
+                              >
+                                <span className="h-2 w-2 rounded-full bg-gray-400 inline-block" />
+                                Not immediate
+                              </span>
+                            )}
+
                           {getRoleIcon(user?.role)}
                         </div>
 
-                        {/* Address only (position removed as requested) */}
                         <div className="space-y-2 text-sm text-gray-600">
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -288,6 +381,14 @@ function AllUsersContent() {
                               {user?.address ?? "No address available"}
                             </span>
                           </div>
+                          {/* phone (optional) */}
+                          {user.phoneNum && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500 truncate">
+                                {user.phoneNum}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -297,6 +398,11 @@ function AllUsersContent() {
                         variant="outline"
                         size="sm"
                         className="w-full text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] hover:text-white transition-colors bg-transparent"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleUserClick(user);
+                        }}
+                        aria-label={`View profile of ${user.name}`}
                       >
                         View Profile
                       </Button>
@@ -314,6 +420,7 @@ function AllUsersContent() {
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  aria-label="Previous page"
                 >
                   Previous
                 </Button>
@@ -325,6 +432,7 @@ function AllUsersContent() {
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  aria-label="Next page"
                 >
                   Next
                 </Button>
@@ -344,12 +452,14 @@ function AllUsersContent() {
                 ? "Try adjusting your search or filter criteria"
                 : "Start typing in the search box to see results"}
             </p>
-            {(searchQuery || selectedRole !== "all") && (
+
+            {(searchQuery || selectedRole !== "all" || onlyImmediate) && (
               <Button
                 variant="outline"
                 onClick={() => {
                   setSearchQuery("");
                   setSelectedRole("all");
+                  setOnlyImmediate(false);
                 }}
                 className="text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] hover:text-white"
               >
@@ -363,7 +473,6 @@ function AllUsersContent() {
   );
 }
 
-// ---- Page export wrapped in Suspense (fixes: useSearchParams must be wrapped)
 export default function AllUsersPage() {
   return (
     <Suspense

@@ -362,13 +362,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-4">
               <div className="flex items-center gap-4 sm:gap-6">
                 <Link
-                  href={`/${postedByType === "recruiter" ? "recruiters-profile" : "companies-profile"}/${postedById}`}
-                  aria-label={postedByType === "recruiter" ? "Recruiter profile" : "Company profile"}
+                  href={`/${
+                    postedByType === "recruiter"
+                      ? "recruiters-profile"
+                      : "companies-profile"
+                  }/${postedById}`}
+                  aria-label={
+                    postedByType === "recruiter"
+                      ? "Recruiter profile"
+                      : "Company profile"
+                  }
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
                     <Image
                       src={postedByLogo}
-                      alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
+                      alt={
+                        postedByType === "recruiter"
+                          ? "Recruiter Photo"
+                          : "Company Logo"
+                      }
                       fill
                       sizes="(max-width: 640px) 56px, 64px"
                       className="object-cover"
@@ -382,7 +394,11 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   </h1>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:text-base">
                     <Link
-                      href={`/${postedByType === "recruiter" ? "recruiters-profile" : "companies-profile"}/${postedById}`}
+                      href={`/${
+                        postedByType === "recruiter"
+                          ? "recruiters-profile"
+                          : "companies-profile"
+                      }/${postedById}`}
                       className="font-medium truncate max-w-[16rem] sm:max-w-none"
                     >
                       {postedByName}
@@ -397,7 +413,14 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
               <div className="flex flex-col items-start sm:items-end gap-2">
                 <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
-                  {job.salaryRange}
+                  {(() => {
+                    const salary = job.salaryRange; // e.g. "₦ 100000" or "ر.ع. 500000"
+                    const parts = salary.split(" ");
+                    const currency = parts[0]; // "₦" or "ر.ع."
+                    const amount = Number(parts[1]); // 100000
+
+                    return `${currency} ${amount.toLocaleString()}`;
+                  })()}
                 </div>
                 <div className="inline-flex items-center bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
                   {job.employement_Type || "Not specified"}
@@ -534,15 +557,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <CardContent className="space-y-3 sm:space-y-4">
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Experience</span>
-                  <span className="font-medium">{job.experience.charAt(0).toUpperCase() + job.experience.slice(1)} level</span>
+                  <span className="font-medium">
+                    {job.experience.charAt(0).toUpperCase() +
+                      job.experience.slice(1)}{" "}
+                    level
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Positions</span>
                   <span className="font-medium">{job.vacancy}</span>
                 </div>
-                <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
+                {/* <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Compensation</span>
                   <span className="font-medium">{job.compensation}</span>
+                </div> */}
+                <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
+                  <span className="text-gray-600">Application Published</span>
+                  <span className="font-medium">
+                    {formatDate(job.publishDate)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Deadline</span>
@@ -555,7 +588,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <Badge
                     variant={job.status === "active" ? "default" : "secondary"}
                   >
-                    {job.status}
+                    {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                   </Badge>
                 </div>
               </CardContent>
