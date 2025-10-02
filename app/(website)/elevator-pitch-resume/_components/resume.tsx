@@ -421,7 +421,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 About
               </h3>
               <p
-                className="text-gray-600 leading-relaxed"
+                className="list-item !text-gray-600 leading-relaxed list-none"
                 dangerouslySetInnerHTML={{
                   __html: resume.resume.aboutUs || "No description provided",
                 }}

@@ -1179,7 +1179,7 @@ export default function UpdateResumeForm({
   return (
     <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Update Resume</h1>
+        <h1 className="text-3xl font-bold">Update Profile</h1>
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
@@ -2110,7 +2110,7 @@ export default function UpdateResumeForm({
               className="bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Updating..." : "Update Resume"}
+              {isSubmitting ? "Updating..." : "Update Profile"}
             </Button>
             <Button
               type="button"

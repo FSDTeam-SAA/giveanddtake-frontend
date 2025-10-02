@@ -17,6 +17,7 @@ import JobDescriptionStep from "./job-form-steps/job-description-step";
 import ApplicationRequirementsStep from "./job-form-steps/application-requirements-step";
 import CustomQuestionsStep from "./job-form-steps/custom-questions-step";
 import FinishStep from "./job-form-steps/finish-step";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface JobCategory {
   _id: string;
@@ -98,12 +99,11 @@ async function postJob(data: any, retries = 2): Promise<any> {
         }`
       );
     }
-
     return await response.json();
   } catch (error) {
-    console.error("[v0] Job post error:", error);
+    console.error(" Job post error:", error);
     if (retries > 0) {
-      console.warn(`[v0] Retrying job post... (${retries} attempts left)`);
+      console.warn(`Retrying job post... (${retries} attempts left)`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       return postJob(data, retries - 1);
     }
@@ -136,6 +136,7 @@ export default function MultiStepJobForm() {
   const [cities, setCities] = useState<string[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const queryClient = useQueryClient();
 
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
@@ -408,9 +409,9 @@ export default function MultiStepJobForm() {
       // console.log(postData);
       toast.success("Job published successfully!");
       if (role === "company") {
-        router.push("/elevator-pitch-resume");
+        window.location.href = "/elevator-pitch-resume";
       } else if (role === "recruiter") {
-        router.push("/recruiter-dashboard");
+        window.location.href = "/recruiter-dashboard";
       }
     } catch (error) {
       toast.error(

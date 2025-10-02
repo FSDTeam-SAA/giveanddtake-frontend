@@ -160,3 +160,77 @@
   height: 40px;
   width: 100%;
 }
+/* Quill content wrapper */
+.list-item {
+  @apply text-base leading-relaxed;
+}
+
+/* Unordered lists (bullets) */
+.list-item ul {
+  list-style-type: disc; /* restore default bullets */
+  padding-left: 1.5rem;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+
+
+/* Ordered lists (numbers) */
+.list-item ol {
+  list-style-type: decimal; /* restore default numbering */
+  padding-left: 1.5rem;
+  margin-top: 0.5em;
+  margin-bottom: 1em;
+}
+
+.list-item li {
+  margin-bottom: 0.5em;
+}
+
+/* Headings inside the editor content */
+.list-item h1,
+.list-item h2,
+.list-item h3,
+.list-item h4,
+.list-item h5,
+.list-item h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+  color: white !important;
+}
+
+
+
+
+/* globals.css */
+h1 {
+  @apply text-4xl font-bold leading-tight;
+}
+
+h2 {
+  @apply text-3xl font-semibold leading-snug;
+}
+
+h3 {
+  @apply text-2xl font-semibold leading-snug;
+}
+
+h4 {
+  @apply text-xl font-medium leading-normal;
+}
+
+h5 {
+  @apply text-lg font-medium leading-normal;
+}
+
+h6 {
+  @apply text-base font-medium leading-normal;
+}
+
+p {
+  @apply text-base leading-relaxed ;
+}
+
+small {
+  @apply text-sm ;
+}

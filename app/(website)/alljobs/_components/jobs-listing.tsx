@@ -188,7 +188,7 @@ export default function JobsListing() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Keywords; Title, Skill, Location, Category"
+                placeholder="Keywords; Title, Skill, Category"
                 className="pl-10 p-2 border rounded w-full"
                 value={localSearchTerm}
                 onChange={(e) => setLocalSearchTerm(e.target.value)} // Make editable

@@ -757,42 +757,6 @@ export default function RecruiterDashboard() {
           </div>
         </section>
 
-        {/* Elevator Pitch Section */}
-        <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl lg:text-2xl font-bold text-center mb-8">
-            Elevator Pitch
-          </h2>
-          <div className="rounded-lg overflow-hidden">
-            {pitchLoading ? (
-              <Skeleton className="w-full h-[500px] mx-auto" />
-            ) : pitchError ? (
-              <div className="text-center text-red-500">
-                Error: {pitchError.message}
-                <Button
-                  variant="outline"
-                  onClick={() =>
-                    queryClient.invalidateQueries({
-                      queryKey: ["pitch", session?.user?.id, token],
-                    })
-                  }
-                  className="ml-4"
-                >
-                  Retry
-                </Button>
-              </div>
-            ) : userPitch ? (
-              <VideoPlayer
-                pitchId={userPitch._id}
-                className="w-full h-[500px] mx-auto"
-              />
-            ) : (
-              <div className="text-center text-gray-500">
-                No pitch available
-              </div>
-            )}
-          </div>
-        </section>
-
         {/* Your Jobs Section */}
         <section className="mb-12 bg-white p-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -957,6 +921,8 @@ export default function RecruiterDashboard() {
             </div>
           )}
         </section>
+
+      
 
         {/* Company Selection Modal */}
         <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>

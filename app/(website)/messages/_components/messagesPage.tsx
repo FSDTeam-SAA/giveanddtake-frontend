@@ -101,10 +101,12 @@ function MessagingContent() {
         {selectedRoomId ? (
           <ChatArea
             roomId={selectedRoomId}
+            userRole={MyRole}
             userId={MyId}
             socket={socket ?? undefined}
             onBackToList={isMobileView ? handleBackToList : undefined}
             roomName={roomName}
+            // roomUserId ={_id}
             roomAvatarUrl={roomAvatarUrl} // header avatar
           />
         ) : (

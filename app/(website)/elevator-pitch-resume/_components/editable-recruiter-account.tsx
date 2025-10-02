@@ -904,7 +904,7 @@ export default function EditableRecruiterAccount({
                 )}
               </div>
 
-              <div className="space-y-5">
+              {/* <div className="space-y-5">
                 {websiteHref && (
                   <div className="flex items-center gap-3">
                     <Globe className="h-6 w-6 text-muted-foreground" />
@@ -928,7 +928,7 @@ export default function EditableRecruiterAccount({
                     </p>
                   </div>
                 )}
-              </div>
+              </div> */}
             </aside>
           </div>
         </div>
