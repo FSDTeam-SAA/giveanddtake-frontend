@@ -130,7 +130,7 @@ export default function VerifyPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Enter OTP</CardTitle>
           <p className="text-gray-600">
-            We have sent a code to your registered email address
+            We have sent a code to your registered email address (Expires in 1 Hour)
           </p>
         </CardHeader>
         <CardContent>
@@ -158,7 +158,7 @@ export default function VerifyPage() {
             </div>
 
             <div className="flex justify-between items-center">
-              {/* <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600">
                 {"Didn't get a code?"}
               </span>
               <button
@@ -167,7 +167,7 @@ export default function VerifyPage() {
                 className="text-sm text-blue-600 hover:underline"
               >
                 Resend Code
-              </button> */}
+              </button>
             </div>
 
             <Button

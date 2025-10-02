@@ -4,25 +4,27 @@ import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Heart, Briefcase } from "lucide-react";
+import { Briefcase } from "lucide-react";
 import { toast } from "sonner";
-import Link from "next/link";
-import Image from "next/image";
+import JobCard from "@/components/shared/card/job-card"; // <-- import your JobCard component
 
 interface Job {
   _id: string;
-  title: string;
-  description: string;
-  salaryRange: string;
-  location: string;
-  companyId: string;
-  userId: string;
+  title?: string;
+  description?: string;
+  salaryRange?: string;
+  location?: string;
+  deadline?: string;
+  employement_Type?: string;
+  // add other fields your JobCard expects
+  [k: string]: any;
 }
 
 interface Bookmark {
   _id: string;
   userId: string;
   jobId: Job;
+  bookmarked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,6 +85,7 @@ export default function BookmarksPage() {
   });
 
   const handleToggleBookmark = (jobId: string) => {
+    // if already bookmarked (exists in current list) - show a warning
     const alreadyBookmarked = data?.data.bookmarks.some(
       (b) => b.jobId._id === jobId
     );
@@ -133,10 +136,11 @@ export default function BookmarksPage() {
     );
   }
 
+  const bookmarks = data?.data.bookmarks ?? [];
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {isError || !data?.data.bookmarks || data.data.bookmarks.length === 0 ? (
+      {isError || bookmarks.length === 0 ? (
         <div className="text-center py-12">
           <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-600 mb-2">
@@ -148,56 +152,29 @@ export default function BookmarksPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data.data.bookmarks.map((bookmark) => (
-            <Link key={bookmark._id} href={`/alljobs/${bookmark?.jobId?._id}`}>
-              <Card key={bookmark._id} className="relative">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        <Image
-                          src=""
-                          alt=""
-                          width={24}
-                          height={24}
-                        />
-                      </div>
-                      <h3 className="text-lg font-semibold text-[#595959]">
-                        {bookmark?.jobId?.title}
-                      </h3>
-                    </div>
-                    <button
-                      onClick={() => handleToggleBookmark(bookmark.jobId._id)}
-                      disabled={
-                        submittingId === bookmark.jobId?._id ||
-                        data.data.bookmarks.some(
-                          (b) => b.jobId?._id === bookmark.jobId?._id
-                        )
-                      }
-                      className="p-2 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 bg-[#2042E3]"
-                    >
-                      <Heart className="w-6 h-6 text-white fill-white" />
-                    </button>
-                  </div>
+          {bookmarks.map((bookmark) => {
+            // create a job object from bookmark.jobId and include bookmarked flag
+            const job = {
+              ...(bookmark.jobId || {}),
+              bookmarked: !!bookmark.bookmarked,
+            } as Job;
 
-                  <p className="text-[#707070] text-sm mb-6 leading-relaxed">
-                    {bookmark.jobId?.description.length > 120
-                      ? `${bookmark.jobId?.description.slice(0, 120)}...`
-                      : bookmark.jobId?.description}
-                  </p>
-
-                  <div className="flex items-center justify-between gap-3">
-                    <button className="text-black text-[16px] font-medium">
-                      View Job
-                    </button>
-                    <button className="text-[#039B06] text-[16px] font-medium">
-                      Apply Now
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+            // If you want the card to link to job details, keep Link here or let JobCard handle it.
+            // I'm rendering JobCard directly and passing an optional onToggleBookmark handler.
+            return (
+              <div key={bookmark._id}>
+                <JobCard
+                  key={job._id}
+                  job={job}
+                  variant="list"
+                  // optional: if your JobCard supports a bookmark toggle, pass it
+                  onToggleBookmark={() => handleToggleBookmark(job._id)}
+                  // optional: pass loading state for this job
+                  bookmarkLoading={submittingId === job._id}
+                />
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

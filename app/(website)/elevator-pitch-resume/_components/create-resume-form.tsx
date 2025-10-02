@@ -393,8 +393,13 @@ export default function CreateResumeForm() {
       toast.success("Elevator pitch uploaded successfully!");
     },
     onError: (error) => {
-      console.error("Upload error:", error);
-      toast.error("Failed to upload elevator pitch. Please try again.");
+      console.log("Upload error:", error);
+
+      // Extract the error message from the API response
+      const errorMessage =
+        error.response?.data?.message || error.message || "Upload failed";
+
+      toast.error(errorMessage);
     },
   });
 
@@ -410,21 +415,20 @@ export default function CreateResumeForm() {
     },
   });
 
-const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-  const file = event.target?.files?.[0];
-  if (!file) return;
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target?.files?.[0];
+    if (!file) return;
 
-  setPhotoFile(file);
+    setPhotoFile(file);
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    if (e.target?.result) {
-      setPhotoPreview(e.target.result as string);
-    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        setPhotoPreview(e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
-};
-
 
   const handleBannerUpload = (file: File | null) => {
     setBannerFile(file);
@@ -461,7 +465,6 @@ const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
       });
     } catch (err) {
       console.error("Upload failed:", err);
-      toast.error("Could not upload your elevator pitch.");
     } finally {
       setIsSubmitting(false);
     }

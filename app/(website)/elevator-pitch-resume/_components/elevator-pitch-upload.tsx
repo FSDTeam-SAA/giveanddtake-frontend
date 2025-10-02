@@ -68,24 +68,22 @@ export function ElevatorPitchUpload({
   }, [previewUrl]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-2">
-            <Video className="h-5 w-5 text-blue-600" />
-            <div>
-              <CardTitle className="text-lg font-medium">
-                Upload Your Elevator Pitch
-              </CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Share a video introduction to make your resume stand out
-              </p>
-            </div>
+    <div>
+      <div className="flex items-start justify-between mb-5">
+        <div className="flex items-center gap-2">
+          <Video className="h-5 w-5 text-blue-600" />
+          <div>
+            <CardTitle className="text-lg font-medium">
+              Upload Your Elevator Pitch
+            </CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Share a video introduction to make your resume stand out
+            </p>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent>
+      <div>
         {videoUrl ? (
           <div className="space-y-4">
             <div className="relative rounded-lg overflow-hidden bg-black">
@@ -164,7 +162,8 @@ export function ElevatorPitchUpload({
                     Drop your video here or click to browse
                   </p>
                   <p className="text-xs text-gray-400">
-                     Maximum size 24mb and 30 seconds or 60 seconds long (if upgraded)
+                    Maximum size 24mb and 30 seconds or 60 seconds long (if
+                    upgraded)
                   </p>
                 </div>
                 <Button
@@ -178,7 +177,7 @@ export function ElevatorPitchUpload({
             </FileUpload>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

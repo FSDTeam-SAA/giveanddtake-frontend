@@ -392,7 +392,9 @@ export function PersonalInfoSection({
                       >
                         Cancel
                       </Button>
-                      <Button type="button" onClick={handleCropConfirm}>Crop & Save</Button>
+                      <Button type="button" onClick={handleCropConfirm}>
+                        Crop & Save
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -446,7 +448,7 @@ export function PersonalInfoSection({
                   <FormControl>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Mr" />
+                        <SelectValue placeholder="Select Salutaion" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Mr.">Mr.</SelectItem>
@@ -618,28 +620,30 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="immediatelyAvailable"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel className="font-normal">
-                      Immediately Available
-                    </FormLabel>
-                    <FormDescription>
-                      Check if you are available to start immediately
-                    </FormDescription>
-                  </div>
-                </FormItem>
-              )}
-            />
+            <div className="space-y-5 lg:space-y-0 lg:mt-7">
+              <FormField
+                control={form.control}
+                name="immediatelyAvailable"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel className="font-normal">
+                        Immediately Available
+                      </FormLabel>
+                      <FormDescription>
+                        Check if you are available to start immediately
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
 
           <SocialLinksSection form={form} />
