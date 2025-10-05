@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,18 +22,10 @@ import {
   Trash,
   Trash2,
   RefreshCw,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  Key,
-  ReactElement,
-  JSXElementConstructor,
-  ReactNode,
-  ReactPortal,
-  AwaitedReactNode,
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -43,8 +36,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner"; // For toast notifications
+import { toast } from "sonner";
 import SocialLinks from "./SocialLinks";
+import Image from "next/image";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 
 interface PitchData {
   _id: string;
@@ -125,6 +126,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
     useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer
   const queryClient = useQueryClient();
 
   const {
@@ -287,7 +289,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       toast.success("Elevator pitch uploaded successfully!");
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
-      queryClient.invalidateQueries({ queryKey: ["company", userId] }); // Invalidate to refetch pitch data
+      queryClient.invalidateQueries({ queryKey: ["company", userId] });
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
@@ -302,8 +304,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       setIsElevatorPitchUploaded(false);
       setElevatorPitchFile(null);
       setIsDeleteModalOpen(false);
-      setPitchData(null); // Clear pitch data
-      queryClient.invalidateQueries({ queryKey: ["company", userId] }); // Invalidate to refetch pitch data
+      setPitchData(null);
+      queryClient.invalidateQueries({ queryKey: ["company", userId] });
     },
     onError: (error: any) => {
       toast.error(error?.message || "Failed to delete elevator pitch.");
@@ -438,13 +440,15 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   return (
     <div className="container mx-auto p-6 space-y-8 bg-white">
       {/* Header Section */}
-      <div className="bg-gray-100 rounded-lg p-8">
-        <div className="flex items-start gap-6">
+      <div className="bg-gray-100 rounded-lg p-6 shadow-md border relative">
+        <div className="flex flex-col md:flex-row items-start gap-6">
           <div className="w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0">
             {company.clogo ? (
-              <img
+              <Image
                 src={company.clogo || "/placeholder.svg"}
                 alt={company.cname}
+                width={80}
+                height={80}
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
@@ -453,7 +457,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           </div>
 
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-1 text-gray-900">
+            <h1 className="text-2xl font-bold mb-2 text-gray-900">
               {company.cname}
             </h1>
             <p className="text-gray-600 mb-4 text-sm">{company.industry}</p>
@@ -470,39 +474,80 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             </div>
 
             <div className="flex gap-2">
-              <div>
-                <SocialLinks sLink={company.sLink} />
-              </div>
-            </div>
-            <div className="mt-4">
-              <Link href="/add-job">
-                <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
-                  Post A Job
-                </Button>
-              </Link>
+              <SocialLinks sLink={company.sLink} />
             </div>
           </div>
 
-          <div className="text-right">
-            <p className="text-sm text-gray-600 mb-2 font-medium">
-              Try it Free - Post Your First Job in No Cost!
-            </p>
-            <p className="text-xs text-gray-500 mb-4 max-w-xs">
-              Easily post your company job openings and reach the right talent
-              fast. Get quality applications in no time.
-            </p>
-            <Link href={`/manage-jobs/${company._id}`}>
-              <Button className="bg-primary hover:bg-primary/90 text-white px-6 mr-2">
-                Manage Jobs
-              </Button>
-            </Link>
-            <Link
-              href={`/elevator-pitch-resume/edit-company/${company.userId}`}
-            >
-              <Button className="bg-primary hover:bg-primary/90 text-white px-6 ml-2">
-                Edit Profile
-              </Button>
-            </Link>
+          <div className="flex flex-col items-end gap-4 w-full md:w-auto">
+            <div className="text-right">
+              <p className="text-sm text-gray-600 mb-2 font-medium">
+                Try it Free - Post Your First Job in No Cost!
+              </p>
+              <p className="text-xs text-gray-500 mb-4 max-w-xs">
+                Easily post your company job openings and reach the right talent
+                fast. Get quality applications in no time.
+              </p>
+              <div className="hidden md:flex gap-2">
+                <Link href="/add-job">
+                  <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
+                    Post A Job
+                  </Button>
+                </Link>
+                <Link href={`/manage-jobs/${company._id}`}>
+                  <Button className="bg-primary hover:bg-primary/90 text-white px-6">
+                    Manage Jobs
+                  </Button>
+                </Link>
+                <Link
+                  href={`/elevator-pitch-resume/edit-company/${company.userId}`}
+                >
+                  <Button className="bg-primary hover:bg-primary/90 text-white px-6">
+                    Edit Profile
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            <div className="md:hidden absolute top-4 right-4">
+              <Drawer direction="left" open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                <DrawerTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="p-2"
+                    aria-label="Open settings menu"
+                  >
+                    <Settings className="h-6 w-6 text-[#2B7FD0]" />
+                  </Button>
+                </DrawerTrigger>
+                <DrawerContent className="w-[75vw] sm:w-[400px] h-full">
+                  <DrawerHeader>
+                    <DrawerTitle>Menu</DrawerTitle>
+                  </DrawerHeader>
+                  <div className="flex flex-col gap-4 p-4 h-full overflow-y-auto">
+                    <Link href="/add-job" onClick={() => setIsDrawerOpen(false)}>
+                      <Button className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-4 text-lg">
+                        Post A Job
+                      </Button>
+                    </Link>
+                    <Link
+                      href={`/manage-jobs/${company._id}`}
+                      onClick={() => setIsDrawerOpen(false)}
+                    >
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-white py-4 text-lg">
+                        Manage Jobs
+                      </Button>
+                    </Link>
+                    <Link
+                      href={`/elevator-pitch-resume/edit-company/${company.userId}`}
+                      onClick={() => setIsDrawerOpen(false)}
+                    >
+                      <Button className="w-full bg-primary hover:bg-primary/90 text-white py-4 text-lg">
+                        Edit Profile
+                      </Button>
+                    </Link>
+                  </div>
+                </DrawerContent>
+              </Drawer>
+            </div>
           </div>
         </div>
       </div>
@@ -636,187 +681,125 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         />
       </div>
 
-      {/* Company Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Website</h3>
-            <a
-              href={links[0]}
-              className="text-blue-600 hover:underline text-sm"
-            >
-              {links[0] || "Not provided"}
-            </a>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Industry</h3>
-            <p className="text-gray-700 text-sm">{company.industry}</p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-2 text-gray-900">Company size</h3>
-            <p className="text-gray-700 text-sm">
-              {company.employeesId?.length || 0} employees
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div>
-            <h3 className="font-semibold mb-3 text-gray-900">Specialties</h3>
-            <div className="flex flex-wrap gap-2">
-              {services.map((service: string, index: number) => (
-                <Badge key={index} variant="secondary" className="text-xs">
-                  {service}
-                </Badge>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold mb-3 text-gray-900">Locations</h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-700 text-sm">
-                  {company.city}, {company.country}
-                </span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-blue-600 text-xs"
-                >
-                  Get Direction
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Employees */}
-      <div className="">
-        <div>
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">
-            Employees
-          </h2>
-          {isLoadingEmployees && !employeeData ? (
-            <div>Loading employees...</div>
-          ) : isEmployeesError ? (
-            <div className="text-red-500">Error: {employeesError.message}</div>
-          ) : (
-            <div className="bg-white rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="font-medium text-gray-700">
-                      Recruiter Name
-                    </TableHead>
-                    <TableHead className="font-medium text-gray-700">
-                      Role
-                    </TableHead>
-                    <TableHead className="font-medium text-gray-700">
-                      Phone Number
-                    </TableHead>
-                    <TableHead className="font-medium text-gray-700">
-                      Action
-                    </TableHead>
+      <div>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Employees</h2>
+        {isLoadingEmployees && !employeeData ? (
+          <div>Loading employees...</div>
+        ) : isEmployeesError ? (
+          <div className="text-red-500">Error: {employeesError.message}</div>
+        ) : (
+          <div className="bg-white rounded-lg border">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-medium text-gray-700">
+                    Recruiter Name
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Role
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Phone Number
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Action
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recruiters.slice(0, 3).map((recruiter) => (
+                  <TableRow key={recruiter._id} className="hover:bg-gray-50">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={recruiter.photo.url}
+                            alt={recruiter.name}
+                          />
+                          <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                            {recruiter.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-gray-900">
+                          {recruiter.name}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className="bg-blue-100 text-blue-800 hover:bg-opacity-80"
+                      >
+                        {recruiter.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-600">
+                      {recruiter.phoneNum}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
+                        onClick={() => handleDelete(recruiter._id)}
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recruiters.slice(0, 3).map((recruiter) => (
-                    <TableRow key={recruiter._id} className="hover:bg-gray-50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={recruiter.photo.url}
-                              alt={recruiter.name}
-                            />
-                            <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                              {recruiter.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-gray-900">
-                            {recruiter.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-100 text-blue-800 hover:bg-opacity-80"
-                        >
-                          {recruiter.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-gray-600">
-                        {recruiter.phoneNum}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                          onClick={() => handleDelete(recruiter._id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                ))}
+              </TableBody>
+            </Table>
 
-              <div className="flex items-center justify-center gap-2 p-4 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0 bg-transparent"
-                  onClick={handlePreviousPage}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (page) => (
-                    <Button
-                      key={page}
-                      variant="outline"
-                      size="sm"
-                      className={`h-8 w-8 p-0 ${
-                        currentPage === page
-                          ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
-                          : "bg-transparent"
-                      }`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </Button>
-                  )
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 w-8 p-0 bg-transparent"
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-              {deleteMutation.isPending && (
-                <div className="text-center text-gray-500 pb-4">
-                  Updating list...
-                </div>
+            <div className="flex items-center justify-center gap-2 p-4 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 bg-transparent"
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant="outline"
+                    size="sm"
+                    className={`h-8 w-8 p-0 ${
+                      currentPage === page
+                        ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
+                        : "bg-transparent"
+                    }`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                )
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0 bg-transparent"
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          )}
-        </div>
+            {deleteMutation.isPending && (
+              <div className="text-center text-gray-500 pb-4">
+                Updating list...
+              </div>
+            )}
+          </div>
+        )}
         <div className="mt-4 flex justify-end">
           <Link href={`/recruiter-list/${company.userId}`}>
             <Button>See all</Button>
@@ -833,41 +816,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           <div className="space-y-4">
             {honors.map(
               (honor: {
-                _id: Key | null | undefined;
-                title:
-                  | string
-                  | number
-                  | bigint
-                  | boolean
-                  | ReactElement<any, string | JSXElementConstructor<any>>
-                  | Iterable<ReactNode>
-                  | ReactPortal
-                  | Promise<AwaitedReactNode>
-                  | null
-                  | undefined;
-                programeName:
-                  | string
-                  | number
-                  | bigint
-                  | boolean
-                  | ReactElement<any, string | JSXElementConstructor<any>>
-                  | Iterable<ReactNode>
-                  | ReactPortal
-                  | Promise<AwaitedReactNode>
-                  | null
-                  | undefined;
+                _id: string;
+                title: string;
+                programeName: string;
                 programeDate: string | number | Date;
-                description:
-                  | string
-                  | number
-                  | bigint
-                  | boolean
-                  | ReactElement<any, string | JSXElementConstructor<any>>
-                  | Iterable<ReactNode>
-                  | ReactPortal
-                  | Promise<AwaitedReactNode>
-                  | null
-                  | undefined;
+                description: string;
               }) => (
                 <Card key={honor._id}>
                   <CardContent className="p-4">

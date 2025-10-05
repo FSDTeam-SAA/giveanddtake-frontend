@@ -46,7 +46,7 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
   }
 
   const baseClasses =
-    "w-10 h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-2xl transition-all duration-300 ease-in-out";
+    "w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-xl md:text-2xl transition-all duration-300 ease-in-out";
 
   return (
     <div className="flex gap-3 mt-4">

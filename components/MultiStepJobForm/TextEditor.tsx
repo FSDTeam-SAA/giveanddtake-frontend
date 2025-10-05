@@ -1,201 +1,103 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useEditor, EditorContent } from "@tiptap/react"
-import StarterKit from "@tiptap/starter-kit"
-import { Bold, Italic, List, ListOrdered, Quote, Code, Minus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react";
+import "quill/dist/quill.snow.css";
 
 interface TextEditorProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
-  className?: string
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
 }
 
-const TextEditor = ({ value, onChange, placeholder, className }: TextEditorProps) => {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3], // Enable h1, h2, h3
-        },
-        bulletList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-        orderedList: {
-          keepMarks: true,
-          keepAttributes: false,
-        },
-      }),
-    ],
-    content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
-    },
-    editorProps: {
-      attributes: {
-        class: `prose dark:prose-invert min-h-[200px] max-w-none p-4 border-0 focus:outline-none ${className || ""}`,
-        "data-placeholder": placeholder || "Start typing...",
-      },
-    },
-    immediatelyRender: false,
-  })
+const TextEditor = ({
+  value,
+  onChange,
+  placeholder,
+  className,
+}: TextEditorProps) => {
+  const quillRef = useRef<any>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  // 1. Add a ref for the toolbar container
+  const toolbarRef = useRef<HTMLDivElement>(null); 
 
-  // Synchronize editor content with value prop changes
+  // Initialize Quill only once
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value, { emitUpdate: false })
+    // 2. Check if both the editor and the toolbar refs are ready
+    if (editorRef.current && toolbarRef.current && !quillRef.current) {
+      const loadQuill = async () => {
+        const Quill = (await import("quill")).default;
+
+        quillRef.current = new Quill(editorRef.current!, {
+          theme: "snow",
+          placeholder: placeholder || "Start typing...",
+          modules: {
+            // 3. Point Quill to the custom toolbar container
+            toolbar: toolbarRef.current, 
+            // 4. Move your custom toolbar configuration into the container's structure
+          },
+        });
+
+        // Set initial value
+        if (value) {
+          quillRef.current.root.innerHTML = value;
+        }
+
+        // Handle changes
+        quillRef.current.on("text-change", () => {
+          const content = quillRef.current.root.innerHTML;
+          onChange(content === "<p><br></p>" ? "" : content);
+        });
+      };
+
+      loadQuill();
     }
-  }, [editor, value])
+  }, []); // run once only
 
-  if (!editor) {
-    return null
-  }
-
-  // Prevent form submission on toolbar button clicks
-  const handleButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-  }
+  // Update editor content when value changes externally
+  useEffect(() => {
+    // A check is added to prevent an infinite loop if Quill content is identical to `value`
+    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
+      // Use setContent if you want a clean history, but innerHTML is fine for a simple update
+      quillRef.current.root.innerHTML = value;
+    }
+  }, [value]);
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white">
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-1 p-3 border-b bg-gray-50/50">
-        {/* Bold */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          disabled={!editor.can().chain().focus().toggleBold().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("bold") ? "default" : "ghost"}
-          size="sm"
-        >
-          <Bold className="h-4 w-4" />
-        </Button>
-
-        {/* Italic */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          disabled={!editor.can().chain().focus().toggleItalic().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("italic") ? "default" : "ghost"}
-          size="sm"
-        >
-          <Italic className="h-4 w-4" />
-        </Button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        {/* Headings */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-          className="h-8 px-2 text-xs font-semibold"
-          variant={editor.isActive("heading", { level: 1 }) ? "default" : "ghost"}
-          size="sm"
-        >
-          H1
-        </Button>
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className="h-8 px-2 text-xs font-semibold"
-          variant={editor.isActive("heading", { level: 2 }) ? "default" : "ghost"}
-          size="sm"
-        >
-          H2
-        </Button>
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className="h-8 px-2 text-xs font-semibold"
-          variant={editor.isActive("heading", { level: 3 }) ? "default" : "ghost"}
-          size="sm"
-        >
-          H3
-        </Button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        {/* Lists */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("bulletList") ? "default" : "ghost"}
-          size="sm"
-        >
-          <List className="h-4 w-4" />
-        </Button>
-
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("orderedList") ? "default" : "ghost"}
-          size="sm"
-        >
-          <ListOrdered className="h-4 w-4" />
-        </Button>
-
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-
-        {/* Blockquote */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("blockquote") ? "default" : "ghost"}
-          size="sm"
-        >
-          <Quote className="h-4 w-4" />
-        </Button>
-
-        {/* Code Block */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className="h-8 w-8 p-0"
-          variant={editor.isActive("codeBlock") ? "default" : "ghost"}
-          size="sm"
-        >
-          <Code className="h-4 w-4" />
-        </Button>
-
-        {/* Horizontal Rule */}
-        <Button
-          type="button"
-          onMouseDown={handleButtonClick}
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="h-8 w-8 p-0"
-          variant="ghost"
-          size="sm"
-        >
-          <Minus className="h-4 w-4" />
-        </Button>
+    <div className={`border rounded-lg bg-white ${className || ""}`}>
+      {/* 5. Create the toolbar container with the ref */}
+      <div ref={toolbarRef} className="quill-toolbar"> 
+        {/* You now need to define the toolbar's structure here, 
+            which corresponds to your previous `modules.toolbar` array. 
+            Quill will render the icons for these controls. */}
+        <div className="ql-formats">
+          <select className="ql-header" defaultValue=""></select>
+        </div>
+        <div className="ql-formats">
+          <button className="ql-bold"></button>
+          <button className="ql-italic"></button>
+          <button className="ql-underline"></button>
+        </div>
+        <div className="ql-formats">
+          <button className="ql-list" value="ordered"></button>
+          <button className="ql-list" value="bullet"></button>
+        </div>
+        <div className="ql-formats">
+          <button className="ql-blockquote"></button>
+          <button className="ql-code-block"></button>
+        </div>
+        <div className="ql-formats">
+          <button className="ql-link"></button>
+        </div>
+        <div className="ql-formats">
+          <button className="ql-clean"></button>
+        </div>
       </div>
-
-      {/* Editor Content */}
-      <div className="min-h-[200px]">
-        <EditorContent editor={editor} />
-      </div>
+      
+      {/* The editor content area remains the same */}
+      <div ref={editorRef} style={{ minHeight: "200px" }} />
     </div>
-  )
-}
+  );
+};
 
-export default TextEditor
+export default TextEditor;

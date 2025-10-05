@@ -7,13 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   FormField,
   FormItem,
   FormLabel,
@@ -337,16 +330,16 @@ export function PersonalInfoSection({
   return (
     <>
       {/* About Us Section */}
-      <Card className="border-2 border-blue-500">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-8">
+      <Card className="">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-8 gap-8">
             {/* Photo Upload with Cropper */}
-            <div className="flex-shrink-0">
+            <div className="col-span-2 w-full">
               <Label className="text-sm font-medium text-blue-600 mb-2 block">
                 Photo
               </Label>
               <div
-                className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
+                className="w-full h-[240px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
                 onClick={() => document.getElementById("photo-upload")?.click()}
               >
                 {photoPreview ? (
@@ -402,7 +395,7 @@ export function PersonalInfoSection({
             </div>
 
             {/* About Us Text Area */}
-            <div className="flex-1">
+            <div className="col-span-6 flex-1">
               <div className="flex items-center justify-between mb-2">
                 <FormLabel className="text-blue-600 font-medium">
                   About Me
@@ -439,30 +432,6 @@ export function PersonalInfoSection({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title*</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Salutaion" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Mr.">Mr.</SelectItem>
-                        <SelectItem value="Mrs.">Mrs.</SelectItem>
-                        <SelectItem value="Ms.">Ms.</SelectItem>
-                        <SelectItem value="Dr.">Dr.</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
             <FormField
               control={form.control}
               name="firstName"

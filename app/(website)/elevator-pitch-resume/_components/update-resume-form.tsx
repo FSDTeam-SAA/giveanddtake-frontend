@@ -1,4 +1,3 @@
-
 "use client";
 
 import type React from "react";
@@ -37,7 +36,12 @@ import { LanguageSelector } from "./resume/language-selector";
 import { CertificationSelector } from "./resume/certification-selector";
 import { UniversitySelector } from "./resume/university-selector";
 import Cropper, { Area } from "react-easy-crop";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Utility function to compare dates (format: MM/YYYY)
 const isDateValid = (startDate: string, endDate: string): boolean => {
@@ -398,7 +402,10 @@ function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<File> => {
     const image = new window.Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
@@ -428,7 +435,9 @@ function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          resolve(new File([blob], "cropped-banner.jpg", { type: "image/jpeg" }));
+          resolve(
+            new File([blob], "cropped-banner.jpg", { type: "image/jpeg" })
+          );
         }
       }, "image/jpeg");
     });
@@ -436,7 +445,10 @@ function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
 
   const handleCropConfirm = async () => {
     if (selectedImage && croppedAreaPixels) {
-      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      const croppedImage = await getCroppedImg(
+        selectedImage,
+        croppedAreaPixels
+      );
       onFileSelect(croppedImage);
       setCropModalOpen(false);
       setSelectedImage(null);
@@ -480,7 +492,9 @@ function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
         ) : (
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-              dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+              dragActive
+                ? "border-green-500 bg-green-50"
+                : "border-gray-300 hover:border-gray-400"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -601,7 +615,10 @@ function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<File> => {
     const image = new window.Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
@@ -628,7 +645,9 @@ function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          resolve(new File([blob], "cropped-photo.jpg", { type: "image/jpeg" }));
+          resolve(
+            new File([blob], "cropped-photo.jpg", { type: "image/jpeg" })
+          );
         }
       }, "image/jpeg");
     });
@@ -636,7 +655,10 @@ function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
 
   const handleCropConfirm = async () => {
     if (selectedImage && croppedAreaPixels) {
-      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      const croppedImage = await getCroppedImg(
+        selectedImage,
+        croppedAreaPixels
+      );
       onFileSelect(croppedImage);
       setCropModalOpen(false);
       setSelectedImage(null);
@@ -647,7 +669,9 @@ function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
     <>
       <div
         className={`w-full h-[250px] border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-          dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+          dragActive
+            ? "border-green-500 bg-green-50"
+            : "border-gray-300 hover:border-gray-400"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -1179,7 +1203,7 @@ export default function UpdateResumeForm({
   return (
     <div className="p-6 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Update Resume</h1>
+        <h1 className="text-3xl font-bold">Update Profile</h1>
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>
@@ -1770,16 +1794,18 @@ export default function UpdateResumeForm({
                                   <SelectValue placeholder="Select a degree" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Bachelor">
-                                    Bachelor's Degree
+                                  <SelectItem value="BSc.">BSc.</SelectItem>
+                                  <SelectItem value="B.Tech.">
+                                    B.Tech.
                                   </SelectItem>
-                                  <SelectItem value="Master">
-                                    Master's Degree
+                                  <SelectItem value="B.A">B.A</SelectItem>
+                                  <SelectItem value="B.Ed.">B.Ed.</SelectItem>
+                                  <SelectItem value="M.B.A.">M.B.A.</SelectItem>
+                                  <SelectItem value="MSc.">MSc.</SelectItem>
+                                  <SelectItem value="M.Phil.">
+                                    M.Phil.
                                   </SelectItem>
-                                  <SelectItem value="phd">PhD</SelectItem>
-                                  <SelectItem value="Associate">
-                                    Associate Degree
-                                  </SelectItem>
+                                  <SelectItem value="Ph.D">Ph.D</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -1787,6 +1813,7 @@ export default function UpdateResumeForm({
                           </FormItem>
                         )}
                       />
+
                       <FormField
                         control={form.control}
                         name={`educationList.${index}.fieldOfStudy`}
@@ -2110,7 +2137,7 @@ export default function UpdateResumeForm({
               className="bg-primary hover:bg-blue-700 text-white py-6 text-lg font-medium"
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Updating..." : "Update Resume"}
+              {isSubmitting ? "Updating..." : "Update Profile"}
             </Button>
             <Button
               type="button"
