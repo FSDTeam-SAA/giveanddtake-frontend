@@ -50,6 +50,7 @@ interface ResumeResponse {
       city?: string;
       email?: string;
       phoneNumber?: string;
+      immediatelyAvailable?: boolean;
       sLink?: { label: string; url: string; _id: string }[];
       skills?: string[];
     };
@@ -254,14 +255,14 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div>
       {/* Banner */}
-      <div className="w-full h-[300px]">
+      <div className="w-full h-auto">
         {resume.banner ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-[300px] object-cover object-center"
+            className="w-full h-auto object-cover lg:object-cover object-center"
           />
         ) : (
           <div className="w-full h-[300px] bg-gray-200" />
@@ -289,14 +290,26 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
 
           <h2 className="text-xl font-bold mt-3">
-            {resume.title && <p className="text-gray-600">{resume.title.charAt(0).toUpperCase() + resume.title.slice(1)}. {resume.firstName} {resume.lastName}</p>}
+            {resume.title && (
+              <p className="text-gray-600">
+                {resume.title.charAt(0).toUpperCase() + resume.title.slice(1)}.{" "}
+                {resume.firstName} {resume.lastName}
+              </p>
+            )}
           </h2>
-          
 
           <p className="text-gray-600 flex items-center">
             <MapPin className="w-4 h-4 mr-1" />
             {joinLocation(resume.country, resume.city)}
           </p>
+
+          {resume.immediatelyAvailable && (
+            <div className="mt-5">
+              <p className="font-semibold text-green-600">
+                Immediately Available
+              </p>
+            </div>
+          )}
 
           {/* Social Links */}
           <div className="flex gap-2 mt-3">
@@ -357,12 +370,12 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
       </section>
 
       {/* Experience (show all) */}
-      <section className="border-b py-6">
-        <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
-          Experience
-        </h3>
+      {sortedExperiences.length > 0 && (
+        <section className="border-b py-6">
+          <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+            Experience
+          </h3>
 
-        {sortedExperiences.length > 0 ? (
           <div className="space-y-8">
             {sortedExperiences.map((exp) => {
               const when = `${toMonthYear(exp.startDate)} - ${
@@ -405,10 +418,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               );
             })}
           </div>
-        ) : (
-          <p className="text-gray-500 text-sm">No experience listed</p>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Education (show all) */}
       <section className="border-b py-6">
@@ -465,12 +476,12 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
       </section>
 
       {/* Awards (show all) */}
-      <section className="py-6">
-        <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
-          Awards & Honours
-        </h3>
+      {sortedAwards.length > 0 && (
+        <section className="py-6">
+          <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+            Awards & Honours
+          </h3>
 
-        {sortedAwards.length > 0 ? (
           <div className="space-y-4">
             {sortedAwards.map((award) => (
               <div
@@ -498,10 +509,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-gray-500 text-sm">No awards listed</p>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 };

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"; // Import useEffect
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
-import JobDetails from "./job-details";
 import JobCard from "@/components/shared/card/job-card";
 import { Pagination } from "@/components/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -50,7 +49,8 @@ interface RecommendedJobsResponse {
   message: string;
   data: {
     jobs?: Job[];
-    fallbackJobs?: Job[];
+    exactMatches?: Job[];
+    partialMatches?: Job[];
   };
 }
 
@@ -158,7 +158,14 @@ export default function JobsListing() {
     totalItems: 0,
     itemsPerPage: 10,
   };
-  const recommended = recommendedData?.data.fallbackJobs || [];
+  const recommended =
+    recommendedData?.data?.exactMatches &&
+    recommendedData.data.exactMatches.length > 0
+      ? recommendedData.data.exactMatches
+      : recommendedData?.data?.partialMatches || [];
+
+  console.log(recommended);
+  console.log(jobs);
 
   // Function to handle filter button click
   const handleFilter = () => {
@@ -237,7 +244,7 @@ export default function JobsListing() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {recommended.map((job) => (
                 <Link href={`/alljobs/${job._id}`} key={job._id}>
-                  <JobCard key={job._id} job={job} variant="suggested" />
+                  <JobCard key={job.job._id} job={job.job} variant="list" />
                 </Link>
               ))}
             </div>

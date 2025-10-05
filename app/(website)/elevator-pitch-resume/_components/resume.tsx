@@ -60,6 +60,7 @@ interface Resume {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  immediatelyAvailable: boolean;
 }
 
 interface Experience {
@@ -291,6 +292,12 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
                     </div>
+                    {resume.resume.immediatelyAvailable && (
+                      <div>
+                        <p className="font-semibold text-base">Availibility</p>
+                        <p className="text-gray-600">Immediately Available</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

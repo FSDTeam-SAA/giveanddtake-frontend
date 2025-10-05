@@ -17,12 +17,14 @@ interface SearchUser {
     url?: string;
   };
   position?: string;
+  // new property from API
+  immediatelyAvailable?: boolean | null;
 }
 
 interface SearchResult {
   success?: boolean;
   message?: string;
-  data?: SearchUser[];
+  data?: (SearchUser | null)[];
 }
 
 const safeLower = (v: unknown) =>
@@ -101,19 +103,31 @@ export function GlobalSearch() {
 
       if (result?.success && Array.isArray(result.data)) {
         const q = searchQuery.toLowerCase();
-        const filteredResults = result.data.filter((user) => {
-          if (!user) return false;
-          const name = safeLower(user.name);
-          const role = safeLower(user.role);
-          const address = safeLower(user.address);
-          const position = safeLower(user.position);
-          return (
-            name.includes(q) ||
-            role.includes(q) ||
-            address.includes(q) ||
-            position.includes(q)
-          );
-        });
+
+        // filter out nulls and match fields (name, role, address, position)
+        const filteredResults = result.data
+          .filter(Boolean)
+          .map((u) => u as SearchUser)
+          .filter((user) => {
+            if (!user) return false;
+            const name = safeLower(user.name);
+            const role = safeLower(user.role);
+            const address = safeLower(user.address);
+            const position = safeLower(user.position);
+            return (
+              name.includes(q) ||
+              role.includes(q) ||
+              address.includes(q) ||
+              position.includes(q)
+            );
+          });
+
+        // sort: immediately available candidates first, then others
+        filteredResults.sort(
+          (a, b) =>
+            Number(b.immediatelyAvailable === true) -
+            Number(a.immediatelyAvailable === true)
+        );
 
         const limited = filteredResults.slice(0, 8);
         setResults(limited);
@@ -173,6 +187,10 @@ export function GlobalSearch() {
     }
   };
 
+  const availableCount = results.filter(
+    (r) => r.role === "candidate" && r.immediatelyAvailable === true
+  ).length;
+
   return (
     <div ref={searchRef} className="relative w-full max-w-md">
       <div className="relative">
@@ -221,8 +239,25 @@ export function GlobalSearch() {
             </div>
           ) : results.length > 0 ? (
             <>
-              <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50">
-                {results.length} result{results.length !== 1 ? "s" : ""} found
+              <div className="px-4 py-2 text-xs text-gray-500 border-b bg-gray-50 flex items-center justify-between">
+                <div>
+                  {results.length} result{results.length !== 1 ? "s" : ""}
+                </div>
+                <div className="text-xs text-gray-600">
+                  {availableCount > 0 ? (
+                    <span
+                      className="inline-flex items-center gap-2"
+                      aria-hidden={availableCount === 0}
+                    >
+                      <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+                      <span>{availableCount} immediately available</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-400">
+                      No immediate candidates
+                    </span>
+                  )}
+                </div>
               </div>
 
               {results.map((user) => {
@@ -233,6 +268,9 @@ export function GlobalSearch() {
                 ).toUpperCase();
                 const avatarUrl =
                   user?.avatar?.url || "/placeholder.svg?height=40&width=40";
+
+                const isCandidate = user.role === "candidate";
+                const isAvailable = user.immediatelyAvailable === true;
 
                 return (
                   <Button
@@ -256,6 +294,32 @@ export function GlobalSearch() {
                           <span className="font-medium text-gray-900">
                             {displayName}
                           </span>
+
+                          {/* availability badge for candidates */}
+                          {isCandidate && isAvailable && (
+                            <span
+                              className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800"
+                              aria-label="Immediately available"
+                              title="Immediately available"
+                            >
+                              <span className="h-2 w-2 rounded-full bg-green-600 inline-block" />
+                              Immediate
+                            </span>
+                          )}
+
+                          {isCandidate &&
+                            !isAvailable &&
+                            user.immediatelyAvailable === false && (
+                              <span
+                                className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-gray-50 text-gray-600"
+                                aria-label="Not immediately available"
+                                title="Not immediately available"
+                              >
+                                <span className="h-2 w-2 rounded-full bg-gray-400 inline-block" />
+                                Not immediate
+                              </span>
+                            )}
+
                           {getRoleIcon(user?.role as string | undefined)}
                         </div>
                         <div className="text-sm text-gray-500">

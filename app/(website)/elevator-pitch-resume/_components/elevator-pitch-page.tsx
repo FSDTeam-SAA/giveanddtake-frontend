@@ -62,10 +62,9 @@ export default function ElevatorPitchAndResume() {
     }
   };
 
-  // Session loading skeleton
   if (status === "loading") return <LoadingSkeleton />;
 
-  // Global loading skeleton while relevant query fetches
+
   if (resumeLoading || recruiterLoading || companyLoading)
     return <LoadingSkeleton />;
 
