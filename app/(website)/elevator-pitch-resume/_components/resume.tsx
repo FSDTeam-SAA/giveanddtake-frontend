@@ -217,18 +217,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
         </div>
         <Card className="border-0">
           <CardContent className="p-0">
-            <div className="mb-2 lg:mb-0 flex items-center justify-center relative">
-              <div className="absolute right-0 mt-[70px]">
-                <Button
-                  onClick={onEdit}
-                  className="bg-[#3b82f6] hover:bg-[#3b82f6]"
-                >
-                  <SquarePen className="mr-2 h-4 w-4" />
-                  Edit
-                </Button>
-              </div>
-            </div>
-
             <div className="flex flex-col lg:flex-row border-b-2 mt-[-20px] pb-4 gap-6 sm:px-6">
               <div className="lg:w-1/3 w-full">
                 <div className="mb-6 text-center lg:text-left">
@@ -262,17 +250,30 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       .toUpperCase()}${resume.resume.lastName.slice(1)}`}
                   </h2>
 
-                  <div>
+                  <div className="flex items-center justify-center lg:justify-start mt-2 space-x-2">
                     <SocialLinks sLink={resume.resume.sLink} />
                   </div>
                 </div>
               </div>
 
-              <div className="lg:w-2/3 w-full space-y-6 mt-[50px]">
+              <div className="lg:w-2/3 w-full space-y-6 lg:mt-[50px]">
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-800 mb-3 text-2xl border-b-2 pb-2">
-                    Contact Info
-                  </h3>
+                  <div className="flex justify-between border-b-2 pb-2">
+                    <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+                      Contact Info
+                    </h3>
+                    <div className="">
+                      <div className="">
+                        <Button
+                          onClick={onEdit}
+                          className="bg-[#3b82f6] hover:bg-[#3b82f6]"
+                        >
+                          <SquarePen className="mr-2 h-4 w-4" />
+                          Edit
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                     <div>
                       <p className="font-semibold text-base">Location</p>
@@ -510,14 +511,16 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         </p>
                       )}
                     </div>
-                    <p className="text-gray-600 text-sm flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>
-                        {exp.city && `${exp.city}, `}
-                        {exp.country}
-                        {exp.zip && `, ${exp.zip}`}
-                      </span>
-                    </p>
+                    {exp.country && (
+                      <p className="text-gray-600 text-sm flex items-center gap-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>
+                          {exp.city && `${exp.city}, `}
+                          {exp.country}
+                          {exp.zip && `, ${exp.zip}`}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -559,7 +562,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {resume.awardsAndHonors?.length > 0 && (
+            {resume.awardsAndHonors?.length > 0 && resume.awardsAndHonors[0].title && (
               <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
                 <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                   Awards & Honours

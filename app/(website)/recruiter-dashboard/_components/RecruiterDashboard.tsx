@@ -18,6 +18,7 @@ import {
   Trash2,
   Mail,
   Globe,
+  Settings,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +33,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
 import { VideoPlayer } from "@/components/company/video-player";
 import DOMPurify from "dompurify";
 
@@ -444,9 +452,8 @@ export default function RecruiterDashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPageTable, setCurrentPageTable] = useState(1);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
-    null
-  );
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer
   const itemsPerPage = 4;
 
   const {
@@ -582,11 +589,11 @@ export default function RecruiterDashboard() {
 
   const handleConnectWithCompany = () => {
     setIsCompanyModalOpen(true);
+    setIsDrawerOpen(false); // Close drawer when opening company modal
   };
 
   const handleSelectCompany = (companyId: string) => {
     setSelectedCompanyId(companyId);
-    console.log(selectedCompanyId);
   };
 
   const handleConfirmApply = () => {
@@ -597,19 +604,17 @@ export default function RecruiterDashboard() {
     }
   };
 
-  console.log(companiesData);
-
   return (
     <div className="min-h-screen py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
       <div className="container mx-auto">
-        <h1 className="text-4xl text-[#131313] font-bold text-center mb-12">
+        <h1 className="text-2xl md:text-4xl text-[#131313] font-bold text-center mb-12">
           Recruiter Dashboard
         </h1>
 
         {/* Recruiter Information Section */}
         <section className="mb-12 bg-white md:p-6 rounded-lg shadow-sm">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="md:flex md:items-center md:justify-between mb-4 border-b border-[#999999] pb-3 space-y-2">
+            <div className="flex items-center justify-between mb-4 border-b border-[#999999] pb-3 space-y-2">
               <div>
                 <h2 className="text-2xl font-bold text-[#131313]">
                   {recruiterAccount?.data?.companyId?._id
@@ -617,18 +622,17 @@ export default function RecruiterDashboard() {
                     : "Recruiter Information"}
                 </h2>
               </div>
-              <div className="flex gap-2">
-                {!recruiterAccount?.data?.companyId?._id && (
-                  <div>
+              <div className="flex items-center">
+                {/* Show buttons on medium screens and above */}
+                <div className="hidden md:flex space-x-2">
+                  {!recruiterAccount?.data?.companyId?._id && (
                     <Button
                       onClick={handleConnectWithCompany}
                       className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md"
                     >
                       Connect with a Company
                     </Button>
-                  </div>
-                )}
-                <div>
+                  )}
                   <Link
                     href={`/recruiters-profile/${encodeURIComponent(
                       recruiterAccount?.data?.userId ?? ""
@@ -641,14 +645,61 @@ export default function RecruiterDashboard() {
                       Public view
                     </Button>
                   </Link>
-                </div>
-
-                <div>
                   <Link href="/add-job">
                     <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
                       Post A Job
                     </Button>
                   </Link>
+                </div>
+                {/* Show settings icon on small screens */}
+                <div className="md:hidden">
+                  <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+                    <DrawerTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="p-2"
+                        aria-label="Open settings menu"
+                      >
+                        <Settings className="h-6 w-6 text-[#2B7FD0]" />
+                      </Button>
+                    </DrawerTrigger>
+                    <DrawerContent>
+                      <DrawerHeader>
+                        <DrawerTitle>Menu</DrawerTitle>
+                      </DrawerHeader>
+                      <div className="flex flex-col gap-4 p-4">
+                        {!recruiterAccount?.data?.companyId?._id && (
+                          <Button
+                            onClick={handleConnectWithCompany}
+                            className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-4 text-lg"
+                          >
+                            Connect with a Company
+                          </Button>
+                        )}
+                        <Link
+                          href={`/recruiters-profile/${encodeURIComponent(
+                            recruiterAccount?.data?.userId ?? ""
+                          )}`}
+                          onClick={() => setIsDrawerOpen(false)}
+                        >
+                          <Button
+                            disabled={!recruiterAccount?.data?.userId}
+                            className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-4 text-lg"
+                          >
+                            Public view
+                          </Button>
+                        </Link>
+                        <Link
+                          href="/add-job"
+                          onClick={() => setIsDrawerOpen(false)}
+                        >
+                          <Button className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-4 text-lg">
+                            Post A Job
+                          </Button>
+                        </Link>
+                      </div>
+                    </DrawerContent>
+                  </Drawer>
                 </div>
               </div>
             </div>
@@ -722,7 +773,6 @@ export default function RecruiterDashboard() {
                           )}
                         </div>
                         <div className="space-y-3">
-                          {/* Email */}
                           <div className="flex items-center gap-3">
                             <Mail className="text-gray-600 h-5 w-5" />
                             <p className="text-base text-gray-700">
@@ -922,8 +972,6 @@ export default function RecruiterDashboard() {
           )}
         </section>
 
-      
-
         {/* Company Selection Modal */}
         <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
           <DialogContent className="sm:max-w-[600px]">
@@ -970,9 +1018,9 @@ export default function RecruiterDashboard() {
                           <Image
                             src={company.clogo}
                             alt={`${company.cname} logo`}
-                            width={400}
-                            height={400}
-                            className="rounded-full w-[40px] h-[40px]"
+                            width={40}
+                            height={40}
+                            className="rounded-full"
                           />
                         )}
                         <span className="text-base font-medium">

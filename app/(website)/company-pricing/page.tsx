@@ -5,20 +5,20 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 
+/* ----------------------------- Types ----------------------------- */
+
 interface Feature {
   text: string;
-  included: boolean;
 }
 
 interface Plan {
@@ -28,6 +28,7 @@ interface Plan {
   price: number;
   features: string[];
   for: string;
+  valid: "monthly" | "yearly" | string;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -38,6 +39,29 @@ interface ApiResponse {
   message: string;
   data: Plan[];
 }
+
+/** Local unified plan (merged monthly/yearly variants under one card) */
+type LocalPlan = {
+  name: string;
+  // Display labels
+  monthlyPriceLabel?: string;
+  annualPriceLabel?: string;
+  // Numeric amounts
+  monthlyAmount?: number;
+  annualAmount?: number;
+  // IDs
+  planId: string; // representative id
+  monthlyPlanId?: string;
+  annualPlanId?: string;
+  features: Feature[];
+  buttonText: string;
+};
+
+/* --------------------------- Utilities --------------------------- */
+
+const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim();
+
+/* --------------------------- Data Fetch -------------------------- */
 
 const fetchCompanyPlans = async (): Promise<Plan[]> => {
   const response = await fetch(
@@ -50,72 +74,179 @@ const fetchCompanyPlans = async (): Promise<Plan[]> => {
   return data.data.filter((plan) => plan.for === "company");
 };
 
-const transformApiPlanToLocalPlan = (apiPlan: Plan) => {
-  return {
-    name: apiPlan.title,
-    description: `$${apiPlan.price} ${apiPlan.description}`,
-    features: apiPlan.features.map((feature) => ({
-      text: feature,
-      included: true,
-    })),
-    buttonText: "Purchase",
-    planId: apiPlan._id,
-  };
+const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
+  const map = new Map<string, { monthly?: Plan; yearly?: Plan }>();
+
+  for (const p of plans) {
+    const key = normalizeTitle(p.title);
+    const bucket = map.get(key) ?? {};
+    const v = (p.valid || "").toLowerCase();
+
+    if (v === "monthly") bucket.monthly = p;
+    else if (v === "yearly") bucket.yearly = p;
+    else {
+      // Fallback: infer from description
+      if (/per\s*month/i.test(p.description)) bucket.monthly = p;
+      else if (/per\s*ann?um/i.test(p.description) || /per\s*year/i.test(p.description)) bucket.yearly = p;
+      else bucket.monthly = p; // Default to monthly
+    }
+    map.set(key, bucket);
+  }
+
+  const out: LocalPlan[] = [];
+  for (const [title, g] of map.entries()) {
+    // Subscription (monthly/yearly/both)
+    const base = g.monthly ?? g.yearly!;
+    const monthlyAmount = g.monthly?.price;
+    const annualAmount = g.yearly?.price;
+
+    out.push({
+      name: title,
+      monthlyAmount,
+      annualAmount,
+      monthlyPriceLabel:
+        monthlyAmount != null
+          ? `$${monthlyAmount.toFixed(2)} per month`
+          : undefined,
+      annualPriceLabel:
+        annualAmount != null
+          ? `$${annualAmount.toFixed(2)} per annum`
+          : undefined,
+      features: base.features.map((text) => ({ text })),
+      buttonText: `Subscribe to ${title.toLowerCase().split(" ")[0]}`,
+      planId: base._id,
+      monthlyPlanId: g.monthly?._id,
+      annualPlanId: g.yearly?._id,
+    });
+  }
+
+  return out;
 };
+
+/* -------------------------- Component ---------------------------- */
 
 export default function PricingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] =
-    useState<ReturnType<typeof transformApiPlanToLocalPlan> | null>(null);
+  const [selectedPlanIdForPayment, setSelectedPlanIdForPayment] =
+    useState<string>("");
+  const [showPlanOptions, setShowPlanOptions] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<LocalPlan | null>(null);
 
-  // NEW: track the user's current plan id
+  // track user's current plan id
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null);
 
-  const { data: apiPlans, isLoading, error } = useQuery({
+  // also track current plan title + validity (monthly/yearly)
+  const [currentPlanMeta, setCurrentPlanMeta] = useState<{
+    titleNorm: string | null;
+    valid: "monthly" | "yearly" | null;
+  }>({ titleNorm: null, valid: null });
+
+  const isSameTitle = (planName: string) =>
+    currentPlanMeta.titleNorm &&
+    normalizeTitle(planName) === currentPlanMeta.titleNorm;
+
+  const {
+    data: apiPlans,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["companyPlans"],
     queryFn: fetchCompanyPlans,
   });
 
+  // session for auth to /user/single
   const { data: session, status } = useSession();
 
-  const handlePlanSelect = (
-    plan: ReturnType<typeof transformApiPlanToLocalPlan>
-  ) => {
-    // Extract price keeping the decimal point
-    const priceMatch = plan.description.match(/\$(\d+\.\d{2}|\d+)/);
-    setSelectedPrice(priceMatch ? priceMatch[1] : "0.00");
+  const pricingPlans = useMemo(
+    () => (apiPlans ? groupCompanyPlans(apiPlans) : []),
+    [apiPlans]
+  );
+
+  /* ----------------- Plan selection / payment flow ---------------- */
+
+  const handlePlanSelect = (plan: LocalPlan) => {
+    // If user already has this title and there is only one variant, do nothing
+    const sameTitle = isSameTitle(plan.name);
+    const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null;
+    const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null;
+    if (sameTitle && (onlyMonthly || onlyYearly)) return;
+
+    // Guard: don't open modal if representative id matches
+    if (currentPlanId === plan.planId) return;
+
     setSelectedPlan(plan);
-    setIsModalOpen(true);
+
+    if (onlyMonthly) {
+      setSelectedPrice(plan.monthlyAmount!.toFixed(2));
+      setSelectedPlanIdForPayment(plan.monthlyPlanId || plan.planId);
+      setIsModalOpen(true);
+    } else if (onlyYearly) {
+      setSelectedPrice(plan.annualAmount!.toFixed(2));
+      setSelectedPlanIdForPayment(plan.annualPlanId || plan.planId);
+      setIsModalOpen(true);
+    } else {
+      setShowPlanOptions(true);
+    }
   };
 
-  // NEW: fetch the user and set currentPlanId
+  const handlePaymentOptionSelect = (isMonthly: boolean) => {
+    if (!selectedPlan) return;
+    const priceValue = isMonthly
+      ? selectedPlan.monthlyAmount
+      : selectedPlan.annualAmount;
+    const variantId = isMonthly
+      ? selectedPlan.monthlyPlanId || selectedPlan.planId
+      : selectedPlan.annualPlanId || selectedPlan.planId;
+    setSelectedPrice((priceValue ?? 0).toFixed(2));
+    setSelectedPlanIdForPayment(variantId);
+    setIsModalOpen(true);
+    setShowPlanOptions(false);
+  };
+
+  /* ------------------ Fetch current user & plan ------------------- */
+
   useEffect(() => {
     const fetchUserData = async () => {
-      if (status === "authenticated" && (session as any)?.accessToken) {
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
-            {
-              headers: {
-                Authorization: `Bearer ${(session as any).accessToken}`,
-              },
-            }
-          );
-          const result = await response.json();
-          if (result?.success) {
-            setCurrentPlanId(result?.data?.plan?._id ?? null);
-          } else {
-            console.error("Failed to fetch user data:", result?.message);
-          }
-        } catch (err) {
-          console.error("Error fetching user data:", err);
+      const token = (session as any)?.accessToken;
+      if (status !== "authenticated" || !token) return;
+
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        if (!response.ok) {
+          if (response.status === 401) console.error("Unauthorized: invalid/expired token");
+          throw new Error(`GET /user/single failed with ${response.status}`);
         }
+
+        const result = await response.json();
+
+        // ✅ NEW: wire up meta + id used by your modal disable logic
+        const apiPlan = result?.data?.plan;
+        const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null;
+
+        // normalize valid → monthly | yearly | null
+        const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "");
+        const valid =
+          vRaw === "monthly" ? "monthly" :
+          vRaw === "yearly"  ? "yearly"  : null;
+
+        setCurrentPlanId(apiPlan?._id ?? null);
+        setCurrentPlanMeta({ titleNorm, valid });
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setCurrentPlanId(null);
+        setCurrentPlanMeta({ titleNorm: null, valid: null });
       }
     };
 
     fetchUserData();
   }, [session, status]);
+
+  /* ----------------------------- UI ------------------------------ */
 
   if (isLoading) {
     return (
@@ -150,11 +281,9 @@ export default function PricingPage() {
     );
   }
 
-  const pricingPlans = apiPlans.map(transformApiPlanToLocalPlan);
-
   return (
     <div className="flex items-center justify-center bg-gray-50 p-4">
-      <div>
+      <div className="w-full max-w-7xl">
         <div className="mb-12 mt-[60px] text-center">
           <h1 className="mb-2 text-4xl font-bold text-gray-800">
             Company Price List
@@ -162,9 +291,76 @@ export default function PricingPage() {
           <p className="text-xl text-gray-600">For Elevator Pitch</p>
         </div>
 
-        <div className="grid w-full container grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 py-4">
+        {/* Current Plan Banner */}
+        {currentPlanMeta.titleNorm && (
+          <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
+            You're currently on <strong>{currentPlanMeta.titleNorm}</strong> plan
+            {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
+          </div>
+        )}
+
+        {/* Plan Options Modal */}
+        {showPlanOptions && selectedPlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="rounded-lg bg-white p-6 shadow-xl">
+              <h3 className="mb-4 text-xl font-bold">
+                Select Payment Option for {selectedPlan.name}
+              </h3>
+              <div className="space-y-3">
+                {selectedPlan.monthlyPriceLabel && (
+                  <Button
+                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={() => handlePaymentOptionSelect(true)}
+                    disabled={!!isSameTitle(selectedPlan.name) && currentPlanMeta.valid === "monthly"}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span>Monthly: {selectedPlan.monthlyPriceLabel}</span>
+                      {isSameTitle(selectedPlan.name) &&
+                        currentPlanMeta.valid === "monthly" && (
+                          <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
+                            Current
+                          </span>
+                        )}
+                    </div>
+                  </Button>
+                )}
+
+                {selectedPlan.annualPriceLabel && (
+                  <Button
+                    className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
+                    onClick={() => handlePaymentOptionSelect(false)}
+                    disabled={!!isSameTitle(selectedPlan.name) && currentPlanMeta.valid === "yearly"}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <span>Annual: {selectedPlan.annualPriceLabel}</span>
+                      {isSameTitle(selectedPlan.name) &&
+                        currentPlanMeta.valid === "yearly" && (
+                          <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
+                            Current
+                          </span>
+                        )}
+                    </div>
+                  </Button>
+                )}
+
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setShowPlanOptions(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Pricing Cards */}
+        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 py-4">
           {pricingPlans.map((plan, index) => {
-            const isCurrent = currentPlanId === plan.planId;
+            const cardIsCurrentByTitle = isSameTitle(plan.name);
+            const isCurrent =
+              currentPlanId === plan.planId || cardIsCurrentByTitle;
 
             return (
               <Card
@@ -173,16 +369,46 @@ export default function PricingPage() {
                   "flex flex-col justify-between overflow-hidden border-none rounded-lg shadow-sm"
                 )}
               >
-                <CardHeader className="space-y-2 p-6">
+                <CardHeader className="space-y-2 p-6 pb-0">
                   <CardTitle className="font-medium text-base text-[#2B7FD0]">
                     {plan.name.toUpperCase()}
+                    {isCurrent && (
+                      <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
+                        Current
+                      </span>
+                    )}
                   </CardTitle>
-                  <CardDescription className="text-[32px] font-bold text-[#282828]">
-                    {plan.description}
-                  </CardDescription>
+
+                  {/* Price row with responsive delimiter and clean spacing */}
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2 text-[18px] flex-wrap">
+                      {plan.monthlyPriceLabel && (
+                        <p className="font-bold text-[#282828]">
+                          {plan.monthlyPriceLabel}
+                        </p>
+                      )}
+
+                      {/* Delimiter only if both prices exist */}
+                      {plan.monthlyPriceLabel && plan.annualPriceLabel && (
+                        <span
+                          className="text-gray-400"
+                          aria-label="choose monthly or annual billing"
+                        >
+                          <span className="hidden sm:inline">/</span>
+                          <span className="inline sm:hidden">or</span>
+                        </span>
+                      )}
+
+                      {plan.annualPriceLabel && (
+                        <p className="font-bold text-[#282828]">
+                          {plan.annualPriceLabel}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
 
-                <CardContent className="flex-grow space-y-4 p-6 pt-0">
+                <CardContent className="flex-grow space-y-4 p-6 pt-4">
                   <h3 className="font-medium text-base text-[#8593A3]">
                     What you will get
                   </h3>
@@ -201,36 +427,28 @@ export default function PricingPage() {
                 </CardContent>
 
                 <CardFooter className="p-6 pt-0">
-                  {isCurrent ? (
-                    <Button
-                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold"
-                      variant="secondary"
-                      disabled
-                    >
-                      Current plan
-                    </Button>
-                  ) : (
-                    <Button
-                      className="h-[58px] w-full rounded-[80px] text-lg font-semibold text-[#8593A3]"
-                      variant="outline"
-                      onClick={() => handlePlanSelect(plan)}
-                    >
-                      {plan.buttonText}
-                    </Button>
-                  )}
+                  <Button
+                    className="h-[58px] w-full rounded-[80px] text-lg font-semibold border-2 border-[#2B7FD0] bg-transparent text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    variant="outline"
+                    onClick={() => handlePlanSelect(plan)}
+                    disabled={isCurrent}
+                  >
+                    {isCurrent ? "Current Plan" : plan.buttonText}
+                  </Button>
                 </CardFooter>
               </Card>
             );
           })}
         </div>
-      </div>
 
-      <PaymentMethodModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        price={selectedPrice || ""}
-        planId={selectedPlan?.planId || ""}
-      />
+        {/* Payment Method Modal */}
+        <PaymentMethodModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          price={selectedPrice || "0.00"}
+          planId={selectedPlanIdForPayment}
+        />
+      </div>
     </div>
   );
 }

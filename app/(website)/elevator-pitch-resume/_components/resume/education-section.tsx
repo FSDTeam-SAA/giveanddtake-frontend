@@ -295,10 +295,12 @@ export function EducationSection({
   const [selectedEducationCountries, setSelectedEducationCountries] = useState<
     string[]
   >([]);
-  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>([]);
-  const [loadingEducationCities, setLoadingEducationCities] = useState<boolean[]>(
+  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>(
     []
   );
+  const [loadingEducationCities, setLoadingEducationCities] = useState<
+    boolean[]
+  >([]);
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -446,16 +448,14 @@ export function EducationSection({
                           <SelectValue placeholder="Select a degree" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Bachelor">
-                            Bachelor's Degree
-                          </SelectItem>
-                          <SelectItem value="Master">
-                            Master's Degree
-                          </SelectItem>
-                          <SelectItem value="PHD">PhD</SelectItem>
-                          <SelectItem value="Associate">
-                            Associate Degree
-                          </SelectItem>
+                          <SelectItem value="BSc.">BSc.</SelectItem>
+                          <SelectItem value="B.Tech.">B.Tech.</SelectItem>
+                          <SelectItem value="B.A">B.A</SelectItem>
+                          <SelectItem value="B.Ed.">B.Ed.</SelectItem>
+                          <SelectItem value="M.B.A.">M.B.A.</SelectItem>
+                          <SelectItem value="MSc.">MSc.</SelectItem>
+                          <SelectItem value="M.Phil.">M.Phil.</SelectItem>
+                          <SelectItem value="Ph.D">Ph.D</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -463,6 +463,7 @@ export function EducationSection({
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name={`educationList.${index}.fieldOfStudy`}

@@ -128,13 +128,16 @@ interface ApiResponse {
 }
 
 const degreeLabels: Record<string, string> = {
-  bachelor: "Bachelor's Degree",
-  master: "Master's Degree",
-  phd: "PhD",
-  associate: "Associate Degree",
-  diploma: "Diploma",
-  certificate: "Certificate",
+  bsc: "BSc.",
+  btech: "B.Tech.",
+  ba: "B.A",
+  bed: "B.Ed.",
+  mba: "M.B.A.",
+  msc: "MSc.",
+  mphil: "M.Phil.",
+  phd: "Ph.D",
 };
+
 
 const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
@@ -547,7 +550,7 @@ export default function ApplicantDetailsPage() {
 
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="flex items-start gap-6">
+            <div className="md:flex  gap-6 ">
               <div className="h-[170px] w-[170px] overflow-hidden">
                 <Image
                   src={resume?.photo || "/placeholder.svg"}
@@ -559,11 +562,9 @@ export default function ApplicantDetailsPage() {
               </div>
 
               <div className="flex-1">
-                <div className="flex items-start justify-between">
+                <div className="md:flex items-start justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {resume.title.charAt(0).toUpperCase() +
-                        resume.title.slice(1)}{" "}
                       {resume.firstName} {resume.lastName}
                     </h1>
                     <div className="space-y-1 text-gray-600 mb-4">
@@ -718,7 +719,7 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {awardsAndHonors.length > 0 && (
+        {awardsAndHonors.length > 0 && awardsAndHonors[0].title && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Awards & Honors</CardTitle>

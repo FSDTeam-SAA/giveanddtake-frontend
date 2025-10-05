@@ -101,28 +101,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
       .slice(0, 2);
   };
 
-  // const formatDate = (dateString: string) => {
-  //   const date = new Date(dateString);
-  //   const now = new Date();
-  //   const diffTime = Math.abs(now.getTime() - date.getTime());
-  //   const diffMinutes = Math.floor(diffTime / (1000 * 60));
-  //   const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  //   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  //   if (diffMinutes < 60)
-  //     return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-  //   if (diffHours < 24)
-  //     return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-  //   if (diffDays === 1) return `1 day ago`;
-  //   if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-  //   if (diffDays < 30)
-  //     return `${Math.ceil(diffDays / 7)} week${
-  //       Math.ceil(diffDays / 7) === 1 ? "" : "s"
-  //     } ago`;
-  //   return `${Math.ceil(diffDays / 30)} month${
-  //     Math.ceil(diffDays / 30) === 1 ? "" : "s"
-  //   } ago`;
-  // };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -154,9 +133,6 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     postedByType = "company";
     postedByData = { companyId: job.companyId };
   }
-
-  // Log the appropriate data
-  console.log(postedByData);
 
   const CompanyAvatar = () => (
     <div className="relative shrink-0">

@@ -452,7 +452,6 @@ export default function CompanyProfilePage() {
                   <JobCard
                     key={job._id}
                     job={job}
-                    onSelect={() => setSelectedJobId(job._id)}
                     variant="list"
                   />
                 ))}

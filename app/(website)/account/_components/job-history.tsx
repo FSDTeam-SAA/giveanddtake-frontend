@@ -206,7 +206,7 @@ export default function JobHistory() {
                       className={cn(index % 2 === 1 ? "bg-gray-50" : "")}
                     >
                       <TableCell className="font-medium">
-                        {application.jobId.title}
+                        {application.jobId?.title}
                       </TableCell>
                       <TableCell>Arrex Digital</TableCell>{" "}
                       {/* Hardcoded as per image, no company name in API */}

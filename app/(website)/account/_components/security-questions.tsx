@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,62 +10,74 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 
 interface SecurityQuestionsProps {
   onBack: () => void;
   onComplete: (token: string) => void;
 }
 
+interface SecurityQuestion {
+  question: string;
+  answer: string;
+  _id: string;
+}
+
+interface SingleUserResponse {
+  success: boolean;
+  data: {
+    id: string;
+    securityQuestions: SecurityQuestion[];
+  };
+}
+
 export function SecurityQuestions({
   onBack,
   onComplete,
 }: SecurityQuestionsProps) {
-  const [questions, setQuestions] = useState<string[]>([]);
-  const [answers, setAnswers] = useState<string[]>(["", "", "", "", ""]);
+  const [questions, setQuestions] = useState<SecurityQuestion[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const session = useSession();
-
+  const token = session.data?.accessToken;
   const userEmail = session.data?.user?.email;
 
-  // Fetch security questions from API
+  // Fetch user data including security questions
+  const { data: singleUser } = useQuery<SingleUserResponse, Error>({
+    queryKey: ["single-user"],
+    queryFn: async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/single`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: "no-store",
+      });
+      if (!response.ok)
+        throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    },
+    enabled: !!token,
+    retry: 1,
+  });
+
+  // Set questions from user data when available
   useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL}/default-security-questions`
-        );
-        const data = await response.json();
-
-        if (data.success) {
-          // Take first 5 questions or all available questions
-          const availableQuestions = data.date || data.data || [];
-          setQuestions(availableQuestions.slice(0, 5));
-        } else {
-          throw new Error(data.message || "Failed to fetch questions");
-        }
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : "Failed to load security questions";
-        setError(errorMessage);
-        toast.error(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuestions();
-  }, []);
+    if (singleUser?.data?.securityQuestions) {
+      setQuestions(singleUser.data.securityQuestions);
+      // Initialize answers array with empty strings
+      setAnswers(new Array(singleUser.data.securityQuestions.length).fill(""));
+      setLoading(false);
+    } else if (singleUser && !singleUser.data.securityQuestions) {
+      setError("No security questions found for your account.");
+      setLoading(false);
+    }
+  }, [singleUser]);
 
   // Handle answer change for specific question
   const handleAnswerChange = (index: number, value: string) => {
@@ -73,8 +85,6 @@ export function SecurityQuestions({
     updatedAnswers[index] = value;
     setAnswers(updatedAnswers);
   };
-
-  // Handle email change
 
   // Handle form submission - verify security answers
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,11 +96,6 @@ export function SecurityQuestions({
       toast.error("Please answer all security questions");
       return;
     }
-
-    // Prepare answers array (only the answers, not question-answer pairs)
-    const answersArray = answers
-      .slice(0, questions.length)
-      .map((answer) => answer.trim());
 
     setSubmitting(true);
 
@@ -104,7 +109,7 @@ export function SecurityQuestions({
           },
           body: JSON.stringify({
             email: userEmail,
-            answers: answersArray,
+            answers: answers,
           }),
         }
       );
@@ -143,7 +148,7 @@ export function SecurityQuestions({
       <Card className="border-0 shadow-none">
         <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading questions...</span>
+          <span className="ml-2">Loading security questions...</span>
         </CardContent>
       </Card>
     );
@@ -175,14 +180,14 @@ export function SecurityQuestions({
       </div>
       <div>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Security Questions */}
-          {questions.map((question, index) => (
-            <div key={index} className="space-y-2">
+          {/* User's Security Questions */}
+          {questions.map((questionObj, index) => (
+            <div key={questionObj._id} className="space-y-2">
               <Label
                 htmlFor={`question-${index}`}
                 className="text-sm font-medium text-blue-600"
               >
-                {question}
+                {questionObj.question}
               </Label>
               <Input
                 id={`question-${index}`}
