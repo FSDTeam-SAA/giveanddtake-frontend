@@ -290,10 +290,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               )}
             </div>
 
-            <h2 className="text-xl font-bold mt-3">
-              <p className="text-gray-600">
+            <h2 className="text-2xl md:text-3xl font-bold mt-3">
                 {resume.firstName} {resume.lastName}
-              </p>
             </h2>
 
             <p className="text-gray-600 flex items-center">
@@ -321,7 +319,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           {/* About */}
           <div className="col-span-7 lg:mt-[60px]">
             <div className="flex items-center justify-between border-b-2 pb-2">
-              <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+              <h3 className="text-2xl md:text-[40px] font-semibold text-gray-800 mb-3">
                 About
               </h3>
               {userId ? (
@@ -353,7 +351,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
         {/* Skills */}
         <section className="border-b py-12">
-          <h3 className="text-2xl font-semibold mb-3">Skills</h3>
+          <h3 className="text-2xl md:text-[40px] font-semibold mb-4">Skills</h3>
           <div className="flex flex-wrap gap-2">
             {resume.skills?.length ? (
               resume.skills.map((skill, idx) => (
@@ -373,7 +371,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         {/* Experience (show all) */}
         {sortedExperiences.length > 0 && (
           <section className="border-b py-6">
-            <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+            <h3 className="text-2xl md:text-[40px] font-semibold mb-4 text-[#131313]">
               Experience
             </h3>
 
@@ -384,7 +382,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                 }`;
                 return (
                   <div key={exp._id} className="flex gap-4 items-start">
-                    <div>
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
                       <Briefcase className="text-blue-600 w-8 h-8" />
                     </div>
                     <div className="flex-1">
@@ -425,7 +423,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
         {/* Education (show all) */}
         <section className="border-b py-6">
-          <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+          <h3 className="text-2xl md:text-[40px] font-semibold mb-4 text-[#131313]">
             Education
           </h3>
 
@@ -447,7 +445,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                       className="flex gap-4 items-start sm:items-center"
                     >
                       <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
-                        <GraduationCap className="text-blue-600 w-7 h-7 sm:w-8 sm:h-8" />
+                        <GraduationCap className="text-blue-600 w-8 h-8 sm:w-8 sm:h-8" />
                       </div>
 
                       <div className="flex-1">
@@ -482,7 +480,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         {/* Awards (show all) */}
         {sortedAwards.length > 0 && sortedAwards[0].title && (
           <section className="py-6">
-            <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+            <h3 className="text-2xl md:text-[40px] font-semibold mb-3 text-[#131313]">
               Awards & Honours
             </h3>
 
