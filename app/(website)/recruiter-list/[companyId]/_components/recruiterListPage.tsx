@@ -227,7 +227,7 @@ export default function RecruiterListPage({
     return <div className="p-6 container mx-auto">Error: {error.message}</div>;
 
   return (
-    <div className="p-6 container mx-auto">
+    <div className="p-6 container mx-auto pb-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
         <Link href="/elevator-pitch-resume">
           <Button variant="ghost" size="icon" className="text-gray-500">

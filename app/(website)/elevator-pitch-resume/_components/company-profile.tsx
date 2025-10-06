@@ -438,7 +438,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const services = companyData.companies[0].service || [];
 
   return (
-    <div className="container mx-auto p-6 space-y-8 bg-white">
+    <div className="container mx-auto p-6 space-y-8 bg-white pb-16">
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-6 shadow-md border relative">
         <div className="flex flex-col md:flex-row items-start gap-6">

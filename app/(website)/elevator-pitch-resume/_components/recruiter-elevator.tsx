@@ -252,7 +252,7 @@ export default function RecruiterElevator({
       <div className="lg:space-y-8 space-y-4 py-8">
         <h2 className="text-xl lg:text-2xl font-bold">About Us</h2>
         <div
-          className="text-gray-600 text-sm text-start"
+          className="text-gray-600 text-sm text-start pb-8"
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(
               recruiter?.bio ||

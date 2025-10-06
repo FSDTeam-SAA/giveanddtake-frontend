@@ -201,21 +201,21 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
 
   return (
     <main className="min-h-screen">
-      <div className="container">
-        <div>
+      <div className="lg:container lg:mx-auto lg:px-6">
+        <div className="w-full h-[150px] md:h-[300px]">
           {resume.resume.banner ? (
             <Image
               src={resume.resume.banner}
               alt="Resume Header Background"
               width={1200}
               height={300}
-              className="w-full h-48 object-cover"
+              className="w-full h-[150px] md:h-[300px] object-cover"
             />
           ) : (
             <div className="w-full h-48 bg-gray-200 rounded-t-lg" />
           )}
         </div>
-        <Card className="border-0">
+        <Card className="container mx-auto border-0 mb-16">
           <CardContent className="p-0">
             <div className="flex flex-col lg:flex-row border-b-2 mt-[-20px] pb-4 gap-6 sm:px-6">
               <div className="lg:w-1/3 w-full">
