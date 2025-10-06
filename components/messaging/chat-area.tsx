@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -11,14 +16,29 @@ import { Send, Smile, ArrowLeft } from "lucide-react";
 import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import type { ChatMessage, PagedMessages } from "./messaging";
+import Link from "next/link";
 
 interface ChatAreaProps {
   roomId: string;
   userId?: string;
   socket?: Socket;
   roomName: string;
+  userRole?: string;
   roomAvatarUrl?: string;
   onBackToList?: () => void;
+}
+
+interface SideUser {
+  _id: string;
+}
+interface MessageRoom {
+  _id: string;
+  userId: SideUser;
+  messsageAccepted: boolean;
+  lastMessage: string;
+  lastMessageSender?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export function ChatArea({
@@ -27,6 +47,7 @@ export function ChatArea({
   socket,
   onBackToList,
   roomName,
+  userRole,
   roomAvatarUrl,
 }: ChatAreaProps) {
   const [message, setMessage] = useState("");
@@ -36,7 +57,25 @@ export function ChatArea({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
 
-  const senderIdOf = (u: ChatMessage["userId"]) => (typeof u === "string" ? u : u?._id ?? "");
+  const { data: rooms = [] } = useQuery<MessageRoom[]>({
+    queryKey: ["message-rooms", userId, userRole],
+    queryFn: async () => {
+      if (!userId || !userRole) return [];
+      const response = await fetch(
+        `/api/message-room/get-message-rooms?type=${userRole}&userId=${userId}`
+      );
+      const data = await response.json();
+      return data.success ? (data.data as MessageRoom[]) : [];
+    },
+    enabled: !!userId && !!userRole,
+    staleTime: 10_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const candidateId = rooms[0]?.userId?._id;
+
+  const senderIdOf = (u: ChatMessage["userId"]) =>
+    typeof u === "string" ? u : u?._id ?? "";
 
   const isNearBottom = () => {
     const el = messagesContainerRef.current;
@@ -55,9 +94,12 @@ export function ChatArea({
     useInfiniteQuery<PagedMessages>({
       queryKey: ["messages", roomId],
       queryFn: async ({ pageParam = 1 }) => {
-        const response = await fetch(`/api/message/${roomId}?page=${pageParam}&limit=20`);
+        const response = await fetch(
+          `/api/message/${roomId}?page=${pageParam}&limit=20`
+        );
         const json = await response.json();
-        if (!json?.success) return { data: [], meta: { page: 1, totalPages: 1 } };
+        if (!json?.success)
+          return { data: [], meta: { page: 1, totalPages: 1 } };
         return json as PagedMessages;
       },
       getNextPageParam: (lastPage) => {
@@ -78,7 +120,8 @@ export function ChatArea({
   useEffect(() => {
     if (!socket || !roomId) return;
 
-    if (currentRoom && currentRoom !== roomId) socket.emit("leaveRoom", currentRoom);
+    if (currentRoom && currentRoom !== roomId)
+      socket.emit("leaveRoom", currentRoom);
     socket.emit("joinRoom", roomId);
     setCurrentRoom(roomId);
 
@@ -90,15 +133,25 @@ export function ChatArea({
 
       queryClient.setQueryData(
         ["messages", roomId],
-        (oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined) => {
+        (
+          oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined
+        ) => {
           if (!oldData) {
-            return { pages: [{ data: [newMessage], meta: { page: 1, totalPages: 1 } }], pageParams: [1] };
+            return {
+              pages: [{ data: [newMessage], meta: { page: 1, totalPages: 1 } }],
+              pageParams: [1],
+            };
           }
-          const exists = oldData.pages.some((pg) => pg.data.some((m) => m._id === newMessage._id));
+          const exists = oldData.pages.some((pg) =>
+            pg.data.some((m) => m._id === newMessage._id)
+          );
           if (exists) return oldData;
 
           const pages = [...oldData.pages];
-          const first = pages[0] ?? { data: [], meta: { page: 1, totalPages: 1 } };
+          const first = pages[0] ?? {
+            data: [],
+            meta: { page: 1, totalPages: 1 },
+          };
           pages[0] = { ...first, data: [newMessage, ...first.data] }; // newest page prepend
           return { ...oldData, pages };
         }
@@ -126,12 +179,20 @@ export function ChatArea({
   const appendLocalMessage = (created: ChatMessage) => {
     queryClient.setQueryData(
       ["messages", roomId],
-      (oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined) => {
+      (
+        oldData: { pages: PagedMessages[]; pageParams: unknown[] } | undefined
+      ) => {
         if (!oldData) {
-          return { pages: [{ data: [created], meta: { page: 1, totalPages: 1 } }], pageParams: [1] };
+          return {
+            pages: [{ data: [created], meta: { page: 1, totalPages: 1 } }],
+            pageParams: [1],
+          };
         }
         const pages = [...oldData.pages];
-        const first = pages[0] ?? { data: [], meta: { page: 1, totalPages: 1 } };
+        const first = pages[0] ?? {
+          data: [],
+          meta: { page: 1, totalPages: 1 },
+        };
         pages[0] = { ...first, data: [created, ...first.data] };
         return { ...oldData, pages };
       }
@@ -141,11 +202,15 @@ export function ChatArea({
 
   const sendMessageMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch("/api/message", { method: "POST", body: formData });
+      const response = await fetch("/api/message", {
+        method: "POST",
+        body: formData,
+      });
       return response.json();
     },
     onSuccess: (resp) => {
-      if (resp?.success && resp?.data) appendLocalMessage(resp.data as ChatMessage);
+      if (resp?.success && resp?.data)
+        appendLocalMessage(resp.data as ChatMessage);
       else toast.error(resp?.message || "Failed to send message.");
       setMessage("");
       setFiles([]);
@@ -184,23 +249,44 @@ export function ChatArea({
       {/* Header */}
       <div className="p-4 border-b bg-white flex items-center">
         {onBackToList && (
-          <Button variant="ghost" size="sm" onClick={onBackToList} className="mr-3 p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBackToList}
+            className="mr-3 p-2"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
         )}
-        <Avatar className="w-10 h-10">
-          <AvatarImage
-            src={roomAvatarUrl || `/placeholder.svg?height=40&width=40&text=${roomName?.charAt(0) || "U"}`}
-          />
-          <AvatarFallback>{roomName?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div className="ml-3 flex-1 min-w-0">
-          <h2 className="font-semibold truncate">{roomName || "Conversation"}</h2>
-        </div>
+        <Link
+          href={`/candidates-profile/${candidateId}`}
+          className="flex items-center"
+        >
+          <Avatar className="w-10 h-10">
+            <AvatarImage
+              src={
+                roomAvatarUrl ||
+                `/placeholder.svg?height=40&width=40&text=${
+                  roomName?.charAt(0) || "U"
+                }`
+              }
+            />
+            <AvatarFallback>{roomName?.charAt(0) || "U"}</AvatarFallback>
+          </Avatar>
+          <div className="ml-3 flex-1 min-w-0">
+            <h2 className="font-semibold truncate">
+              {roomName || "Conversation"}
+            </h2>
+          </div>
+        </Link>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" onScroll={handleScroll} ref={messagesContainerRef}>
+      <div
+        className="flex-1 overflow-y-auto p-4 space-y-4"
+        onScroll={handleScroll}
+        ref={messagesContainerRef}
+      >
         {isFetchingNextPage && (
           <div className="flex justify-center py-2">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
@@ -209,7 +295,8 @@ export function ChatArea({
 
         {allMessages.map((msg, index) => {
           const currSender = senderIdOf(msg.userId);
-          const prevSender = index > 0 ? senderIdOf(allMessages[index - 1].userId) : "";
+          const prevSender =
+            index > 0 ? senderIdOf(allMessages[index - 1].userId) : "";
           return (
             <MessageBubble
               key={msg._id}
@@ -235,14 +322,23 @@ export function ChatArea({
                 className="flex-1 text-base"
                 disabled={sendMessageMutation.isPending}
               />
-              <Button type="button" variant="ghost" size="sm" className="p-2 flex-shrink-0" title="Emoji">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="p-2 flex-shrink-0"
+                title="Emoji"
+              >
                 <Smile className="w-4 h-4" />
               </Button>
             </div>
           </div>
           <Button
             type="submit"
-            disabled={sendMessageMutation.isPending || (!message.trim() && files.length === 0)}
+            disabled={
+              sendMessageMutation.isPending ||
+              (!message.trim() && files.length === 0)
+            }
             className="bg-primary hover:bg-blue-700 flex-shrink-0"
             size="sm"
             aria-label="Send"
