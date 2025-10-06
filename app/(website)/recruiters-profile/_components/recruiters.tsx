@@ -335,10 +335,10 @@ export default function Recruiters({ userId }: MydataProps) {
     !myId;
 
   return (
-    <div className="container mx-auto px-6">
+    <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
       <div
-        className={`relative w-full h-[300px] ${
+        className={`relative w-full h-[150px] md:h-[300px] ${
           recruiterData.banner ? "" : "bg-gray-200"
         }`}
       >
@@ -353,136 +353,140 @@ export default function Recruiters({ userId }: MydataProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] px-6">
-        {/* Profile Section */}
-        <div className="col-span-1 md:col-span-4 space-y-4">
-          <div className="relative w-[170px] h-[170px]">
-            {recruiterData.photo ? (
-              <Image
-                src={recruiterData.photo}
-                alt={`${recruiterData.firstName} ${recruiterData.lastName}`}
-                fill
-                className="rounded-md object-cover"
+      <div className="container mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] md:px-6">
+          {/* Profile Section */}
+          <div className="col-span-1 md:col-span-4 space-y-4">
+            <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gray-200 rounded-md">
+              {recruiterData.photo ? (
+                <Image
+                  src={recruiterData.photo}
+                  alt={`${recruiterData.firstName} ${recruiterData.lastName}`}
+                  fill
+                  className="rounded-md object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
+                  <span className="text-gray-500">No Photo</span>
+                </div>
+              )}
+            </div>
+            <div>
+              <div className="py-2">
+                <h1 className="text-2xl font-bold">
+                  {recruiterData.firstName} {recruiterData.sureName}{" "}
+                  {recruiterData.lastName}
+                </h1>
+                <p className="text-lg text-gray-600">{recruiterData.title}</p>
+                <p className="text-gray-700 flex items-center">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  {recruiterData.country}, {recruiterData.city},
+                </p>
+              </div>
+              <div className="flex space-x-2 mt-2">
+                <div>
+                  <SocialLinks sLink={recruiterData.sLink} />
+                </div>
+              </div>
+            </div>
+
+            {/* Follow / Unfollow with count */}
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => toggleFollowMutation.mutate()}
+                className={`${
+                  isFollowing
+                    ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                    : "bg-blue-600 hover:bg-blue-700"
+                } transition-colors`}
+                aria-label={isFollowing ? "Unfollow" : "Follow"}
+                title={!myId ? "Sign in to follow" : undefined}
+              >
+                {followBusy
+                  ? "Please wait…"
+                  : isFollowing
+                  ? "Unfollow"
+                  : "Follow"}
+              </Button>
+
+              {(followInfo?.count ?? 0) > 0 && (
+                <span className="text-sm text-gray-600">
+                  {followersCount} follower{followersCount === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* About */}
+          <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
+            <div className="flex items-center justify-between border-b-2 pb-2">
+              <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+                About
+              </h3>
+              {userId ? (
+                <CandidateSharePopover
+                  userId={userId}
+                  role="recruiters-profile"
+                  title={`${recruiterData.firstName} ${
+                    recruiterData.lastName
+                  } — ${recruiterData.title ?? "Candidate"}`}
+                  summary={
+                    recruiterData.bio
+                      ? recruiterData.bio.replace(/<[^>]*>/g, "").slice(0, 180)
+                      : ""
+                  }
+                />
+              ) : null}
+            </div>
+
+            <div>
+              <p
+                className="text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: recruiterData.bio || "No description provided",
+                }}
               />
-            ) : (
-              <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                <span className="text-gray-500">No Photo</span>
-              </div>
-            )}
-          </div>
-          <div>
-            <div className="py-2">
-              <h1 className="text-2xl font-bold">
-                {recruiterData.firstName} {recruiterData.sureName}{" "}
-                {recruiterData.lastName}
-              </h1>
-              <p className="text-lg text-gray-600">{recruiterData.title}</p>
-              <p className="text-gray-700 flex items-center">
-                <MapPin className="w-4 h-4 mr-1" />
-                {recruiterData.country}, {recruiterData.city},
-              </p>
-            </div>
-            <div className="flex space-x-2 mt-2">
-              <div>
-                <SocialLinks sLink={recruiterData.sLink} />
-              </div>
             </div>
           </div>
+        </div>
 
-          {/* Follow / Unfollow with count */}
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => toggleFollowMutation.mutate()}
-              className={`${
-                isFollowing
-                  ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                  : "bg-blue-600 hover:bg-blue-700"
-              } transition-colors`}
-              aria-label={isFollowing ? "Unfollow" : "Follow"}
-              title={!myId ? "Sign in to follow" : undefined}
-            >
-              {followBusy
-                ? "Please wait…"
-                : isFollowing
-                ? "Unfollow"
-                : "Follow"}
-            </Button>
+        {/* Elevator Pitch */}
+        {recruiterData?.elevatorPitch && (
+          <div className="lg:py-12 pb-5">
+            <h2 className="text-xl lg:text-4xl font-bold text-center mb-4 md:mb-24">
+              Elevator Pitch
+            </h2>
+            <div className="rounded-lg">
+              <VideoPlayer
+                pitchId={recruiterData?.elevatorPitch._id}
+                className="w-full mx-auto"
+              />
+            </div>
+          </div>
+        )}
 
-            {(followInfo?.count ?? 0) > 0 && (
-              <span className="text-sm text-gray-600">
-                {followersCount} follower{followersCount === 1 ? "" : "s"}
+        <div className="border-t border-gray-300 mt-6" />
+
+        {/* Skills */}
+        <section className="mt-6 bg-white p-6 rounded-lg shadow mb-4">
+          <h2 className="text-xl font-semibold">Skills</h2>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {[
+              "UX/UI Design",
+              "Prototyping",
+              "User Testing",
+              "Design Systems",
+            ].map((skill) => (
+              <span
+                key={skill}
+                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+              >
+                {skill}
               </span>
-            )}
+            ))}
           </div>
-        </div>
-
-        {/* About */}
-        <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
-          <div className="flex items-center justify-between border-b-2 pb-2">
-            <h3 className="font-semibold text-gray-800 mb-3 text-2xl">About</h3>
-            {userId ? (
-              <CandidateSharePopover
-                userId={userId}
-                role="recruiters-profile"
-                title={`${recruiterData.firstName} ${
-                  recruiterData.lastName
-                } — ${recruiterData.title ?? "Candidate"}`}
-                summary={
-                  recruiterData.bio
-                    ? recruiterData.bio.replace(/<[^>]*>/g, "").slice(0, 180)
-                    : ""
-                }
-              />
-            ) : null}
-          </div>
-
-          <div>
-            <p
-              className="text-gray-600 leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: recruiterData.bio || "No description provided",
-              }}
-            />
-          </div>
-        </div>
+        </section>
       </div>
-
-      {/* Elevator Pitch */}
-      {recruiterData?.elevatorPitch && (
-        <div className="lg:py-12 pb-5">
-          <h2 className="text-xl lg:text-4xl font-bold text-center mb-24">
-            Elevator Pitch
-          </h2>
-          <div className="rounded-lg">
-            <VideoPlayer
-              pitchId={recruiterData?.elevatorPitch._id}
-              className="w-full mx-auto"
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="border-t border-gray-300 mt-6" />
-
-      {/* Skills */}
-      <section className="mt-6 bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold">Skills</h2>
-        <div className="flex flex-wrap gap-2 mt-2">
-          {[
-            "UX/UI Design",
-            "Prototyping",
-            "User Testing",
-            "Design Systems",
-          ].map((skill) => (
-            <span
-              key={skill}
-              className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }
