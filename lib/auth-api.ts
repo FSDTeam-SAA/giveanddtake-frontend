@@ -48,7 +48,7 @@ export interface VerifyResponse {
 export interface SecurityQuestionsResponse {
   success: boolean;
   message: string;
-  date: string[];
+  data: string[];
 }
 
 // Update the authAPI object with proper typing
