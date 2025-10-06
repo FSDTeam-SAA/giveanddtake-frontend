@@ -92,7 +92,7 @@ export async function fetchUsers(companyUserId?: string) {
 }
 
 export async function fetchCompanies() {
-  const url =`/all/companies`;
+  const url = `/all/companies`;
   const response = await apiClient.get(url);
   return response.data.data as User[];
 }

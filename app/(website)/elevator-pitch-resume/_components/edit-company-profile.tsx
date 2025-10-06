@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Check, ChevronsUpDown } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -19,12 +19,33 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { useSession } from "next-auth/react";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { SocialLinksSection } from "./social-links-section";
 import { useRouter } from "next/navigation";
+import CustomDateInput from "@/components/custom-date-input";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+
+// Types for countries and cities
+interface Country {
+  country: string;
+}
 
 // Fixed platforms for SocialLinksSection
 const FIXED_PLATFORMS = [
@@ -79,6 +100,31 @@ interface Honor {
   isDeleted?: boolean;
 }
 
+// API functions for countries and cities
+const fetchCountries = async (): Promise<Country[]> => {
+  const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+  const data = await response.json();
+  if (data.error) throw new Error("Failed to fetch countries");
+  return data.data as Country[];
+};
+
+const fetchCities = async (country: string): Promise<string[]> => {
+  if (!country) return [];
+  const response = await fetch(
+    "https://countriesnow.space/api/v0.1/countries/cities",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ country }),
+    }
+  );
+  const data = await response.json();
+  if (data.error) throw new Error("Failed to fetch cities");
+  return data.data as string[];
+};
+
 function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -98,6 +144,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     },
   ]);
   const [originalHonors, setOriginalHonors] = useState<Honor[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [cityOpen, setCityOpen] = useState(false);
 
   const router = useRouter();
 
@@ -120,6 +169,17 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
   const session = useSession();
   const token = session?.data?.accessToken || "";
+
+  const { data: countriesData = [], isLoading: isLoadingCountries } = useQuery({
+    queryKey: ["countries"],
+    queryFn: fetchCountries,
+  });
+
+  const { data: citiesData = [], isLoading: isLoadingCities } = useQuery({
+    queryKey: ["cities", selectedCountry],
+    queryFn: () => fetchCities(selectedCountry),
+    enabled: !!selectedCountry,
+  });
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -149,9 +209,14 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   useEffect(() => {
     if (companyData?.data?.companies?.[0]) {
       const company = companyData.data.companies[0];
+      console.log("Company data loaded:", company); // Debug log
 
-      // Map API sLink to fixed platforms
-      const sLink = FIXED_PLATFORMS.map((label) => {
+      if (company.country) {
+        setSelectedCountry(company.country);
+      }
+
+      // Process social links - ensure all fixed platforms are included
+      const processedSocialLinks = FIXED_PLATFORMS.map((label) => {
         const matchingLink = company.sLink?.find(
           (link: { label: string; url: string; _id: string }) =>
             link.label === label
@@ -164,6 +229,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         };
       });
 
+      console.log("Processed social links:", processedSocialLinks); // Debug log
+      console.log("AboutUs content:", company.aboutUs); // Debug log
+
+      // Reset form with all data including aboutUs and sLink
       form.reset({
         cname: company.cname || "",
         country: company.country || "",
@@ -172,11 +241,13 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         cemail: company.cemail || "",
         cPhoneNumber: company.cPhoneNumber || "",
         aboutUs: company.aboutUs || "",
-        sLink,
+        sLink: processedSocialLinks,
       });
 
       if (company.service && company.service.length > 0) {
         setServices(company.service);
+      } else {
+        setServices([""]);
       }
 
       if (company.employeesId) {
@@ -200,6 +271,19 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       );
       setHonors(loadedHonors);
       setOriginalHonors([...loadedHonors]);
+    } else {
+      // Reset honors if none exist
+      setHonors([
+        {
+          id: "1",
+          title: "",
+          issuer: "",
+          programeDate: "",
+          description: "",
+          isNew: true,
+        },
+      ]);
+      setOriginalHonors([]);
     }
   }, [companyData, form]);
 
@@ -358,7 +442,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       const allHonors = [...processedHonors, ...deletedHonors];
 
-      // Process social links
       const originalSLinks = companyData?.data?.companies[0]?.sLink || [];
       const processedSocialLinks = data.sLink.map((link) => {
         const originalLink = originalSLinks.find(
@@ -419,7 +502,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 <div className="aspect-[4/1]">
                   <FileUpload
                     onFileSelect={setBannerFile}
-                    defaultUrl={companyData.data.companies[0].banner}
+                    defaultUrl={companyData?.data?.companies?.[0]?.banner}
                     accept="image/*"
                     className="h-full"
                   >
@@ -438,7 +521,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   <div className="aspect-square">
                     <FileUpload
                       onFileSelect={setLogoFile}
-                      defaultUrl={companyData.data.companies[0].clogo}
+                      defaultUrl={companyData?.data?.companies?.[0]?.clogo}
                       accept="image/*"
                       className="h-full"
                     >
@@ -493,13 +576,67 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     control={form.control}
                     name="country"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel className="text-sm font-medium text-gray-900">
                           Country*
                         </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter Country" />
-                        </FormControl>
+                        <Popover
+                          open={countryOpen}
+                          onOpenChange={setCountryOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={countryOpen}
+                                className={cn(
+                                  "w-full justify-between font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value || "Select a country"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search country..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  {isLoadingCountries
+                                    ? "Loading countries..."
+                                    : "No country found."}
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {countriesData?.map((country: Country) => (
+                                    <CommandItem
+                                      key={country.country}
+                                      value={country.country}
+                                      onSelect={(value) => {
+                                        field.onChange(value);
+                                        setSelectedCountry(value);
+                                        form.setValue("city", "");
+                                        setCountryOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === country.country
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {country.country}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -509,13 +646,63 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     control={form.control}
                     name="city"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="flex flex-col">
                         <FormLabel className="text-sm font-medium text-gray-900">
                           City*
                         </FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="Enter City" />
-                        </FormControl>
+                        <Popover open={cityOpen} onOpenChange={setCityOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={cityOpen}
+                                disabled={!selectedCountry}
+                                className={cn(
+                                  "w-full justify-between font-normal",
+                                  !field.value && "text-muted-foreground"
+                                )}
+                              >
+                                {field.value || "Select a city"}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search city..." />
+                              <CommandList>
+                                <CommandEmpty>
+                                  {isLoadingCities
+                                    ? "Loading cities..."
+                                    : "No city found."}
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {citiesData?.map((city: string) => (
+                                    <CommandItem
+                                      key={city}
+                                      value={city}
+                                      onSelect={(value) => {
+                                        field.onChange(value);
+                                        setCityOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          field.value === city
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        )}
+                                      />
+                                      {city}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -585,7 +772,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 </div>
               </div>
 
-              {/* Social Links Section */}
               <SocialLinksSection form={form} />
 
               <div className="space-y-4">
@@ -626,6 +812,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   onClick={addService}
                   className="flex items-center gap-2 bg-transparent"
                 >
+                  <Plus className="h-4 w-4" />
                   Add more
                 </Button>
               </div>
@@ -723,16 +910,12 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                               <Label className="text-sm font-medium text-gray-700">
                                 Award Date
                               </Label>
-                              <Input
-                                type="date"
+                              <CustomDateInput
                                 value={honor.programeDate}
-                                onChange={(e) =>
-                                  updateHonor(
-                                    honor.id,
-                                    "programeDate",
-                                    e.target.value
-                                  )
+                                onChange={(value) =>
+                                  updateHonor(honor.id, "programeDate", value)
                                 }
+                                placeholder="MM/YYYY"
                               />
                             </div>
                           </div>

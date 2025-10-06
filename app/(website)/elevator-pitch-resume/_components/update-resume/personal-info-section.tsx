@@ -16,8 +16,8 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
+  CommandInput,
   CommandList,
 } from "@/components/ui/command";
 import {
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PersonalInfoSectionProps {
   form: UseFormReturn<any>;
@@ -78,7 +79,7 @@ export const PersonalInfoSection = ({
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name*</FormLabel>
+                <FormLabel>Sur Name*</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} />
                 </FormControl>
@@ -105,18 +106,18 @@ export const PersonalInfoSection = ({
           />
           <FormField
             control={form.control}
-            name="phone"
+            name="phoneNumber"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Phone*</FormLabel>
                 <FormControl>
-                  <Input placeholder="+1 234 567 8900" {...field} />
+                  <Input placeholder="+1 234 567 8900" disabled {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <FormField
+          {/* <FormField
             control={form.control}
             name="title"
             render={({ field }) => (
@@ -128,7 +129,7 @@ export const PersonalInfoSection = ({
                 <FormMessage />
               </FormItem>
             )}
-          />
+          /> */}
           <FormField
             control={form.control}
             name="country"
@@ -257,13 +258,36 @@ export const PersonalInfoSection = ({
           />
           <FormField
             control={form.control}
-            name="zip"
+            name="zipCode"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Zip Code</FormLabel>
                 <FormControl>
                   <Input placeholder="12345" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Immediately Available Checkbox */}
+          <FormField
+            control={form.control}
+            name="immediatelyAvailable"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Immediately Available</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Check this if you can start work immediately
+                  </p>
+                </div>
                 <FormMessage />
               </FormItem>
             )}

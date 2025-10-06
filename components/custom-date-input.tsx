@@ -1,9 +1,119 @@
+// "use client";
+
+// import type React from "react";
+
+// import { Input } from "@/components/ui/input";
+// import { forwardRef, type KeyboardEvent } from "react";
+
+// interface CustomDateInputProps {
+//   value?: string;
+//   onChange?: (value: string) => void;
+//   placeholder?: string;
+//   disabled?: boolean;
+//   className?: string;
+// }
+
+// const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
+//   (
+//     {
+//       value = "",
+//       onChange,
+//       placeholder = "MMYYYY",
+//       disabled,
+//       className,
+//       ...props
+//     },
+//     ref
+//   ) => {
+//     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+//       const input = e.currentTarget;
+//       const cursorPosition = input.selectionStart || 0;
+
+//       // Allow backspace to delete the slash
+//       if (e.key === "Backspace") {
+//         if (cursorPosition === 3 && value.charAt(2) === "/") {
+//           // If cursor is right after the slash, delete the slash and the digit before it
+//           const newValue = value.slice(0, 1) + value.slice(3);
+//           onChange?.(newValue);
+//           e.preventDefault();
+//           setTimeout(() => {
+//             input.setSelectionRange(1, 1);
+//           }, 0);
+//           return;
+//         }
+//       }
+
+//       // Allow only numbers, backspace, delete, arrow keys, tab
+//       if (
+//         !/[0-9]/.test(e.key) &&
+//         !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(
+//           e.key
+//         )
+//       ) {
+//         e.preventDefault();
+//       }
+//     };
+
+//     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+//       let inputValue = e.target.value.replace(/\D/g, ""); // Remove non-digits
+
+//       // Limit to 6 digits (MMYYYY)
+//       if (inputValue.length > 6) {
+//         inputValue = inputValue.slice(0, 6);
+//       }
+
+//       // Format as MM/YYYY
+//       let formattedValue = "";
+//       if (inputValue.length >= 1) {
+//         formattedValue = inputValue.slice(0, 2);
+//         if (inputValue.length > 2) {
+//           formattedValue += "/" + inputValue.slice(2, 6);
+//         }
+//       }
+
+//       // Validate month (01-12)
+//       if (formattedValue.length >= 2) {
+//         const month = Number.parseInt(formattedValue.slice(0, 2));
+//         if (month > 12) {
+//           formattedValue = "12" + formattedValue.slice(2);
+//         } else if (month === 0) {
+//           formattedValue = "01" + formattedValue.slice(2);
+//         }
+//       }
+
+//       onChange?.(formattedValue);
+//     };
+
+//     return (
+//       <Input
+//         {...props}
+//         ref={ref}
+//         value={value}
+//         onChange={handleChange}
+//         onKeyDown={handleKeyDown}
+//         placeholder={placeholder}
+//         maxLength={7}
+//         disabled={disabled}
+//         className={className}
+//       />
+//     );
+//   }
+// );
+
+// CustomDateInput.displayName = "CustomDateInput";
+
+// export default CustomDateInput;
+
 "use client";
 
-import type React from "react";
-
+import React, {
+  forwardRef,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Input } from "@/components/ui/input";
-import { forwardRef, type KeyboardEvent } from "react";
 
 interface CustomDateInputProps {
   value?: string;
@@ -13,89 +123,248 @@ interface CustomDateInputProps {
   className?: string;
 }
 
+const yearsRange = (from: number, to: number) => {
+  const arr: number[] = [];
+  for (let y = from; y <= to; y++) arr.push(y);
+  return arr;
+};
+
 const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
   (
     {
       value = "",
       onChange,
-      placeholder = "MMYYYY",
+      placeholder = "MM/YYYY",
       disabled,
       className,
       ...props
     },
     ref
   ) => {
+    const [open, setOpen] = useState(false);
+    const [internalValue, setInternalValue] = useState(value || "");
+    const [pickerMonth, setPickerMonth] = useState<number | null>(null);
+    const [pickerYear, setPickerYear] = useState<number | null>(null);
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      setInternalValue(value || "");
+    }, [value]);
+
+    useEffect(() => {
+      if (open) {
+        // initialize picker from value
+        const parts = (internalValue || "").split("/");
+        if (parts.length === 2) {
+          const m = Number(parts[0]);
+          const y = Number(parts[1]);
+          if (!Number.isNaN(m)) setPickerMonth(m);
+          if (!Number.isNaN(y)) setPickerYear(y);
+        }
+      }
+    }, [open]);
+
+    useEffect(() => {
+      const onDocClick = (e: MouseEvent) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(e.target as Node)
+        ) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("mousedown", onDocClick);
+      return () => document.removeEventListener("mousedown", onDocClick);
+    }, []);
+
+    const currentYear = new Date().getFullYear();
+    const years = yearsRange(currentYear - 80, currentYear + 10);
+
+    const clampMonth = (m: number) => {
+      if (m <= 0) return 1;
+      if (m > 12) return 12;
+      return m;
+    };
+
+    const formatFromDigits = (digits: string) => {
+      // digits contains only numbers, max 6 (MMYYYY)
+      if (digits.length === 0) return "";
+
+      // if user types a single digit > '1', treat it as month with leading zero -> e.g. '3' => '03'
+      if (digits.length === 1) {
+        const d = digits[0];
+        if (d > "1") {
+          digits = "0" + d; // auto prefix
+        }
+      }
+
+      let mm = digits.slice(0, 2);
+      let yyyy = digits.slice(2, 6);
+
+      if (mm.length === 2) {
+        let monthNum = Number(mm);
+        if (Number.isNaN(monthNum)) monthNum = 1;
+        monthNum = clampMonth(monthNum);
+        mm = monthNum.toString().padStart(2, "0");
+      }
+
+      let formatted = mm;
+      if (yyyy.length > 0) formatted += "/" + yyyy;
+      return formatted;
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      let inputDigits = e.target.value.replace(/\D/g, "");
+      if (inputDigits.length > 6) inputDigits = inputDigits.slice(0, 6);
+      const formatted = formatFromDigits(inputDigits);
+      setInternalValue(formatted);
+      onChange?.(formatted);
+    };
+
     const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      const allowed = ["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"];
+      // allow ctrl/cmd + A/C/V/X
+      if (e.ctrlKey || e.metaKey) return;
+
+      if (!/^[0-9]$/.test(e.key) && !allowed.includes(e.key)) {
+        e.preventDefault();
+      }
+
+      // special backspace behavior: if cursor just after slash, delete previous digit too
       const input = e.currentTarget;
       const cursorPosition = input.selectionStart || 0;
-
-      // Allow backspace to delete the slash
       if (e.key === "Backspace") {
-        if (cursorPosition === 3 && value.charAt(2) === "/") {
-          // If cursor is right after the slash, delete the slash and the digit before it
-          const newValue = value.slice(0, 1) + value.slice(3);
+        if (cursorPosition === 3 && internalValue.charAt(2) === "/") {
+          // remove the slash and the digit before
+          const newValue = internalValue.slice(0, 1) + internalValue.slice(3);
+          setInternalValue(newValue);
           onChange?.(newValue);
           e.preventDefault();
           setTimeout(() => {
             input.setSelectionRange(1, 1);
           }, 0);
-          return;
         }
-      }
-
-      // Allow only numbers, backspace, delete, arrow keys, tab
-      if (
-        !/[0-9]/.test(e.key) &&
-        !["Backspace", "Delete", "ArrowLeft", "ArrowRight", "Tab"].includes(
-          e.key
-        )
-      ) {
-        e.preventDefault();
       }
     };
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      let inputValue = e.target.value.replace(/\D/g, ""); // Remove non-digits
+    const openPicker = () => setOpen(true);
+    const closePicker = () => setOpen(false);
 
-      // Limit to 6 digits (MMYYYY)
-      if (inputValue.length > 6) {
-        inputValue = inputValue.slice(0, 6);
-      }
+    const applyPicker = () => {
+      if (pickerMonth == null || pickerYear == null) return;
+      const mm = String(clampMonth(pickerMonth)).padStart(2, "0");
+      const yyyy = String(pickerYear);
+      const newVal = `${mm}/${yyyy}`;
+      setInternalValue(newVal);
+      onChange?.(newVal);
+      setOpen(false);
+    };
 
-      // Format as MM/YYYY
-      let formattedValue = "";
-      if (inputValue.length >= 1) {
-        formattedValue = inputValue.slice(0, 2);
-        if (inputValue.length > 2) {
-          formattedValue += "/" + inputValue.slice(2, 6);
-        }
-      }
-
-      // Validate month (01-12)
-      if (formattedValue.length >= 2) {
-        const month = Number.parseInt(formattedValue.slice(0, 2));
-        if (month > 12) {
-          formattedValue = "12" + formattedValue.slice(2);
-        } else if (month === 0) {
-          formattedValue = "01" + formattedValue.slice(2);
-        }
-      }
-
-      onChange?.(formattedValue);
+    const clearValue = () => {
+      setInternalValue("");
+      onChange?.("");
     };
 
     return (
-      <Input
-        {...props}
-        ref={ref}
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        maxLength={7}
-        disabled={disabled}
-        className={className}
-      />
+      <div
+        ref={containerRef}
+        style={{ position: "relative", display: "inline-block" }}
+      >
+        <Input
+          {...props}
+          ref={ref}
+          value={internalValue}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={openPicker}
+          placeholder={placeholder}
+          maxLength={7}
+          disabled={disabled}
+          className={className}
+        />
+
+        {open && (
+          <div
+            role="dialog"
+            aria-modal="false"
+            style={{
+              position: "absolute",
+              zIndex: 9999,
+              top: "calc(100% + 6px)",
+              left: 0,
+              background: "white",
+              border: "1px solid rgba(0,0,0,0.08)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.08)",
+              padding: 12,
+              borderRadius: 8,
+              minWidth: 220,
+            }}
+          >
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <select
+                aria-label="Month"
+                value={pickerMonth ?? ""}
+                onChange={(ev) => setPickerMonth(Number(ev.target.value))}
+              >
+                <option value="">Month</option>
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <option key={i} value={i + 1}>
+                    {(i + 1).toString().padStart(2, "0")}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                aria-label="Year"
+                value={pickerYear ?? ""}
+                onChange={(ev) => setPickerYear(Number(ev.target.value))}
+              >
+                <option value="">Year</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: 8,
+                marginTop: 10,
+              }}
+            >
+              <button
+                type="button"
+                onClick={clearValue}
+                style={{ padding: "6px 10px" }}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={closePicker}
+                style={{ padding: "6px 10px" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={applyPicker}
+                style={{ padding: "6px 10px" }}
+              >
+                Apply
+              </button>
+            </div>
+
+            <div style={{ marginTop: 10, fontSize: 12, color: "#555" }}>
+              Tip: you can also type <code>MMYYYY</code> (digits only).
+            </div>
+          </div>
+        )}
+      </div>
     );
   }
 );

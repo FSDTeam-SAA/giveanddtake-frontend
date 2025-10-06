@@ -119,6 +119,9 @@ export default function JobDetailsStep({
     useState<boolean>(false);
   const [currenciesError, setCurrenciesError] = useState<string | null>(null);
 
+  // Track if job title was auto-filled
+  const [isJobTitleAutoFilled, setIsJobTitleAutoFilled] = useState(false);
+
   const loadCurrencies = useCallback(async () => {
     const controller = new AbortController();
     setIsLoadingCurrencies(true);
@@ -185,6 +188,36 @@ export default function JobDetailsStep({
   const [openRole, setOpenRole] = useState(false);
   const [openCurrency, setOpenCurrency] = useState(false);
 
+  // Auto-fill job title when role is selected
+  const handleRoleSelect = (role: string) => {
+    form.setValue("role", role, {
+      shouldValidate: true,
+    });
+
+    // Auto-fill job title with the selected role
+    const currentJobTitle = form.getValues("jobTitle");
+    if (!currentJobTitle || isJobTitleAutoFilled) {
+      form.setValue("jobTitle", role, {
+        shouldValidate: true,
+      });
+      setIsJobTitleAutoFilled(true);
+    }
+
+    setOpenRole(false);
+  };
+
+  // Reset auto-fill flag when user manually edits job title
+  const handleJobTitleChange = (value: string) => {
+    form.setValue("jobTitle", value, {
+      shouldValidate: true,
+    });
+
+    // If user manually edits the field, clear the auto-fill flag
+    if (isJobTitleAutoFilled) {
+      setIsJobTitleAutoFilled(false);
+    }
+  };
+
   return (
     <Card className="w-full mx-auto border-none shadow-none">
       <CardContent className="p-6">
@@ -206,23 +239,184 @@ export default function JobDetailsStep({
         )}
 
         <div className="space-y-6">
-          {/* Job Title */}
+          {/* Category & Role - Moved to top */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Category (auto-close) */}
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Job Category<span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  <Popover open={openCategory} onOpenChange={setOpenCategory}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          disabled={
+                            categoriesLoading || categoriesError !== null
+                          }
+                        >
+                          {field.value
+                            ? jobCategories?.data?.category?.find(
+                                (c) => c._id === field.value
+                              )?.name
+                            : "Select category"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search category..." />
+                        <CommandList>
+                          <CommandEmpty>
+                            {categoriesLoading
+                              ? "Loading categories..."
+                              : "No category found."}
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {jobCategories?.data?.category?.length ? (
+                              jobCategories.data.category.map((category) => (
+                                <CommandItem
+                                  value={category.name}
+                                  key={category._id}
+                                  onSelect={() => {
+                                    form.setValue("categoryId", category._id, {
+                                      shouldValidate: true,
+                                    });
+                                    form.setValue("role", "", {
+                                      shouldValidate: true,
+                                    });
+                                    // Only clear job title if it was auto-filled from previous role
+                                    if (isJobTitleAutoFilled) {
+                                      form.setValue("jobTitle", "", {
+                                        shouldValidate: true,
+                                      });
+                                    }
+                                    setSelectedCategoryRoles(
+                                      category.role || []
+                                    );
+                                    setIsJobTitleAutoFilled(false);
+                                    setOpenCategory(false);
+                                  }}
+                                >
+                                  {category.name}
+                                </CommandItem>
+                              ))
+                            ) : (
+                              <CommandEmpty>
+                                No categories available.
+                              </CommandEmpty>
+                            )}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Role (dependent, auto-close) */}
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Role<span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  <Popover open={openRole} onOpenChange={setOpenRole}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
+                            !field.value && "text-muted-foreground"
+                          )}
+                          disabled={!selectedCategoryRoles.length}
+                        >
+                          {field.value || "Select role"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search role..." />
+                        <CommandList>
+                          <CommandEmpty>
+                            {selectedCategoryRoles.length === 0
+                              ? "Please select a category first"
+                              : "No role found."}
+                          </CommandEmpty>
+                          <CommandGroup>
+                            {selectedCategoryRoles.map((role) => (
+                              <CommandItem
+                                value={role}
+                                key={role}
+                                onSelect={() => handleRoleSelect(role)}
+                              >
+                                {role}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                  {selectedCategoryRoles.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Select a category first to see available roles
+                    </p>
+                  )}
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Job Title - Now third field with auto-fill info */}
           <FormField
             control={form.control}
             name="jobTitle"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Job Title<span className="text-red-500 ml-1">*</span>
-                </FormLabel>
+                <div className="flex items-center justify-between">
+                  <FormLabel className="text-sm font-medium text-gray-700">
+                    Job Title<span className="text-red-500 ml-1">*</span>
+                  </FormLabel>
+                  {isJobTitleAutoFilled && (
+                    <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                      Auto-filled from role
+                    </span>
+                  )}
+                </div>
                 <FormControl>
                   <Input
                     placeholder="Enter job title"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
-                    {...field}
+                    value={field.value}
+                    onChange={(e) => handleJobTitleChange(e.target.value)}
                   />
                 </FormControl>
                 <FormMessage />
+                {isJobTitleAutoFilled && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    You can customize the job title if needed
+                  </p>
+                )}
               </FormItem>
             )}
           />
@@ -300,7 +494,7 @@ export default function JobDetailsStep({
                                     shouldValidate: true,
                                   });
                                   setSelectedCountry(country.country);
-                                  setOpenCountry(false); // auto-close
+                                  setOpenCountry(false);
                                 }}
                               >
                                 {country.country}
@@ -359,7 +553,7 @@ export default function JobDetailsStep({
                                   form.setValue("region", city, {
                                     shouldValidate: true,
                                   });
-                                  setOpenCity(false); // auto-close
+                                  setOpenCity(false);
                                 }}
                               >
                                 {city}
@@ -544,137 +738,6 @@ export default function JobDetailsStep({
             />
           </div>
 
-          {/* Category (auto-close) */}
-          <FormField
-            control={form.control}
-            name="categoryId"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Job Category<span className="text-red-500 ml-1">*</span>
-                </FormLabel>
-                <Popover open={openCategory} onOpenChange={setOpenCategory}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                          !field.value && "text-muted-foreground"
-                        )}
-                        disabled={categoriesLoading || categoriesError !== null}
-                      >
-                        {field.value
-                          ? jobCategories?.data?.category?.find(
-                              (c) => c._id === field.value
-                            )?.name
-                          : "Select category"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search category..." />
-                      <CommandList>
-                        <CommandEmpty>
-                          {categoriesLoading
-                            ? "Loading categories..."
-                            : "No category found."}
-                        </CommandEmpty>
-                        <CommandGroup>
-                          {jobCategories?.data?.category?.length ? (
-                            jobCategories.data.category.map((category) => (
-                              <CommandItem
-                                value={category.name}
-                                key={category._id}
-                                onSelect={() => {
-                                  form.setValue("categoryId", category._id, {
-                                    shouldValidate: true,
-                                  });
-                                  form.setValue("role", "", {
-                                    shouldValidate: true,
-                                  });
-                                  setSelectedCategoryRoles(category.role || []);
-                                  setOpenCategory(false); // auto-close
-                                }}
-                              >
-                                {category.name}
-                              </CommandItem>
-                            ))
-                          ) : (
-                            <CommandEmpty>
-                              No categories available.
-                            </CommandEmpty>
-                          )}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Role (dependent, auto-close) */}
-          {selectedCategoryRoles.length > 0 && (
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel className="text-sm font-medium text-gray-700">
-                    Role<span className="text-red-500 ml-1">*</span>
-                  </FormLabel>
-                  <Popover open={openRole} onOpenChange={setOpenRole}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "h-11 justify-between border-gray-300 focus:border-[#2B7FD0]",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value || "Select role"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Search role..." />
-                        <CommandList>
-                          <CommandEmpty>No role found.</CommandEmpty>
-                          <CommandGroup>
-                            {selectedCategoryRoles.map((role) => (
-                              <CommandItem
-                                value={role}
-                                key={role}
-                                onSelect={() => {
-                                  form.setValue("role", role, {
-                                    shouldValidate: true,
-                                  });
-                                  setOpenRole(false); // auto-close
-                                }}
-                              >
-                                {role}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
           {/* Compensation: currency combobox (auto-close) + amount */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Currency combobox (API-driven, searchable) */}
@@ -755,7 +818,7 @@ export default function JobDetailsStep({
                                           digits ? `${sym} ${digits}` : "",
                                           { shouldValidate: true }
                                         );
-                                        setOpenCurrency(false); // auto-close
+                                        setOpenCurrency(false);
                                       }}
                                     >
                                       <div className="flex items-center justify-between w-full">
@@ -831,10 +894,7 @@ export default function JobDetailsStep({
                       }}
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Stored as: <code>{currencySymbol} 10000</code> (symbol +
-                    space + amount)
-                  </p>
+
                   <FormMessage />
                 </FormItem>
               )}
