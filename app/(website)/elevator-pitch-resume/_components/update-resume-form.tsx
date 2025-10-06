@@ -50,6 +50,7 @@ export const resumeFormSchema = z.object({
   banner: z.string().optional(),
   skills: z.array(z.string()).optional().default([]),
   languages: z.array(z.string()).optional().default([]),
+  immediatelyAvailable: z.boolean().optional(),
   certifications: z.array(z.string()).optional().default([]),
   sLink: z
     .array(
@@ -269,6 +270,7 @@ export default function UpdateResumeForm({
       city: resume.resume?.city || "",
       zipCode: resume.resume?.zipCode || "",
       country: resume.resume?.country || "",
+      immediatelyAvailable: resume.resume?.immediatelyAvailable || false,
       aboutUs: resume.resume?.aboutUs || "",
       skills: Array.isArray(resume.resume?.skills) ? resume.resume.skills : [],
       sLink:
@@ -542,6 +544,7 @@ export default function UpdateResumeForm({
         title: data.title || "",
         city: data.city || "",
         zipCode: data.zipCode || "",
+        immediatelyAvailable: data.immediatelyAvailable,
         country: data.country || "",
         aboutUs: data.aboutUs,
         skills: Array.isArray(data.skills) ? data.skills : [],

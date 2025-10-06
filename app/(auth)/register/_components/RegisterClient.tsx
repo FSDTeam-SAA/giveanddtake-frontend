@@ -230,7 +230,7 @@ export default function RegisterPage() {
 
   const handleInputChange = (field: keyof RegisterData, value: string) => {
     if (field === "email") {
-      value = value.trim();
+      value = value.trim().toLowerCase();
     }
 
     if (field === "password") {
@@ -396,7 +396,7 @@ export default function RegisterPage() {
       return false;
     }
 
-    const sanitizedPhone = sanitizePhone(formData.phoneNum); // Regex: Start with '+', followed by 4 to 15 digits.
+    const sanitizedPhone = sanitizePhone(formData.phoneNum);
     if (!/^\+\d{4,15}$/.test(sanitizedPhone)) {
       toast.error(
         "Please enter a valid phone number (e.g., +123456789) with a maximum of 15 digits."
@@ -867,11 +867,11 @@ export default function RegisterPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm your sign-up role</AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to create a {" "}
+              You are about to create a{" "}
               <span className="font-semibold">
                 {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
-              </span> account
-              .
+              </span>{" "}
+              account .
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="rounded-md bg-muted p-3 text-sm space-y-1">

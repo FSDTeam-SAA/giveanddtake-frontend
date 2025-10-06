@@ -1,41 +1,55 @@
-"use client"
+"use client";
 
-import type { UseFormReturn } from "react-hook-form"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { CustomDateInput } from "./custom-date-input"
-import { UniversitySelector } from "./university-selector"
+import type { UseFormReturn } from "react-hook-form";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { CustomDateInput } from "./custom-date-input";
+import { UniversitySelector } from "./university-selector";
 
 // Utility function to compare dates (format: MM/YYYY)
 const isDateValid = (startDate: string, endDate: string): boolean => {
-  if (!startDate || !endDate) return true
-  const [startMonth, startYear] = startDate.split("/").map(Number)
-  const [endMonth, endYear] = endDate.split("/").map(Number)
-  if (startYear > endYear) return false
-  if (startYear === endYear && startMonth > endMonth) return false
-  return true
-}
+  if (!startDate || !endDate) return true;
+  const [startMonth, startYear] = startDate.split("/").map(Number);
+  const [endMonth, endYear] = endDate.split("/").map(Number);
+  if (startYear > endYear) return false;
+  if (startYear === endYear && startMonth > endMonth) return false;
+  return true;
+};
 
 interface EducationSectionProps {
-  form: UseFormReturn<any>
+  form: UseFormReturn<any>;
 }
 
 export const EducationSection = ({ form }: EducationSectionProps) => {
-  const educationList = form.watch("educationList") || []
+  const educationList = form.watch("educationList") || [];
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Education</CardTitle>
-        <p className="text-sm text-muted-foreground">Showcase your academic background and qualifications.</p>
+        <p className="text-sm text-muted-foreground">
+          Showcase your academic background and qualifications.
+        </p>
       </CardHeader>
       <CardContent>
         {educationList.map((education: any, index: number) => {
-          if (education.type === "delete") return null
+          if (education.type === "delete") return null;
 
           return (
             <div key={index} className="space-y-4 rounded-lg border p-4 mb-4">
@@ -64,15 +78,22 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                     <FormItem>
                       <FormLabel>Degree</FormLabel>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select a degree" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Bachelor">Bachelor's Degree</SelectItem>
-                            <SelectItem value="Master">Master's Degree</SelectItem>
-                            <SelectItem value="phd">PhD</SelectItem>
-                            <SelectItem value="Associate">Associate Degree</SelectItem>
+                            <SelectItem value="BSc.">BSc.</SelectItem>
+                            <SelectItem value="B.Tech.">B.Tech.</SelectItem>
+                            <SelectItem value="B.A">B.A</SelectItem>
+                            <SelectItem value="B.Ed.">B.Ed.</SelectItem>
+                            <SelectItem value="M.B.A.">M.B.A.</SelectItem>
+                            <SelectItem value="MSc.">MSc.</SelectItem>
+                            <SelectItem value="M.Phil.">M.Phil.</SelectItem>
+                            <SelectItem value="Ph.D">Ph.D</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -103,17 +124,27 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                         <CustomDateInput
                           value={field.value || ""}
                           onChange={(value) => {
-                            field.onChange(value)
-                            const graduationDate = form.getValues(`educationList.${index}.graduationDate`)
-                            const currentlyStudying = form.getValues(`educationList.${index}.currentlyStudying`)
+                            field.onChange(value);
+                            const graduationDate = form.getValues(
+                              `educationList.${index}.graduationDate`
+                            );
+                            const currentlyStudying = form.getValues(
+                              `educationList.${index}.currentlyStudying`
+                            );
                             if (!currentlyStudying && graduationDate && value) {
                               if (!isDateValid(value, graduationDate)) {
-                                form.setError(`educationList.${index}.graduationDate`, {
-                                  type: "manual",
-                                  message: "Graduation date cannot be earlier than start date",
-                                })
+                                form.setError(
+                                  `educationList.${index}.graduationDate`,
+                                  {
+                                    type: "manual",
+                                    message:
+                                      "Graduation date cannot be earlier than start date",
+                                  }
+                                );
                               } else {
-                                form.clearErrors(`educationList.${index}.graduationDate`)
+                                form.clearErrors(
+                                  `educationList.${index}.graduationDate`
+                                );
                               }
                             }
                           }}
@@ -136,16 +167,24 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                           <CustomDateInput
                             value={field.value || ""}
                             onChange={(value) => {
-                              field.onChange(value)
-                              const startDate = form.getValues(`educationList.${index}.startDate`)
+                              field.onChange(value);
+                              const startDate = form.getValues(
+                                `educationList.${index}.startDate`
+                              );
                               if (startDate && value) {
                                 if (!isDateValid(startDate, value)) {
-                                  form.setError(`educationList.${index}.graduationDate`, {
-                                    type: "manual",
-                                    message: "Graduation date cannot be earlier than start date",
-                                  })
+                                  form.setError(
+                                    `educationList.${index}.graduationDate`,
+                                    {
+                                      type: "manual",
+                                      message:
+                                        "Graduation date cannot be earlier than start date",
+                                    }
+                                  );
                                 } else {
-                                  form.clearErrors(`educationList.${index}.graduationDate`)
+                                  form.clearErrors(
+                                    `educationList.${index}.graduationDate`
+                                  );
                                 }
                               }
                             }}
@@ -166,15 +205,22 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                         <Checkbox
                           checked={field.value}
                           onCheckedChange={(checked) => {
-                            field.onChange(checked)
+                            field.onChange(checked);
                             if (checked) {
-                              form.setValue(`educationList.${index}.graduationDate`, "")
-                              form.clearErrors(`educationList.${index}.graduationDate`)
+                              form.setValue(
+                                `educationList.${index}.graduationDate`,
+                                ""
+                              );
+                              form.clearErrors(
+                                `educationList.${index}.graduationDate`
+                              );
                             }
                           }}
                         />
                       </FormControl>
-                      <FormLabel className="font-normal">Currently Studying</FormLabel>
+                      <FormLabel className="font-normal">
+                        Currently Studying
+                      </FormLabel>
                     </FormItem>
                   )}
                 />
@@ -185,18 +231,21 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                   variant="destructive"
                   size="sm"
                   onClick={() => {
-                    const currentEducation = form.getValues("educationList") || []
-                    const educationToRemove = currentEducation[index]
+                    const currentEducation =
+                      form.getValues("educationList") || [];
+                    const educationToRemove = currentEducation[index];
                     if (educationToRemove._id) {
-                      const updatedEducation = [...currentEducation]
+                      const updatedEducation = [...currentEducation];
                       updatedEducation[index] = {
                         ...educationToRemove,
                         type: "delete",
-                      }
-                      form.setValue("educationList", updatedEducation)
+                      };
+                      form.setValue("educationList", updatedEducation);
                     } else {
-                      const updatedEducation = currentEducation.filter((_: any, i: number) => i !== index)
-                      form.setValue("educationList", updatedEducation)
+                      const updatedEducation = currentEducation.filter(
+                        (_: any, i: number) => i !== index
+                      );
+                      form.setValue("educationList", updatedEducation);
                     }
                   }}
                 >
@@ -204,13 +253,13 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                 </Button>
               )}
             </div>
-          )
+          );
         })}
         <Button
           type="button"
           variant="outline"
           onClick={() => {
-            const currentEducation = form.getValues("educationList") || []
+            const currentEducation = form.getValues("educationList") || [];
             form.setValue("educationList", [
               ...currentEducation,
               {
@@ -224,12 +273,12 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                 city: "",
                 country: "",
               },
-            ])
+            ]);
           }}
         >
           Add Education
         </Button>
       </CardContent>
     </Card>
-  )
-}
+  );
+};
