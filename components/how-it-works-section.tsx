@@ -42,6 +42,7 @@ export function HowItWorksSection() {
                 <li>Pitch the real you in 30 seconds</li>
                 <li>Make a lasting impression from the first hello</li>
                 <li>Apply for jobs online or with the EVP app</li>
+                <li>Mobile app coming soon!</li>
               </ul>
             </CardContent>
           </Card>
@@ -67,6 +68,7 @@ export function HowItWorksSection() {
                 <li>Screen elevator pitches online</li>
                 <li>One-click feedback to applicants</li>
                 <li>Manage your account with the EVP app</li>
+                <li>Mobile app coming soon!</li>
               </ul>
             </CardContent>
           </Card>
@@ -90,6 +92,7 @@ export function HowItWorksSection() {
                 <li>Directly screen experienced candidates online</li>
                 <li>Hire strong talent for your business to thrive</li>
                 <li>Manage your account with the EVP app</li>
+                <li>Mobile app coming soon!</li>
               </ul>
             </CardContent>
           </Card>

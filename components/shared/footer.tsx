@@ -89,7 +89,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-2 text-sm text-white/80">
             <MapPin className="h-4 w-4" />
-            <span>Linienstraße 120, 10115 Berlin</span>
+            <span>124 City Road, London EC1V 2NX</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-white/80">
             <Mail className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function Footer() {
           </div>
           <div className="flex items-center gap-2 text-sm text-white/80">
             <Phone className="h-4 w-4" />
-            <span>+1234 567 889</span>
+            <span>+44 0203 954 2530</span>
           </div>
         </div>
 

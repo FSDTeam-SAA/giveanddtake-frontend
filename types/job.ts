@@ -60,11 +60,11 @@ export const jobSchema = z.object({
     .min(1, "Expiration date is required")
     .max(20, "Invalid expiration date"),
 
-  companyUrl: z
-    .string()
-    .url("Invalid URL")
-    .max(200, "Company URL too long")
-    .optional(),
+  companyUrl: z.union([
+  z.string().url("Invalid URL").max(200),
+  z.literal(""),
+]).optional(),
+
 
   jobDescription: z
     .string()
