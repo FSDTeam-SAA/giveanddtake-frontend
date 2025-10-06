@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,28 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const loadSavedCredentials = () => {
+      try {
+        const savedCredentials = localStorage.getItem("rememberedCredentials");
+        if (savedCredentials) {
+          const { email: savedEmail, password: savedPassword } =
+            JSON.parse(savedCredentials);
+          setEmail(savedEmail);
+          setPassword(savedPassword);
+          setRememberMe(true);
+        }
+      } catch (error) {
+        console.error("Error loading saved credentials:", error);
+        // Clear corrupted data
+        localStorage.removeItem("rememberedCredentials");
+      }
+    };
+
+    loadSavedCredentials();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -36,10 +58,20 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Invalid email or password. Please try again.");
       } else if (result?.ok) {
+        // Save or clear credentials based on rememberMe
         try {
-          if (rememberMe) localStorage.setItem("rememberedEmail", email);
-          else localStorage.removeItem("rememberedEmail");
-        } catch {}
+          if (rememberMe) {
+            const credentials = { email, password };
+            localStorage.setItem(
+              "rememberedCredentials",
+              JSON.stringify(credentials)
+            );
+          } else {
+            localStorage.removeItem("rememberedCredentials");
+          }
+        } catch (storageError) {
+          console.error("Error accessing localStorage:", storageError);
+        }
 
         window.location.href = "/elevator-pitch-resume";
       }
@@ -47,6 +79,14 @@ export default function LoginPage() {
       setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Clear saved credentials when user manually clears the form
+  const handleClearSaved = () => {
+    if (rememberMe) {
+      setRememberMe(false);
+      localStorage.removeItem("rememberedCredentials");
     }
   };
 
@@ -116,8 +156,23 @@ export default function LoginPage() {
               </Link>
             </div>
 
+            {email && password && rememberMe && (
+              <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                <p>Your credentials will be saved for automatic login.</p>
+                <button
+                  type="button"
+                  onClick={handleClearSaved}
+                  className="text-blue-600 hover:underline mt-1"
+                >
+                  Clear saved credentials
+                </button>
+              </div>
+            )}
+
             {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
+              <div className="text-red-500 text-sm text-center bg-red-50 p-2 rounded">
+                {error}
+              </div>
             )}
 
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -135,8 +190,6 @@ export default function LoginPage() {
                 Sign Up Here.
               </Link>
             </div>
-
-            <div className="flex justify-center space-x-4 pt-4"></div>
           </form>
         </CardContent>
       </Card>
