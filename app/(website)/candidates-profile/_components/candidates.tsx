@@ -86,7 +86,7 @@ interface ResumeResponse {
 
 // ---------- skeleton ----------
 const SkeletonLoader: React.FC = () => (
-  <div className="py-24">
+  <div className="py-24 container mx-auto px-6">
     <Card className="border-0">
       <CardContent className="p-0">
         {/* Profile Section Skeleton */}
@@ -253,264 +253,269 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   if (!resume) return <SkeletonLoader />;
 
   return (
-    <div>
+    <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-auto">
+      <div className="w-full h-[150px] md:h-[300px]">
         {resume.banner ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-auto object-cover lg:object-cover object-center"
+            className="w-full h-[150px] md:h-[300px] object-cover lg:object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[300px] bg-gray-200" />
+          <div className="w-full h-[150px] md:h-[300px] bg-gray-200" />
         )}
       </div>
 
-      {/* Profile */}
-      <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 px-6 mt-[-30px]">
-        <div className="col-span-3">
-          <div className="w-[170px] h-[170px] rounded-md bg-gray-200 overflow-hidden">
-            {resume.photo ? (
-              <Image
-                src={resume.photo}
-                alt={`${resume.firstName} ${resume.lastName}`}
-                width={170}
-                height={170}
-                className="w-[170px] h-[170px] object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-2xl font-bold">
-                {resume.firstName?.[0]}
-                {resume.lastName?.[0]}
-              </div>
-            )}
-          </div>
+      <div className="container mx-auto md:px-6">
+        {/* Profile */}
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:px-6 mt-[-30px]">
+          <div className="col-span-3">
+            <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded-md bg-gray-200 overflow-hidden">
+              {resume.photo ? (
+                <Image
+                  src={resume.photo}
+                  alt={`${resume.firstName} ${resume.lastName}`}
+                  width={170}
+                  height={170}
+                  className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-2xl font-bold">
+                  {resume.firstName?.[0]}
+                  {resume.lastName?.[0]}
+                </div>
+              )}
+            </div>
 
-          <h2 className="text-xl font-bold mt-3">
-            {resume.title && (
+            <h2 className="text-xl font-bold mt-3">
               <p className="text-gray-600">
-                {resume.title.charAt(0).toUpperCase() + resume.title.slice(1)}.{" "}
                 {resume.firstName} {resume.lastName}
               </p>
+            </h2>
+
+            <p className="text-gray-600 flex items-center">
+              <MapPin className="w-4 h-4 mr-1" />
+              {joinLocation(resume.country, resume.city)}
+            </p>
+
+            {resume.immediatelyAvailable && (
+              <div className="mt-2 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-green-500 inline-block" />
+                <p className="font-semibold text-green-600">
+                  Immediately Available
+                </p>
+              </div>
             )}
-          </h2>
 
-          <p className="text-gray-600 flex items-center">
-            <MapPin className="w-4 h-4 mr-1" />
-            {joinLocation(resume.country, resume.city)}
-          </p>
-
-          {resume.immediatelyAvailable && (
-            <div className="mt-5">
-              <p className="font-semibold text-green-600">
-                Immediately Available
-              </p>
+            {/* Social Links */}
+            <div className="flex gap-2 mt-3">
+              <div>
+                <SocialLinks sLink={resume.sLink} />
+              </div>
             </div>
-          )}
+          </div>
 
-          {/* Social Links */}
-          <div className="flex gap-2 mt-3">
+          {/* About */}
+          <div className="col-span-7 lg:mt-[60px]">
+            <div className="flex items-center justify-between border-b-2 pb-2">
+              <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+                About
+              </h3>
+              {userId ? (
+                <CandidateSharePopover
+                  userId={userId}
+                  role="candidates-profile"
+                  title={`${resume.firstName} ${resume.lastName} — ${
+                    resume.title ?? "Candidate"
+                  }`}
+                  summary={
+                    resume.aboutUs
+                      ? resume.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
+                      : ""
+                  }
+                />
+              ) : null}
+            </div>
+
             <div>
-              <SocialLinks sLink={resume.sLink} />
+              <p
+                className="text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{
+                  __html: resume.aboutUs || "No description provided",
+                }}
+              />
             </div>
           </div>
         </div>
 
-        {/* About */}
-        <div className="col-span-7 lg:mt-[60px]">
-          <div className="flex items-center justify-between border-b-2 pb-2">
-            <h3 className="font-semibold text-gray-800 mb-3 text-2xl">About</h3>
-            {userId ? (
-              <CandidateSharePopover
-                userId={userId}
-                role="candidates-profile"
-                title={`${resume.firstName} ${resume.lastName} — ${
-                  resume.title ?? "Candidate"
-                }`}
-                summary={
-                  resume.aboutUs
-                    ? resume.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
-                    : ""
-                }
-              />
-            ) : null}
-          </div>
-
-          <div>
-            <p
-              className="text-gray-600 leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: resume.aboutUs || "No description provided",
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Skills */}
-      <section className="border-b py-12">
-        <h3 className="text-2xl font-semibold mb-3">Skills</h3>
-        <div className="flex flex-wrap gap-2">
-          {resume.skills?.length ? (
-            resume.skills.map((skill, idx) => (
-              <span
-                key={idx}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))
-          ) : (
-            <p className="text-gray-500">No skills listed</p>
-          )}
-        </div>
-      </section>
-
-      {/* Experience (show all) */}
-      {sortedExperiences.length > 0 && (
-        <section className="border-b py-6">
-          <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
-            Experience
-          </h3>
-
-          <div className="space-y-8">
-            {sortedExperiences.map((exp) => {
-              const when = `${toMonthYear(exp.startDate)} - ${
-                exp.endDate ? toMonthYear(exp.endDate) : "Present"
-              }`;
-              const loc = joinLocation(exp.city, exp.country);
-              return (
-                <div key={exp._id} className="flex gap-4 items-start">
-                  <div>
-                    <Briefcase className="text-blue-600 w-8 h-8" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <h4 className="font-bold text-[20px] text-[#595959]">
-                        {exp.position || "N/A"}
-                        {exp.company && (
-                          <span className="font-normal text-gray-700">
-                            {" "}
-                            · {exp.company}
-                          </span>
-                        )}
-                      </h4>
-                      <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                        {when}
-                      </span>
-                    </div>
-
-                    {exp.jobDescription && (
-                      <p className="text-gray-600 text-sm mt-1">
-                        {exp.jobDescription}
-                      </p>
-                    )}
-
-                    <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
-                      <MapPin className="w-4 h-4" />
-                      {loc}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Skills */}
+        <section className="border-b py-12">
+          <h3 className="text-2xl font-semibold mb-3">Skills</h3>
+          <div className="flex flex-wrap gap-2">
+            {resume.skills?.length ? (
+              resume.skills.map((skill, idx) => (
+                <span
+                  key={idx}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                >
+                  {skill}
+                </span>
+              ))
+            ) : (
+              <p className="text-gray-500">No skills listed</p>
+            )}
           </div>
         </section>
-      )}
 
-      {/* Education (show all) */}
-      <section className="border-b py-6">
-        <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
-          Education
-        </h3>
+        {/* Experience (show all) */}
+        {sortedExperiences.length > 0 && (
+          <section className="border-b py-6">
+            <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+              Experience
+            </h3>
 
-        <div className="space-y-4">
-          {sortedEducation.length > 0 ? (
-            <ul className="space-y-6">
-              {sortedEducation.map((edu) => {
-                const degree = titleCase(edu.degree) || "Degree";
-                const field =
-                  typeof edu.fieldOfStudy === "string" &&
-                  edu.fieldOfStudy.trim().length
-                    ? edu.fieldOfStudy.trim()
-                    : "";
-                const loc = joinLocation(edu.city, edu.state, edu.country);
-
+            <div className="space-y-8">
+              {sortedExperiences.map((exp) => {
+                const when = `${toMonthYear(exp.startDate)} - ${
+                  exp.endDate ? toMonthYear(exp.endDate) : "Present"
+                }`;
                 return (
-                  <li
-                    key={edu._id}
-                    className="flex gap-4 items-start sm:items-center"
-                  >
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
-                      <GraduationCap className="text-blue-600 w-7 h-7 sm:w-8 sm:h-8" />
+                  <div key={exp._id} className="flex gap-4 items-start">
+                    <div>
+                      <Briefcase className="text-blue-600 w-8 h-8" />
                     </div>
-
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                        <h4 className="font-semibold text-lg text-[#595959]">
-                          {degree}
-                          {field && (
-                            <span className="font-normal"> in {field}</span>
+                        <h4 className="font-bold text-[20px] text-[#595959]">
+                          {exp.position || "N/A"}
+                          {exp.company && (
+                            <span className="font-[10px] text-gray-700">
+                              {" "}
+                              · {exp.company}
+                            </span>
                           )}
                         </h4>
-
                         <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                          {toMonthYear(edu.startDate)} —{" "}
-                          {toMonthYear(edu.graduationDate)}
+                          {when}
                         </span>
                       </div>
 
-                      <p className="text-gray-600 text-sm mt-1">{loc}</p>
+                      {exp.jobDescription && (
+                        <p className="text-gray-600 text-sm mt-1">
+                          {exp.jobDescription}
+                        </p>
+                      )}
+
+                      {exp.city && exp.country && (
+                        <p className="text-gray-600 text-sm flex items-center gap-1 mt-1">
+                          <MapPin className="w-4 h-4" />
+                          {exp.country}
+                        </p>
+                      )}
                     </div>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
-          ) : (
-            <p className="text-gray-500 text-sm">No education listed</p>
-          )}
-        </div>
-      </section>
+            </div>
+          </section>
+        )}
 
-      {/* Awards (show all) */}
-      {sortedAwards.length > 0 && (
-        <section className="py-6">
+        {/* Education (show all) */}
+        <section className="border-b py-6">
           <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
-            Awards & Honours
+            Education
           </h3>
 
           <div className="space-y-4">
-            {sortedAwards.map((award) => (
-              <div
-                key={award._id}
-                className="flex gap-4 items-start sm:items-center"
-              >
-                <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded">
-                  <AwardIcon className="text-blue-600 w-8 h-8" />
-                </div>
-                <div className="flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <h4 className="font-semibold text-lg">
-                      {award.title || "N/A"}
-                    </h4>
-                    <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                      {toMonthYear(award.programeDate || award.createdAt)}
-                    </span>
-                  </div>
-                  {award.description && (
-                    <p className="text-gray-600 text-sm mt-1">
-                      {award.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
+            {sortedEducation.length > 0 ? (
+              <ul className="space-y-6">
+                {sortedEducation.map((edu) => {
+                  const degree = titleCase(edu.degree) || "Degree";
+                  const field =
+                    typeof edu.fieldOfStudy === "string" &&
+                    edu.fieldOfStudy.trim().length
+                      ? edu.fieldOfStudy.trim()
+                      : "";
+                  const loc = joinLocation(edu.city, edu.state, edu.country);
+
+                  return (
+                    <li
+                      key={edu._id}
+                      className="flex gap-4 items-start sm:items-center"
+                    >
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
+                        <GraduationCap className="text-blue-600 w-7 h-7 sm:w-8 sm:h-8" />
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                          <h4 className="font-semibold text-lg text-[#595959]">
+                            {degree}
+                            {field && (
+                              <span className="font-normal"> in {field}</span>
+                            )}
+                          </h4>
+
+                          <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                            {toMonthYear(edu.startDate)} —{" "}
+                            {toMonthYear(edu.graduationDate)}
+                          </span>
+                        </div>
+
+                        {edu.country && (
+                          <p className="text-gray-600 text-sm mt-1">{loc}</p>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">No education listed</p>
+            )}
           </div>
         </section>
-      )}
+
+        {/* Awards (show all) */}
+        {sortedAwards.length > 0 && sortedAwards[0].title && (
+          <section className="py-6">
+            <h3 className="text-[40px] font-semibold mb-3 text-[#131313]">
+              Awards & Honours
+            </h3>
+
+            <div className="space-y-4">
+              {sortedAwards.map((award) => (
+                <div
+                  key={award._id}
+                  className="flex gap-4 items-start sm:items-center"
+                >
+                  <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded">
+                    <AwardIcon className="text-blue-600 w-8 h-8" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <h4 className="font-semibold text-lg">
+                        {award.title || "N/A"}
+                      </h4>
+                      <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
+                        {toMonthYear(award.programeDate || award.createdAt)}
+                      </span>
+                    </div>
+                    {award.description && (
+                      <p className="text-gray-600 text-sm mt-1">
+                        {award.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 };

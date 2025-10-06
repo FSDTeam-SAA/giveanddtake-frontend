@@ -316,234 +316,237 @@ export default function CompanyProfilePage() {
     !canFollow;
 
   return (
-    <div className="container mx-auto">
+    <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-[300px] rounded-b-lg">
+      <div className="w-full h-[150px] md:h-[300px] rounded-b-lg">
         {company.banner ? (
           <Image
             src={company.banner}
             alt={`${company.cname} banner`}
             width={1200}
             height={200}
-            className="w-full h-[300px] object-cover object-center"
+            className=" w-full h-[150px] md:h-[300px] object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[300px] bg-gray-200" />
+          <div className=" w-full h-[150px] md:h-[300px] bg-gray-200" />
         )}
       </div>
 
-      {/* Header Section */}
-      <div className="px-4 md:px-6 lg:pl-10 mt-[-30px]">
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
-          <div className="col-span-3">
-            <div className="w-[170px] h-[170px] flex-shrink-0">
-              <Image
-                src={
-                  company.clogo && company.clogo.trim() !== ""
-                    ? company.clogo
-                    : "/placeholder.svg"
-                }
-                alt={company.cname}
-                width={170}
-                height={170}
-                className="w-[170px] h-[170px] object-cover rounded"
-              />
-            </div>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-2 text-gray-900">
-                {company.cname}
-              </h1>
-              <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  {company.city}, {company.country}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  {company.employeesId?.length || 0} employees
-                </div>
-              </div>
-              <div className="flex items-center gap-1 text-sm text-gray-600">
-                <Building2 className="h-4 w-4" />
-                {company.industry}
-              </div>
-              <div className="flex gap-4">
-                <div>
-                  <SocialLinks sLink={company.sLink} />
-                </div>
-              </div>
-              <div className="mt-4">
-                {/* Follow / Unfollow with count */}
-                <div className="flex items-center gap-3">
-                  <Button
-                    onClick={() => toggleFollowMutation.mutate()}
-                    disabled={disabled}
-                    className={`${
-                      isFollowing
-                        ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    } transition-colors`}
-                    aria-label={isFollowing ? "Unfollow" : "Follow"}
-                    title={!myId ? "Sign in to follow" : undefined}
-                  >
-                    {followBusy
-                      ? "Please wait…"
-                      : isFollowing
-                      ? "Unfollow"
-                      : "Follow"}
-                  </Button>
-
-                  {(followInfo?.count ?? 0) > 0 && (
-                    <span className="text-sm text-gray-600">
-                      {followersCount} follower{followersCount === 1 ? "" : "s"}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col-span-7 lg:mt-[60px]">
-            <div className="flex items-center justify-between border-b-2 pb-2">
-              <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
-                About
-              </h3>
-              {userId ? (
-                <CandidateSharePopover
-                  userId={userId}
-                  role="companies-profile"
-                  title={`${company.firstName} ${company.lastName} — ${
-                    company.title ?? "Candidate"
-                  }`}
-                  summary={
-                    company.aboutUs
-                      ? company.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
-                      : ""
+      <div className="container mx-auto">
+        {/* Header Section */}
+        <div className="md:px-6 lg:pl-10 mt-[-30px]">
+          <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
+            <div className="col-span-3">
+              <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] flex-shrink-0">
+                <Image
+                  src={
+                    company.clogo && company.clogo.trim() !== ""
+                      ? company.clogo
+                      : "/placeholder.svg"
                   }
+                  alt={company.cname}
+                  width={170}
+                  height={170}
+                  className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded"
                 />
-              ) : null}
-            </div>
+              </div>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold mb-2 text-gray-900">
+                  {company.cname}
+                </h1>
+                <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    {company.city}, {company.country}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    {company.employeesId?.length || 0} employees
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-sm text-gray-600">
+                  <Building2 className="h-4 w-4" />
+                  {company.industry}
+                </div>
+                <div className="flex gap-4">
+                  <div>
+                    <SocialLinks sLink={company.sLink} />
+                  </div>
+                </div>
+                <div className="mt-4">
+                  {/* Follow / Unfollow with count */}
+                  <div className="flex items-center gap-3">
+                    <Button
+                      onClick={() => toggleFollowMutation.mutate()}
+                      disabled={disabled}
+                      className={`${
+                        isFollowing
+                          ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                          : "bg-blue-600 hover:bg-blue-700"
+                      } transition-colors`}
+                      aria-label={isFollowing ? "Unfollow" : "Follow"}
+                      title={!myId ? "Sign in to follow" : undefined}
+                    >
+                      {followBusy
+                        ? "Please wait…"
+                        : isFollowing
+                        ? "Unfollow"
+                        : "Follow"}
+                    </Button>
 
-            <div>
-              <p
-                className="text-gray-600 leading-relaxed"
-                dangerouslySetInnerHTML={{
-                  __html: company.aboutUs || "No description provided",
-                }}
-              />
+                    {(followInfo?.count ?? 0) > 0 && (
+                      <span className="text-sm text-gray-600">
+                        {followersCount} follower
+                        {followersCount === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-span-7 lg:mt-[60px]">
+              <div className="flex items-center justify-between border-b-2 pb-2">
+                <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
+                  About
+                </h3>
+                {userId ? (
+                  <CandidateSharePopover
+                    userId={userId}
+                    role="companies-profile"
+                    title={`${company.firstName} ${company.lastName} — ${
+                      company.title ?? "Candidate"
+                    }`}
+                    summary={
+                      company.aboutUs
+                        ? company.aboutUs.replace(/<[^>]*>/g, "").slice(0, 180)
+                        : ""
+                    }
+                  />
+                ) : null}
+              </div>
+
+              <div>
+                <p
+                  className="text-gray-600 leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: company.aboutUs || "No description provided",
+                  }}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Company Jobs */}
-      <div className="my-12">
-      {approvedJobs.length > 0 && (
-        <div>
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">
-            Company Jobs
-          </h2>
+        {/* Company Jobs */}
+        <div className="my-12">
+          {approvedJobs.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-6 text-gray-900">
+                Company Jobs
+              </h2>
 
-          {isLoadingJobs ? (
-            <div className="text-center py-10">Loading jobs...</div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {visibleJobs.map((job: any) => (
-                  <JobCard
-                    key={job._id}
-                    job={job}
-                    variant="list"
-                  />
-                ))}
-              </div>
+              {isLoadingJobs ? (
+                <div className="text-center py-10">Loading jobs...</div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {visibleJobs.map((job: any) => (
+                      <JobCard key={job._id} job={job} variant="list" />
+                    ))}
+                  </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="mt-8 flex items-center justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Prev
-                  </Button>
-
-                  {Array.from({ length: totalPages }).map((_, idx) => {
-                    const pageNum = idx + 1;
-                    const isActive = pageNum === currentPage;
-                    return (
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
                       <Button
-                        key={pageNum}
-                        variant={isActive ? "default" : "outline"}
+                        variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
                       >
-                        {pageNum}
+                        Prev
                       </Button>
-                    );
-                  })}
 
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
+                      {Array.from({ length: totalPages }).map((_, idx) => {
+                        const pageNum = idx + 1;
+                        const isActive = pageNum === currentPage;
+                        return (
+                          <Button
+                            key={pageNum}
+                            variant={isActive ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setCurrentPage(pageNum)}
+                          >
+                            {pageNum}
+                          </Button>
+                        );
+                      })}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                        }
+                        disabled={currentPage === totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
-            </>
+            </div>
           )}
         </div>
-      )}
-      </div>
 
-      {/* Elevator Pitch */}
-      <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
-          Elevator Pitch
-        </h2>
-        <div className="rounded-lg p-6 bg-gray-50">
-          <VideoPlayer
-            pitchId={companyData?.companies[0]?.elevatorPitch?._id}
-            className="w-full mx-auto"
-          />
-        </div>
-      </div>
-
-      {/* About Us */}
-      <div className="space-y-12 pb-24 pt-8  mx-auto">
-        {/* Awards and Honors */}
-        {honors.length > 0 && (
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
-              Awards and Honors
-            </h2>
-            <div className="space-y-4">
-              {honors.map((honor: Honor) => (
-                <Card key={honor._id}>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-gray-900">
-                      {honor.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      {honor.programeName || honor.issuer}
-                    </p>
-                    <p className="text-sm text-gray-500 mb-2">
-                      <Calendar className="inline h-4 w-4 mr-1" />
-                      {new Date(honor.programeDate).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm text-gray-700">{honor.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+        {/* Elevator Pitch */}
+        <div>
+          <h2 className="text-xl font-semibold mb-6 text-gray-900">
+            Elevator Pitch
+          </h2>
+          <div className="rounded-lg md:p-6 bg-gray-50">
+            <VideoPlayer
+              pitchId={companyData?.companies[0]?.elevatorPitch?._id}
+              className="w-full mx-auto"
+            />
           </div>
-        )}
+        </div>
+
+        {/* About Us */}
+        <div className="space-y-12 pb-24 pt-8  mx-auto">
+          {/* Awards and Honors */}
+          {honors.length > 0 && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">
+                Awards and Honors
+              </h2>
+              <div className="space-y-4">
+                {honors.map((honor: Honor) => (
+                  <Card key={honor._id}>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-gray-900">
+                        {honor.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {honor.programeName || honor.issuer}
+                      </p>
+                      <p className="text-sm text-gray-500 mb-2">
+                        <Calendar className="inline h-4 w-4 mr-1" />
+                        {new Date(honor.programeDate).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {honor.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

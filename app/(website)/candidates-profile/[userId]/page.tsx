@@ -9,7 +9,7 @@ export default async function Page({ params }: PageProps) {
   const { userId } = await params;
 
   return (
-    <div className="container mx-auto">
+    <div className="">
       <Candidates userId={userId} />
     </div>
   );

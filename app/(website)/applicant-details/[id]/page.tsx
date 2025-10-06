@@ -5,26 +5,16 @@ import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChevronLeft,
   MapPin,
-  Calendar,
   ExternalLink,
   Download,
   Mail,
   PhoneOutgoing,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import DOMPurify from "dompurify";
 
 import { toast } from "sonner";
@@ -139,7 +129,6 @@ const degreeLabels: Record<string, string> = {
 };
 
 
-const skillLevels = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
 // Helper function to validate URLs
 const isValidUrl = (urlString: string): boolean => {
@@ -169,16 +158,12 @@ export default function ApplicantDetailsPage() {
   const { data: session } = useSession();
 
   const MyId = session?.user.id;
-  const MyRole = session?.user.role;
   const token = session?.accessToken;
   const applicationId = params.id as string;
   const resumeId = searchParams.get("resumeId");
-  const applicatUserJobId = searchParams.get("applicationId");
 
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
-  const [applicationStatus, setApplicationStatus] = useState<string>("pending");
-  const [statusLoading, setStatusLoading] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
 
   const fetchResumeData = async () => {
@@ -314,45 +299,7 @@ export default function ApplicantDetailsPage() {
     enabled: !!token && !!applicationId,
   });
 
-  const handleStatusUpdate = async (newStatus: string) => {
-    try {
-      setStatusLoading(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/${applicatUserJobId}/status`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (response.ok) {
-        const allowedStatuses = [
-          "selected",
-          "shortlisted",
-          "rejected",
-          "pending",
-          "interviewed",
-        ];
-        if (allowedStatuses.includes(newStatus)) {
-          setApplicationStatus(newStatus);
-          toast.success(`Status updated to ${newStatus}`);
-        } else {
-          console.error(`Invalid status: ${newStatus}`);
-          toast.error("Invalid application status.");
-        }
-      } else {
-        toast.error("Failed to update status.");
-      }
-    } catch (e) {
-      console.error("Failed to update status:", e);
-      toast.error("Something went wrong while updating status.");
-    } finally {
-      setStatusLoading(false);
-    }
-  };
+ 
 
   // Function to handle message room creation
   const handleCreateMessageRoom = async () => {
@@ -436,27 +383,27 @@ export default function ApplicantDetailsPage() {
     });
   };
 
-  const getYearsOfExperience = (experiences: Experience[] = []) => {
-    if (!experiences.length) return "0+ years";
+  // const getYearsOfExperience = (experiences: Experience[] = []) => {
+  //   if (!experiences.length) return "0+ years";
 
-    const totalMonths = experiences.reduce((total, exp) => {
-      if (!exp.startDate) return total;
-      const start = new Date(exp.startDate);
-      const end = exp.endDate ? new Date(exp.endDate) : new Date();
-      const months =
-        (end.getFullYear() - start.getFullYear()) * 12 +
-        (end.getMonth() - start.getMonth());
-      return total + Math.max(0, months);
-    }, 0);
+  //   const totalMonths = experiences.reduce((total, exp) => {
+  //     if (!exp.startDate) return total;
+  //     const start = new Date(exp.startDate);
+  //     const end = exp.endDate ? new Date(exp.endDate) : new Date();
+  //     const months =
+  //       (end.getFullYear() - start.getFullYear()) * 12 +
+  //       (end.getMonth() - start.getMonth());
+  //     return total + Math.max(0, months);
+  //   }, 0);
 
-    const years = Math.floor(totalMonths / 12);
-    return `${years}+ years`;
-  };
+  //   const years = Math.floor(totalMonths / 12);
+  //   return `${years}+ years`;
+  // };
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="">
           <Skeleton className="h-8 w-48 mb-6" />
           <Card className="mb-6">
             <CardContent className="p-6">
@@ -486,7 +433,7 @@ export default function ApplicantDetailsPage() {
   if (isError || !applicantData) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="">
           <Card>
             <CardContent className="flex items-center justify-center py-8">
               <div className="text-center">
@@ -516,7 +463,7 @@ export default function ApplicantDetailsPage() {
   if (!hasResumeData && experiences.length === 0 && education.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="">
           <Button
             variant="ghost"
             onClick={() => router.back()}
