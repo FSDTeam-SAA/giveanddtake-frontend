@@ -743,8 +743,8 @@ export default function RecruiterDashboard() {
               </div>
             ) : (
               <div className="container mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-                  <div className="col-span-1 md:col-span-2">
+                <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
+                  <div className="col-span-1 md:col-span-3">
                     <div className="md:flex space-x-3">
                       <Image
                         src={

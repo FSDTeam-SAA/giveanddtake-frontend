@@ -335,7 +335,7 @@ export default function Recruiters({ userId }: MydataProps) {
     !myId;
 
   return (
-    <div className="lg:container lg:mx-auto lg:px-6">
+    <div className="lg:container lg:mx-auto lg:px-6 pb-8 md:pb-16">
       {/* Banner */}
       <div
         className={`relative w-full h-[150px] md:h-[300px] ${
@@ -378,10 +378,12 @@ export default function Recruiters({ userId }: MydataProps) {
                   {recruiterData.lastName}
                 </h1>
                 <p className="text-lg text-gray-600">{recruiterData.title}</p>
-                <p className="text-gray-700 flex items-center">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  {recruiterData.country}, {recruiterData.city},
-                </p>
+                {recruiterData.country && recruiterData.city && (
+                  <p className="text-gray-700 flex items-center">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {recruiterData.country}, {recruiterData.city}
+                  </p>
+                )}
               </div>
               <div className="flex space-x-2 mt-2">
                 <div>

@@ -236,7 +236,7 @@ function ManagePage({ userId }: ManagePageProps) {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto p-6 space-y-6 pb-16">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Manage Jobs</h1>
         <p className="text-muted-foreground">
