@@ -543,8 +543,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         </FormLabel>
                         <FormControl>
                           <TextEditor
-                            value={field.value}
+                            value={field.value || ""}
                             onChange={field.onChange}
+                            placeholder="Write about your company..."
                           />
                         </FormControl>
                         <FormMessage />

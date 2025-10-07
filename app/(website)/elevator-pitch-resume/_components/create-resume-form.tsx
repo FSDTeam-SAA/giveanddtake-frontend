@@ -594,7 +594,7 @@ export default function CreateResumeForm() {
   return (
     <div className="mx-auto p-6 space-y-8">
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Create Your Resume</h1>
+        <h1 className="text-3xl font-bold">Create Your Profile</h1>
         <p className="text-muted-foreground">
           Fill in your details to create a professional resume
         </p>
