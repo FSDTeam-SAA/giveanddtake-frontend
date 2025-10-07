@@ -274,7 +274,7 @@ export default function JobPreview({
                 Experience Level
               </p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                {formData.experience || "N/A"}
+                {formData.experience || "N/A"} Level
               </div>
             </div>
             <div className="space-y-2">
