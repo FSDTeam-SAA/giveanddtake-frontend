@@ -483,48 +483,51 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 ))}
               </div>
             </section>
-
-            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Experience
-              </h3>
-              <div className="space-y-6">
-                {resume.experiences.map((exp) => (
-                  <div
-                    key={exp._id}
-                    className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
-                  >
-                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Briefcase className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-[#595959] text-lg capitalize">
-                        {exp.position}
-                      </h4>
-                      <h3>{exp.company}</h3>
-                      <p className="text-gray-500 text-sm">
-                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
-                      </p>
-                      {exp.jobDescription && (
-                        <p className="text-gray-600 text-sm">
-                          {exp.jobDescription}
-                        </p>
-                      )}
-                    </div>
-                    {exp.country && (
-                      <p className="text-gray-600 text-sm flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>
-                          {exp.city && `${exp.city}, `}
-                          {exp.country}
-                          {exp.zip && `, ${exp.zip}`}
-                        </span>
-                      </p>
-                    )}
+            {resume.experiences[0].company &&
+              resume.experiences[0].startDate && (
+                <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                    Experience
+                  </h3>
+                  <div className="space-y-6">
+                    {resume.experiences.map((exp) => (
+                      <div
+                        key={exp._id}
+                        className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                      >
+                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-[#595959] text-lg capitalize">
+                            {exp.position}
+                          </h4>
+                          <h3>{exp.company}</h3>
+                          <p className="text-gray-500 text-sm">
+                            {formatDate(exp.startDate)} -{" "}
+                            {formatDate(exp.endDate)}
+                          </p>
+                          {exp.jobDescription && (
+                            <p className="text-gray-600 text-sm">
+                              {exp.jobDescription}
+                            </p>
+                          )}
+                        </div>
+                        {exp.country && (
+                          <p className="text-gray-600 text-sm flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>
+                              {exp.city && `${exp.city}, `}
+                              {exp.country}
+                              {exp.zip && `, ${exp.zip}`}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
+                </section>
+              )}
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
@@ -562,38 +565,39 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {resume.awardsAndHonors?.length > 0 && resume.awardsAndHonors[0].title && (
-              <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                  Awards & Honours
-                </h3>
-                <div className="space-y-6">
-                  {resume.awardsAndHonors?.map((award) => (
-                    <div
-                      key={award._id}
-                      className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                    >
-                      <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <AwardIcon className="w-8 h-8 text-blue-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-800 text-lg">
-                          {award.title}
-                        </h4>
-                        <p className="text-gray-500 text-sm">
-                          {formatDate(award.programeDate)}
-                        </p>
-                        {award.description && (
-                          <p className="text-gray-600 text-sm">
-                            {award.description}
+            {resume.awardsAndHonors?.length > 0 &&
+              resume.awardsAndHonors[0].title && (
+                <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                    Awards & Honours
+                  </h3>
+                  <div className="space-y-6">
+                    {resume.awardsAndHonors?.map((award) => (
+                      <div
+                        key={award._id}
+                        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+                      >
+                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <AwardIcon className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800 text-lg">
+                            {award.title}
+                          </h4>
+                          <p className="text-gray-500 text-sm">
+                            {formatDate(award.programeDate)}
                           </p>
-                        )}
+                          {award.description && (
+                            <p className="text-gray-600 text-sm">
+                              {award.description}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+                    ))}
+                  </div>
+                </section>
+              )}
           </CardContent>
         </Card>
       </div>
