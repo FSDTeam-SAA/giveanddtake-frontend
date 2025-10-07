@@ -247,14 +247,8 @@ function ManagePage({ userId }: ManagePageProps) {
       {isLoading ? (
         <JobTableSkeleton />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Job Postings</CardTitle>
-            <CardDescription>
-              {jobs.length} job posting{jobs.length !== 1 ? "s" : ""} found
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div>
+          <div className="mt-4">
             <div className="rounded-md border">
               <Table>
                 <TableHeader>
@@ -396,8 +390,8 @@ function ManagePage({ userId }: ManagePageProps) {
                 </Pagination>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
     </div>
   );

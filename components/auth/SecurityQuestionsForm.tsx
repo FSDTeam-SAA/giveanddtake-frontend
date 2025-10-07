@@ -93,7 +93,7 @@ export function SecurityQuestionsForm() {
     );
   }
 
-  const questions = questionsData?.date || [];
+  const questions = questionsData?.data || [];
 
   return (
     <Card className="w-full max-w-2xl">

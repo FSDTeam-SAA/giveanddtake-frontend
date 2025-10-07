@@ -510,7 +510,7 @@ export default function CreateCompanyPage() {
       toast.success("Elevator pitch uploaded successfully!");
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
+      console.log(error.response?.data?.message || "Failed to upload video");
     },
   });
 
@@ -524,7 +524,7 @@ export default function CreateCompanyPage() {
       setElevatorPitchFile(null);
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to delete video");
+      console.log(error.response?.data?.message || "Failed to delete video");
     },
   });
 

@@ -489,7 +489,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               </p>
               <div className="hidden md:flex gap-2">
                 <Link href="/add-job">
-                  <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-10 py-4 text-lg shadow-md">
+                  <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-6">
                     Post A Job
                   </Button>
                 </Link>

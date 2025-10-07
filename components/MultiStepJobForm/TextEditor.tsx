@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "quill/dist/quill.snow.css";
 
 interface TextEditorProps {
@@ -18,12 +18,10 @@ const TextEditor = ({
 }: TextEditorProps) => {
   const quillRef = useRef<any>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  // 1. Add a ref for the toolbar container
-  const toolbarRef = useRef<HTMLDivElement>(null); 
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize Quill only once
   useEffect(() => {
-    // 2. Check if both the editor and the toolbar refs are ready
     if (editorRef.current && toolbarRef.current && !quillRef.current) {
       const loadQuill = async () => {
         const Quill = (await import("quill")).default;
@@ -32,46 +30,50 @@ const TextEditor = ({
           theme: "snow",
           placeholder: placeholder || "Start typing...",
           modules: {
-            // 3. Point Quill to the custom toolbar container
-            toolbar: toolbarRef.current, 
-            // 4. Move your custom toolbar configuration into the container's structure
+            toolbar: toolbarRef.current,
           },
         });
 
-        // Set initial value
+        // Set initial value if available
         if (value) {
           quillRef.current.root.innerHTML = value;
         }
 
-        // Handle changes
+        // Listen for user input
         quillRef.current.on("text-change", () => {
-          const content = quillRef.current.root.innerHTML;
-          onChange(content === "<p><br></p>" ? "" : content);
+          const html = quillRef.current.root.innerHTML;
+          onChange(html === "<p><br></p>" ? "" : html);
         });
+
+        setInitialized(true);
       };
 
       loadQuill();
     }
-  }, []); // run once only
+  }, []);
 
-  // Update editor content when value changes externally
+  // Sync external value updates (like from form reset or API load)
   useEffect(() => {
-    // A check is added to prevent an infinite loop if Quill content is identical to `value`
-    if (quillRef.current && value !== quillRef.current.root.innerHTML) {
-      // Use setContent if you want a clean history, but innerHTML is fine for a simple update
-      quillRef.current.root.innerHTML = value;
+    if (initialized && quillRef.current) {
+      const editorHTML = quillRef.current.root.innerHTML.trim();
+      const newValue = (value || "").trim();
+
+      if (editorHTML !== newValue) {
+        quillRef.current.root.innerHTML = newValue;
+      }
     }
-  }, [value]);
+  }, [value, initialized]);
 
   return (
     <div className={`border rounded-lg bg-white ${className || ""}`}>
-      {/* 5. Create the toolbar container with the ref */}
-      <div ref={toolbarRef} className="quill-toolbar"> 
-        {/* You now need to define the toolbar's structure here, 
-            which corresponds to your previous `modules.toolbar` array. 
-            Quill will render the icons for these controls. */}
+      {/* Toolbar */}
+      <div ref={toolbarRef} className="quill-toolbar">
         <div className="ql-formats">
-          <select className="ql-header" defaultValue=""></select>
+          <select className="ql-header" defaultValue="">
+            <option value="1"></option>
+            <option value="2"></option>
+            <option value=""></option>
+          </select>
         </div>
         <div className="ql-formats">
           <button className="ql-bold"></button>
@@ -88,13 +90,11 @@ const TextEditor = ({
         </div>
         <div className="ql-formats">
           <button className="ql-link"></button>
-        </div>
-        <div className="ql-formats">
           <button className="ql-clean"></button>
         </div>
       </div>
-      
-      {/* The editor content area remains the same */}
+
+      {/* Editor */}
       <div ref={editorRef} style={{ minHeight: "200px" }} />
     </div>
   );
