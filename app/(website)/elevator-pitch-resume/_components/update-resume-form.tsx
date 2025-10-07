@@ -391,9 +391,7 @@ export default function UpdateResumeForm({
             type: award._id ? "update" : "create",
             title: award.title || "",
             programeName: award.programeName || "",
-            year: award.programeDate
-              ? new Date(award.programeDate).getFullYear().toString()
-              : award.year || "",
+            programeDate: award.programeDate || "",
             description: award.description || "",
           }));
         }
@@ -402,7 +400,7 @@ export default function UpdateResumeForm({
             type: "create",
             title: "",
             programeName: "",
-            year: "",
+            programeDate: "",
             description: "",
           },
         ];
@@ -605,9 +603,7 @@ export default function UpdateResumeForm({
             ? "delete"
             : "update"
           : "create",
-        programeDate: award.year
-          ? new Date(`${award.year}-01-01`).toISOString()
-          : "",
+        programeDate: award.programeDate || "",
       }));
 
       formData.append("resume", JSON.stringify(resumeObject));
@@ -624,6 +620,7 @@ export default function UpdateResumeForm({
       }
 
       await onUpdate(formData);
+      console.log("Form Data Submitted:", formData.getAll("awardsAndHonors"));
       toast.success("Resume updated successfully!");
     } catch (error) {
       console.error("Error in form submission:", error);
