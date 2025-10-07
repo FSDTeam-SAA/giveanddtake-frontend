@@ -375,7 +375,7 @@ export default function CreateResumeForm() {
     mutationFn: createResume,
     onSuccess: (data: any) => {
       toast.success(data?.message || "Resume created successfully!");
-      // window.location.reload();
+      window.location.reload();
     },
     onError: (error: any) => {
       toast.error(
