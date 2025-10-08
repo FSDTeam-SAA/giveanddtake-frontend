@@ -484,14 +484,34 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                   )}
                 />
               </div>
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={() => handleRemoveEducation(index)}
-              >
-                Remove Education
-              </Button>
+              {educationList.length > 1 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => {
+                    const currentEducation =
+                      form.getValues("educationList") || [];
+                    const educationToRemove = currentEducation[index];
+
+                    if (educationToRemove._id) {
+                      const updatedEducation = [...currentEducation];
+                      updatedEducation[index] = {
+                        ...educationToRemove,
+                        type: "delete",
+                      };
+                      form.setValue("educationList", updatedEducation);
+                    } else {
+                      const updatedEducation = currentEducation.filter(
+                        (_: any, i: number) => i !== index
+                      );
+                      form.setValue("educationList", updatedEducation);
+                    }
+                  }}
+                >
+                  Remove Education
+                </Button>
+              )}
             </div>
           );
         })}

@@ -113,6 +113,8 @@ export const resumeFormSchema = z.object({
     .array(
       z
         .object({
+          _id: z.string().optional(),
+          type: z.enum(["create", "update", "delete"]).optional(),
           instituteName: z
             .string()
             .trim()
@@ -670,8 +672,8 @@ export default function UpdateResumeForm({
 
           <PersonalInfoSection
             form={form}
-            countriesData={countriesData}
-            citiesData={citiesData}
+            countriesData={countriesData || []}
+            citiesData={citiesData || []}
             isLoadingCountries={isLoadingCountries}
             isLoadingCities={isLoadingCities}
             selectedCountry={selectedCountry}
@@ -778,9 +780,9 @@ export default function UpdateResumeForm({
             </CardContent>
           </Card>
 
-          <ExperienceSection form={form} experienceFields={experienceFields} />
+          <ExperienceSection form={form} />
 
-          <EducationSection form={form} educationFields={educationFields} />
+          <EducationSection form={form} />
 
           <AwardsSection form={form} awardFields={awardFields} />
 
