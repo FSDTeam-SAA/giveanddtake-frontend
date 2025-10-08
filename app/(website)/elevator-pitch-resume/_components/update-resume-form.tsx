@@ -48,10 +48,10 @@ export const resumeFormSchema = z.object({
   country: z.string().optional(),
   aboutUs: z.string().optional(),
   banner: z.string().optional(),
-  skills: z.array(z.string()).optional().default([]),
-  languages: z.array(z.string()).optional().default([]),
+  skills: z.array(z.string()).optional(),
+  languages: z.array(z.string()).optional(),
   immediatelyAvailable: z.boolean().optional(),
-  certifications: z.array(z.string()).optional().default([]),
+  certifications: z.array(z.string()).optional(),
   sLink: z
     .array(
       z.object({
@@ -65,8 +65,7 @@ export const resumeFormSchema = z.object({
           .pipe(z.string().url("Please enter a valid URL").or(z.literal(""))),
       })
     )
-    .optional()
-    .default([]),
+    .optional(),
   experiences: z
     .array(
       z
@@ -109,47 +108,65 @@ export const resumeFormSchema = z.object({
           }
         )
     )
-    .optional()
-    .default([]),
+    .optional(),
   educationList: z
     .array(
       z
         .object({
-          _id: z.string().optional(),
-          type: z.enum(["create", "update", "delete"]).optional(),
-          instituteName: z.string().min(1, "Institute name is required"),
-          university: z.string().optional(),
-          degree: z.string().min(1, "Degree is required"),
-          fieldOfStudy: z.string().optional(),
-          startDate: z.string().optional(),
-          graduationDate: z.string().optional(),
+          instituteName: z
+            .string()
+            .trim()
+            .max(150, "Institution name can be at most 150 characters")
+            .optional(),
+          degree: z
+            .string()
+            .trim()
+            .max(100, "Degree can be at most 100 characters")
+            .optional(),
+          fieldOfStudy: z
+            .string()
+            .trim()
+            .max(100, "Field of study can be at most 100 characters")
+            .optional(),
+          startDate: z
+            .string()
+            .trim()
+            .max(30, "Start date can be at most 30 characters")
+            .optional(),
+          graduationDate: z
+            .string()
+            .trim()
+            .max(30, "Graduation date can be at most 30 characters")
+            .optional(),
           currentlyStudying: z.boolean().optional().default(false),
-          city: z.string().optional(),
-          country: z.string().optional(),
+          city: z
+            .string()
+            .trim()
+            .max(100, "City can be at most 100 characters")
+            .optional(),
+          country: z
+            .string()
+            .trim()
+            .max(100, "Country can be at most 100 characters")
+            .optional(),
         })
         .refine(
           (data) =>
-            data.currentlyStudying === true ||
-            !data.startDate ||
-            !data.graduationDate ||
-            isDateValid(data.startDate, data.graduationDate),
-          {
-            message: "Graduation date cannot be earlier than start date",
-            path: ["graduationDate"],
-          }
-        )
-        .refine(
-          (data) =>
-            data.currentlyStudying === true ||
-            (!!data.graduationDate && data.currentlyStudying === false),
+            // ✅ Graduation date required only if instituteName & startDate exist AND not currently studying
+            !(
+              data.instituteName &&
+              data.startDate &&
+              !data.currentlyStudying &&
+              !data.graduationDate
+            ),
           {
             message: "Graduation date is required unless currently studying",
             path: ["graduationDate"],
           }
         )
     )
-    .optional()
-    .default([]),
+    .max(20, "You can add at most 20 education entries")
+    .optional(),
   awardsAndHonors: z
     .array(
       z.object({
@@ -162,8 +179,7 @@ export const resumeFormSchema = z.object({
         description: z.string().optional(),
       })
     )
-    .optional()
-    .default([]),
+    .optional(),
 });
 
 type ResumeFormData = z.infer<typeof resumeFormSchema>;
