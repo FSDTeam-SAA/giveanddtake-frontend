@@ -156,18 +156,25 @@ export default function AboutUsPage() {
               About Us
             </h2>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Elevator Video Pitch was initially conceived in 2016 at a time of
-              high employment amidst a skills shortage, which has now abated.
+              Elevator Video Pitch© was initially conceived in 2016 at a time of
+              high employment amidst a skills shortage, which no longer exists.
             </p>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Today, over 220 million knowledgeable, skilled and willing
-              professionals, graduates, and school leavers are open to work with
-              many posting written unheard pleas for help to find a job, an
-              apprenticeship, internship or a trainee opportunity, having tried
-              to enter or re-enter the job market for a long time.
+              Today, millions of knowledgeable, skilled and willing
+              professionals, graduates, and school leavers are open to work,
+              apprenticeships, internships, and tradesmanship roles, with many
+              posting written unheard pleas for help to find a job, on sites,
+              having been out of work for several months.
             </p>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
-              At EVP, we see you, we hear you, we care.
+              At EVP, we see you, we hear you, we care and are therefore making
+              our platform available to global jobseekers of all professions and
+              trades, from doctors, to lawyers to pilots, tradespersons,
+              mechanics, models, engineers, IT professionals; i.e. all are
+              welcome to record an elevator pitch to articulate your needs.
+            </p>
+            <p className="text-base font-normal text-[#545454] leading-relaxed">
+              2026 is your year of elevation!
             </p>
           </div>
 

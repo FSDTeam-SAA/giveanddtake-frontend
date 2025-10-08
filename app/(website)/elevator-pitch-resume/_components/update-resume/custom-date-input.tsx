@@ -1,53 +1,3 @@
-// "use client"
-
-// import type React from "react"
-// import { Input } from "@/components/ui/input"
-
-// export const CustomDateInput = ({
-//   value,
-//   onChange,
-//   placeholder,
-// }: {
-//   value: string
-//   onChange: (value: string) => void
-//   placeholder?: string
-// }) => {
-//   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-//     let inputValue = e.target.value.replace(/\D/g, "") // Remove non-digits
-
-//     if (inputValue.length >= 2) {
-//       inputValue = inputValue.slice(0, 2) + "/" + inputValue.slice(2, 6)
-//     }
-
-//     if (inputValue.length > 7) {
-//       inputValue = inputValue.slice(0, 7)
-//     }
-
-//     onChange(inputValue)
-//   }
-
-//   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-//     if (e.key === "Backspace") {
-//       const cursorPosition = (e.target as HTMLInputElement).selectionStart || 0
-//       if (cursorPosition === 3 && value.charAt(2) === "/") {
-//         e.preventDefault()
-//         onChange(value.slice(0, 2))
-//       }
-//     }
-//   }
-
-//   return (
-//     <Input
-//       type="text"
-//       value={value}
-//       onChange={handleChange}
-//       onKeyDown={handleKeyDown}
-//       placeholder={placeholder}
-//       maxLength={7}
-//     />
-//   )
-// }
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -79,7 +29,9 @@ export const CustomDateInput = ({
     for (let y = from; y <= to; y++) arr.push(y);
     return arr;
   };
-  const currentYear = new Date().getFullYear();
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1; // 1..12
   const years = yearsRange(currentYear - 80, currentYear + 10);
 
   // clamp month to 01-12
@@ -87,6 +39,14 @@ export const CustomDateInput = ({
     if (m <= 0) return 1;
     if (m > 12) return 12;
     return m;
+  };
+
+  // ensure mm/yyyy not after today
+  const clampToToday = (mm: number, yyyy: number) => {
+    if (yyyy > currentYear) return { mm: currentMonth, yyyy: currentYear };
+    if (yyyy === currentYear && mm > currentMonth)
+      return { mm: currentMonth, yyyy: currentYear };
+    return { mm, yyyy };
   };
 
   const formatFromDigits = (digits: string) => {
@@ -111,11 +71,20 @@ export const CustomDateInput = ({
 
     let formatted = mm;
     if (yyyy.length > 0) formatted += "/" + yyyy;
+
+    // if full year present, clamp to today
+    if (yyyy.length === 4) {
+      const monthNum = Number(mm) || 1;
+      const yearNum = Number(yyyy);
+      const { mm: clampedM, yyyy: clampedY } = clampToToday(monthNum, yearNum);
+      formatted = String(clampedM).padStart(2, "0") + "/" + String(clampedY);
+    }
+
     return formatted;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let digits = e.target.value.replace(/\D/g, "");
+    let digits = e.target.value.replace(/\\D/g, "");
     if (digits.length > 6) digits = digits.slice(0, 6);
     const formatted = formatFromDigits(digits);
     setInternalValue(formatted);
@@ -165,16 +134,25 @@ export const CustomDateInput = ({
   };
   const closePicker = () => setOpen(false);
 
-  // apply picker month/year into value
-  const applyPicker = () => {
-    if (pickerMonth === "" || pickerYear === "") return;
-    const mm = String(clampMonth(Number(pickerMonth))).padStart(2, "0");
-    const yyyy = String(pickerYear);
-    const newVal = `${mm}/${yyyy}`;
+  // apply picker month/year into value (enforces not after today)
+  const applyPicker = (m?: number | "", y?: number | "") => {
+    const month = m === undefined ? pickerMonth : m;
+    const year = y === undefined ? pickerYear : y;
+    if (month === "" || year === "") return;
+    const mm = String(clampMonth(Number(month))).padStart(2, "0");
+    const yyyy = String(year);
+    const { mm: clampedM, yyyy: clampedY } = clampToToday(
+      Number(mm),
+      Number(yyyy)
+    );
+    const newVal = `${String(clampedM).padStart(2, "0")}/${String(clampedY)}`;
     setInternalValue(newVal);
     onChange?.(newVal);
+  };
+
+  const applyPickerAndClose = (m?: number | "", y?: number | "") => {
+    applyPicker(m, y);
     setOpen(false);
-    // focus input afterwards
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -253,11 +231,20 @@ export const CustomDateInput = ({
             <select
               aria-label="Year"
               value={pickerYear === "" ? "" : pickerYear}
-              onChange={(ev) =>
-                setPickerYear(
-                  ev.target.value === "" ? "" : Number(ev.target.value)
-                )
-              }
+              onChange={(ev) => {
+                const newYear =
+                  ev.target.value === "" ? "" : Number(ev.target.value);
+                setPickerYear(newYear);
+
+                // After selecting year: auto-apply and close.
+                // If month not chosen, default to currently selected month or today's month.
+                const monthToUse =
+                  pickerMonth === "" ? currentMonth : Number(pickerMonth);
+                const yearToUse =
+                  newYear === "" ? currentYear : Number(newYear);
+
+                applyPickerAndClose(monthToUse, yearToUse);
+              }}
             >
               <option value="">Year</option>
               {years.map((y) => (
@@ -292,7 +279,10 @@ export const CustomDateInput = ({
             </button>
             <button
               type="button"
-              onClick={applyPicker}
+              onClick={() => {
+                // apply current selections and keep popover open (legacy behavior)
+                applyPicker();
+              }}
               style={{ padding: "6px 10px" }}
             >
               Apply
@@ -300,7 +290,8 @@ export const CustomDateInput = ({
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, color: "#555" }}>
-            Tip: you can also type <code>MMYYYY</code> (digits only).
+            Tip: you can also type <code>MMYYYY</code> (digits only). The value
+            cannot be a future date.
           </div>
         </div>
       )}

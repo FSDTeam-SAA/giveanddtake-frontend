@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, {
@@ -72,13 +71,26 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
       return () => document.removeEventListener("mousedown", onDocClick);
     }, []);
 
-    const currentYear = new Date().getFullYear();
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth() + 1; // 1..12
     const years = yearsRange(currentYear - 80, currentYear + 10);
 
     const clampMonth = (m: number) => {
       if (m <= 0) return 1;
       if (m > 12) return 12;
       return m;
+    };
+
+    const clampToToday = (mm: number, yyyy: number) => {
+      // ensure date mm/yyyy is not after today
+      if (yyyy > currentYear) {
+        return { mm: currentMonth, yyyy: currentYear };
+      }
+      if (yyyy === currentYear && mm > currentMonth) {
+        return { mm: currentMonth, yyyy: currentYear };
+      }
+      return { mm, yyyy };
     };
 
     const formatFromDigits = (digits: string) => {
@@ -105,6 +117,18 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
 
       let formatted = mm;
       if (yyyy.length > 0) formatted += "/" + yyyy;
+
+      // If full year present, make sure it's not after today
+      if (yyyy.length === 4) {
+        const monthNum = Number(mm) || 1;
+        const yearNum = Number(yyyy);
+        const { mm: clampedM, yyyy: clampedY } = clampToToday(
+          monthNum,
+          yearNum
+        );
+        formatted = String(clampedM).padStart(2, "0") + "/" + String(clampedY);
+      }
+
       return formatted;
     };
 
@@ -145,13 +169,23 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
     const openPicker = () => setOpen(true);
     const closePicker = () => setOpen(false);
 
-    const applyPicker = () => {
-      if (pickerMonth == null || pickerYear == null) return;
-      const mm = String(clampMonth(pickerMonth)).padStart(2, "0");
-      const yyyy = String(pickerYear);
-      const newVal = `${mm}/${yyyy}`;
+    const applyPicker = (m?: number | null, y?: number | null) => {
+      const month = m ?? pickerMonth ?? 1;
+      const year = y ?? pickerYear ?? currentYear;
+      const mm = String(clampMonth(month)).padStart(2, "0");
+      const yyyy = String(year);
+      // enforce not after today
+      const { mm: clampedM, yyyy: clampedY } = clampToToday(
+        Number(mm),
+        Number(yyyy)
+      );
+      const newVal = `${String(clampedM).padStart(2, "0")}/${String(clampedY)}`;
       setInternalValue(newVal);
       onChange?.(newVal);
+    };
+
+    const applyPickerAndClose = (m?: number | null, y?: number | null) => {
+      applyPicker(m, y);
       setOpen(false);
     };
 
@@ -199,7 +233,10 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
               <select
                 aria-label="Month"
                 value={pickerMonth ?? ""}
-                onChange={(ev) => setPickerMonth(Number(ev.target.value))}
+                onChange={(ev) => {
+                  const val = Number(ev.target.value) || null;
+                  setPickerMonth(val);
+                }}
               >
                 <option value="">Month</option>
                 {Array.from({ length: 12 }).map((_, i) => (
@@ -212,7 +249,18 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
               <select
                 aria-label="Year"
                 value={pickerYear ?? ""}
-                onChange={(ev) => setPickerYear(Number(ev.target.value))}
+                onChange={(ev) => {
+                  const val = Number(ev.target.value) || null;
+                  setPickerYear(val);
+
+                  // After selecting year: auto-apply and close.
+                  // If month is not chosen, use the currently selected month or today's month.
+                  const monthToUse = pickerMonth ?? currentMonth;
+                  const yearToUse = val ?? currentYear;
+
+                  // Apply with clamping so date is not after today, and then close
+                  applyPickerAndClose(monthToUse, yearToUse);
+                }}
               >
                 <option value="">Year</option>
                 {years.map((y) => (
@@ -247,7 +295,10 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
               </button>
               <button
                 type="button"
-                onClick={applyPicker}
+                onClick={() => {
+                  // apply current selections and keep popover open (legacy behavior)
+                  applyPicker();
+                }}
                 style={{ padding: "6px 10px" }}
               >
                 Apply
@@ -255,7 +306,8 @@ const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
             </div>
 
             <div style={{ marginTop: 10, fontSize: 12, color: "#555" }}>
-              Tip: you can also type <code>MMYYYY</code> (digits only).
+              Tip: you can also type <code>MMYYYY</code> (digits only). The
+              value cannot be a future date.
             </div>
           </div>
         )}

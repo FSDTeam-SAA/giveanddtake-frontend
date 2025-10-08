@@ -37,7 +37,7 @@ export function HowItWorksSection() {
                 Candidates
               </CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
-                <li>Gain an edge over 220 million jobseekers</li>
+                <li>Gain an edge over millions of jobseekers</li>
                 <li>Create your elevator video pitch today</li>
                 <li>Pitch the real you in 30 seconds</li>
                 <li>Make a lasting impression from the first hello</li>
