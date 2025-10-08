@@ -46,6 +46,7 @@ interface JobDetailsData {
   experience: string;
   deadline: string;
   status: string;
+  publishDate: string;
   compensation: string;
   applicationRequirement: Array<{
     requirement: string;
