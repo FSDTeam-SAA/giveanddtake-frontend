@@ -393,6 +393,7 @@ export default function Recruiters({ userId }: MydataProps) {
             </div>
 
             {/* Follow / Unfollow with count */}
+            {myId !== userId && (
             <div className="flex items-center gap-3">
               <Button
                 onClick={() => toggleFollowMutation.mutate()}
@@ -417,6 +418,7 @@ export default function Recruiters({ userId }: MydataProps) {
                 </span>
               )}
             </div>
+            )}
           </div>
 
           {/* About */}

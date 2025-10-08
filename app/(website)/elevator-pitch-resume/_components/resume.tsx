@@ -452,38 +452,43 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Certifications
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {resume.resume.certifications?.map((cert, index) => (
-                  <Badge
-                    key={index}
-                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                  >
-                    {cert}
-                  </Badge>
-                ))}
-              </div>
-            </section>
+            {resume.resume.certifications?.length > 0 && (
+              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                  Certifications
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {resume.resume.certifications?.map((cert, index) => (
+                    <Badge
+                      key={index}
+                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    >
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
 
-            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Languages
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {resume.resume.languages?.map((lang, index) => (
-                  <Badge
-                    key={index}
-                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                  >
-                    {lang}
-                  </Badge>
-                ))}
-              </div>
-            </section>
-            {resume.experiences[0].company &&
+            {resume.resume.languages?.length > 0 && (
+              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                  Languages
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {resume.resume.languages?.map((lang, index) => (
+                    <Badge
+                      key={index}
+                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    >
+                      {lang}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {resume.experiences[0]?.company &&
               resume.experiences[0].startDate && (
                 <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
                   <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
@@ -499,10 +504,10 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                           <Briefcase className="w-8 h-8 text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-semibold text-[#595959] text-lg capitalize">
+                          <h4 className="font-semibold text-gray-800 capitalize text-lg">
                             {exp.position}
                           </h4>
-                          <h3>{exp.company}</h3>
+                          <p className="text-sm">{exp.company}</p>
                           <p className="text-gray-500 text-sm">
                             {formatDate(exp.startDate)} -{" "}
                             {formatDate(exp.endDate)}
@@ -529,42 +534,44 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </section>
               )}
 
-            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Education
-              </h3>
-              <div className="space-y-6">
-                {resume.education?.map((edu) => (
-                  <div
-                    key={edu._id}
-                    className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                  >
-                    <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <GraduationCap className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                        {edu.degree}
-                        {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
-                      </h4>
-                      <p className="text-sm">{edu.instituteName}</p>
-                      <p className="text-gray-500 text-sm">
-                        {formatDate(edu.startDate)} -{" "}
-                        {formatDate(edu.graduationDate)}
-                      </p>
-                    </div>
-                    <p className="text-gray-600 text-sm flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>
-                        {edu.city && `${edu.city}, `}
-                        {edu.country}
-                      </span>
-                    </p>
+            {resume.education[0]?.instituteName &&
+              resume.education[0].startDate && (
+                <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                    Education
+                  </h3>
+                  <div className="space-y-6">
+                    {resume.education?.map((edu) => (
+                      <div
+                        key={edu._id}
+                        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
+                      >
+                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <GraduationCap className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800 capitalize text-lg">
+                            {edu.degree}
+                            {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
+                          </h4>
+                          <p className="text-sm">{edu.instituteName}</p>
+                          <p className="text-gray-500 text-sm">
+                            {formatDate(edu.startDate)} -{" "}
+                            {formatDate(edu.graduationDate)}
+                          </p>
+                        </div>
+                        <p className="text-gray-600 text-sm flex items-center gap-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>
+                            {edu.city && `${edu.city}, `}
+                            {edu.country}
+                          </span>
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </section>
-
+                </section>
+              )}
             {resume.awardsAndHonors?.length > 0 &&
               resume.awardsAndHonors[0].title && (
                 <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
