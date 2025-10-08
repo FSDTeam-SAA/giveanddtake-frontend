@@ -426,6 +426,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                     const currentEducation =
                       form.getValues("educationList") || [];
                     const educationToRemove = currentEducation[index];
+
                     if (educationToRemove._id) {
                       const updatedEducation = [...currentEducation];
                       updatedEducation[index] = {
