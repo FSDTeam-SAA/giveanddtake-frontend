@@ -21,7 +21,13 @@ interface Application {
   jobId: {
     _id: string;
     title: string;
-    companyId: string; // Assuming this is an ID, using a placeholder name
+    companyId: {
+      cname: string;
+    };
+    recruiterId: {
+      firstName: string;
+      sureName: string;
+    };
   };
   userId: {
     _id: string;
@@ -208,7 +214,17 @@ export default function JobHistory() {
                       <TableCell className="font-medium">
                         {application.jobId?.title}
                       </TableCell>
-                      <TableCell>Arrex Digital</TableCell>{" "}
+                      <TableCell>
+                        {application.jobId?.recruiterId
+                          ? `${
+                              application.jobId.recruiterId.firstName ??
+                              "Unknown"
+                            } ${
+                              application.jobId.recruiterId.sureName ?? ""
+                            }`.trim()
+                          : application.jobId?.companyId?.cname ??
+                            "Unknown Company"}
+                      </TableCell>
                       {/* Hardcoded as per image, no company name in API */}
                       <TableCell>
                         {new Date(application.createdAt).toLocaleDateString(

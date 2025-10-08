@@ -72,7 +72,6 @@ interface JobApplicationPageProps {
   jobId: string;
 }
 
-
 export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id;
@@ -545,7 +544,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                     onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
                   />
                   <Label htmlFor="agree-cv" className="text-sm text-gray-700">
-                    I agree to my CV being shared with the Recruiter for the
+                    I agree to my video pitch shared with the Recruiter for the
                     role I am applying for
                   </Label>
                 </div>
