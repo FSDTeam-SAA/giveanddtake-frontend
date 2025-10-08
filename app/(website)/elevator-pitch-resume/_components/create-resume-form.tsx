@@ -188,59 +188,64 @@ export const resumeSchema = z.object({
     .max(20, "You can add at most 20 experiences")
     .optional(),
 
-  educationList: z
-    .array(
-      z
-        .object({
-          instituteName: z
-            .string()
-            .trim()
-            .min(1, "Institution name is required")
-            .max(150, "Institution name can be at most 150 characters"),
-          degree: z
-            .string()
-            .trim()
-            .min(1, "Degree is required")
-            .max(100, "Degree can be at most 100 characters"),
-          fieldOfStudy: z
-            .string()
-            .trim()
-            .max(100, "Field of study can be at most 100 characters")
-            .optional(),
-          startDate: z
-            .string()
-            .trim()
-            .max(30, "Start date can be at most 30 characters")
-            .optional(),
-          graduationDate: z
-            .string()
-            .trim()
-            .max(30, "Graduation date can be at most 30 characters")
-            .optional(),
-          currentlyStudying: z.boolean().optional().default(false),
-          city: z
-            .string()
-            .trim()
-            .max(100, "City can be at most 100 characters")
-            .optional(),
-          country: z
-            .string()
-            .trim()
-            .max(100, "Country can be at most 100 characters")
-            .optional(),
-        })
-        .refine(
-          (data) =>
-            data.currentlyStudying ||
-            (!data.currentlyStudying && !!data.graduationDate),
-          {
-            message: "Graduation date is required unless currently studying",
-            path: ["graduationDate"],
-          }
-        )
-    )
-    .min(1, "At least one education entry is required")
-    .max(20, "You can add at most 20 education entries"),
+ educationList: z
+  .array(
+    z
+      .object({
+        instituteName: z
+          .string()
+          .trim()
+          .max(150, "Institution name can be at most 150 characters")
+          .optional(),
+        degree: z
+          .string()
+          .trim()
+          .max(100, "Degree can be at most 100 characters")
+          .optional(),
+        fieldOfStudy: z
+          .string()
+          .trim()
+          .max(100, "Field of study can be at most 100 characters")
+          .optional(),
+        startDate: z
+          .string()
+          .trim()
+          .max(30, "Start date can be at most 30 characters")
+          .optional(),
+        graduationDate: z
+          .string()
+          .trim()
+          .max(30, "Graduation date can be at most 30 characters")
+          .optional(),
+        currentlyStudying: z.boolean().optional().default(false),
+        city: z
+          .string()
+          .trim()
+          .max(100, "City can be at most 100 characters")
+          .optional(),
+        country: z
+          .string()
+          .trim()
+          .max(100, "Country can be at most 100 characters")
+          .optional(),
+      })
+      .refine(
+        (data) =>
+          // ✅ Graduation date required only if instituteName & startDate exist AND not currently studying
+          !(
+            data.instituteName &&
+            data.startDate &&
+            !data.currentlyStudying &&
+            !data.graduationDate
+          ),
+        {
+          message: "Graduation date is required unless currently studying",
+          path: ["graduationDate"],
+        }
+      )
+  )
+  .max(20, "You can add at most 20 education entries")
+  .optional(),
 
   awardsAndHonors: z
     .array(

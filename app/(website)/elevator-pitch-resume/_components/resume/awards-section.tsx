@@ -99,7 +99,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
           }
           className="flex items-center gap-2"
         >
-          Add award
+          Add
         </Button>
       </CardContent>
     </Card>

@@ -404,7 +404,7 @@ export function ExperienceSection({
           }
           className="flex items-center gap-2"
         >
-          Add more +
+          Add
         </Button>
       </CardContent>
     </Card>

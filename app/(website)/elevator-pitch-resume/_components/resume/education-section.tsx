@@ -367,7 +367,7 @@ export function EducationSection({
   // Sync education countries state with form data
   useEffect(() => {
     setSelectedEducationCountries(
-      educationFields.map((field) => field.country || "")
+      educationFields.map((field, index) => form.getValues(`educationList.${index}.country`) || "")
     );
   }, [educationFields]);
 
@@ -442,7 +442,7 @@ export function EducationSection({
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
-                        value={field.value}
+                        value={field.value || ""} // Ensure value is empty string if undefined
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a degree" />
@@ -684,7 +684,7 @@ export function EducationSection({
           }
           className="flex items-center gap-2"
         >
-          Add more +
+          Add
         </Button>
       </CardContent>
     </Card>
