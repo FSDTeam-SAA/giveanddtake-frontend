@@ -524,14 +524,6 @@ export default function ApplicantDetailsPage() {
                           <span>{resume.country}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
-                        <span>{resume.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <PhoneOutgoing className="h-4 w-4" />
-                        <span>{resume.phoneNumber}</span>
-                      </div>
                     </div>
                   </div>
                   <Button
@@ -626,33 +618,7 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {education[0]?.instituteName && education[0]?.degree && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Education</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {education.map((edu) => (
-                  <div
-                    key={edu._id}
-                    className="border-l-2 pl-4 border-gray-200"
-                  >
-                    <div>
-                      <h3 className="font-semibold text-lg">
-                        {degreeLabels[edu.degree?.toLowerCase() || ""] ||
-                          "Degree not specified"}
-                      </h3>
-                      <p className="text-gray-600">
-                        {edu.fieldOfStudy || "Field of study not specified"}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+      
 
         {resume.skills && resume.skills.length > 0 && (
           <Card className="mb-6">
