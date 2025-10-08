@@ -605,7 +605,6 @@ const recruiterSchema = z.object({
   phoneNumber: z.string().min(1, "Phone number is required"),
   title: z.string().min(1, "Current position is required"),
   bio: z.string().optional(),
-  experience: z.string().min(1, "Years of experience is required"),
   country: z.string().min(1, "Country is required"),
   city: z.string().optional(),
   zipCode: z.string().optional(),
@@ -742,7 +741,6 @@ export default function CreateRecruiterAccountForm() {
       phoneNumber: "",
       title: "",
       bio: "",
-      experience: "",
       country: "",
       city: "",
       zipCode: "",
@@ -1247,32 +1245,6 @@ export default function CreateRecruiterAccountForm() {
                           placeholder="Enter current position"
                           {...field}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="experience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Years of Experience*</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select Experience" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0-1">0-1 years</SelectItem>
-                            <SelectItem value="2-5">2-5 years</SelectItem>
-                            <SelectItem value="6-10">6-10 years</SelectItem>
-                            <SelectItem value="10+">10+ years</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

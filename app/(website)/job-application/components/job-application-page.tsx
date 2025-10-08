@@ -21,6 +21,11 @@ interface Resume {
   selected?: boolean;
 }
 
+interface slink {
+  label: string;
+  url: string;
+  _id: string;
+}
 interface UserData {
   id?: string;
   name?: string;
@@ -34,6 +39,7 @@ interface UserData {
   facebookUrl?: string;
   instagramUrl?: string;
   role?: string;
+  sLink?: slink[];
 }
 
 interface UserDataResponse {
@@ -65,13 +71,6 @@ interface JobDetailsResponse {
 interface JobApplicationPageProps {
   jobId: string;
 }
-
-const Skeleton = ({ className }: { className?: string }) => (
-  <div
-    className={`animate-pulse bg-gray-200 rounded ${className}`}
-    aria-label="Loading"
-  ></div>
-);
 
 export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const { data: session, status: sessionStatus } = useSession();
@@ -400,19 +399,27 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   {userData.phoneNum || "Not provided"}
                 </p>
               </div>
-              <div>
-                <p className="text-black text-[22px] font-semibold">
-                  LinkedIn URL
-                </p>
-                <p className="font-normal text-[20px] text-[#707070]">
-                  <Link
-                    href={userData.linkedinUrl || "#"}
-                    className="hover:underline"
-                  >
-                    {userData.linkedinUrl || "Not provided"}
-                  </Link>
-                </p>
-              </div>
+
+              {userData.sLink?.find((link) => link.label === "LinkedIn") && (
+                <div>
+                  <p className="text-black text-[22px] font-semibold">
+                    LinkedIn URL
+                  </p>
+                  <p className="font-normal text-[20px] text-[#707070]">
+                    <Link
+                      href={
+                        userData.sLink?.find(
+                          (link) => link.label === "LinkedIn"
+                        )?.url || "#"
+                      }
+                      className="hover:underline"
+                    >
+                      {userData.sLink?.find((link) => link.label === "LinkedIn")
+                        ?.url || "Not provided"}
+                    </Link>
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -537,7 +544,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                     onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
                   />
                   <Label htmlFor="agree-cv" className="text-sm text-gray-700">
-                    I agree to my CV being shared with the Recruiter for the
+                    I agree to my video pitch shared with the Recruiter for the
                     role I am applying for
                   </Label>
                 </div>
