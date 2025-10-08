@@ -166,73 +166,6 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
     );
   }, [educationCitiesData]);
 
-  // Check if an education entry is empty
-  const isEducationEmpty = (education: any): boolean => {
-    return (
-      !education.instituteName &&
-      !education.degree &&
-      !education.fieldOfStudy &&
-      !education.startDate &&
-      !education.graduationDate &&
-      !education.city &&
-      !education.country
-    );
-  };
-
-  // Filter out empty education entries before rendering
-  const filteredEducationList = educationList.filter((edu: any) => {
-    // Keep entries that are marked for deletion (they'll be handled in submission)
-    if (edu.type === "delete") return true;
-    // Filter out completely empty entries (new ones with no data)
-    return !isEducationEmpty(edu);
-  });
-
-  // Update form value when filtered list changes
-  useEffect(() => {
-    if (filteredEducationList.length !== educationList.length) {
-      form.setValue("educationList", filteredEducationList);
-    }
-  }, [filteredEducationList.length]);
-
-  const handleRemoveEducation = (index: number) => {
-    const currentEducation = form.getValues("educationList") || [];
-    const educationToRemove = currentEducation[index];
-
-    if (educationToRemove._id) {
-      // For existing entries with ID, mark for deletion
-      const updatedEducation = [...currentEducation];
-      updatedEducation[index] = {
-        ...educationToRemove,
-        type: "delete",
-      };
-      form.setValue("educationList", updatedEducation);
-    } else {
-      // For new entries without ID, simply remove from array
-      const updatedEducation = currentEducation.filter(
-        (_: any, i: number) => i !== index
-      );
-      form.setValue("educationList", updatedEducation);
-    }
-  };
-
-  const handleAddEducation = () => {
-    const currentEducation = form.getValues("educationList") || [];
-    form.setValue("educationList", [
-      ...currentEducation,
-      {
-        type: "create",
-        instituteName: "",
-        degree: "",
-        fieldOfStudy: "",
-        startDate: "",
-        graduationDate: "",
-        currentlyStudying: false,
-        city: "",
-        country: "",
-      },
-    ]);
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -242,7 +175,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
         </p>
       </CardHeader>
       <CardContent>
-        {filteredEducationList.map((education: any, index: number) => {
+        {educationList.map((education: any, index: number) => {
           if (education.type === "delete") return null;
 
           return (
@@ -515,7 +448,27 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
             </div>
           );
         })}
-        <Button type="button" variant="outline" onClick={handleAddEducation}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            const currentEducation = form.getValues("educationList") || [];
+            form.setValue("educationList", [
+              ...currentEducation,
+              {
+                type: "create",
+                instituteName: "",
+                degree: "",
+                fieldOfStudy: "",
+                startDate: "",
+                graduationDate: "",
+                currentlyStudying: false,
+                city: "",
+                country: "",
+              },
+            ]);
+          }}
+        >
           Add Education
         </Button>
       </CardContent>

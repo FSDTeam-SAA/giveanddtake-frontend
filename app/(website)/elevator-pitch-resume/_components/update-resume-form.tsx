@@ -639,7 +639,7 @@ export default function UpdateResumeForm({
 
       await onUpdate(formData);
       console.log("Form Data Submitted:", formData.getAll("awardsAndHonors"));
-      toast.success("Profile updated successfully!");
+      toast.success("Resume updated successfully!");
     } catch (error) {
       console.error("Error in form submission:", error);
       toast.error("Failed to update resume. Please try again.");
