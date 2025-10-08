@@ -255,6 +255,7 @@ function BannerUpload({
       }
     }
   };
+  console.log(previewUrl)
 
   return (
     <>
@@ -267,14 +268,21 @@ function BannerUpload({
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <Image
-          src={previewUrl || "/placeholder-banner.svg"}
+
+        {previewUrl ? (
+    <Image
+          src={previewUrl }
           alt="Cover image"
           width={1600}
           height={900}
           className="object-cover opacity-80 w-full h-full"
           priority
         />
+          ) : (
+          <div className="w-full h-full bg-gray-200" />
+        )
+          }
+    
         {isEditing && (
           <div
             className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
@@ -698,7 +706,7 @@ export default function EditableRecruiterAccount({
     location || [city, country].filter(Boolean).join(", ");
   const displayPhoto = photoPreview || recruiter.photo || "/placeholder.svg";
   const displayBanner =
-    bannerPreview || recruiter.banner || "/placeholder-banner.svg";
+    bannerPreview || recruiter.banner;
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(followerCount);
@@ -825,8 +833,8 @@ export default function EditableRecruiterAccount({
       />
 
       <div className="border-b-2">
-        <div className="mx-auto max-w-7xl lg:pb-10 pb-6">
-          <div className="relative -mt-10 sm:-mt-14 md:-mt-16">
+        <div className="container mx-auto lg:pb-10 pb-6 px-4 sm:px-6 lg:px-16">
+          <div className="relative -mt-10 sm:-mt-14 md:-mt-16  ">
             <div className="flex items-end justify-between gap-4">
               <PhotoUpload
                 onFileSelect={(file) => {
@@ -885,7 +893,7 @@ export default function EditableRecruiterAccount({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-8 md:grid-cols-[1fr_300px]">
+          <div className="mt-6 grid gap-8">
             <div className="space-y-4">
               {isEditing ? (
                 <Form {...form}>
@@ -1200,32 +1208,6 @@ export default function EditableRecruiterAccount({
                   </div>
                 )}
               </div>
-
-              {/* <div className="space-y-5">
-                {websiteHref && (
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-6 w-6 text-muted-foreground" />
-                    <Link
-                      href={websiteHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm underline underline-offset-4"
-                    >
-                      Website
-                    </Link>
-                  </div>
-                )}
-
-                {primaryLocation && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-6 w-6 text-muted-foreground" />
-                    <p className="text-sm">
-                      {"Location: "}
-                      {primaryLocation}
-                    </p>
-                  </div>
-                )}
-              </div> */}
             </aside>
           </div>
         </div>

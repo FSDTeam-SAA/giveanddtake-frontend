@@ -159,7 +159,7 @@ export default function RecruiterElevator({
   };
 
   return (
-    <div>
+    <div className="container mx-auto">
       <div className="lg:pb-12 pb-5">
         <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
           Elevator Pitch
@@ -188,7 +188,7 @@ export default function RecruiterElevator({
             {pitchData ? (
               <VideoPlayer
                 pitchId={pitchData._id}
-                className="w-full mx-auto h-[500px]"
+                className="w-full mx-auto md:h-[500px]"
               />
             ) : loading ? (
               <div>Loading pitch...</div>

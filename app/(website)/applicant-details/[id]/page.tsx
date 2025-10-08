@@ -44,6 +44,8 @@ interface Experience {
   _id: string;
   userId: string;
   employer?: string;
+  company?: string;
+  position?: string;
   jobTitle?: string;
   startDate?: string;
   endDate?: string;
@@ -63,6 +65,7 @@ interface Education {
   fieldOfStudy?: string;
   createdAt?: string;
   updatedAt?: string;
+  instituteName?: string;
 }
 
 interface Award {
@@ -575,7 +578,7 @@ export default function ApplicantDetailsPage() {
           </div>
         )}
 
-        {experiences.length > 0 && (
+        {experiences[0]?.company && experiences[0]?.position && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Experience</CardTitle>
@@ -590,7 +593,7 @@ export default function ApplicantDetailsPage() {
                     <div className="flex justify-between">
                       <div>
                         <h3 className="font-semibold text-lg">
-                          {exp.jobTitle || "Unknown Position"}
+                          {exp.position || "Unknown Position"}
                         </h3>
                         {/* <p className="text-gray-600">
                           {exp.employer || "Unknown Employer"}
@@ -599,6 +602,11 @@ export default function ApplicantDetailsPage() {
                       <div className="text-gray-500 text-sm">
                         {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
                       </div>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">
+                        {exp.company || "Unknown Employer"}
+                      </p>
                     </div>
                     {exp.country && (
                       <div className="flex items-center gap-1 text-sm text-gray-500 mt-1">
@@ -618,7 +626,7 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {education.length > 0 && (
+        {education[0]?.instituteName && education[0]?.degree && (
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Education</CardTitle>
