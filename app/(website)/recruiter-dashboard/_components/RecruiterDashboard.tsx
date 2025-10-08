@@ -452,7 +452,9 @@ export default function RecruiterDashboard() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [currentPageTable, setCurrentPageTable] = useState(1);
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(
+    null
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer
   const itemsPerPage = 4;
 
@@ -746,21 +748,28 @@ export default function RecruiterDashboard() {
                 <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
                   <div className="col-span-1 md:col-span-3">
                     <div className="md:flex space-x-3">
-                      <Image
-                        src={
-                          recruiterAccount?.data?.companyId?.clogo ??
-                          recruiterAccount?.data?.photo ??
-                          "/placeholder.png"
-                        }
-                        alt={
-                          recruiterAccount?.data?.companyId
-                            ? "Company Logo"
-                            : "Recruiter Photo"
-                        }
-                        width={170}
-                        height={170}
-                        className="mt-1"
-                      />
+                      {recruiterAccount?.data?.companyId?.clogo ||
+                      recruiterAccount?.data?.photo ? (
+                        <Image
+                          src={
+                            recruiterAccount?.data?.companyId?.clogo ||
+                            recruiterAccount?.data?.photo ||
+                            "/placeholder.png"
+                          }
+                          alt={
+                            recruiterAccount?.data?.companyId
+                              ? "Company Logo"
+                              : "Recruiter Photo"
+                          }
+                          width={170}
+                          height={170}
+                          className="mt-1 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-[170px] h-[170px] bg-gray-200 flex items-center justify-center text-gray-500">
+                          No Image
+                        </div>
+                      )}
                       <div className="space-y-3">
                         <div>
                           <div className="font-medium text-xl text-[#000000]">

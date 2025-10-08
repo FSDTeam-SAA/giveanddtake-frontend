@@ -70,7 +70,7 @@ export default function ElevatorPitchAndResume() {
 
   return (
     <section className="">
-      <div className="container mx-auto lg:px-6">
+      <div className="lg:container lg:mx-auto lg:px-6">
         {role === "candidate" ? (
           myresume?.resume ? (
             isEditing ? (
