@@ -1,6 +1,8 @@
 "use client";
 
 import type { UseFormReturn } from "react-hook-form";
+import { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,17 @@ import {
 } from "@/components/ui/form";
 import { CustomDateInput } from "./custom-date-input";
 import { UniversitySelector } from "./university-selector";
+import { Combobox } from "@/components/ui/combo-box";
+
+interface Country {
+  country: string;
+  cities: string[];
+}
+
+interface Option {
+  value: string;
+  label: string;
+}
 
 // Utility function to compare dates (format: MM/YYYY)
 const isDateValid = (startDate: string, endDate: string): boolean => {
@@ -38,6 +51,120 @@ interface EducationSectionProps {
 
 export const EducationSection = ({ form }: EducationSectionProps) => {
   const educationList = form.watch("educationList") || [];
+  const [selectedEducationCountries, setSelectedEducationCountries] = useState<
+    string[]
+  >([]);
+  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>(
+    []
+  );
+  const [loadingEducationCities, setLoadingEducationCities] = useState<
+    boolean[]
+  >([]);
+
+  // Fetch countries
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
+    Country[]
+  >({
+    queryKey: ["countries"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries"
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch countries");
+      return data.data as Country[];
+    },
+  });
+
+  const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
+    if (!country) return [];
+    try {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country }),
+        }
+      );
+      const data = await response.json();
+      if (data.error) throw new Error("Failed to fetch cities");
+      return data.data as string[];
+    } catch (error) {
+      console.error("Error fetching cities:", error);
+      return [];
+    }
+  };
+
+  // Sync education countries state with form data
+  useEffect(() => {
+    const initialCountries = educationList.map((edu: any) => edu.country || "");
+    setSelectedEducationCountries(initialCountries);
+  }, [educationList.length]);
+
+  // Fetch cities for all education entries when countries change
+  useEffect(() => {
+    const fetchEducationCities = async () => {
+      const newCitiesData: string[][] = [];
+      const newLoadingStates: boolean[] = [];
+
+      for (let index = 0; index < educationList.length; index++) {
+        const country = selectedEducationCountries[index] || "";
+        newLoadingStates[index] = !!country;
+
+        if (country) {
+          const cities = await fetchCitiesForCountry(country);
+          newCitiesData[index] = cities;
+        } else {
+          newCitiesData[index] = [];
+        }
+        newLoadingStates[index] = false;
+      }
+
+      setEducationCitiesData(newCitiesData);
+      setLoadingEducationCities(newLoadingStates);
+    };
+
+    if (educationList.length > 0) {
+      fetchEducationCities();
+    }
+  }, [educationList.length, selectedEducationCountries]);
+
+  // Validate dates whenever startDate or graduationDate changes
+  useEffect(() => {
+    educationList.forEach((_: any, index: number) => {
+      const startDate = form.getValues(`educationList.${index}.startDate`);
+      const graduationDate = form.getValues(
+        `educationList.${index}.graduationDate`
+      );
+      const currentlyStudying = form.getValues(
+        `educationList.${index}.currentlyStudying`
+      );
+
+      if (!currentlyStudying && startDate && graduationDate) {
+        if (!isDateValid(startDate, graduationDate)) {
+          form.setError(`educationList.${index}.graduationDate`, {
+            type: "manual",
+            message: "Graduation date cannot be earlier than start date",
+          });
+        } else {
+          form.clearErrors(`educationList.${index}.graduationDate`);
+        }
+      }
+    });
+  }, [form, educationList]);
+
+  const countryOptions = useMemo(
+    () =>
+      countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
+    [countriesData]
+  );
+
+  const educationCityOptions = useMemo(() => {
+    return educationCitiesData.map(
+      (cities) => cities?.map((c) => ({ value: c, label: c })) || []
+    );
+  }, [educationCitiesData]);
 
   return (
     <Card>
@@ -114,6 +241,71 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                     </FormItem>
                   )}
                 />
+
+                {/* Country Field */}
+                <FormField
+                  control={form.control}
+                  name={`educationList.${index}.country`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Combobox
+                          options={countryOptions}
+                          value={field.value || ""}
+                          onChange={(value) => {
+                            field.onChange(value);
+                            setSelectedEducationCountries((prev) => {
+                              const newCountries = [...prev];
+                              newCountries[index] = value;
+                              return newCountries;
+                            });
+                          }}
+                          placeholder={
+                            isLoadingCountries
+                              ? "Loading countries..."
+                              : "Select Country"
+                          }
+                          minSearchLength={0}
+                          disabled={isLoadingCountries}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* City Field */}
+                <FormField
+                  control={form.control}
+                  name={`educationList.${index}.city`}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Combobox
+                          options={educationCityOptions[index] || []}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          placeholder={
+                            !selectedEducationCountries[index]
+                              ? "Select country first"
+                              : loadingEducationCities[index]
+                              ? "Loading cities..."
+                              : "Select City"
+                          }
+                          minSearchLength={2}
+                          disabled={
+                            loadingEducationCities[index] ||
+                            !selectedEducationCountries[index]
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name={`educationList.${index}.startDate`}
