@@ -78,7 +78,6 @@ export const resumeSchema = z.object({
     .string()
     .trim()
     .min(1, "About section is required")
-    .max(1500, "About section can be at most 1500 characters")
     .refine(
       (value) => {
         const wordCount = value.trim().split(/\s+/).length;

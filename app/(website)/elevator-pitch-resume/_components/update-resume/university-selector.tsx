@@ -1,38 +1,46 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 interface UniversitySelectorProps {
-  value: string
-  onChange: (value: string) => void
-  placeholder?: string
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-export const UniversitySelector = ({ value, onChange, placeholder }: UniversitySelectorProps) => {
-  const [search, setSearch] = useState(value || "")
-  const [showDropdown, setShowDropdown] = useState(false)
+export const UniversitySelector = ({
+  value,
+  onChange,
+  placeholder,
+}: UniversitySelectorProps) => {
+  const [search, setSearch] = useState(value || "");
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const { data: universities, isLoading } = useQuery({
     queryKey: ["universities"],
     queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/university`)
-      const data = await response.json()
-      if (!data.success) throw new Error("Failed to fetch universities")
-      return data.data.map((uni: any) => uni.name)
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/university`
+      );
+      const data = await response.json();
+      if (!data.success) throw new Error("Failed to fetch universities");
+      return data.data.map((uni: any) => uni.name);
     },
-  })
+  });
 
   const filteredUniversities =
-    universities?.filter((uni: string) => uni.toLowerCase().includes(search.toLowerCase())) || []
+    universities?.filter((uni: string) =>
+      uni.toLowerCase().includes(search.toLowerCase())
+    ) || [];
 
   const selectUniversity = (uni: string) => {
-    setSearch(uni)
-    onChange(uni)
-    setShowDropdown(false)
-  }
+    setSearch(uni);
+    onChange(uni);
+    setShowDropdown(false);
+  };
 
   return (
     <div className="relative">
@@ -40,12 +48,14 @@ export const UniversitySelector = ({ value, onChange, placeholder }: UniversityS
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
         <Input
           type="text"
-          placeholder={placeholder || "Search for university..."}
+          placeholder={
+            placeholder || "Search for university/college/high-school..."
+          }
           value={search}
           onChange={(e) => {
-            setSearch(e.target.value)
-            onChange(e.target.value)
-            setShowDropdown(true)
+            setSearch(e.target.value);
+            onChange(e.target.value);
+            setShowDropdown(true);
           }}
           onFocus={() => setShowDropdown(true)}
           onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
@@ -68,5 +78,5 @@ export const UniversitySelector = ({ value, onChange, placeholder }: UniversityS
         </div>
       )}
     </div>
-  )
-}
+  );
+};
