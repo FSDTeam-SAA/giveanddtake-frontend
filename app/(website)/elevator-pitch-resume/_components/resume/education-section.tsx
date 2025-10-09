@@ -147,7 +147,7 @@ function Combobox({
 function UniversitySelector({
   value,
   onChange,
-  placeholder = "Search for university...",
+  placeholder = "Type your University/College/High School",
   disabled = false,
 }: {
   value: string;
@@ -367,7 +367,9 @@ export function EducationSection({
   // Sync education countries state with form data
   useEffect(() => {
     setSelectedEducationCountries(
-      educationFields.map((field, index) => form.getValues(`educationList.${index}.country`) || "")
+      educationFields.map(
+        (field, index) => form.getValues(`educationList.${index}.country`) || ""
+      )
     );
   }, [educationFields]);
 
@@ -426,7 +428,7 @@ export function EducationSection({
                       <UniversitySelector
                         value={field.value || ""}
                         onChange={field.onChange}
-                        placeholder="Search for university (e.g. Harvard University)..."
+                        placeholder="Type your University/College/High School"
                       />
                     </FormControl>
                     <FormMessage />
@@ -438,14 +440,14 @@ export function EducationSection({
                 name={`educationList.${index}.degree`}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Degree</FormLabel>
+                    <FormLabel>Qualification</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value || ""} // Ensure value is empty string if undefined
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a degree" />
+                          <SelectValue placeholder="Select a qualification" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="BSc.">BSc.</SelectItem>
@@ -456,6 +458,11 @@ export function EducationSection({
                           <SelectItem value="MSc.">MSc.</SelectItem>
                           <SelectItem value="M.Phil.">M.Phil.</SelectItem>
                           <SelectItem value="Ph.D">Ph.D</SelectItem>
+                          <SelectItem value="High School">
+                            High School
+                          </SelectItem>
+                          <SelectItem value="College">College</SelectItem>
+                          <SelectItem value="Sixth Form">Sixth Form</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -471,7 +478,10 @@ export function EducationSection({
                   <FormItem>
                     <FormLabel>Field Of Study</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Computer Science" {...field} />
+                      <Input
+                        placeholder="e.g. Computer Science/Medicine/Civil Engineering"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -191,7 +191,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                         <UniversitySelector
                           value={field.value || ""}
                           onChange={field.onChange}
-                          placeholder="Search for university..."
+                          placeholder="Type your University/College/High School"
                         />
                       </FormControl>
                       <FormMessage />
@@ -203,14 +203,14 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                   name={`educationList.${index}.degree`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Degree</FormLabel>
+                      <FormLabel>Qualification</FormLabel>
                       <FormControl>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a degree" />
+                            <SelectValue placeholder="Select a qualification" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="BSc.">BSc.</SelectItem>
@@ -221,6 +221,13 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                             <SelectItem value="MSc.">MSc.</SelectItem>
                             <SelectItem value="M.Phil.">M.Phil.</SelectItem>
                             <SelectItem value="Ph.D">Ph.D</SelectItem>
+                            <SelectItem value="High School">
+                              High School
+                            </SelectItem>
+                            <SelectItem value="College">College</SelectItem>
+                            <SelectItem value="Sixth Form">
+                              Sixth Form
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormControl>
@@ -235,7 +242,10 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                     <FormItem>
                       <FormLabel>Field Of Study</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Computer Science" {...field} />
+                        <Input
+                          placeholder="e.g. Computer Science/Medicine/Civil Engineering"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
