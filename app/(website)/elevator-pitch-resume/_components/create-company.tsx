@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react"; // Added useCallback here
@@ -28,11 +27,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { FileUpload } from "@/components/company/file-upload";
 import { EmployeeSelector } from "@/components/company/employee-selector";
 import { DynamicInputList } from "@/components/company/dynamic-input-list";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
-import CustomDateInput from "@/components/custom-date-input";
 import {
   createCompany,
   uploadElevatorPitch,
@@ -40,10 +37,15 @@ import {
 } from "@/lib/api-service";
 import { SocialLinksSection } from "./social-links-section";
 import { AwardsSection } from "./resume/awards-section";
-import { BannerUpload } from "./banner-upload";
+import { BannerUpload } from "@/components/shared/banner-upload";
 import { convertToISODate } from "@/lib/date-utils";
 import Cropper, { Area } from "react-easy-crop";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import Image from "next/image"; // Added for Image component
 import { X } from "lucide-react"; // Added for X icon
 
@@ -178,7 +180,10 @@ function LogoUpload({ onFileSelect, previewUrl }: LogoUploadProps) {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []); // useCallback is now imported and functional
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<File> => {
     const image = new window.Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
@@ -215,7 +220,10 @@ function LogoUpload({ onFileSelect, previewUrl }: LogoUploadProps) {
     if (selectedImage && croppedAreaPixels) {
       setIsProcessing(true);
       try {
-        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        const croppedImage = await getCroppedImg(
+          selectedImage,
+          croppedAreaPixels
+        );
         onFileSelect(croppedImage);
         setCropModalOpen(false);
         setSelectedImage(null);
@@ -231,7 +239,9 @@ function LogoUpload({ onFileSelect, previewUrl }: LogoUploadProps) {
     <>
       <div
         className={`aspect-square border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-          dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+          dragActive
+            ? "border-green-500 bg-green-50"
+            : "border-gray-300 hover:border-gray-400"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
