@@ -318,26 +318,26 @@ export default function CompanyProfilePage() {
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-[150px] md:h-[300px] rounded-b-lg">
+      <div className="w-full h-auto lg:h-[300px] rounded-b-lg">
         {company.banner ? (
           <Image
             src={company.banner}
             alt={`${company.cname} banner`}
             width={1200}
             height={200}
-            className=" w-full h-[150px] md:h-[300px] object-cover object-center"
+            className=" w-full h-auto lg:h-[300px] object-cover object-center"
           />
         ) : (
-          <div className=" w-full h-[150px] md:h-[300px] bg-gray-200" />
+          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
         )}
       </div>
 
       <div className="container mx-auto">
         {/* Header Section */}
-        <div className="md:px-6 lg:pl-10 mt-[-30px]">
+        <div className="md:px-6 lg:pl-10 mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
             <div className="col-span-3">
-              <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] flex-shrink-0">
+              <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] flex-shrink-0 ring-2 ring-background shadow-md overflow-hidden bg-muted">
                 <Image
                   src={
                     company.clogo && company.clogo.trim() !== ""

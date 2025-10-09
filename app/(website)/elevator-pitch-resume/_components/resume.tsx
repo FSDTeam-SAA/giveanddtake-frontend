@@ -202,35 +202,35 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   return (
     <main className="min-h-screen">
       <div className="lg:container lg:mx-auto lg:px-6">
-        <div className="w-full h-[150px] md:h-[300px]">
+        <div className="w-full h-auto lg:h-[300px]">
           {resume.resume.banner ? (
             <Image
               src={resume.resume.banner}
               alt="Resume Header Background"
               width={1200}
               height={300}
-              className="w-full h-[150px] md:h-[300px] object-cover"
+              className="w-full h-auto lg:h-[300px] object-cover"
             />
           ) : (
-            <div className="w-full h-[150px] md:h-[300px] bg-gray-200" />
+            <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
           )}
         </div>
         <div className="container mx-auto border-0 mb-16">
           <CardContent className="p-0">
-            <div className="flex flex-col lg:flex-row border-b-2 mt-[-20px] pb-4 gap-6 sm:px-6">
+            <div className="flex flex-col lg:flex-row border-b-2 mt-[-10px] md:mt-[-20px] lg:mt-[-30px] pb-4 gap-6 sm:px-6">
               <div className="lg:w-1/3 w-full">
-                <div className="mb-6 text-center lg:text-left">
-                  <div className="w-[170px] h-[170px] mx-auto lg:mx-0 rounded-md bg-gray-300 mb-4 overflow-hidden">
+                <div className="mb-6">
+                  <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded-md bg-gray-300 ring-2 ring-background shadow-md overflow-hidden bg-muted mb-4">
                     {resume.resume.photo ? (
                       <Image
                         src={resume.resume.photo}
                         alt={`${resume.resume.firstName} ${resume.resume.lastName}`}
                         height={500}
                         width={500}
-                        className="w-full h-full object-cover object-top"
+                        className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                      <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
                         {resume.resume.firstName?.[0] || "U"}
                         {resume.resume.lastName?.[0] || "U"}
                       </div>
@@ -250,7 +250,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       .toUpperCase()}${resume.resume.lastName.slice(1)}`}
                   </h2>
 
-                  <div className="flex items-center justify-center lg:justify-start mt-2 space-x-2">
+                  <div className="mt-2 space-x-2">
                     <SocialLinks sLink={resume.resume.sLink} />
                   </div>
                 </div>

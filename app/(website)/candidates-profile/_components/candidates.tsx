@@ -255,25 +255,25 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-[150px] md:h-[300px]">
+      <div className="w-full h-auto lg:h-[300px]">
         {resume.banner ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-[150px] md:h-[300px] object-cover lg:object-cover object-center"
+            className="w-full h-auto lg:h-[300px] object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[150px] md:h-[300px] bg-gray-200" />
+          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
         )}
       </div>
 
       <div className="container mx-auto md:px-6">
         {/* Profile */}
-        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:px-6 mt-[-30px]">
+        <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:px-6 mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
           <div className="col-span-3">
-            <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded-md bg-gray-200 overflow-hidden">
+            <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded-md bg-gray-200 ring-2 ring-background shadow-md overflow-hidden bg-muted">
               {resume.photo ? (
                 <Image
                   src={resume.photo}
