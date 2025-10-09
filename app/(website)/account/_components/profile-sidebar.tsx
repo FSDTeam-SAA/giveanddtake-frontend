@@ -1,8 +1,9 @@
+// components/ProfileSidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -18,6 +19,7 @@ import { User, Lock, Calendar, LogOut, Camera, Menu } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Cropper, { type Area } from "react-easy-crop";
 
 async function fetchUserData(token: string) {
   const response = await fetch(
@@ -61,27 +63,33 @@ export function ProfileSidebar() {
   const token = session?.accessToken || "";
   const role = session?.user?.role as string | undefined;
 
-  const [isOpen, setIsOpen] = useState(false); // mobile sheet
-  const [confirmOpen, setConfirmOpen] = useState(false); // modal state
+  const [isOpen, setIsOpen] = useState(false); // Mobile sheet
+  const [confirmOpen, setConfirmOpen] = useState(false); // Crop dialog state
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Always call hooks before any early return
+  // Cleanup for URL.createObjectURL
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (selectedImage) URL.revokeObjectURL(selectedImage);
     };
-  }, [previewUrl]);
+  }, [previewUrl, selectedImage]);
 
   // Fetch user data
   const { data: userData, isLoading: isUserDataLoading } = useQuery({
     queryKey: ["userData", token],
     queryFn: () => fetchUserData(token),
-    enabled: !!token, // Only fetch if token exists
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
   });
 
   // Mutation for updating avatar
@@ -93,13 +101,16 @@ export function ProfileSidebar() {
       setConfirmOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
+      setSelectedImage(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     },
     onError: (error: any) => {
       toast.error(`Failed to update avatar: ${error.message}`);
+      setIsProcessing(false);
     },
   });
 
-  // Define menu items and filter out "Job History" for recruiters/companies
+  // Define menu items
   const menuItems = useMemo(
     () =>
       [
@@ -124,6 +135,86 @@ export function ProfileSidebar() {
       ),
     [role]
   );
+
+  // Cropping logic
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+    const image = new window.Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => (image.onload = resolve));
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    const outputSize = 200;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      outputSize,
+      outputSize
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        if (blob) {
+          resolve(new File([blob], "cropped-avatar.jpg", { type: "image/jpeg" }));
+        }
+      }, "image/jpeg");
+    });
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setConfirmOpen(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const confirmUpload = async () => {
+    if (!selectedImage || !croppedAreaPixels) return;
+
+    setIsProcessing(true);
+    try {
+      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      setSelectedFile(croppedImage);
+      setPreviewUrl(URL.createObjectURL(croppedImage));
+      avatarMutation.mutate({ token, file: croppedImage });
+    } catch (error) {
+      toast.error("Failed to process image");
+      setIsProcessing(false);
+    }
+  };
+
+  const cancelUpload = () => {
+    setConfirmOpen(false);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    if (selectedImage) URL.revokeObjectURL(selectedImage);
+    setPreviewUrl(null);
+    setSelectedFile(null);
+    setSelectedImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   // Handle loading state with skeleton loader
   if (status === "loading" || isUserDataLoading) {
@@ -159,29 +250,6 @@ export function ProfileSidebar() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] || null;
-    if (!file) return;
-
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    setConfirmOpen(true);
-  };
-
-  const confirmUpload = () => {
-    if (!selectedFile) return;
-    avatarMutation.mutate({ token, file: selectedFile });
-  };
-
-  const cancelUpload = () => {
-    setConfirmOpen(false);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       <div className="flex flex-col items-center mb-6 p-6">
@@ -194,7 +262,7 @@ export function ProfileSidebar() {
               alt={session?.user?.name || "User Avatar"}
             />
             <AvatarFallback className="text-xl bg-gray-200">
-              {userData?.data?.name[0]?.toUpperCase() || "U"}
+              {userData?.data?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           <button
@@ -293,44 +361,44 @@ export function ProfileSidebar() {
         <SidebarContent />
       </div>
 
-      {/* Confirm change avatar dialog */}
+      {/* Crop avatar dialog */}
       <Dialog
         open={confirmOpen}
         onOpenChange={(o) => (o ? setConfirmOpen(true) : cancelUpload())}
       >
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Change profile photo?</DialogTitle>
+            <DialogTitle>Crop Profile Photo</DialogTitle>
             <DialogDescription>
-              This will replace your current profile picture. You can preview it
-              below before confirming.
+              Adjust the crop area for your profile picture, then confirm to upload.
             </DialogDescription>
           </DialogHeader>
-
-          {previewUrl ? (
-            <div className="flex items-center gap-4">
-              <img
-                src={previewUrl}
-                alt="Selected preview"
-                className="h-20 w-20 rounded-full object-cover border"
+          <div className="relative h-[300px] bg-black">
+            {selectedImage && (
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                restrictPosition={false}
+                minZoom={0.5}
+                maxZoom={3}
               />
-              <div className="text-sm text-gray-600">
-                <p className="font-medium">New photo selected</p>
-                <p className="mt-1">Click "Confirm" to upload.</p>
-              </div>
-            </div>
-          ) : null}
-
+            )}
+          </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={cancelUpload}
-              disabled={avatarMutation.isPending}
+              disabled={isProcessing}
             >
               Cancel
             </Button>
-            <Button onClick={confirmUpload} disabled={avatarMutation.isPending}>
-              {avatarMutation.isPending ? "Uploading..." : "Confirm"}
+            <Button onClick={confirmUpload} disabled={isProcessing}>
+              {isProcessing ? "Processing..." : "Confirm Crop"}
             </Button>
           </DialogFooter>
         </DialogContent>

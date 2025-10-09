@@ -41,6 +41,7 @@ import { useRouter } from "next/navigation";
 import CustomDateInput from "@/components/custom-date-input";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { LogoUpload } from "./logo-upload";
 
 // Types for countries and cities
 interface Country {
@@ -85,10 +86,6 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-interface EditCompanyPageProps {
-  companyId: string;
-}
-
 interface Honor {
   id: string;
   _id?: string;
@@ -125,6 +122,10 @@ const fetchCities = async (country: string): Promise<string[]> => {
   return data.data as string[];
 };
 
+interface EditCompanyPageProps {
+  companyId: string;
+}
+
 function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -149,7 +150,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [cityOpen, setCityOpen] = useState(false);
 
   const router = useRouter();
-
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -181,6 +181,15 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     enabled: !!selectedCountry,
   });
 
+  // Cleanup for URL.createObjectURL
+  useEffect(() => {
+    return () => {
+      if (logoFile) {
+        URL.revokeObjectURL(URL.createObjectURL(logoFile));
+      }
+    };
+  }, [logoFile]);
+
   useEffect(() => {
     const fetchCompany = async () => {
       try {
@@ -192,6 +201,19 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
           throw new Error("Failed to fetch company");
         }
         const data = await response.json();
+        // Validate clogo URL
+        const isValidUrl = (url: string) => {
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
+        };
+        if (data?.data?.companies?.[0]?.clogo && !isValidUrl(data.data.companies[0].clogo)) {
+          console.warn("Invalid logo URL, resetting to null");
+          data.data.companies[0].clogo = null;
+        }
         setCompanyData(data);
       } catch (error) {
         console.error("Error fetching company:", error);
@@ -209,13 +231,13 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   useEffect(() => {
     if (companyData?.data?.companies?.[0]) {
       const company = companyData.data.companies[0];
-      console.log("Company data loaded:", company); // Debug log
+      console.log("Company data loaded:", company);
 
       if (company.country) {
         setSelectedCountry(company.country);
       }
 
-      // Process social links - ensure all fixed platforms are included
+      // Process social links
       const processedSocialLinks = FIXED_PLATFORMS.map((label) => {
         const matchingLink = company.sLink?.find(
           (link: { label: string; url: string; _id: string }) =>
@@ -229,10 +251,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         };
       });
 
-      console.log("Processed social links:", processedSocialLinks); // Debug log
-      console.log("AboutUs content:", company.aboutUs); // Debug log
+      console.log("Processed social links:", processedSocialLinks);
+      console.log("AboutUs content:", company.aboutUs);
 
-      // Reset form with all data including aboutUs and sLink
       form.reset({
         cname: company.cname || "",
         country: company.country || "",
@@ -272,7 +293,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       setHonors(loadedHonors);
       setOriginalHonors([...loadedHonors]);
     } else {
-      // Reset honors if none exist
       setHonors([
         {
           id: "1",
@@ -515,21 +535,15 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-900">
-                    Company Logo
-                  </Label>
-                  <div className="aspect-square">
-                    <FileUpload
-                      onFileSelect={setLogoFile}
-                      defaultUrl={companyData?.data?.companies?.[0]?.clogo}
-                      accept="image/*"
-                      className="h-full"
-                    >
-                      <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
-                        Company Logo
-                      </div>
-                    </FileUpload>
-                  </div>
+                  <Label className="text-sm font-medium text-gray-900">Company Logo</Label>
+                  <LogoUpload
+                    onFileSelect={setLogoFile}
+                    previewUrl={
+                      logoFile
+                        ? URL.createObjectURL(logoFile)
+                        : companyData?.data?.companies?.[0]?.clogo || null
+                    }
+                  />
                 </div>
 
                 <div className="md:col-span-2 space-y-2">
