@@ -51,6 +51,7 @@ interface JobDetailsData {
   applicationRequirement: Array<{
     requirement: string;
     _id: string;
+    status: string;
   }>;
   customQuestion: Array<{
     question: string;
@@ -595,19 +596,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </CardContent>
             </Card>
 
-            {!!job.applicationRequirement?.length && (
+            {job.applicationRequirement?.some(
+              (req) => req.status !== "Optional"
+            ) && (
               <Card>
                 <CardHeader>
                   <CardTitle>Application Requirements</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
-                    {job.applicationRequirement.map((req) => (
-                      <li key={req._id} className="flex items-start">
-                        <span className="mt-2 mr-3 h-2 w-2 flex-shrink-0 rounded-full bg-red-600" />
-                        <span className="text-gray-700">{req.requirement}</span>
-                      </li>
-                    ))}
+                    {job.applicationRequirement
+                      .filter((req) => req.status !== "Optional")
+                      .map((req) => (
+                        <li key={req._id} className="flex items-start">
+                          <span className="mt-2 mr-3 h-2 w-2 flex-shrink-0 rounded-full bg-red-600" />
+                          <span className="text-gray-700">
+                            {req.requirement}
+                          </span>
+                        </li>
+                      ))}
                   </ul>
                 </CardContent>
               </Card>

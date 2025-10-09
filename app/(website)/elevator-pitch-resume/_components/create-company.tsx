@@ -30,7 +30,7 @@ import {
 } from "@/lib/api-service";
 import { SocialLinksSection } from "./social-links-section";
 import { AwardsSection } from "./resume/awards-section";
-import { BannerUpload } from "./banner-upload";
+import { BannerUpload } from "@/components/shared/banner-upload";
 import { convertToISODate } from "@/lib/date-utils";
 import Cropper, { Area } from "react-easy-crop";
 import {

@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { SocialLinksSection } from "./social-links-section";
 import { LanguageSelector } from "./resume/language-selector";
 import { CertificationSelector } from "./resume/certification-selector";
-import { BannerUpload } from "./update-resume/banner-upload";
+import { BannerUpload } from "@/components/shared/banner-upload";
 import { PhotoAboutSection } from "./update-resume/photo-about-section";
 import { PersonalInfoSection } from "./update-resume/personal-info-section";
 import { SkillsSelector } from "./update-resume/skills-selector";
@@ -224,6 +224,7 @@ export default function UpdateResumeForm({
   const [selectedCertifications, setSelectedCertifications] = useState<
     string[]
   >(resume.resume?.certifications || []);
+  
 
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
     Country[]

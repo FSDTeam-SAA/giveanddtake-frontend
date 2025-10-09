@@ -1,4 +1,3 @@
-
 "use client";
 
 // =========================
@@ -19,13 +18,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Form,
   FormControl,
@@ -60,10 +52,14 @@ import {
 import { cn } from "@/lib/utils";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import { SocialLinksSection } from "./social-links-section";
-import CustomDateInput from "@/components/custom-date-input";
 import apiClient from "@/lib/api-service";
 import Cropper, { Area } from "react-easy-crop";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Option {
   value: string;
@@ -89,7 +85,11 @@ interface BannerUploadProps {
   onUploadSuccess: () => void;
 }
 
-function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploadProps) {
+function BannerUpload({
+  onFileSelect,
+  previewUrl,
+  onUploadSuccess,
+}: BannerUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -147,7 +147,10 @@ function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploa
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<File> => {
     const image = new window.Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
@@ -177,7 +180,9 @@ function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploa
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          resolve(new File([blob], "cropped-banner.jpg", { type: "image/jpeg" }));
+          resolve(
+            new File([blob], "cropped-banner.jpg", { type: "image/jpeg" })
+          );
         }
       }, "image/jpeg");
     });
@@ -187,7 +192,10 @@ function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploa
     if (selectedImage && croppedAreaPixels) {
       setIsProcessing(true);
       try {
-        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        const croppedImage = await getCroppedImg(
+          selectedImage,
+          croppedAreaPixels
+        );
         onFileSelect(croppedImage);
         setCropModalOpen(false);
         setSelectedImage(null);
@@ -217,7 +225,9 @@ function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploa
       <CardContent>
         <div
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+            dragActive
+              ? "border-green-500 bg-green-50"
+              : "border-gray-300 hover:border-gray-400"
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
@@ -256,7 +266,9 @@ function BannerUpload({ onFileSelect, previewUrl, onUploadSuccess }: BannerUploa
                 type="button"
                 variant="secondary"
                 className="bg-gray-700 hover:bg-gray-600 text-white"
-                onClick={() => document.getElementById("banner-upload")?.click()}
+                onClick={() =>
+                  document.getElementById("banner-upload")?.click()
+                }
               >
                 Choose File
               </Button>
@@ -358,7 +370,11 @@ interface PhotoUploadProps {
   onUploadSuccess: () => void;
 }
 
-function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadProps) {
+function PhotoUpload({
+  onFileSelect,
+  previewUrl,
+  onUploadSuccess,
+}: PhotoUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -416,7 +432,10 @@ function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadP
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
-  const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<File> => {
+  const getCroppedImg = async (
+    imageSrc: string,
+    pixelCrop: Area
+  ): Promise<File> => {
     const image = new window.Image();
     image.src = imageSrc;
     await new Promise((resolve) => (image.onload = resolve));
@@ -443,7 +462,9 @@ function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadP
     return new Promise((resolve) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          resolve(new File([blob], "cropped-photo.jpg", { type: "image/jpeg" }));
+          resolve(
+            new File([blob], "cropped-photo.jpg", { type: "image/jpeg" })
+          );
         }
       }, "image/jpeg");
     });
@@ -453,7 +474,10 @@ function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadP
     if (selectedImage && croppedAreaPixels) {
       setIsProcessing(true);
       try {
-        const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+        const croppedImage = await getCroppedImg(
+          selectedImage,
+          croppedAreaPixels
+        );
         onFileSelect(croppedImage);
         setCropModalOpen(false);
         setSelectedImage(null);
@@ -470,7 +494,9 @@ function PhotoUpload({ onFileSelect, previewUrl, onUploadSuccess }: PhotoUploadP
     <>
       <div
         className={`w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer transition-colors ${
-          dragActive ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-gray-400"
+          dragActive
+            ? "border-green-500 bg-green-50"
+            : "border-gray-300 hover:border-gray-400"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -934,17 +960,18 @@ export default function CreateRecruiterAccountForm() {
     },
   });
 
-  const handleBannerSelect = (file: File | null) => {
+  const handleBannerUpload = (file: File | null) => {
     setBannerFile(file);
     if (file) {
-      const url = URL.createObjectURL(file);
-      setBannerPreview(url);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
     } else {
       setBannerPreview(null);
-      setIsBannerUploaded(false);
     }
   };
-
   const handlePhotoSelect = (file: File | null) => {
     setPhotoFile(file);
     if (file) {
@@ -1121,7 +1148,7 @@ export default function CreateRecruiterAccountForm() {
           </Card>
 
           <BannerUpload
-            onFileSelect={handleBannerSelect}
+            onFileSelect={handleBannerUpload}
             previewUrl={bannerPreview}
             onUploadSuccess={() => setIsBannerUploaded(true)}
           />
@@ -1135,7 +1162,9 @@ export default function CreateRecruiterAccountForm() {
             <CardContent className="space-y-4">
               <div className="flex items-start gap-4">
                 <div>
-                  <Label className="text-sm font-medium">Profile Photo (Optional)</Label>
+                  <Label className="text-sm font-medium">
+                    Profile Photo (Optional)
+                  </Label>
                   <PhotoUpload
                     onFileSelect={handlePhotoSelect}
                     previewUrl={photoPreview}
@@ -1225,7 +1254,11 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Phone Number*</FormLabel>
                       <FormControl>
-                        <Input disabled placeholder="Enter phone number" {...field} />
+                        <Input
+                          disabled
+                          placeholder="Enter phone number"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
