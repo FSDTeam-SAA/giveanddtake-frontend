@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, DollarSign } from "lucide-react";
+import { MapPin } from "lucide-react";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
@@ -18,14 +18,12 @@ interface Recruiter {
   photo?: string;
   userId: string;
 }
-
 interface CompanyId {
   _id?: string;
   cname?: string;
   clogo?: string;
   userId?: string;
 }
-
 interface Job {
   _id: string;
   title: string;
@@ -41,7 +39,6 @@ interface Job {
   compensation: string;
   createdAt: string;
 }
-
 interface JobCardProps {
   job: Job;
   variant: "suggested" | "list";
@@ -57,14 +54,20 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   const isUnauthed = status === "unauthenticated";
   const isCandidate = role === "candidate";
   const isRecruiterOrCompany = role === "recruiter" || role === "company";
-
   const canSeeApply = isUnauthed || isCandidate;
 
   const applicationLink = `/job-application?id=${job._id}`;
 
-  const handleClick = (e: React.MouseEvent) => {
-    // Keep card-level behavior unchanged: just stop propagation here.
-    e.stopPropagation();
+  // Card activation: clicks or keyboard (Enter / Space) navigate to job details
+  const activateCard = (e?: React.MouseEvent | React.KeyboardEvent) => {
+    // Keyboard handler should only activate on Enter or Space
+    if (e && "key" in (e as any)) {
+      const key = (e as any).key;
+      if (key !== "Enter" && key !== " ") return;
+      (e as React.KeyboardEvent).preventDefault();
+      (e as React.KeyboardEvent).stopPropagation();
+    }
+    router.push(`/alljobs/${job._id}`);
   };
 
   const TOAST_DURATION_MS = 2200;
@@ -91,21 +94,17 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     router.push(applicationLink);
   };
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .filter(Boolean)
-      .map((word) => word[0])
+      .map((w) => w[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
-
-
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-
     return date.toLocaleDateString("en-GB", {
       day: "numeric",
       month: "long",
@@ -113,25 +112,22 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     });
   };
 
-  // Determine postedBy data
+  // postedBy data
   let postedByName = "Unknown";
   let postedByLogo = "/default-logo.png";
   let postedById = "#";
   let postedByType = "company";
-  let postedByData = null;
 
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
     postedByLogo = job.recruiterId.photo || "/default-logo.png";
     postedById = job.recruiterId.userId || "#";
     postedByType = "recruiter";
-    postedByData = { recruiterId: job.recruiterId };
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
     postedByLogo = job.companyId.clogo || "/default-logo.png";
     postedById = job.companyId.userId || "#";
     postedByType = "company";
-    postedByData = { companyId: job.companyId };
   }
 
   const CompanyAvatar = () => (
@@ -156,22 +152,20 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   );
 
   const navigateToProfile = (e: React.MouseEvent | React.KeyboardEvent) => {
-    // Prevent outer click behavior when clicking the profile name
     if ("stopPropagation" in e) {
       // MouseEvent or KeyboardEvent
       // @ts-ignore
       e.stopPropagation?.();
     }
-    const profilePath =
-      postedByType === "recruiter"
-        ? `/recruiters-profile/${postedById}`
-        : `/companies-profile/${postedById}`;
-
-    // If keyboard Enter/Space pressed, ensure it's activated
     if ("key" in (e as any)) {
       const key = (e as any).key;
       if (key !== "Enter" && key !== " ") return;
     }
+
+    const profilePath =
+      postedByType === "recruiter"
+        ? `/recruiters-profile/${postedById}`
+        : `/companies-profile/${postedById}`;
 
     router.push(profilePath);
   };
@@ -192,7 +186,6 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
       );
     }
 
-    // Authenticated candidate: programmatic navigation to avoid inner <a>
     return (
       <button
         type="button"
@@ -217,20 +210,26 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     </span>
   );
 
-  /**
-   * SUGGESTED VARIANT
-   */
+  // SUGGESTED VARIANT
   if (variant === "suggested") {
     return (
       <Card
-        role="article"
+        role="link"
         aria-label={`${job.title} — ${postedByName}`}
+        tabIndex={0}
         className={clsx(
           "hover:shadow-md transition-shadow cursor-pointer",
           "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
           className
         )}
-        onClick={handleClick}
+        onClick={(e) => activateCard(e)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            activateCard(e);
+          }
+        }}
       >
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:gap-4">
@@ -246,7 +245,6 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
                   </div>
                 </div>
                 <div className="mt-0.5">
-                  {/* programmatic profile navigation (no <a>) */}
                   <span
                     role="link"
                     tabIndex={0}
@@ -276,7 +274,6 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
 
             <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
               <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                {/* small chip: programmatic navigation */}
                 <span
                   role="link"
                   tabIndex={0}
@@ -301,19 +298,25 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     );
   }
 
-  /**
-   * LIST VARIANT
-   */
+  // LIST VARIANT
   return (
     <Card
-      role="article"
+      role="link"
       aria-label={`${job.title} — ${postedByName}`}
+      tabIndex={0}
       className={clsx(
         "hover:shadow-md transition-shadow cursor-pointer",
         "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
         className
       )}
-      onClick={handleClick}
+      onClick={(e) => activateCard(e)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          activateCard(e);
+        }
+      }}
     >
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:gap-4">
@@ -327,7 +330,6 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
                     {job.title}
                   </h3>
                   <div>
-                    {/* programmatic profile navigation */}
                     <span
                       role="link"
                       tabIndex={0}

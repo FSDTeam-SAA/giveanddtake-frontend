@@ -242,10 +242,8 @@ export default function JobsListing() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {recommended.map((job) => (
-                <Link href={`/alljobs/${job._id}`} key={job._id}>
-                  <JobCard key={job.job._id} job={job.job} variant="list" />
-                </Link>
+              {recommended.map((item) => (
+                <JobCard key={item._id} job={item.job} variant="list" />
               ))}
             </div>
           )}
@@ -265,9 +263,7 @@ export default function JobsListing() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {jobs.map((job) => (
-              <Link href={`/alljobs/${job._id}`} key={job._id}>
-                <JobCard key={job._id} job={job} variant="list" />
-              </Link>
+              <JobCard key={job._id} job={job} variant="list" />
             ))}
           </div>
         )}

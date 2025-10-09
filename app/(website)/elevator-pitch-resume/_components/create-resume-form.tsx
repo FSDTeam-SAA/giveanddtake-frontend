@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { BannerUpload } from "./banner-upload";
+import { BannerUpload } from "@/components/shared/banner-upload";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import { SkillsSelector } from "./skills-selector";
 import { PersonalInfoSection } from "./resume/personal-info-section";
@@ -187,64 +187,64 @@ export const resumeSchema = z.object({
     .max(20, "You can add at most 20 experiences")
     .optional(),
 
- educationList: z
-  .array(
-    z
-      .object({
-        instituteName: z
-          .string()
-          .trim()
-          .max(150, "Institution name can be at most 150 characters")
-          .optional(),
-        degree: z
-          .string()
-          .trim()
-          .max(100, "Degree can be at most 100 characters")
-          .optional(),
-        fieldOfStudy: z
-          .string()
-          .trim()
-          .max(100, "Field of study can be at most 100 characters")
-          .optional(),
-        startDate: z
-          .string()
-          .trim()
-          .max(30, "Start date can be at most 30 characters")
-          .optional(),
-        graduationDate: z
-          .string()
-          .trim()
-          .max(30, "Graduation date can be at most 30 characters")
-          .optional(),
-        currentlyStudying: z.boolean().optional().default(false),
-        city: z
-          .string()
-          .trim()
-          .max(100, "City can be at most 100 characters")
-          .optional(),
-        country: z
-          .string()
-          .trim()
-          .max(100, "Country can be at most 100 characters")
-          .optional(),
-      })
-      .refine(
-        (data) =>
-          // ✅ Graduation date required only if instituteName & startDate exist AND not currently studying
-          !(
-            data.instituteName &&
-            data.startDate &&
-            !data.currentlyStudying &&
-            !data.graduationDate
-          ),
-        {
-          message: "Graduation date is required unless currently studying",
-          path: ["graduationDate"],
-        }
-      )
-  )
-  .max(20, "You can add at most 20 education entries")
-  .optional(),
+  educationList: z
+    .array(
+      z
+        .object({
+          instituteName: z
+            .string()
+            .trim()
+            .max(150, "Institution name can be at most 150 characters")
+            .optional(),
+          degree: z
+            .string()
+            .trim()
+            .max(100, "Degree can be at most 100 characters")
+            .optional(),
+          fieldOfStudy: z
+            .string()
+            .trim()
+            .max(100, "Field of study can be at most 100 characters")
+            .optional(),
+          startDate: z
+            .string()
+            .trim()
+            .max(30, "Start date can be at most 30 characters")
+            .optional(),
+          graduationDate: z
+            .string()
+            .trim()
+            .max(30, "Graduation date can be at most 30 characters")
+            .optional(),
+          currentlyStudying: z.boolean().optional().default(false),
+          city: z
+            .string()
+            .trim()
+            .max(100, "City can be at most 100 characters")
+            .optional(),
+          country: z
+            .string()
+            .trim()
+            .max(100, "Country can be at most 100 characters")
+            .optional(),
+        })
+        .refine(
+          (data) =>
+            // ✅ Graduation date required only if instituteName & startDate exist AND not currently studying
+            !(
+              data.instituteName &&
+              data.startDate &&
+              !data.currentlyStudying &&
+              !data.graduationDate
+            ),
+          {
+            message: "Graduation date is required unless currently studying",
+            path: ["graduationDate"],
+          }
+        )
+    )
+    .max(20, "You can add at most 20 education entries")
+    .optional(),
 
   awardsAndHonors: z
     .array(
@@ -672,10 +672,12 @@ export default function CreateResumeForm() {
             </CardContent>
           </Card>
 
-          <BannerUpload
-            onFileSelect={handleBannerUpload}
-            previewUrl={bannerPreview}
-          />
+          <div>
+            <BannerUpload
+              onFileSelect={handleBannerUpload}
+              previewUrl={bannerPreview}
+            />
+          </div>
 
           <PersonalInfoSection
             form={form}

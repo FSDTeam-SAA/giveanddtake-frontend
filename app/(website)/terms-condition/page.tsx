@@ -15,48 +15,49 @@ const page = () => {
             1. Introduction
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            When you use Elevator Video Pitch (EVP) you agree to all these
-            terms. When you register and join the Elevator Video Pitch site, you
-            become a "Member". If you have chosen not to register for our
-            Services, you may access limited features as a "Visitor".
+            When you use Elevator Video Pitch&copy; (EVP) you agree to all these
+            terms. When you register and join the Elevator Video Pitch&copy;
+            site, you become a &quot;Member&quot;. If you have chosen not to
+            register for our Services, you may access limited features as a
+            &quot;Visitor&quot;.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             As a Visitor or Member of our Services, the collection, use, and
-            sharing of your personal data is subject to our Privacy Policy
+            sharing of your personal data is subject to our Privacy Policy
             including our use of Cookies. This Contract applies to Members and
             Visitors.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            By creating an Elevator Video Pitch account or accessing or using
-            our Services, you are agreeing to enter a legally binding contract
-            with Elevator Video Pitch (even if you are using third party
-            credentials or using our Services on behalf of a company). If you do
-            not agree to this Contract, do not create an account or access or
-            otherwise use any of our Services. If you wish to terminate this
-            Contract at any time, you can do so by disabling your account and no
-            longer accessing or using our Services.
+            By creating an Elevator Video Pitch&copy; account or accessing or
+            using our Services, you are agreeing to enter a legally binding
+            contract with Elevator Video Pitch&copy; (even if you are using
+            third party credentials or using our Services on behalf of a
+            company). If you do not agree to this Contract, do not create an
+            account or access or otherwise use any of our Services. If you wish
+            to terminate this Contract at any time, you can do so by disabling
+            your account and no longer accessing or using our Services.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            This Contract applies to EVPPitch.com, Elevator Video Pitch mobile
-            apps, and other communications and services that state that they are
-            offered under this Contract (&quot;Services&quot;), including the
-            offsite storage of data for those Services.
+            This Contract applies to EVPitch.com, Elevator Video Pitch&copy;
+            mobile apps, and other communications and services that state that
+            they are offered under this Contract (&quot;Services&quot;),
+            including the offsite storage of data for those Services.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             At all times, you are entering into this Contract with Elevator
-            Video Pitch (also referred to as &quot;we&quot; and &quot;us&quot;),
-            and we will be the controller of your personal data provided to or
-            processed in connection with our Services.
+            Video Pitch&copy; (also referred to as &quot;we&quot; and
+            &quot;us&quot;), and we will be the controller of your personal data
+            provided to or processed in connection with our Services.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            We may modify this Contract and our Privacy Policy from time to
+            We may modify this Contract and our Privacy Policy  from time to
             time. If required by applicable laws or we make material changes to
-            this Contract, we will provide you notice to review the opportunity
-            to review the changes before they become effective.
+            this Contract, we will provide you notice to provide you the
+            opportunity to review the changes before they become effective. 
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             We agree that changes cannot be backdated. If you object to any of
-            these changes, you may delete your account. Your continued use of
+            these changes, you may delete your account. Your continued use of
             our Services after we publish or send a notice about our changes to
             these terms means that you are consenting to the updated terms as of
             their effective date.
@@ -69,17 +70,17 @@ const page = () => {
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
             To be eligible to enter this Contract you must be at least our
-            &quot;Minimum Age.&quot; &quot;Minimum Age&quot; means 18 years old.
+            &quot;Minimum Age.&quot; &quot;Minimum Age&quot; means 16 years old.
             However, if local data privacy laws require that you must be older
-            for Elevator Video Pitch to lawfully provide our Services to you
-            without parental consent, the local regulation will prevail. To use
-            the Services, you agree that:
+            for Elevator Video Pitch&copy; to lawfully provide our Services to
+            you without parental consent, the local regulation will prevail. To
+            use the Services, you agree that: 
           </p>
           <ol className="list-decimal list-inside ml-4 space-y-1 text-[#424242] text-base font-normal">
             <li>You must be the minimum age or older.</li>
             <li>
-              You will only have one Elevator Video Pitch account, which must be
-              in your real name.
+              You will only have one Elevator Video Pitch&copy; account, which
+              must be in your real name.
             </li>
             <li>
               Creating an account with false information is a violation of our
@@ -105,7 +106,7 @@ const page = () => {
             3. Payment
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You will honour your subscription payment obligations and confirm
+            You will  honour your subscription payment obligations and confirm
             you are okay with us storing your payment information. You
             understand that there may be taxes added to our prices.
           </p>
@@ -115,7 +116,7 @@ const page = () => {
           <p className="mb-2 text-[#424242] text-base font-normal">
             If you buy any of our paid Services, you agree to pay us the
             applicable fees and taxes. Failure to pay these fees will result in
-            the termination of the paid Services. Also, you agree that your
+            the termination of your paid Services. Also, you agree that your
             purchase may be subject to foreign exchange fees or differences in
             prices based on location (e.g., exchange rates).
           </p>
@@ -132,8 +133,8 @@ const page = () => {
           <p className="mb-2 text-[#424242] text-base font-normal">
             Our monthly paid subscriptions are non-refundable after 7 days and
             yearly subscriptions non-refundable after 30 days. Pro-rata payments
-            will be deducted from refunds if the Elevator Video Pitch account
-            has been used.
+            will be deducted from refunds if the Elevator Video Pitch&copy;
+            account has been used.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             We may calculate taxes payable by you based on the billing
@@ -141,7 +142,7 @@ const page = () => {
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             You can obtain a copy of your invoice through your Elevator Video
-            Pitch account settings under Payment History.
+            Pitch&copy; account settings under Payment History.
           </p>
         </section>
 
@@ -150,16 +151,16 @@ const page = () => {
             4. Notices and Messages
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You&apos;re okay with us providing notices and messages to you
-            through our websites, mobile apps, and contact information provided.
-            If your contact information is out of date, you may miss out on
-            important notices.
+            You’re okay with us providing notices and messages to you through
+            our websites, mobile apps, and contact information provided. If your
+            contact information is out of date, you may miss out on important
+            notices.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             You agree that we will provide notices and messages to you within
-            the Elevator Pitch Site or sent to the contact information you
-            provided us (e.g., email or mobile number). You agree to keep your
-            contact information up to date.
+            the Elevator Video Pitch&copy; Site or sent to the contact
+            information you provided us (e.g., email or  mobile number). You
+            agree to keep your contact information up to date.
           </p>
         </section>
 
@@ -169,7 +170,7 @@ const page = () => {
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
             Your profile information is available to all Members and Visitors to
-            the site. Your Elevator Video Pitch and CV will only be made
+            the site. Your Elevator Video Pitch&copy; and CV will only be made
             available to recruiters when you apply for a job.
           </p>
         </section>
@@ -179,14 +180,14 @@ const page = () => {
             6. Rights and Limits
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You own your original data including your elevator video pitch and
+            You own your original data including your  elevator video pitch and
             resume that you provide to us, but you also grant us a non-exclusive
-            license to it. If content is not of the Elevator Video Pitch, we
-            will remove it.
+            license to it. If content includes personal data, it is subject to
+            our Privacy Policy.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             You can end this license by deleting your account, and your data
-            will no longer be viewable by recruiters as part of the Services we
+            will no longer be viewable  by recruiters as part of the Services we
             offer. The data will not be retained unless we are required by law
             to retain or share it with others, nor beyond the reasonable time it
             takes to remove your account from backup systems.
@@ -197,24 +198,24 @@ const page = () => {
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             By submitting suggestions for improvement or other feedback
-            regarding our Services to Elevator Video Pitch, you agree that we
-            can use and share (but do not have to) such feedback for any purpose
-            without compensation to you.
+            regarding our Services to Elevator Video Pitch&copy;, you agree that
+            we can use and share (but do not have to) such feedback for any
+            purpose without compensation to you.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You promise to only provide your own Elevator Video Pitch and other
-            information that you have the right to share and that your Elevator
-            Video Pitch profile will be an accurate reflection of your
-            knowledge, skills and experience.
+            You promise to only provide your own Elevator Video Pitch&copy; and
+            other information that you have the right to share and that your
+            Elevator Video Pitch&copy; profile will be an accurate reflection of
+            your knowledge, skills and experience.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You agree that any profile content and other information you post
-            will violate the law or anyone&apos;s rights (including intellectual
-            property rights). You have chosen about how much information you
-            provide on your profile, but also agree that the profile information
-            you provide will be truthful. Elevator Video Pitch may be required
-            by law to remove certain content and other information in certain
-            countries.
+            You agree to only provide content and other information that does
+            not violate the law or anyone’s rights (including intellectual
+            property rights). You have choices about how much information to
+            provide on your profile but also agree that the profile information
+            you provide will be truthful. Elevator Video Pitch&copy; may be
+            required by law to remove certain content and other information in
+            certain countries.
           </p>
         </section>
 
@@ -236,57 +237,56 @@ const page = () => {
 
         <section>
           <h2 className="text-base font-semibold text-[#2B7FD0] mb-2">
-            8. Others Content
+            8. Others’ Content
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
             By using the Services, you may encounter content or other
             information that might be inaccurate, incomplete, delayed,
-            misleading, illegal, offensive, or otherwise harmful. While we agree
-            that we are not responsible for content or other information made
+            misleading, illegal, offensive, or otherwise harmful. You agree that
+            we are not responsible for content or other information made
             available through or within the Services by others, including
-            Members. While we will check for inaccuracies in place to review
-            much of the content and other information presented on our site, we
+            Members. While we have checks and balances in place to review much
+            of the content and other information presented on our site, we
             cannot always prevent misuse of our Services, and you agree that we
-            are not responsible for such misuse. You also acknowledge the risk
-            that others may share inaccurate or misleading information about
-            themselves and their previous work history, and that you or your
-            organization may therefore be mistakenly associated with content
-            about others, for example, when we list companies know their current
-            and past employees registered on our site.
+            are not responsible for any such misuse. You also acknowledge the
+            risk that others may share inaccurate or misleading information
+            about themselves and their previous work history, and that you or
+            your organization may therefore be mistakenly associated with
+            content about others, for example, when we let companies know their
+            current and past employees registered on our site.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You further acknowledge that Elevator Video Pitch does not
+            You further acknowledge that Elevator Video Pitch&copy; does not
             supervise, direct, control, or monitor Members in the making of
-            their elevator video pitches, or in their providing recruiters for
-            companies with their recruiting process of performing placement of
-            content agrees that:
+            their elevator video pitches, or in their providing recruiters or
+            companies with work, delivering products or performing services, and
+            you agree that: 
           </p>
           <ol className="list-decimal list-inside ml-4 space-y-1 text-[#424242] text-base font-normal">
             <li>
-              Elevator Video Pitch is not responsible for offers of jobs or
-              performance of procurement of these.
+              Elevator Video Pitch&copy; is not responsible for offers of
+              labour, or performance or procurement of these.
             </li>
             <li>
-              Elevator Video Pitch does not evaluate or endorse any
-              Member&apos;s elevator pitch, resume, work history claimed or
-              profile.
+              Elevator Video Pitch&copy; does not evaluate or endorse any
+              Member’s elevator pitch, resume, work history claimed or profile.
             </li>
             <li>
-              Elevator Video Pitch is not an agent or employment agency on
+              Elevator Video Pitch&copy; is not an agent or employment agency on
               behalf of any Member offering employment or other work, products
-              or services.
+              or services. 
             </li>
             <li>
-              With respect to employment or other work, Elevator Video Pitch
-              does not make employment or hiring decisions on behalf of Members
-              offering opportunities and does not have such authority. Our
-              Members are responsible for their products.
+              With respect to employment or other work, Elevator Video
+              Pitch&copy; does not make employment or hiring decisions on behalf
+              of Members offering opportunities and does not have such authority
+              from Members or organizations using our products. 
             </li>
             <li>
-              For Recruiter and Company accounts, you must be at least 18 years
+              For Recruiter and Company accounts,  you must be at least 18 years
               of age to advertise jobs, and you must have all the required
               licenses and provide jobs consistent with the relevant industry
-              standards and local labour regulations.
+              standards and local labour regulations. 
             </li>
           </ol>
         </section>
@@ -299,16 +299,16 @@ const page = () => {
             We have the right to limit how you interact on our Site.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            Elevator Video Pitch reserves the right to limit your use of our
-            Services, including your ability to apply for jobs. Elevator Video
-            Pitch reserves the right to restrict, suspend, or terminate your
-            account if you breach this Contract or the law or are misusing the
-            Services e.g. by recording inappropriate content in place of a
-            professional Elevator Pitch.
+            Elevator Video Pitch&copy; reserves the right to limit your use of
+            our Services, including your ability to apply for jobs. Elevator
+            Video Pitch&copy; reserves the right to restrict, suspend, or
+            terminate your account if you breach this Contract or the law or are
+            misusing the Services e.g. by recording inappropriate content in
+            place of a professional Elevator Pitch&copy;.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You can also remove any content or other information you shared if
-            we believe it violates this Contract.
+            We can also remove any content or other information you shared if we
+            believe it violates  this Contract.
           </p>
         </section>
 
@@ -317,9 +317,10 @@ const page = () => {
             10. Intellectual Property Rights
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            LinkedIn reserves all its intellectual property rights in the
-            Services. Elevator Video Pitch logos and other Elevator Video Pitch
-            trademarks, are owned exclusively by Elevator Video Pitch Ltd.
+            Elevator Video Pitch&copy; reserves all its intellectual property
+            rights in the Services. Elevator Video Pitch&copy; logos and other
+            Elevator Video Pitch&copy; trademarks, are owned exclusively by
+            Elevator Video Pitch&copy; Ltd.
           </p>
         </section>
 
@@ -332,7 +333,7 @@ const page = () => {
             have about Members and content on the Services to make
             recommendations for jobs that may be useful to you. Keeping your
             profile accurate and up to date helps us to make these
-            recommendations more accurate and relevant.
+            recommendations more accurate and relevant. 
           </p>
         </section>
 
@@ -348,16 +349,16 @@ const page = () => {
             or reliability of our Services.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            Elevator Video Pitch and its affiliates make no representation or
-            warranty about our Services, including any representation that the
-            services will be uninterrupted or error-free, and provide the
+            Elevator Video Pitch&copy; and its affiliates make no representation
+            or warranty about our services, including any representation that
+            the services will be uninterrupted or error-free, and provide the
             services including content and information on an &apos;as is&apos;
-            and &apos;as available&apos; basis.
+            and &apos;as available&apos; basis. 
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             To the fullest extent permitted under applicable law, Elevator Video
-            Pitch and its affiliates disclaim any implied or statutory warranty,
-            including any implied warranty of title, accuracy of data,
+            Pitch&copy; and its affiliates disclaim any implied or statutory
+            warranty, including any implied warranty of title, accuracy of data,
             non-infringement, merchantability or fitness for a particular
             purpose.
           </p>
@@ -369,29 +370,30 @@ const page = () => {
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             To the fullest extent permitted by law and unless Elevator Video
-            Pitch has entered into a separate written agreement that overrides
-            this contract, Elevator Video Pitch, including its affiliates, will
-            not be liable in connection with this contract for lost profits or
-            lost business opportunities, reputation, loss of data (e.g. downtime
-            or loss of, use of or changes to your information or content or any
-            indirect, incidental, consequential, special or punitive damages).
+            Pitch&copy; has entered into a separate written agreement that
+            overrides this contract, Elevator Video Pitch&copy;, including its
+            affiliates, will not be liable in connection with this contract for
+            lost profits or lost business opportunities, reputation, loss of
+            data (e.g. downtime or loss of, use of or changes to your
+            information or content or any indirect, incidental, consequential,
+            special or punitive damages).
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            Elevator Video Pitch and its affiliates will not be liable to you in
-            connection with this contract for any amount that exceeds the total
-            fees paid or payable by you to Elevator Video Pitch for the Services
-            during the term of your contract with us.
+            Elevator Video Pitch&copy; and its affiliates will not be liable to
+            you in connection with this contract for any amount that exceeds the
+            total fees paid or payable by you to Elevator Video Pitch&copy; for
+            the services during the term of your contract with us.
           </p>
           <h3 className="text-sm font-semibold text-[#424242] mb-1">
             12.3 Exclusions
           </h3>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            The limitations of liability in this Section and part of the basis
-            of the agreement between you and Elevator Video Pitch and shall
-            apply to all claims of liability (e.g. warranty, tort, negligence,
-            contract and even if Elevator Video Pitch or its affiliates has been
-            told of the possibility of any such damage, and even if these
-            remedies fail their essential purpose).
+            The limitations of liability in this Section are part of the basis
+            of the agreement between you and Elevator Video Pitch&copy; and
+            shall apply to all claims of liability (e.g., warranty, tort,
+            negligence, contract and law) even if Elevator Video Pitch&copy; or
+            its affiliates has been told of the possibility of any such damage,
+            and even if these remedies fail their essential purpose.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             These limitations of liability do not apply to liability for death
@@ -407,16 +409,16 @@ const page = () => {
             12.4 Termination
           </h3>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            Either Elevator Video Pitch or the Member can end this Contract, but
-            some rights and obligations survive.
+            Either Elevator Video Pitch&copy; or the Member can end this
+            Contract, but some rights and obligations survive.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            Both you and Elevator Video Pitch may terminate this Contract at any
-            time with notice to the other. On termination, you lose the right to
-            access or use the Services.
+            Both you and Elevator Video Pitch&copy; may terminate this Contract
+            at any time with notice to the other. On termination, you lose the
+            right to access or use the Services. 
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            You can visit your profile page to delete your account.
+            You can visit your profile page to delete your account.
           </p>
         </section>
 
@@ -426,15 +428,16 @@ const page = () => {
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
             In the unlikely event we end up in a legal dispute, you and Elevator
-            Video Pitch agree to resolve it in UK courts using British law.
+            Video Pitch&copy; agree to resolve it in UK courts using British
+            law.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            British law governs all claims related to Elevator Video Pitch
+            British law governs all claims related to Elevator Video Pitch&copy;
             provision of our Services, but this shall not deprive you of the
-            mandatory consumer protections under the law of the country in which
-            you elect your Services, where you have habitual residence. With
-            respect to jurisdiction, you and Elevator Video Pitch agree to
-            choose the courts of the country to which you elect your Services
+            mandatory consumer protections under the law of the country to which
+            we direct your Services where you have habitual residence. With
+            respect to jurisdiction, you and Elevator Video Pitch&copy; agree to
+            choose the courts of the country to which we direct your Services
             where you have habitual residence for all disputes arising out of or
             relating to this User Agreement, alternatively you may choose the
             responsible court in the UK.
@@ -447,26 +450,26 @@ const page = () => {
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
             If a court with authority over this Contract finds any part of it
-            unenforceable, Members and Elevator Video Pitch agree that the court
-            should modify the terms to make that part enforceable while still
-            achieving its intent. If the court cannot do that, you and we agree
-            to ask the court to remove that unenforceable part and still enforce
-            the rest of this Contract.
+            unenforceable,  Members and Elevator Video Pitch&copy; agree that
+            the court should modify the terms to make that part enforceable
+            while still achieving its intent. If the court cannot do that, you
+            and we agree to ask the court to remove that unenforceable part and
+            still enforce the rest of this Contract.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            This Contract (meaning additional terms that may be provided by us
-            when you engage with a feature of the Elevator Video Pitch Services)
-            is the only agreement between us and supersedes all prior agreements
-            for the Services.
+            This Contract (including additional terms that may be provided by us
+            when you engage with a feature of the Elevator Video Pitch&copy;
+            Services) is the only agreement between us and supersedes all prior
+            agreements for the Services.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             If we don&apos;t act to enforce a breach of this Contract, that does
-            not mean that Elevator Video Pitch has waived its right to enforce
-            this Contract. You may not assign or transfer this Contract (or your
-            membership or use of our Services) to anyone. However, you agree
-            that Elevator Video Pitch may assign this Contract to a party that
-            buys us in future with your consent. There are no third-party
-            beneficiaries to this Contract.
+            not mean that Elevator Video Pitch&copy; has waived its right to
+            enforce this Contract. You may not assign or transfer this Contract
+            (or your membership or use of our Services) to anyone. However, you
+            agree that Elevator Video Pitch&copy; may assign this Contract to a
+            party that buys us in future without your consent. There are no
+            third-party beneficiaries to this Contract.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             You agree that the only way to provide us legal notice is at the
@@ -476,11 +479,12 @@ const page = () => {
 
         <section>
           <h2 className="text-base font-semibold text-[#2B7FD0] mb-2">
-            15. Elevator Video Pitch &quot;Dos and Don&apos;ts&quot;
+            15. Elevator Video Pitch&copy; &quot;Dos and Don’t&quot;s&quot;
           </h2>
           <p className="mb-2 text-[#424242] text-base font-normal">
-            LinkedIn is a professional community. This list of &quot;Dos and
-            Don&apos;ts&quot; limit what you can and cannot do on our Services.
+            Elevator Video Pitch&copy; is a professional community. This list of
+            &quot;Dos and Don’t&quot;s&quot; limit what you can and cannot do on
+            our Services.
           </p>
           <h3 className="text-sm font-semibold text-[#424242] mb-1">
             15.1 You agree that you will:
@@ -489,11 +493,11 @@ const page = () => {
             <li>
               Comply with all applicable laws, including, without limitation,
               privacy laws, intellectual property laws, anti-spam laws, export
-              control laws, laws governing the content, and other applicable
-              laws and regulatory requirements.
+              control laws, laws governing the content shared, and other
+              applicable laws and regulatory requirements.
             </li>
             <li>
-              Provide accurate content and identity information to us and keep
+              Provide accurate contact and identity information to us and keep
               it updated.
             </li>
             <li>
@@ -503,14 +507,15 @@ const page = () => {
             <li>Use all our Services in a professional manner.</li>
           </ol>
           <h3 className="text-sm font-semibold text-[#424242] mb-1">
-            15.2 You agree that you will not:
+            15.2 You agree that you will not:
           </h3>
           <ol className="list-decimal list-inside ml-4 space-y-1 text-[#424242] text-base font-normal">
             <li>
-              Create a false identity on Elevator Video Pitch, misrepresent your
-              identity, create a member profile for anyone other than yourself
-              (a real person), or use or attempt to use someone else&apos;s
-              account (such as sharing log-in credentials or copying cookies).
+              Create a false identity on Elevator Video Pitch&copy;,
+              misrepresent your identity, create a member profile for anyone
+              other than yourself (a real person), or use or attempt to use
+              someone else’s account (such as sharing log-in credentials or
+              copying cookies).
             </li>
             <li>
               Develop, support or use software, devices, scripts, robots or any
@@ -531,20 +536,20 @@ const page = () => {
             </li>
             <li>
               Disclose information that you do not have the consent to disclose
-              (such as confidential information of others including your
+              (such as confidential information of others (including your
               employer).
             </li>
             <li>
               Violate the intellectual property rights of others, including
-              Elevator Video Pitches recorded on our site.
+              elevator pitches recorded on our site. 
             </li>
             <li>
               Violate the intellectual property or other rights of Elevator
-              Video Pitch, including, without limitation, copying or
+              Video Pitch&copy;, including, without limitation, copying or
               distributing our elevator pitch videos or other materials, copying
               or distributing our technology, unless it is released under
-              open-source licenses, or using the title &quot;Elevator Video
-              Pitch&quot; or our logos in any business name, email, or URL.
+              open-source licenses; or using the title “Elevator Video
+              Pitch&copy;” or our logos in any business name, email, or URL.
             </li>
             <li>
               Post (or otherwise share) anything that contains malware, or any
@@ -557,7 +562,7 @@ const page = () => {
             </li>
             <li>
               Imply or state that you are affiliated with or endorsed by
-              Elevator Video Pitch without our express consent (e.g.,
+              Elevator Video Pitch&copy; without our express consent (e.g.,
               representing yourself as our employee or marketer).
             </li>
             <li>
@@ -565,18 +570,17 @@ const page = () => {
               access to the same.
             </li>
             <li>
-              Use bots or other unauthorised automated methods to access the
+              Use bots or other unauthorized automated methods to access the
               Services, add or download elevator pitch videos, send or redirect
               messages.
             </li>
             <li>
-              Engage in &quot;framing,&quot; &quot;mirroring,&quot; or otherwise
-              simulating the appearance or function of the Elevator Video Pitch
-              Services.
+              Engage in “framing”, “mirroring”, or otherwise simulating the
+              appearance or function of the Elevator Video Pitch&copy; Services.
             </li>
             <li>
               Interfere with the operation of, or place an unreasonable load on,
-              the Site (e.g., spam, denial of service attack, viruses,
+              the site (e.g., spam, denial of service attack, viruses,
               manipulating algorithms).
             </li>
             <li>
@@ -584,8 +588,8 @@ const page = () => {
               when you sign up for or start using such our site.
             </li>
             <li>
-              Use Elevator Video Pitch Services to do anything that is unlawful,
-              misleading, discriminatory, or fraudulent.
+              Use Elevator Video Pitch&copy; Services to do anything that is
+              unlawful, misleading, discriminatory, or fraudulent.
             </li>
           </ol>
         </section>
@@ -600,18 +604,18 @@ const page = () => {
             rights) or otherwise violates this Contract or the law. To the
             extent we can act under the law, we may remove or restrict access to
             content, features, services, or information, including if we believe
-            that it&apos;s reasonably necessary to avoid harm to Elevator Video
-            Pitch or others, violates the law or is reasonably necessary to
-            prevent misuse of our Services. We reserve the right to act against
-            serious violations of this Contract, including by implementing
-            account restrictions for significant violations.
+            that it’s reasonably necessary to avoid harm to Elevator Video
+            Pitch&copy; or others, violates the law or is reasonably necessary
+            to prevent misuse of our Services. We reserve the right to act
+            against serious violations of this Contract, including by
+            implementing account restrictions for significant violations.
           </p>
           <p className="mb-2 text-[#424242] text-base font-normal">
             We respect the intellectual property rights of others. We require
             that information shared by Members be accurate and not in violation
             of the intellectual property rights or other rights of third
-            parties. We provide a process for complaints concerning content
-            shared, and/or trademarks used, by our members.
+            parties. We provide a process for complaints concerning content
+            shared, and/or trademarks used, by our members.
           </p>
         </section>
 

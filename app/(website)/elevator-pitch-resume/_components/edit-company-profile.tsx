@@ -41,6 +41,7 @@ import { useRouter } from "next/navigation";
 import CustomDateInput from "@/components/custom-date-input";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { BannerUpload } from "@/components/shared/banner-upload";
 
 // Types for countries and cities
 interface Country {
@@ -131,6 +132,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   const [companyData, setCompanyData] = useState<any>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [services, setServices] = useState<string[]>([""]);
   const [honors, setHonors] = useState<Honor[]>([
@@ -192,6 +194,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
           throw new Error("Failed to fetch company");
         }
         const data = await response.json();
+        setBannerPreview(data.data.companies[0]?.banner || null);
         setCompanyData(data);
       } catch (error) {
         console.error("Error fetching company:", error);
@@ -382,6 +385,19 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     return response.json();
   };
 
+  const handleBannerSelect = (file: File | null) => {
+    setBannerFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setBannerPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setBannerPreview(null);
+    }
+  };
+
   const onSubmit = async (data: FormData) => {
     try {
       setIsUpdating(true);
@@ -499,18 +515,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                 <Label className="text-sm font-medium text-gray-900">
                   Company Banner
                 </Label>
-                <div className="aspect-[4/1]">
-                  <FileUpload
-                    onFileSelect={setBannerFile}
-                    defaultUrl={companyData?.data?.companies?.[0]?.banner}
-                    accept="image/*"
-                    className="h-full"
-                  >
-                    <div className="w-full h-full bg-primary text-white flex items-center justify-center text-sm font-medium rounded-lg">
-                      Company Banner
-                    </div>
-                  </FileUpload>
-                </div>
+                <BannerUpload
+                  onFileSelect={handleBannerSelect}
+                  previewUrl={bannerPreview}
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
