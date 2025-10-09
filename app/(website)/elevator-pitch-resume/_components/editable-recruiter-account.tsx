@@ -255,12 +255,12 @@ function BannerUpload({
       }
     }
   };
-  console.log(previewUrl)
+  console.log(previewUrl);
 
   return (
     <>
       <div
-        className={`relative h-36 sm:h-44 md:h-56 lg:h-[300px] bg-muted ${
+        className={`relative w-full h-auto lg:h-[300px] bg-muted ${
           isEditing ? "cursor-pointer" : ""
         }`}
         onDragEnter={handleDrag}
@@ -268,21 +268,19 @@ function BannerUpload({
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-
         {previewUrl ? (
-    <Image
-          src={previewUrl }
-          alt="Cover image"
-          width={1600}
-          height={900}
-          className="object-cover opacity-80 w-full h-full"
-          priority
-        />
-          ) : (
-          <div className="w-full h-full bg-gray-200" />
-        )
-          }
-    
+          <Image
+            src={previewUrl}
+            alt="Cover image"
+            width={1600}
+            height={900}
+            className="object-cover opacity-80 w-full h-auto lg:h-[300px]"
+            priority
+          />
+        ) : (
+          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+        )}
+
         {isEditing && (
           <div
             className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
@@ -397,12 +395,6 @@ function PhotoUpload({
     }
   };
 
-  const removePhoto = () => {
-    onFileSelect(null);
-    setSelectedImage(null);
-    setCropModalOpen(false);
-  };
-
   const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
@@ -468,7 +460,7 @@ function PhotoUpload({
   return (
     <>
       <div
-        className={`relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded-lg ring-2 ring-background shadow-md overflow-hidden bg-muted ${
+        className={`relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded ring-2 ring-background shadow-md overflow-hidden bg-muted ${
           isEditing ? "cursor-pointer" : ""
         }`}
         onDragEnter={handleDrag}
@@ -476,15 +468,18 @@ function PhotoUpload({
         onDragOver={handleDrag}
         onDrop={handleDrop}
       >
-        <Avatar className="h-full w-full rounded-lg">
-          <AvatarImage
+        <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded">
+          <Image
             src={previewUrl || "/placeholder.svg"}
+            width={600}
+            height={600}
             alt="Profile photo"
+            className="w-[120px] h-[120px] md:h-[170px] md:w-[170px]"
           />
-          <AvatarFallback className="rounded-lg">
+          <div className="rounded">
             {getInitials()}
-          </AvatarFallback>
-        </Avatar>
+          </div>
+        </div>
         {isEditing && (
           <div
             className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
@@ -705,8 +700,7 @@ export default function EditableRecruiterAccount({
   const primaryLocation =
     location || [city, country].filter(Boolean).join(", ");
   const displayPhoto = photoPreview || recruiter.photo || "/placeholder.svg";
-  const displayBanner =
-    bannerPreview || recruiter.banner;
+  const displayBanner = bannerPreview || recruiter.banner;
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(followerCount);
@@ -792,7 +786,6 @@ export default function EditableRecruiterAccount({
 
       toast.success("Profile updated successfully!");
       window.location.reload();
-
     } catch (error) {
       console.error("Failed to save recruiter account:", error);
       toast.error("Failed to update profile. Please try again.");
@@ -834,7 +827,7 @@ export default function EditableRecruiterAccount({
 
       <div className="border-b-2">
         <div className="container mx-auto lg:pb-10 pb-6 px-4 sm:px-6 lg:px-16">
-          <div className="relative -mt-10 sm:-mt-14 md:-mt-16  ">
+          <div className="relative mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
             <div className="flex items-end justify-between gap-4">
               <PhotoUpload
                 onFileSelect={(file) => {

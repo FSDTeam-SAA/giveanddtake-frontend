@@ -306,20 +306,6 @@ export function GlobalSearch() {
                               Immediate
                             </span>
                           )}
-
-                          {isCandidate &&
-                            !isAvailable &&
-                            user.immediatelyAvailable === false && (
-                              <span
-                                className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-gray-50 text-gray-600"
-                                aria-label="Not immediately available"
-                                title="Not immediately available"
-                              >
-                                <span className="h-2 w-2 rounded-full bg-gray-400 inline-block" />
-                                Not immediate
-                              </span>
-                            )}
-
                           {getRoleIcon(user?.role as string | undefined)}
                         </div>
                         <div className="text-sm text-gray-500">

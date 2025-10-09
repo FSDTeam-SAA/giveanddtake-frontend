@@ -337,27 +337,25 @@ export default function Recruiters({ userId }: MydataProps) {
   return (
     <div className="lg:container lg:mx-auto lg:px-6 pb-8 md:pb-16">
       {/* Banner */}
-      <div
-        className={`relative w-full h-[150px] md:h-[300px] ${
-          recruiterData.banner ? "" : "bg-gray-200"
-        }`}
-      >
-        {recruiterData.banner && (
+      <div className="w-full h-auto lg:h-[300px]">
+        {recruiterData.banner ? (
           <Image
             src={recruiterData.banner}
-            alt={`${recruiterData.firstName} ${recruiterData.lastName} Banner`}
-            fill
-            className="object-cover"
-            priority
+            alt={`${recruiterData.firstName} banner`}
+            width={1200}
+            height={200}
+            className="w-full h-auto lg:h-[300px] object-cover lg:object-cover object-center"
           />
+        ) : (
+          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
         )}
       </div>
 
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-60px] md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-10px] md:mt-[-20px] lg:mt-[-30px] md:px-6">
           {/* Profile Section */}
           <div className="col-span-1 md:col-span-4 space-y-4">
-            <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gray-200 rounded-md">
+            <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gray-200 ring-2 ring-background shadow-md overflow-hidden bg-muted rounded-md">
               {recruiterData.photo ? (
                 <Image
                   src={recruiterData.photo}
@@ -394,30 +392,30 @@ export default function Recruiters({ userId }: MydataProps) {
 
             {/* Follow / Unfollow with count */}
             {myId !== userId && (
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => toggleFollowMutation.mutate()}
-                className={`${
-                  isFollowing
-                    ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
-                    : "bg-blue-600 hover:bg-blue-700"
-                } transition-colors`}
-                aria-label={isFollowing ? "Unfollow" : "Follow"}
-                title={!myId ? "Sign in to follow" : undefined}
-              >
-                {followBusy
-                  ? "Please wait…"
-                  : isFollowing
-                  ? "Unfollow"
-                  : "Follow"}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => toggleFollowMutation.mutate()}
+                  className={`${
+                    isFollowing
+                      ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  } transition-colors`}
+                  aria-label={isFollowing ? "Unfollow" : "Follow"}
+                  title={!myId ? "Sign in to follow" : undefined}
+                >
+                  {followBusy
+                    ? "Please wait…"
+                    : isFollowing
+                    ? "Unfollow"
+                    : "Follow"}
+                </Button>
 
-              {(followInfo?.count ?? 0) > 0 && (
-                <span className="text-sm text-gray-600">
-                  {followersCount} follower{followersCount === 1 ? "" : "s"}
-                </span>
-              )}
-            </div>
+                {(followInfo?.count ?? 0) > 0 && (
+                  <span className="text-sm text-gray-600">
+                    {followersCount} follower{followersCount === 1 ? "" : "s"}
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
