@@ -75,7 +75,7 @@ export default function PayPalCheckoutClient() {
             );
             if (!response.ok) throw new Error("Failed to capture PayPal order");
             // const data = await response.json();
-            // router.push("/success");
+            router.push("/success");
           } catch (err) {
             console.error("PayPal Capture Error:", err);
           }
