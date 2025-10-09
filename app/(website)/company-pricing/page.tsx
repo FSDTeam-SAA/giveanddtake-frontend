@@ -431,7 +431,7 @@ export default function PricingPage() {
                     className="h-[58px] w-full rounded-[80px] text-lg font-semibold border-2 border-[#2B7FD0] bg-transparent text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     variant="outline"
                     onClick={() => handlePlanSelect(plan)}
-                    disabled={isCurrent}
+                    disabled={!!isCurrent}
                   >
                     {isCurrent ? "Current Plan" : plan.buttonText}
                   </Button>
