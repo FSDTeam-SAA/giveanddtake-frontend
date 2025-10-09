@@ -31,14 +31,10 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
 
-  // Ensure modal opens when sourceImage is set
   useEffect(() => {
-    if (sourceImage) {
-      setCropModalOpen(true);
-    }
+    if (sourceImage) setCropModalOpen(true);
   }, [sourceImage]);
 
-  // Drag-and-Drop handlers
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -54,11 +50,10 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
     if (f) startCropFlow(f);
   };
 
-  // File picker handler
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (f) startCropFlow(f);
-    e.currentTarget.value = ""; // Clear input after processing
+    e.currentTarget.value = "";
   };
 
   const startCropFlow = (file: File) => {
@@ -80,11 +75,8 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
     reader.readAsDataURL(file);
   };
 
-  const removeBanner = () => {
-    onFileSelect(null);
-  };
+  const removeBanner = () => onFileSelect(null);
 
-  // Cropper handlers
   const onCropComplete = useCallback((_area: Area, pixels: Area) => {
     setCroppedAreaPixels(pixels);
   }, []);
@@ -128,23 +120,36 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
             </div>
           </div>
         </CardHeader>
+
         <CardContent>
           {previewUrl ? (
             <div className="relative">
-              <div className="relative w-full h-[300px] rounded-lg overflow-hidden border">
+              {/* ✅ Responsive preview height */}
+              <div className="relative w-full h-auto md:h-[300px] rounded-lg overflow-hidden border">
                 <img
                   src={previewUrl}
                   alt="Banner preview"
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto md:h-full object-cover"
                 />
               </div>
-              <div className="absolute top-3 right-3 flex gap-2">
+
+              {/* ✅ Buttons layout (below on mobile, overlay on desktop) */}
+              <div
+                className="
+                  flex flex-col md:flex-row 
+                  md:absolute md:top-3 md:right-3 
+                  gap-2 mt-3 md:mt-0 justify-end
+                  md:bg-transparent 
+                  bg-white/80 backdrop-blur-sm p-2 md:p-0 
+                  rounded-md md:rounded-none
+                "
+              >
                 <Button
                   variant="outline"
                   size="sm"
                   type="button"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent click from bubbling to parent
+                    e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
                 >
@@ -180,7 +185,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
               <Button
                 variant="outline"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent click from bubbling to parent
+                  e.stopPropagation();
                   fileInputRef.current?.click();
                 }}
                 type="button"
@@ -192,20 +197,24 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
               </div>
             </div>
           )}
+
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png" // Restrict to common formats
+            accept="image/jpeg,image/png"
             onChange={onInputChange}
             className="hidden"
           />
         </CardContent>
       </Card>
+
+      {/* Cropper Modal */}
       <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>Edit cover photo</DialogTitle>
           </DialogHeader>
+
           <div className="space-y-4">
             <div className="relative h-[420px] bg-black rounded-md overflow-hidden">
               {sourceImage && (
@@ -220,7 +229,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                   onRotationChange={setRotation}
                   onCropComplete={onCropComplete}
                   showGrid
-                  minZoom={0.5}
+                  minZoom={1}   // ✅ Minimum zoom fixed
                   maxZoom={3}
                 />
               )}
@@ -228,13 +237,15 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                 Drag to reposition • Zoom/Rotate below
               </div>
             </div>
+
+            {/* Zoom + Rotation Controls */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <label className="w-20 text-sm">Zoom</label>
                 <input
                   aria-label="Zoom"
                   type="range"
-                  min={0.5}
+                  min={1}
                   max={3}
                   step={0.01}
                   value={zoom}
@@ -245,6 +256,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                   {zoom.toFixed(2)}x
                 </div>
               </div>
+
               <div className="flex items-center gap-3">
                 <label className="w-20 text-sm">Rotate</label>
                 <input
@@ -268,13 +280,14 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                 </button>
               </div>
             </div>
+
+            {/* Action Buttons */}
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => {
                   setCropModalOpen(false);
                   onFileSelect(null);
-                  setCropModalOpen(false);
                   setSourceImage(null);
                 }}
               >

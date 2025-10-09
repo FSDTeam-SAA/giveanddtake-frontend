@@ -14,15 +14,21 @@ interface PhotoAboutSectionProps {
 
 export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAboutSectionProps) {
   return (
-    <Card>
+    <Card className="w-full">
       <CardContent className="pt-6">
-        <div className="flex items-start gap-8">
-          <div className="flex-shrink-0">
-            <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">Photo</FormLabel>
-            <PhotoUpload onFileSelect={onPhotoSelect} previewUrl={photoPreview} />
+        <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
+          {/* Photo Section */}
+          <div className="flex-shrink-0 w-full md:w-auto">
+            <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
+              Photo
+            </FormLabel>
+            <div className="flex justify-center md:justify-start">
+              <PhotoUpload onFileSelect={onPhotoSelect} previewUrl={photoPreview} />
+            </div>
           </div>
 
-          <div className="flex-1">
+          {/* About Me Section */}
+          <div className="flex-1 w-full">
             <FormField
               control={form.control}
               name="aboutUs"
@@ -30,7 +36,9 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
                 <FormItem>
                   <FormLabel className="text-blue-600 font-medium">About Me</FormLabel>
                   <FormControl>
-                    <TextEditor value={field.value ?? ""} onChange={field.onChange} />
+                    <div className="mt-2">
+                      <TextEditor value={field.value ?? ""} onChange={field.onChange} />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
