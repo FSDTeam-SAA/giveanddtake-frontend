@@ -1,4 +1,3 @@
-// components/ProfileSidebar.tsx
 "use client";
 
 import Link from "next/link";
@@ -15,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { User, Lock, Calendar, LogOut, Camera, Menu } from "lucide-react";
+import { User, Lock, Calendar, LogOut, Camera, Menu, Edit2 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -70,6 +69,7 @@ export function ProfileSidebar() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0); // Added for rotation control
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -152,6 +152,11 @@ export function ProfileSidebar() {
     const outputSize = 200;
     canvas.width = outputSize;
     canvas.height = outputSize;
+
+    // Apply rotation
+    ctx.translate(outputSize / 2, outputSize / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(-outputSize / 2, -outputSize / 2);
 
     ctx.drawImage(
       image,
@@ -373,34 +378,84 @@ export function ProfileSidebar() {
               Adjust the crop area for your profile picture, then confirm to upload.
             </DialogDescription>
           </DialogHeader>
-          <div className="relative h-[300px] bg-black">
-            {selectedImage && (
-              <Cropper
-                image={selectedImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-                restrictPosition={false}
-                minZoom={0.5}
-                maxZoom={3}
-              />
-            )}
+          <div className="space-y-4">
+            <div className="relative h-[300px] bg-black rounded-md overflow-hidden">
+              {selectedImage && (
+                <Cropper
+                  image={selectedImage}
+                  crop={crop}
+                  zoom={zoom}
+                  rotation={rotation}
+                  aspect={1}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onRotationChange={setRotation}
+                  onCropComplete={onCropComplete}
+                  restrictPosition={false}
+                  minZoom={0.5}
+                  maxZoom={3}
+                />
+              )}
+              <div className="absolute left-3 top-3 bg-black/40 text-white text-xs px-2 py-1 rounded">
+                Drag to reposition • Zoom/Rotate below
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <label className="w-20 text-sm">Zoom</label>
+                <input
+                  aria-label="Zoom"
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.01}
+                  value={zoom}
+                  onChange={(e) => setZoom(Number(e.target.value))}
+                  className="w-full"
+                />
+                <div className="w-12 text-right text-xs">
+                  {zoom.toFixed(2)}x
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <label className="w-20 text-sm">Rotate</label>
+                <input
+                  aria-label="Rotate"
+                  type="range"
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={rotation}
+                  onChange={(e) => setRotation(Number(e.target.value))}
+                  className="w-full"
+                />
+                <button
+                  type="button"
+                  onClick={() => setRotation((r) => (r + 90) % 360)}
+                  className="ml-2 p-2 rounded border"
+                  title="Rotate 90°"
+                  aria-label="Rotate 90 degrees"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={cancelUpload}
+                disabled={isProcessing}
+              >
+                Cancel
+              </Button>
+              <Button onClick={confirmUpload} disabled={isProcessing}>
+                {isProcessing ? "Processing..." : "Confirm Crop"}
+              </Button>
+            </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={cancelUpload}
-              disabled={isProcessing}
-            >
-              Cancel
-            </Button>
-            <Button onClick={confirmUpload} disabled={isProcessing}>
-              {isProcessing ? "Processing..." : "Confirm Crop"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useMemo, useState, useCallback, useEffect } from "react";
-import Image from "next/image";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
@@ -18,16 +17,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Globe,
-  MapPin,
-  Edit,
-  Save,
-  X,
-  Camera,
-  Check,
-  ChevronsUpDown,
-} from "lucide-react";
+import { Edit, Save, X, Check, ChevronsUpDown } from "lucide-react";
 import DOMPurify from "dompurify";
 import { editRecruiterAccount } from "@/lib/api-service";
 import { toast } from "sonner";
@@ -35,13 +25,6 @@ import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { CompanySelector } from "@/components/company/company-selector";
 import SocialLinks from "./SocialLinks";
 import { SocialLinksSection } from "./social-links-section";
-import Cropper, { type Area } from "react-easy-crop";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Command,
   CommandEmpty,
@@ -56,8 +39,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { BannerUpload } from "@/components/shared/banner-upload";
+import { PhotoUpload } from "./update-resume/photo-upload";
+import Image from "next/image";
 
-type MaybeStringifiedArray = string[] | string | undefined;
+type MaybeStringifiedArray = string[] | string | undefined | null;
 
 type Company = {
   _id: string;
@@ -123,416 +109,10 @@ export type Recruiter = {
   banner?: string;
 };
 
-interface BannerUploadProps {
-  onFileSelect: (file: File | null) => void;
-  previewUrl?: string | null;
-  onUploadSuccess: () => void;
-  isEditing: boolean;
-}
-
-function BannerUpload({
-  onFileSelect,
-  previewUrl,
-  onUploadSuccess,
-  isEditing,
-}: BannerUploadProps) {
-  const [dragActive, setDragActive] = useState(false);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isEditing) return;
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isEditing) return;
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileSelect = (file: File) => {
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("File size must be less than 10MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setCropModalOpen(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const removeBanner = () => {
-    onFileSelect(null);
-    setSelectedImage(null);
-    setCropModalOpen(false);
-  };
-
-  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  const getCroppedImg = async (
-    imageSrc: string,
-    pixelCrop: Area
-  ): Promise<File> => {
-    const image = new window.Image();
-    image.src = imageSrc;
-    await new Promise((resolve) => (image.onload = resolve));
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-
-    const outputHeight = 300;
-    const scale = outputHeight / pixelCrop.height;
-    const outputWidth = pixelCrop.width * scale;
-
-    canvas.width = outputWidth;
-    canvas.height = outputHeight;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      outputWidth,
-      outputHeight
-    );
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(
-            new File([blob], "cropped-banner.jpg", { type: "image/jpeg" })
-          );
-        }
-      }, "image/jpeg");
-    });
-  };
-
-  const handleCropConfirm = async () => {
-    if (selectedImage && croppedAreaPixels) {
-      setIsProcessing(true);
-      try {
-        const croppedImage = await getCroppedImg(
-          selectedImage,
-          croppedAreaPixels
-        );
-        onFileSelect(croppedImage);
-        setCropModalOpen(false);
-        setSelectedImage(null);
-        onUploadSuccess();
-      } catch (error) {
-        toast.error("Failed to process image");
-      } finally {
-        setIsProcessing(false);
-      }
-    }
-  };
-  console.log(previewUrl);
-
-  return (
-    <>
-      <div
-        className={`relative w-full h-auto lg:h-[300px] bg-muted ${
-          isEditing ? "cursor-pointer" : ""
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        {previewUrl ? (
-          <Image
-            src={previewUrl}
-            alt="Cover image"
-            width={1600}
-            height={900}
-            className="object-cover opacity-80 w-full h-auto lg:h-[300px]"
-            priority
-          />
-        ) : (
-          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
-        )}
-
-        {isEditing && (
-          <div
-            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-            onClick={() => document.getElementById("banner-upload")?.click()}
-          >
-            <Camera className="h-6 w-6 text-white" />
-          </div>
-        )}
-        <input
-          id="banner-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleInputChange}
-          className="hidden"
-          disabled={!isEditing}
-        />
-      </div>
-      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
-        <DialogContent className="sm:max-w-[800px]">
-          <DialogHeader>
-            <DialogTitle>Crop Banner Image</DialogTitle>
-          </DialogHeader>
-          <div className="relative h-[400px] bg-black">
-            {selectedImage && (
-              <Cropper
-                image={selectedImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={5 / 1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-                restrictPosition={false}
-                minZoom={0.5}
-                maxZoom={3}
-              />
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropConfirm} disabled={isProcessing}>
-              Confirm Crop
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-
-interface PhotoUploadProps {
-  onFileSelect: (file: File | null) => void;
-  previewUrl?: string | null;
-  onUploadSuccess: () => void;
-  isEditing: boolean;
-}
-
-function PhotoUpload({
-  onFileSelect,
-  previewUrl,
-  onUploadSuccess,
-  isEditing,
-}: PhotoUploadProps) {
-  const [dragActive, setDragActive] = useState(false);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isEditing) return;
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!isEditing) return;
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileSelect(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleFileSelect = (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be less than 5MB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSelectedImage(reader.result as string);
-      setCropModalOpen(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleFileSelect(file);
-    }
-  };
-
-  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  const getCroppedImg = async (
-    imageSrc: string,
-    pixelCrop: Area
-  ): Promise<File> => {
-    const image = new window.Image();
-    image.src = imageSrc;
-    await new Promise((resolve) => (image.onload = resolve));
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d")!;
-
-    const outputSize = 150;
-    canvas.width = outputSize;
-    canvas.height = outputSize;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      outputSize,
-      outputSize
-    );
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          resolve(
-            new File([blob], "cropped-photo.jpg", { type: "image/jpeg" })
-          );
-        }
-      }, "image/jpeg");
-    });
-  };
-
-  const handleCropConfirm = async () => {
-    if (selectedImage && croppedAreaPixels) {
-      setIsProcessing(true);
-      try {
-        const croppedImage = await getCroppedImg(
-          selectedImage,
-          croppedAreaPixels
-        );
-        onFileSelect(croppedImage);
-        setCropModalOpen(false);
-        setSelectedImage(null);
-        onUploadSuccess();
-      } catch (error) {
-        toast.error("Failed to process image");
-      } finally {
-        setIsProcessing(false);
-      }
-    }
-  };
-
-  return (
-    <>
-      <div
-        className={`relative h-20 w-20 sm:h-24 sm:w-24 md:h-40 md:w-40 rounded ring-2 ring-background shadow-md overflow-hidden bg-muted ${
-          isEditing ? "cursor-pointer" : ""
-        }`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded">
-          <Image
-            src={previewUrl || "/placeholder.svg"}
-            width={600}
-            height={600}
-            alt="Profile photo"
-            className="w-[120px] h-[120px] md:h-[170px] md:w-[170px]"
-          />
-          <div className="rounded">
-            {getInitials()}
-          </div>
-        </div>
-        {isEditing && (
-          <div
-            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-            onClick={() => document.getElementById("photo-upload")?.click()}
-          >
-            <Camera className="h-6 w-6 text-white" />
-          </div>
-        )}
-        <input
-          id="photo-upload"
-          type="file"
-          accept="image/*"
-          onChange={handleInputChange}
-          className="hidden"
-          disabled={!isEditing}
-        />
-      </div>
-      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Crop Profile Photo</DialogTitle>
-          </DialogHeader>
-          <div className="relative h-[300px] bg-black">
-            {selectedImage && (
-              <Cropper
-                image={selectedImage}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropComplete}
-                restrictPosition={false}
-                minZoom={0.5}
-                maxZoom={3}
-              />
-            )}
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCropConfirm} disabled={isProcessing}>
-              Confirm Crop
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+const FALLBACK_IMAGE = "/placeholder.svg";
 
 function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
+  if (!input) return [];
   if (Array.isArray(input)) {
     if (
       input.length === 1 &&
@@ -541,7 +121,8 @@ function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
     ) {
       try {
         return JSON.parse(input[0]) as string[];
-      } catch {
+      } catch (e) {
+        console.error("parseMaybeStringifiedArray: Failed to parse array", e);
         return input as string[];
       }
     }
@@ -557,13 +138,6 @@ function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
   return [];
 }
 
-function getInitials(first?: string, last?: string) {
-  const f = first?.[0] ?? "";
-  const l = last?.[0] ?? "";
-  const initials = `${f}${l}`.toUpperCase();
-  return initials || "RC";
-}
-
 function formatFollowerCount(n?: number) {
   if (!Number.isFinite(n as number)) return null;
   const num = Number(n);
@@ -573,7 +147,6 @@ function formatFollowerCount(n?: number) {
   return `${(num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1)}M`;
 }
 
-// Define API fetch functions
 const fetchCountries = async (): Promise<Country[]> => {
   const response = await fetch("https://countriesnow.space/api/v0.1/countries");
   const data = await response.json();
@@ -587,9 +160,7 @@ const fetchCities = async (country: string): Promise<string[]> => {
     "https://countriesnow.space/api/v0.1/countries/cities",
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ country }),
     }
   );
@@ -606,9 +177,6 @@ export default function EditableRecruiterAccount({
   onSave?: (updatedRecruiter: Recruiter) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editedRecruiter, setEditedRecruiter] = useState<Recruiter>({
-    ...recruiter,
-  });
   const [isSaving, setIsSaving] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
@@ -625,8 +193,11 @@ export default function EditableRecruiterAccount({
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
 
-  const form = useForm<{ sLink: SLinkItem[] }>({
-    defaultValues: { sLink: recruiter.sLink || [] },
+  const form = useForm<Recruiter>({
+    defaultValues: {
+      ...recruiter,
+      sLink: recruiter.sLink || [],
+    },
     mode: "onChange",
   });
 
@@ -637,6 +208,7 @@ export default function EditableRecruiterAccount({
   } = useQuery({
     queryKey: ["countries"],
     queryFn: fetchCountries,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
   });
 
   const {
@@ -647,39 +219,140 @@ export default function EditableRecruiterAccount({
     queryKey: ["cities", selectedCountry],
     queryFn: () => fetchCities(selectedCountry),
     enabled: !!selectedCountry && isEditing,
+    staleTime: 1000 * 60 * 60,
   });
 
-  // NEW: Synchronize selectedCompany with recruiter.companyId
   useEffect(() => {
-    const companyId = recruiter.companyId?._id || "";
-    setSelectedCompany(companyId);
-    setEditedRecruiter((prev) => ({
-      ...prev,
+    setSelectedCompany(recruiter.companyId?._id || "");
+    setSelectedCountry(recruiter.country || "");
+    form.reset({
+      ...recruiter,
+      sLink: recruiter.sLink || [],
       companyId: recruiter.companyId || undefined,
-    }));
-  }, [recruiter.companyId]);
+      country: recruiter.country || "",
+      city: recruiter.city || "",
+    });
+  }, [recruiter, form]);
 
-  // Synchronize selectedCountry and city with recruiter prop
   useEffect(() => {
-    if (recruiter.country) {
-      setSelectedCountry(recruiter.country);
-      setEditedRecruiter((prev) => ({
-        ...prev,
-        country: recruiter.country,
-        city: recruiter.city || "",
-      }));
-    }
-  }, [recruiter.country, recruiter.city]);
-
-  // Handle API errors
-  useEffect(() => {
-    if (countriesError) {
-      toast.error("Failed to load countries. Please try again.");
-    }
-    if (citiesError) {
-      toast.error("Failed to load cities. Please try again.");
-    }
+    if (countriesError) toast.error("Failed to load countries.");
+    if (citiesError) toast.error("Failed to load cities.");
   }, [countriesError, citiesError]);
+
+  const handleBannerUpload = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file.");
+      return;
+    }
+    setBannerFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setBannerPreview(reader.result as string);
+      setIsBannerUploaded(true);
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read banner image.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoSelect = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file.");
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+      setIsPhotoUploaded(true);
+    };
+    reader.onerror = () => {
+      toast.error("Failed to read profile photo.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSave = async () => {
+    if (!form.getValues().userId) return;
+    setIsSaving(true);
+    try {
+      const formData = new FormData();
+      const values = form.getValues();
+      const cleanedLinks = (values.sLink || []).filter(
+        (l) => (l.label?.trim() || "") && (l.url?.trim() || "")
+      );
+
+      cleanedLinks.forEach((link, index) => {
+        formData.append(`sLink[${index}][label]`, link.label);
+        formData.append(`sLink[${index}][url]`, link.url || "");
+      });
+
+      Object.entries(values).forEach(([key, value]) => {
+        if (key === "sLink") return;
+        if (key === "photo" && photoFile) {
+          formData.append("photo", photoFile);
+          return;
+        }
+        if (key === "banner" && bannerFile) {
+          formData.append("banner", bannerFile);
+          return;
+        }
+        if (key === "companyId" && selectedCompany) {
+          formData.append("companyId", selectedCompany);
+          return;
+        }
+        if (key === "country" && values.country) {
+          formData.append("country", values.country);
+          return;
+        }
+        if (key === "city" && values.city) {
+          formData.append("city", values.city);
+          return;
+        }
+        if (typeof value === "string" && value.trim() !== "") {
+          formData.append(key, value);
+        }
+      });
+
+      const updatedRecruiter = await editRecruiterAccount(
+        values.userId,
+        formData
+      );
+
+      onSave?.(updatedRecruiter);
+      setIsEditing(false);
+      setPhotoPreview(null);
+      setBannerPreview(null);
+      setPhotoFile(null);
+      setBannerFile(null);
+      setIsBannerUploaded(false);
+      setIsPhotoUploaded(false);
+      form.reset(updatedRecruiter);
+
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      console.error("Failed to save recruiter account:", error);
+      toast.error(
+        error.message || "Failed to update profile. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setSelectedCompany(recruiter.companyId?._id || "");
+    setSelectedCountry(recruiter.country || "");
+    setIsEditing(false);
+    setPhotoPreview(null);
+    setBannerPreview(null);
+    setPhotoFile(null);
+    setBannerFile(null);
+    setIsBannerUploaded(false);
+    setIsPhotoUploaded(false);
+    form.reset({ ...recruiter, sLink: recruiter.sLink || [] });
+  };
 
   const {
     firstName,
@@ -693,163 +366,97 @@ export default function EditableRecruiterAccount({
     companyId,
     sLink,
     followerCount,
-  } = isEditing ? editedRecruiter : recruiter;
+  } = isEditing ? form.getValues() : recruiter;
 
   const fullName =
     [firstName, sureName].filter(Boolean).join(" ") || "Recruiter";
+  const taglineParts = [title, roleAtCompany].filter(Boolean);
   const primaryLocation =
     location || [city, country].filter(Boolean).join(", ");
-  const displayPhoto = photoPreview || recruiter.photo || "/placeholder.svg";
-  const displayBanner = bannerPreview || recruiter.banner;
+  const displayPhoto = photoPreview || recruiter.photo || FALLBACK_IMAGE;
+  const displayBanner = bannerPreview || recruiter.banner || "";
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(followerCount);
     return formatted ? `${formatted} followers` : null;
   }, [followerCount]);
 
-  const companyLinks = parseMaybeStringifiedArray(companyId?.links);
+  const companyLinks = companyId
+    ? parseMaybeStringifiedArray(companyId.links)
+    : [];
   const websiteHref =
     companyLinks[0] ||
-    editedRecruiter?.OtherLink ||
-    editedRecruiter?.upworkUrl ||
+    form.getValues()?.OtherLink ||
+    form.getValues()?.upworkUrl ||
     recruiter?.OtherLink ||
     recruiter?.upworkUrl ||
     undefined;
 
-  const taglineParts = [title, roleAtCompany].filter(Boolean);
-
-  const handleSave = async () => {
-    if (!editedRecruiter.userId) return;
-
-    setIsSaving(true);
-    try {
-      const formData = new FormData();
-      const { sLink: formLinks } = form.getValues();
-      const cleanedLinks = (formLinks || []).filter(
-        (l) => (l.label?.trim() || "") && (l.url?.trim() || "")
-      );
-
-      cleanedLinks.forEach((link, index) => {
-        formData.append(`sLink[${index}][label]`, link.label);
-        formData.append(`sLink[${index}][url]`, link.url || "");
-      });
-
-      Object.entries(editedRecruiter).forEach(([key, value]) => {
-        if (key === "sLink") return;
-        if (key === "photo") {
-          if (photoFile) formData.append("photo", photoFile);
-          return;
-        }
-        if (key === "banner") {
-          if (bannerFile) formData.append("banner", bannerFile);
-          return;
-        }
-        if (key === "companyId") {
-          if (selectedCompany) formData.append("companyId", selectedCompany);
-          return;
-        }
-        if (key === "country") {
-          if (editedRecruiter.country)
-            formData.append("country", editedRecruiter.country);
-          return;
-        }
-        if (key === "city") {
-          if (editedRecruiter.city)
-            formData.append("city", editedRecruiter.city);
-          return;
-        }
-        if (typeof value === "string" && value.trim() !== "") {
-          formData.append(key, value);
-        }
-      });
-
-      const updatedRecruiter = await editRecruiterAccount(
-        editedRecruiter.userId,
-        formData
-      );
-
-      onSave?.(updatedRecruiter);
-      setIsEditing(false);
-      setPhotoPreview(null);
-      setBannerPreview(null);
-      setPhotoFile(null);
-      setBannerFile(null);
-      setIsBannerUploaded(false);
-      setIsPhotoUploaded(false);
-      setEditedRecruiter({
-        ...updatedRecruiter,
-        photo: updatedRecruiter.photo,
-        banner: updatedRecruiter.banner,
-        companyId: updatedRecruiter.companyId,
-      });
-      form.reset({ sLink: updatedRecruiter.sLink || [] });
-
-      toast.success("Profile updated successfully!");
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to save recruiter account:", error);
-      toast.error("Failed to update profile. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCancel = () => {
-    setEditedRecruiter(recruiter);
-    setSelectedCompany(recruiter.companyId?._id || "");
-    setSelectedCountry(recruiter.country || "");
-    setIsEditing(false);
-    setPhotoPreview(null);
-    setBannerPreview(null);
-    setPhotoFile(null);
-    setBannerFile(null);
-    setIsBannerUploaded(false);
-    setIsPhotoUploaded(false);
-    form.reset({ sLink: recruiter.sLink || [] });
-  };
-
   return (
     <div className="w-full bg-background">
-      <BannerUpload
-        onFileSelect={(file) => {
-          setBannerFile(file);
-          if (file) {
-            const url = URL.createObjectURL(file);
-            setBannerPreview(url);
-          } else {
-            setBannerPreview(null);
-          }
-        }}
-        previewUrl={displayBanner}
-        onUploadSuccess={() => setIsBannerUploaded(true)}
-        isEditing={isEditing}
-      />
+      {/* Conditionally render BannerUpload only when editing */}
+      {isEditing ? (
+        <BannerUpload
+          onFileSelect={handleBannerUpload}
+          previewUrl={displayBanner}
+        />
+      ) : (
+        /* Show static banner when not editing */
+        recruiter.banner && (
+          <div className="w-full h-auto lg:h-[300px]">
+            {recruiter.banner ? (
+              <Image
+                src={recruiter.banner}
+                alt="Resume Header Background"
+                width={1200}
+                height={300}
+                className="w-full h-auto lg:h-[300px] object-cover"
+              />
+            ) : (
+              <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+            )}
+          </div>
+        )
+      )}
 
       <div className="border-b-2">
         <div className="container mx-auto lg:pb-10 pb-6 px-4 sm:px-6 lg:px-16">
           <div className="relative mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
             <div className="flex items-end justify-between gap-4">
-              <PhotoUpload
-                onFileSelect={(file) => {
-                  setPhotoFile(file);
-                  if (file) {
-                    const url = URL.createObjectURL(file);
-                    setPhotoPreview(url);
-                  } else {
-                    setPhotoPreview(null);
-                  }
-                }}
-                previewUrl={displayPhoto}
-                onUploadSuccess={() => setIsPhotoUploaded(true)}
-                isEditing={isEditing}
-              />
+              <div>
+                {/* Conditionally render PhotoUpload based on editing state */}
+                {isEditing ? (
+                  <div>
+                    <PhotoUpload
+                      onFileSelect={handlePhotoSelect}
+                      previewUrl={displayPhoto}
+                      onUploadSuccess={() => setIsPhotoUploaded(true)}
+                    />
+                  </div>
+                ) : recruiter?.photo ? (
+                  // Show static avatar when not editing and photo exists
+                  <Image
+                    src={recruiter.photo || FALLBACK_IMAGE}
+                    alt={`${recruiter.firstName || ""}`}
+                    height={500}
+                    width={500}
+                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top"
+                  />
+                ) : (
+                  // Fallback gradient avatar
+                  <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                    {/* {recruiter.full?.[0] || "U"} */}
+                  </div>
+                )}
+              </div>
 
               <div className="mb-4">
                 {!isEditing ? (
                   <Button
                     onClick={() => {
                       form.reset({
-                        sLink: editedRecruiter.sLink || recruiter.sLink || [],
+                        ...recruiter,
+                        sLink: recruiter.sLink || [],
                       });
                       setIsEditing(true);
                     }}
@@ -892,47 +499,47 @@ export default function EditableRecruiterAccount({
                 <Form {...form}>
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName">First Name</Label>
-                        <Input
-                          id="firstName"
-                          value={editedRecruiter.firstName || ""}
-                          onChange={(e) =>
-                            setEditedRecruiter((r) => ({
-                              ...r,
-                              firstName: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sureName">Last Name</Label>
-                        <Input
-                          id="sureName"
-                          value={editedRecruiter.sureName || ""}
-                          onChange={(e) =>
-                            setEditedRecruiter((r) => ({
-                              ...r,
-                              sureName: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="title">Title</Label>
-                      <Input
-                        id="title"
-                        value={editedRecruiter.title || ""}
-                        onChange={(e) =>
-                          setEditedRecruiter((r) => ({
-                            ...r,
-                            title: e.target.value,
-                          }))
-                        }
+                      <FormField
+                        control={form.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Label htmlFor="firstName">First Name</Label>
+                            <FormControl>
+                              <Input id="firstName" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="sureName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Label htmlFor="sureName">Last Name</Label>
+                            <FormControl>
+                              <Input id="sureName" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label htmlFor="title">Title</Label>
+                          <FormControl>
+                            <Input id="title" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -942,10 +549,9 @@ export default function EditableRecruiterAccount({
                         selectedCompany={selectedCompany}
                         onCompanyChange={(companyId) => {
                           setSelectedCompany(companyId);
-                          setEditedRecruiter((r) => ({
-                            ...r,
-                            companyId: { _id: companyId } as Company,
-                          }));
+                          form.setValue("companyId", {
+                            _id: companyId,
+                          } as Company);
                         }}
                       />
                     </div>
@@ -962,13 +568,14 @@ export default function EditableRecruiterAccount({
                               variant="outline"
                               role="combobox"
                               aria-expanded={countryOpen}
+                              aria-label="Select country"
                               className={cn(
                                 "w-full justify-between font-normal",
-                                !editedRecruiter.country &&
+                                !form.getValues().country &&
                                   "text-muted-foreground"
                               )}
                             >
-                              {editedRecruiter.country || "Select a country"}
+                              {form.getValues().country || "Select a country"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -977,9 +584,26 @@ export default function EditableRecruiterAccount({
                               <CommandInput placeholder="Search country..." />
                               <CommandList>
                                 <CommandEmpty>
-                                  {isLoadingCountries
-                                    ? "Loading countries..."
-                                    : "No country found."}
+                                  {isLoadingCountries ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <svg
+                                        className="animate-spin h-5 w-5"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                          fill="none"
+                                        />
+                                      </svg>
+                                      Loading countries...
+                                    </div>
+                                  ) : (
+                                    "No country found."
+                                  )}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {countriesData?.map((country) => (
@@ -987,11 +611,8 @@ export default function EditableRecruiterAccount({
                                       key={country.country}
                                       value={country.country}
                                       onSelect={(value) => {
-                                        setEditedRecruiter((r) => ({
-                                          ...r,
-                                          country: value,
-                                          city: "",
-                                        }));
+                                        form.setValue("country", value);
+                                        form.setValue("city", "");
                                         setSelectedCountry(value);
                                         setCountryOpen(false);
                                       }}
@@ -999,7 +620,7 @@ export default function EditableRecruiterAccount({
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          editedRecruiter.country ===
+                                          form.getValues().country ===
                                             country.country
                                             ? "opacity-100"
                                             : "opacity-0"
@@ -1022,13 +643,15 @@ export default function EditableRecruiterAccount({
                               variant="outline"
                               role="combobox"
                               aria-expanded={cityOpen}
+                              aria-label="Select city"
                               disabled={!selectedCountry}
                               className={cn(
                                 "w-full justify-between font-normal",
-                                !editedRecruiter.city && "text-muted-foreground"
+                                !form.getValues().city &&
+                                  "text-muted-foreground"
                               )}
                             >
-                              {editedRecruiter.city || "Select a city"}
+                              {form.getValues().city || "Select a city"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -1037,9 +660,26 @@ export default function EditableRecruiterAccount({
                               <CommandInput placeholder="Search city..." />
                               <CommandList>
                                 <CommandEmpty>
-                                  {isLoadingCities
-                                    ? "Loading cities..."
-                                    : "No city found."}
+                                  {isLoadingCities ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                      <svg
+                                        className="animate-spin h-5 w-5"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                          fill="none"
+                                        />
+                                      </svg>
+                                      Loading cities...
+                                    </div>
+                                  ) : (
+                                    "No city found."
+                                  )}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {citiesData?.map((city) => (
@@ -1047,17 +687,14 @@ export default function EditableRecruiterAccount({
                                       key={city}
                                       value={city}
                                       onSelect={(value) => {
-                                        setEditedRecruiter((r) => ({
-                                          ...r,
-                                          city: value,
-                                        }));
+                                        form.setValue("city", value);
                                         setCityOpen(false);
                                       }}
                                     >
                                       <Check
                                         className={cn(
                                           "mr-2 h-4 w-4",
-                                          editedRecruiter.city === city
+                                          form.getValues().city === city
                                             ? "opacity-100"
                                             : "opacity-0"
                                         )}
@@ -1073,17 +710,24 @@ export default function EditableRecruiterAccount({
                       </div>
                     </div>
 
-                    <div>
-                      <Label htmlFor="bio" className="text-sm font-medium">
-                        Bio
-                      </Label>
-                      <TextEditor
-                        value={editedRecruiter.bio || ""}
-                        onChange={(value) =>
-                          setEditedRecruiter((r) => ({ ...r, bio: value }))
-                        }
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="bio"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label htmlFor="bio" className="text-sm font-medium">
+                            Bio
+                          </Label>
+                          <FormControl>
+                            <TextEditor
+                              value={field.value || ""}
+                              onChange={(value) => field.onChange(value)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <Card className="mt-6">
                       <CardHeader>
@@ -1128,7 +772,7 @@ export default function EditableRecruiterAccount({
                     )}
                     {(country || city) && (
                       <p className="text-base text-muted-foreground">
-                        {country || city}
+                        {primaryLocation}
                       </p>
                     )}
                   </div>
@@ -1181,7 +825,7 @@ export default function EditableRecruiterAccount({
                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
                       <Avatar>
                         <AvatarImage
-                          src={companyId?.avatar?.url || "/placeholder.svg"}
+                          src={companyId?.avatar?.url || FALLBACK_IMAGE}
                           alt={companyId?.name || ""}
                           className="rounded-none object-cover"
                         />
