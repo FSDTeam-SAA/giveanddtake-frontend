@@ -241,7 +241,7 @@ export default function ContactForm() {
                   href="tel:+14065550120"
                   className="text-gray-700 hover:underline"
                 >
-                  (406) 555-0120
+                  +44 0203 954 2530
                 </a>
               </div>
               <div className="flex items-center gap-16">
@@ -249,8 +249,7 @@ export default function ContactForm() {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <address className="text-gray-700 not-italic">
-                  70 Washington Square <br />
-                  South, New York, USA
+                  124 City Road, London EC1V 2NX
                 </address>
               </div>
               <div className="flex items-center gap-16">
