@@ -25,7 +25,9 @@ export function LanguageSelector({
         `${process.env.NEXT_PUBLIC_BASE_URL}/language`
       );
       const data = await response.json();
-      if (!data.success) throw new Error("Failed to fetch languages");
+      if (data.status !== "success" || !Array.isArray(data.data)) {
+        throw new Error("Failed to fetch universities");
+      }
       return data.data.map((language: any) => language.name || language);
     },
   });

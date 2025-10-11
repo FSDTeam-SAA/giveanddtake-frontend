@@ -1,10 +1,8 @@
 "use client";
 
-import type React from "react";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   FormField,
@@ -14,7 +12,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Upload, Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -30,12 +28,10 @@ import {
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
-import Cropper from "react-easy-crop";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { SocialLinksSection } from "../social-links-section";
-import type { UseFormReturn } from "react-hook-form";
 import { useQuery } from "@tanstack/react-query";
+import { PhotoUpload } from "../update-resume/photo-upload";
 
 interface Country {
   country: string;
@@ -51,6 +47,12 @@ interface DialCode {
 interface Option {
   value: string;
   label: string;
+}
+
+interface PersonalInfoSectionProps {
+  form: UseFormReturn<any>;
+  photoPreview: string | null;
+  onPhotoUpload: (file: File | null) => void;
 }
 
 function Combobox({
@@ -142,12 +144,6 @@ function Combobox({
   );
 }
 
-interface PersonalInfoSectionProps {
-  form: UseFormReturn<any>;
-  photoPreview: string | null;
-  onPhotoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-}
-
 export function PersonalInfoSection({
   form,
   photoPreview,
@@ -157,11 +153,6 @@ export function PersonalInfoSection({
   const [selectedCountry, setSelectedCountry] = useState<string>(
     formCountry || ""
   );
-  const [crop, setCrop] = useState({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -243,155 +234,20 @@ export function PersonalInfoSection({
     }
   }, [countriesData, form, formCountry, selectedCountry]);
 
-  // Function to handle image upload and initiate cropping
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImageSrc(reader.result as string);
-        setShowCropper(true);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Function to crop image
-  const onCropComplete = useCallback(
-    (croppedArea: any, croppedAreaPixels: any) => {
-      setCroppedAreaPixels(croppedAreaPixels);
-    },
-    []
-  );
-
-  // Function to generate cropped image
-  const getCroppedImg = async (
-    imageSrc: string,
-    pixelCrop: { x: number; y: number; width: number; height: number }
-  ): Promise<string> => {
-    const image = new window.Image();
-    image.src = imageSrc;
-    await new Promise((resolve) => {
-      image.onload = resolve;
-    });
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas context not available");
-
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
-
-    ctx.drawImage(
-      image,
-      pixelCrop.x,
-      pixelCrop.y,
-      pixelCrop.width,
-      pixelCrop.height,
-      0,
-      0,
-      pixelCrop.width,
-      pixelCrop.height
-    );
-
-    return canvas.toDataURL("image/jpeg");
-  };
-
-  // Handle crop confirmation
-  const handleCropConfirm = async () => {
-    if (imageSrc && croppedAreaPixels) {
-      try {
-        const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
-        // Call the original onPhotoUpload with a synthetic event
-        onPhotoUpload({
-          target: { files: [dataURLtoFile(croppedImage, "profile.jpg")] },
-        } as any);
-        setShowCropper(false);
-        setImageSrc(null);
-      } catch (e) {
-        console.error("Error cropping image:", e);
-      }
-    }
-  };
-
-  // Convert data URL to File object
-  const dataURLtoFile = (dataUrl: string, filename: string): File => {
-    const arr = dataUrl.split(",");
-    const mime = arr[0].match(/:(.*?);/)?.[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8arr = new Uint8Array(n);
-    while (n--) {
-      u8arr[n] = bstr.charCodeAt(n);
-    }
-    return new File([u8arr], filename, { type: mime });
-  };
-
   return (
     <>
       {/* About Us Section */}
       <Card className="">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-8 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-8 gap-6">
             {/* Photo Upload with Cropper */}
-            <div className="col-span-2 w-full">
-              <Label className="text-sm font-medium text-blue-600 mb-2 block">
-                Photo
-              </Label>
-              <div
-                className="w-full h-[240px] border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 cursor-pointer hover:bg-gray-100"
-                onClick={() => document.getElementById("photo-upload")?.click()}
-              >
-                {photoPreview ? (
-                  <Image
-                    src={photoPreview || "/placeholder.svg"}
-                    alt="Preview"
-                    width={100}
-                    height={100}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                ) : (
-                  <Upload className="h-8 w-8 text-gray-400" />
-                )}
+            <div className="flex justify-center md:justify-start">
+              <div className="border border-gray-400 rounded-lg p-6 w-full max-w-[250px] h-[250px] flex items-center justify-center overflow-hidden">
+                <PhotoUpload
+                  onFileSelect={onPhotoUpload}
+                  previewUrl={photoPreview}
+                />
               </div>
-              <Input
-                id="photo-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              {showCropper && imageSrc && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white p-4 rounded-lg w-[90vw] max-w-[500px]">
-                    <div className="relative w-full h-[300px]">
-                      <Cropper
-                        image={imageSrc}
-                        crop={crop}
-                        zoom={zoom}
-                        aspect={1}
-                        onCropChange={setCrop}
-                        onZoomChange={setZoom}
-                        onCropComplete={onCropComplete}
-                      />
-                    </div>
-                    <div className="mt-4 flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setShowCropper(false);
-                          setImageSrc(null);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="button" onClick={handleCropConfirm}>
-                        Crop & Save
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* About Us Text Area */}
@@ -445,7 +301,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="lastName"
@@ -459,7 +314,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="country"
@@ -487,7 +341,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="city"
@@ -514,7 +367,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="zip"
@@ -528,7 +380,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="email"
@@ -547,7 +398,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="phoneNumber"
@@ -614,7 +464,6 @@ export function PersonalInfoSection({
               />
             </div>
           </div>
-
           <SocialLinksSection form={form} />
         </CardContent>
       </Card>

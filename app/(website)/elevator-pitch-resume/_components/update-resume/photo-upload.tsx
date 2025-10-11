@@ -2,8 +2,6 @@
 
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import Cropper, { Area } from "react-easy-crop";
-import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Upload, Trash2, Edit2 } from "lucide-react";
 import getCroppedImg from "@/hooks/cropImage";
+import Image from "next/image";
 
 interface PhotoUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -156,10 +155,12 @@ export function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
             {previewUrl ? (
               <>
                 <div className="absolute inset-0">
-                  <img
+                  <Image
                     src={previewUrl}
                     alt="Profile preview"
                     className="w-full h-full object-cover"
+                    width={800}
+                    height={800}
                     draggable={false}
                   />
                 </div>
