@@ -14,8 +14,8 @@ interface PhotoAboutSectionProps {
 
 export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAboutSectionProps) {
   return (
-    <Card className="w-full">
-      <CardContent className="pt-6">
+    <div className="w-full">
+      <div className="pt-6">
         <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
           {/* Photo Section */}
           <div className="flex-shrink-0 w-full md:w-auto">
@@ -46,7 +46,7 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
             />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
