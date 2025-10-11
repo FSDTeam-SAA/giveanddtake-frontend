@@ -26,14 +26,6 @@ import {
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
 
-const mockSession = {
-  user: {
-    id: "demo-user-123",
-    email: "demo@example.com",
-    name: "Demo User",
-  },
-};
-
 const MAX_URL_LEN = 2048;
 
 export const resumeSchema = z.object({
@@ -57,7 +49,6 @@ export const resumeSchema = z.object({
     .trim()
     .min(1, "Phone number is required")
     .max(20, "Phone number can be at most 20 characters"),
-
   title: z
     .string()
     .trim()
@@ -85,7 +76,6 @@ export const resumeSchema = z.object({
       },
       { message: "About section cannot exceed 200 words" }
     ),
-
   skills: z
     .array(
       z
@@ -96,7 +86,6 @@ export const resumeSchema = z.object({
     )
     .min(1, "At least one skill is required")
     .max(30, "You can list at most 30 skills"),
-
   sLink: z
     .array(
       z.object({
@@ -110,12 +99,11 @@ export const resumeSchema = z.object({
           .trim()
           .url("Invalid URL format")
           .max(MAX_URL_LEN, `URL can be at most ${MAX_URL_LEN} characters`)
-          .or(z.string().length(0)), // allow empty string
+          .or(z.string().length(0)),
       })
     )
     .max(20, "You can add at most 20 social links")
     .optional(),
-
   experiences: z
     .array(
       z
@@ -186,7 +174,6 @@ export const resumeSchema = z.object({
     )
     .max(20, "You can add at most 20 experiences")
     .optional(),
-
   educationList: z
     .array(
       z
@@ -230,7 +217,6 @@ export const resumeSchema = z.object({
         })
         .refine(
           (data) =>
-            // ✅ Graduation date required only if instituteName & startDate exist AND not currently studying
             !(
               data.instituteName &&
               data.startDate &&
@@ -245,7 +231,6 @@ export const resumeSchema = z.object({
     )
     .max(20, "You can add at most 20 education entries")
     .optional(),
-
   awardsAndHonors: z
     .array(
       z.object({
@@ -273,7 +258,6 @@ export const resumeSchema = z.object({
     )
     .max(20, "You can add at most 20 awards")
     .optional(),
-
   certifications: z
     .array(
       z
@@ -283,14 +267,12 @@ export const resumeSchema = z.object({
     )
     .max(50, "You can add at most 50 certifications")
     .optional(),
-
   languages: z
     .array(
       z.string().trim().max(50, "Each language can be at most 50 characters")
     )
     .max(20, "You can add at most 20 languages")
     .optional(),
-
   immediatelyAvailable: z.boolean().optional().default(false),
 });
 
@@ -308,7 +290,6 @@ export default function CreateResumeForm() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const { data: session } = useSession();
-  console.log(session);
 
   const form = useForm<ResumeFormData>({
     resolver: zodResolver(resumeSchema),
@@ -397,12 +378,9 @@ export default function CreateResumeForm() {
       toast.success("Elevator pitch uploaded successfully!");
     },
     onError: (error) => {
-      console.log("Upload error:", error);
-
-      // Extract the error message from the API response
+      console.error("Upload error:", error);
       const errorMessage =
         error.response?.data?.message || error.message || "Upload failed";
-
       toast.error(errorMessage);
     },
   });
@@ -419,19 +397,23 @@ export default function CreateResumeForm() {
     },
   });
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target?.files?.[0];
-    if (!file) return;
-
+  const handlePhotoUpload = (file: File | null) => {
     setPhotoFile(file);
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        setPhotoPreview(e.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreview(reader.result as string);
+        console.log("Photo preview updated:", reader.result);
+      };
+      reader.onerror = (error) => {
+        console.error("FileReader error:", error);
+        toast.error("Failed to read the photo. Please try another image.");
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhotoPreview(null);
+      console.log("Photo preview cleared");
+    }
   };
 
   const handleBannerUpload = (file: File | null) => {
@@ -456,13 +438,11 @@ export default function CreateResumeForm() {
 
     try {
       setIsSubmitting(true);
-
       try {
         await deleteElevatorPitchMutation.mutateAsync(session.user.id);
       } catch (_) {
         // swallow — we don't care if there's nothing to delete
       }
-
       await uploadElevatorPitchMutation.mutateAsync({
         videoFile: elevatorPitchFile,
         userId: session.user.id,
@@ -481,7 +461,7 @@ export default function CreateResumeForm() {
 
   const onSubmit = async (data: z.infer<typeof resumeSchema>) => {
     if (!isElevatorPitchUploaded) {
-      toast("Please upload an elevator pitch video before submitting.");
+      toast.error("Please upload an elevator pitch video before submitting.");
       return;
     }
 
@@ -549,10 +529,7 @@ export default function CreateResumeForm() {
         formData.append("banner", bannerFile);
       }
 
-      for (const [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-      // createResumeMutation.mutate(formData);
+      createResumeMutation.mutate(formData);
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error("An unexpected error occurred. Please try again.");
@@ -574,7 +551,6 @@ export default function CreateResumeForm() {
     if (!session?.user) return;
     if (form.formState.isDirty) return;
 
-    // Type assertion to access custom properties like phoneNumber and country
     const customUser = session.user as typeof session.user & {
       phoneNumber?: string | null;
       country?: string | null;
@@ -588,7 +564,6 @@ export default function CreateResumeForm() {
       email: form.getValues("email") || (customUser.email ?? ""),
       firstName: form.getValues("firstName") || first,
       lastName: form.getValues("lastName") || rest.join(" "),
-      // Using the asserted customUser to safely access phoneNumber and country
       phoneNumber:
         form.getValues("phoneNumber") || (customUser.phoneNumber ?? ""),
       country: form.getValues("country") || (customUser.country ?? ""),
@@ -672,12 +647,10 @@ export default function CreateResumeForm() {
             </CardContent>
           </Card>
 
-          <div>
-            <BannerUpload
-              onFileSelect={handleBannerUpload}
-              previewUrl={bannerPreview}
-            />
-          </div>
+          <BannerUpload
+            onFileSelect={handleBannerUpload}
+            previewUrl={bannerPreview}
+          />
 
           <PersonalInfoSection
             form={form}

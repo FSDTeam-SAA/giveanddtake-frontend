@@ -681,13 +681,7 @@ export default function UpdateResumeForm({
             setSelectedCountry={setSelectedCountry}
           />
 
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">
-                Social Links
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="mt-6">
               <FormField
                 control={form.control}
                 name="sLink"
@@ -700,8 +694,7 @@ export default function UpdateResumeForm({
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
+          </div>
 
           <Card>
             <CardHeader>
@@ -729,11 +722,11 @@ export default function UpdateResumeForm({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Languages</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div>
+            <div className="mb-4">
+              <h3>Languages</h3>
+            </div>
+            <div>
               <FormField
                 control={form.control}
                 name="languages"
@@ -752,14 +745,14 @@ export default function UpdateResumeForm({
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Certifications</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div>
+            <div className="mb-4">
+              <h3>Certifications</h3>
+            </div>
+            <div>
               <FormField
                 control={form.control}
                 name="certifications"
@@ -778,8 +771,8 @@ export default function UpdateResumeForm({
                   </FormItem>
                 )}
               />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <ExperienceSection form={form} />
 

@@ -14,15 +14,15 @@ interface PhotoAboutSectionProps {
 
 export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAboutSectionProps) {
   return (
-    <Card className="w-full">
-      <CardContent className="pt-6">
+    <div className="w-full">
+      <div className="pt-6">
         <div className="flex flex-col md:flex-row md:items-start gap-6 md:gap-8">
           {/* Photo Section */}
-          <div className="flex-shrink-0 w-full md:w-auto">
+          <div className="flex-shrink-0 w-full md:w-auto ">
             <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
-              Photo
+              Profile Photo
             </FormLabel>
-            <div className="flex justify-center md:justify-start">
+            <div className="flex justify-center md:justify-start border border-gray-400 py-6 rounded">
               <PhotoUpload onFileSelect={onPhotoSelect} previewUrl={photoPreview} />
             </div>
           </div>
@@ -46,7 +46,7 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
             />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

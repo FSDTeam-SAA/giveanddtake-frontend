@@ -136,14 +136,14 @@ function SimpleYearInput({
 
 export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Awards & Honors (Optional)</CardTitle>
+    <div>
+      <div className="mb-4 space-y-2">
+        <h3>Awards & Honors (Optional)</h3>
         <p className="text-sm text-muted-foreground">
           Highlight your achievements and recognitions.
         </p>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         {awardFields.map((award, index) => {
           if (award.type === "delete") return null;
 
@@ -265,8 +265,8 @@ export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
         >
           Add Award
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
