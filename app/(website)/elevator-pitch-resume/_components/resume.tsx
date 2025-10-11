@@ -141,6 +141,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
       toast.success("Elevator pitch uploaded successfully!");
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
+      window.location.reload();
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
