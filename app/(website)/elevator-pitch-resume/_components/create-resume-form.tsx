@@ -552,7 +552,7 @@ export default function CreateResumeForm() {
       for (const [key, value] of formData.entries()) {
         console.log(key, value);
       }
-      createResumeMutation.mutate(formData);
+      // createResumeMutation.mutate(formData);
     } catch (error) {
       console.error("Form submission error:", error);
       toast.error("An unexpected error occurred. Please try again.");

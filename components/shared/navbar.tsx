@@ -762,7 +762,6 @@ export function SiteHeader() {
           </Sheet>
         </div>
       </div>
-      {/* Bottom Blue Scrolling Bar */}
       <ScrollingInfoBar />
     </div>
   );
