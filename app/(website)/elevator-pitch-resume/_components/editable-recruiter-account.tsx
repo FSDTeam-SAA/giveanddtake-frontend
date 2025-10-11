@@ -403,17 +403,17 @@ export default function EditableRecruiterAccount({
       ) : (
         /* Show static banner when not editing */
         recruiter.banner && (
-          <div className="w-full h-auto lg:h-[300px]">
+          <div className="w-full h-auto">
             {recruiter.banner ? (
               <Image
                 src={recruiter.banner}
                 alt="Resume Header Background"
                 width={1200}
                 height={300}
-                className="w-full h-auto lg:h-[300px] object-cover"
+                className="w-full h-auto object-cover"
               />
             ) : (
-              <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+              <div className="w-full h-auto bg-gray-200" />
             )}
           </div>
         )
@@ -422,11 +422,11 @@ export default function EditableRecruiterAccount({
       <div className="border-b-2">
         <div className="container mx-auto lg:pb-10 pb-6 px-4 sm:px-6 lg:px-16">
           <div className="relative mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
-            <div className="flex items-end justify-between gap-4">
+            <div className="md:flex md:items-end md:justify-between md:gap-4 space-y-2">
               <div>
                 {/* Conditionally render PhotoUpload based on editing state */}
                 {isEditing ? (
-                  <div>
+                  <div className="mt-[20px]">
                     <PhotoUpload
                       onFileSelect={handlePhotoSelect}
                       previewUrl={displayPhoto}

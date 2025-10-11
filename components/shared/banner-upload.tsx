@@ -109,20 +109,8 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ImageIcon className="h-5 w-5 text-green-600" />
-            <div>
-              <CardTitle>Upload Cover Photo</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                Upload and crop a LinkedIn-style cover photo (4:1 aspect ratio).
-              </p>
-            </div>
-          </div>
-        </CardHeader>
-
-        <CardContent>
+      <div>
+        <div>
           {previewUrl ? (
             <div className="relative">
               {/* ✅ LinkedIn ratio preview */}
@@ -134,16 +122,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                 />
               </div>
 
-              <div
-                className="
-    flex flex-col md:flex-row 
-    md:absolute md:top-3 md:right-3 
-    gap-2 mt-3 md:mt-0 justify-end
-    md:bg-transparent 
-    bg-white/80 backdrop-blur-sm p-2 md:p-0 
-    rounded-md md:rounded-none
-  "
-              >
+              <div className="absolute top-2 right-2 flex gap-2">
                 {/* Change / Replace button */}
                 <button
                   type="button"
@@ -210,8 +189,8 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
             onChange={onInputChange}
             className="hidden"
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Cropper Modal */}
       <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>

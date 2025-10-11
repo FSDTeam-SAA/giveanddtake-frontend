@@ -410,11 +410,11 @@ export function EducationSection({
   }, [educationCitiesData]);
 
   return (
-    <Card>
-      <CardHeader>
+    <div>
+      <div className="mb-4">
         <CardTitle>Education*</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      </div>
+      <div className="space-y-4">
         {educationFields.map((field, index) => (
           <div key={field.id} className="border rounded-lg p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -696,7 +696,7 @@ export function EducationSection({
         >
           Add
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

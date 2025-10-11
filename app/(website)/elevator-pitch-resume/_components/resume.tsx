@@ -202,17 +202,17 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   return (
     <main className="min-h-screen">
       <div className="lg:container lg:mx-auto lg:px-6">
-        <div className="w-full h-auto lg:h-[300px]">
+        <div className="w-full h-auto">
           {resume.resume.banner ? (
             <Image
               src={resume.resume.banner}
               alt="Resume Header Background"
               width={1200}
               height={300}
-              className="w-full h-auto lg:h-[300px] object-cover"
+              className="w-full h-auto  object-cover"
             />
           ) : (
-            <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+            <div className="w-full h-auto bg-gray-200" />
           )}
         </div>
         <div className="container mx-auto border-0 mb-16">

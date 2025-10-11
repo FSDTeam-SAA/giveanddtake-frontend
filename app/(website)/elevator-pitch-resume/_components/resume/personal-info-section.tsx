@@ -32,6 +32,7 @@ import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { SocialLinksSection } from "../social-links-section";
 import { useQuery } from "@tanstack/react-query";
 import { PhotoUpload } from "../update-resume/photo-upload";
+import type { UseFormReturn } from "react-hook-form";
 
 interface Country {
   country: string;
@@ -237,11 +238,16 @@ export function PersonalInfoSection({
   return (
     <>
       {/* About Us Section */}
-      <Card className="">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-8 gap-6">
+      <div className="border border-gray-400 rounded-lg p-4 lg:p-6">
+        <div className="">
+          <div className="grid grid-cols-1 lg:grid-cols-8 gap-4">
             {/* Photo Upload with Cropper */}
-            <div className="flex justify-center md:justify-start">
+            <div className="col-span-2">
+              <div className="flex items-center justify-between mb-2">
+                <FormLabel className="text-blue-600 font-medium">
+                  Profile photo
+                </FormLabel>
+              </div>
               <div className="border border-gray-400 rounded-lg p-6 w-full max-w-[250px] h-[250px] flex items-center justify-center overflow-hidden">
                 <PhotoUpload
                   onFileSelect={onPhotoUpload}
@@ -278,15 +284,15 @@ export function PersonalInfoSection({
               />
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Personal Information */}
-      <Card>
-        <CardHeader>
+      <div>
+        <div className="mb-4">
           <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -465,8 +471,8 @@ export function PersonalInfoSection({
             </div>
           </div>
           <SocialLinksSection form={form} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </>
   );
 }

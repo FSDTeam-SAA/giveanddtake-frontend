@@ -337,17 +337,17 @@ export default function Recruiters({ userId }: MydataProps) {
   return (
     <div className="lg:container lg:mx-auto lg:px-6 pb-8 md:pb-16">
       {/* Banner */}
-      <div className="w-full h-auto lg:h-[300px]">
+      <div className="w-full h-auto">
         {recruiterData.banner ? (
           <Image
             src={recruiterData.banner}
             alt={`${recruiterData.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-auto lg:h-[300px] object-cover lg:object-cover object-center"
+            className="w-full h-auto object-cover lg:object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+          <div className="w-full h-auto bg-gray-200" />
         )}
       </div>
 

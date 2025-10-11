@@ -318,17 +318,17 @@ export default function CompanyProfilePage() {
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-auto lg:h-[300px] rounded-b-lg">
+      <div className="w-full h-auto  rounded-b-lg">
         {company.banner ? (
           <Image
             src={company.banner}
             alt={`${company.cname} banner`}
             width={1200}
             height={200}
-            className=" w-full h-auto lg:h-[300px] object-cover object-center"
+            className=" w-full h-auto  object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+          <div className="w-full h-auto  bg-gray-200" />
         )}
       </div>
 

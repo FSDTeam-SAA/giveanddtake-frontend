@@ -234,9 +234,14 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
   }, [companyId]);
 
   useEffect(() => {
+    if (companyData?.data) {
+      setBannerPreview(companyData.data.companies[0].banner);
+    }
+  }, [companyData]);
+
+  useEffect(() => {
     if (companyData?.data?.companies?.[0]) {
       const company = companyData.data.companies[0];
-      console.log("Company data loaded:", company);
 
       if (company.country) {
         setSelectedCountry(company.country);

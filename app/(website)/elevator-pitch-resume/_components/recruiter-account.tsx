@@ -360,18 +360,6 @@ export default function RecruiterAccount({
                     </div>
                   </div>
                 )}
-                {/* {services.length > 0 && (
-                                <div className="flex items-center gap-3">
-                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
-                                        <Circle className="h-3 w-3 text-muted-foreground" />
-                                    </span>
-                                    <div className="min-w-0">
-                                        <p className="truncate text-sm text-muted-foreground">
-                                            {services.join(", ")}
-                                        </p>
-                                    </div>
-                                </div>
-                            )} */}
               </div>
               <div className="space-y-5">
                 {websiteHref && (
