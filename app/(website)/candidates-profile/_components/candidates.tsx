@@ -255,17 +255,17 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      <div className="w-full h-auto lg:h-[300px]">
+      <div className="w-full h-auto">
         {resume.banner ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
             width={1200}
             height={200}
-            className="w-full h-auto lg:h-[300px] object-cover object-center"
+            className="w-full h-auto object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto lg:h-[300px] bg-gray-200" />
+          <div className="w-full h-auto bg-gray-200" />
         )}
       </div>
 

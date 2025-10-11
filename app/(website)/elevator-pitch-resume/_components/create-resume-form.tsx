@@ -380,7 +380,12 @@ export default function CreateResumeForm() {
     onError: (error) => {
       console.error("Upload error:", error);
       const errorMessage =
-        error.response?.data?.message || error.message || "Upload failed";
+        (typeof error === "object" &&
+          error !== null &&
+          "response" in error &&
+          (error as any).response?.data?.message) ||
+        error.message ||
+        "Upload failed";
       toast.error(errorMessage);
     },
   });
@@ -584,15 +589,8 @@ export default function CreateResumeForm() {
           onSubmit={form.handleSubmit(onSubmit, onError)}
           className="space-y-8"
         >
-          <Card>
-            <CardHeader>
-              <CardTitle>Elevator Pitch</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Upload a short video introducing yourself. This is required
-                before submitting your resume.
-              </p>
-            </CardHeader>
-            <CardContent>
+          <div>
+            <div>
               <ElevatorPitchUpload
                 onFileSelect={setElevatorPitchFile}
                 selectedFile={elevatorPitchFile}
@@ -644,8 +642,8 @@ export default function CreateResumeForm() {
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           <BannerUpload
             onFileSelect={handleBannerUpload}

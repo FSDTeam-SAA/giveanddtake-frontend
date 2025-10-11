@@ -22,7 +22,7 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
             <FormLabel className="text-sm font-medium text-blue-600 mb-2 block">
               Profile Photo
             </FormLabel>
-            <div className="flex justify-center md:justify-start border border-gray-400 py-6 rounded">
+            <div className="flex justify-center md:justify-start">
               <PhotoUpload onFileSelect={onPhotoSelect} previewUrl={photoPreview} />
             </div>
           </div>
