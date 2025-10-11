@@ -55,8 +55,6 @@ export function SiteHeader() {
   const pathname = usePathname();
   const [userAvatar, setUserAvatar] = useState("");
   const [userName, setUserName] = useState("");
-
-  // NEW: control mobile sheet open state so we can close it when navigating
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
@@ -213,7 +211,7 @@ export function SiteHeader() {
 
   const links = getDashboardLinks();
 
-  // ---- Shared user dropdown content (used for desktop and mobile avatar) ----
+  // Shared user dropdown content (used for desktop and mobile avatar)
   const UserMenuContent = () => (
     <DropdownMenuContent align="end">
       {(userRole === "recruiter" || userRole === "company") && (
@@ -238,18 +236,20 @@ export function SiteHeader() {
               </Link>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem asChild>
-            <Link
-              href={
-                userRole === "recruiter"
-                  ? "/recruiter-pricing"
-                  : "/company-pricing"
-              }
-              className="flex items-center w-full px-2 py-1.5"
-            >
-              <CreditCard className="mr-2 h-4 w-4" /> My Plan
-            </Link>
-          </DropdownMenuItem>
+          {!isValid && (
+            <DropdownMenuItem asChild>
+              <Link
+                href={
+                  userRole === "recruiter"
+                    ? "/recruiter-pricing"
+                    : "/company-pricing"
+                }
+                className="flex items-center w-full px-2 py-1.5"
+              >
+                <CreditCard className="mr-2 h-4 w-4" /> My Plan
+              </Link>
+            </DropdownMenuItem>
+          )}
         </Fragment>
       )}
       {userRole === "candidate" && (
@@ -270,14 +270,16 @@ export function SiteHeader() {
               <Bookmark className="mr-2 h-4 w-4" /> Bookmarks
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href="/user-pricing"
-              className="flex items-center w-full px-2 py-1.5"
-            >
-              <CreditCard className="mr-2 h-4 w-4" /> My Plan
-            </Link>
-          </DropdownMenuItem>
+          {!isValid && (
+            <DropdownMenuItem asChild>
+              <Link
+                href="/user-pricing"
+                className="flex items-center w-full px-2 py-1.5"
+              >
+                <CreditCard className="mr-2 h-4 w-4" /> My Plan
+              </Link>
+            </DropdownMenuItem>
+          )}
         </Fragment>
       )}
       <DropdownMenuSeparator />
@@ -334,7 +336,6 @@ export function SiteHeader() {
           >
             Jobs
           </Link>
-
           <Link
             href="/elevator-pitch-resume"
             className={`transition-colors focus:outline-none ${
@@ -345,24 +346,19 @@ export function SiteHeader() {
           >
             My EVP Profile
           </Link>
-
           {/* Upgrade Plan (desktop) */}
-          {status === "authenticated" &&
-            isValid === false &&
-            getUpgradePath() && (
-              <Link
-                href={getUpgradePath()!}
-                className={`transition-colors focus:outline-none font-semibold ${
-                  isActive(getUpgradePath()!)
-                    ? "text-[#2B7FD0]"
-                    : "text-[#2B7FD0] hover:opacity-80"
-                }`}
-              >
-                Upgrade Plan
-              </Link>
-            )}
-
-          {/* Blogs */}
+          {status === "authenticated" && !isValid && getUpgradePath() && (
+            <Link
+              href={getUpgradePath()!}
+              className={`transition-colors focus:outline-none font-semibold ${
+                isActive(getUpgradePath()!)
+                  ? "text-[#2B7FD0]"
+                  : "text-[#2B7FD0] hover:opacity-80"
+              }`}
+            >
+              Upgrade Plan
+            </Link>
+          )}
           <Link
             href="/blogs"
             className={`transition-colors focus:outline-none ${
@@ -371,8 +367,6 @@ export function SiteHeader() {
           >
             Blogs
           </Link>
-
-          {/* About Us moved out of More */}
           <Link
             href="/about-us"
             className={`transition-colors focus:outline-none ${
@@ -381,7 +375,6 @@ export function SiteHeader() {
           >
             About Us
           </Link>
-
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -408,8 +401,6 @@ export function SiteHeader() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* More dropdown WITHOUT About Us */}
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
@@ -528,8 +519,8 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent
               side="left"
-              className="w-[300px]  p-0"
-              onOpenAutoFocus={(e) => e.preventDefault()} // prevent mobile keyboard
+              className="w-[300px] p-0"
+              onOpenAutoFocus={(e) => e.preventDefault()}
             >
               <div className="h-full flex flex-col overflow-hidden">
                 <Link
@@ -631,8 +622,6 @@ export function SiteHeader() {
                         My EVP Profile
                       </Link>
                     )}
-
-                    {/* Blogs */}
                     <Link
                       href="/blogs"
                       onClick={() => setSheetOpen(false)}
@@ -644,10 +633,9 @@ export function SiteHeader() {
                     >
                       Blogs
                     </Link>
-
                     {/* Upgrade Plan (mobile) */}
                     {status === "authenticated" &&
-                      isValid === false &&
+                      !isValid &&
                       getUpgradePath() && (
                         <Link
                           href={getUpgradePath()!}
@@ -661,8 +649,6 @@ export function SiteHeader() {
                           Upgrade Plan
                         </Link>
                       )}
-
-                    {/* About Us */}
                     <Link
                       href="/about-us"
                       onClick={() => setSheetOpen(false)}
@@ -674,8 +660,6 @@ export function SiteHeader() {
                     >
                       About Us
                     </Link>
-
-                    {/* Help & Info */}
                     <div className="space-y-2">
                       <div className="font-medium text-gray-900">
                         Help & Info
@@ -705,8 +689,6 @@ export function SiteHeader() {
                         </Link>
                       </div>
                     </div>
-
-                    {/* More (without About Us) */}
                     <div className="space-y-2">
                       <div className="font-medium text-gray-900">More</div>
                       <div className="pl-4 space-y-2">
@@ -734,8 +716,6 @@ export function SiteHeader() {
                         </Link>
                       </div>
                     </div>
-
-                    {/* Auth button */}
                     {status === "authenticated" ? (
                       <Button
                         onClick={() => {
@@ -762,6 +742,7 @@ export function SiteHeader() {
           </Sheet>
         </div>
       </div>
+      {/* Bottom Blue Scrolling Bar */}
       <ScrollingInfoBar />
     </div>
   );
