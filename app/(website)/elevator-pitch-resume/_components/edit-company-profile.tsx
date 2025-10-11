@@ -212,7 +212,10 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
             return false;
           }
         };
-        if (data?.data?.companies?.[0]?.clogo && !isValidUrl(data.data.companies[0].clogo)) {
+        if (
+          data?.data?.companies?.[0]?.clogo &&
+          !isValidUrl(data.data.companies[0].clogo)
+        ) {
           console.warn("Invalid logo URL, resetting to null");
           data.data.companies[0].clogo = null;
         }
@@ -542,7 +545,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-900">Company Logo</Label>
+                  <Label className="text-sm font-medium text-gray-900">
+                    Company Logo
+                  </Label>
                   <LogoUpload
                     onFileSelect={setLogoFile}
                     previewUrl={

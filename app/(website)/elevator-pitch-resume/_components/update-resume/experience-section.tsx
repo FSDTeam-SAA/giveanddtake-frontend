@@ -157,14 +157,14 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
   }, [experienceCitiesData]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Experience (Optional)</CardTitle>
+    <div>
+      <div className="mb-4 space-y-2">
+        <h3>Experience (Optional)</h3>
         <p className="text-sm text-muted-foreground">
           Highlight your work journey and key achievements.
         </p>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         {experiences.map((experience: any, index: number) => {
           if (experience.type === "delete") return null;
 
@@ -450,7 +450,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
         >
           Add Experience
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };

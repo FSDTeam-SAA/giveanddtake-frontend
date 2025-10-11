@@ -167,14 +167,14 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
   }, [educationCitiesData]);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Education</CardTitle>
+    <div>
+      <div className="space-y-2 mb-4">
+        <h3>Education</h3>
         <p className="text-sm text-muted-foreground">
           Showcase your academic background and qualifications.
         </p>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div>
         {educationList.map((education: any, index: number) => {
           if (education.type === "delete") return null;
 
@@ -481,7 +481,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
         >
           Add Education
         </Button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
