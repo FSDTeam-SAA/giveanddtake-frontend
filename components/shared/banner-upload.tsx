@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Upload, X, ImageIcon, RotateCw } from "lucide-react";
+import { Upload, X, ImageIcon, RotateCw, Edit2, Trash2 } from "lucide-react";
 import getCroppedImg from "@/hooks/cropImage";
 
 interface BannerUploadProps {
@@ -18,8 +18,9 @@ interface BannerUploadProps {
   previewUrl?: string | null;
 }
 
-const COVER_ASPECT = 1400 / 300;
-const OUTPUT_HEIGHT = 300;
+// ✅ LinkedIn cover photo ratio — 1584×396 px = 4:1 aspect ratio
+const COVER_ASPECT = 4 / 1;
+const OUTPUT_HEIGHT = 396;
 
 export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -113,9 +114,9 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
           <div className="flex items-center gap-2">
             <ImageIcon className="h-5 w-5 text-green-600" />
             <div>
-              <CardTitle>Upload Banner</CardTitle>
+              <CardTitle>Upload Cover Photo</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                Upload and crop a cover photo. Output height is 300px.
+                Upload and crop a LinkedIn-style cover photo (4:1 aspect ratio).
               </p>
             </div>
           </div>
@@ -124,8 +125,8 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
         <CardContent>
           {previewUrl ? (
             <div className="relative">
-              {/* ✅ Responsive preview height */}
-              <div className="relative w-full h-auto md:h-[300px] rounded-lg overflow-hidden border">
+              {/* ✅ LinkedIn ratio preview */}
+              <div className="relative w-full h-auto md:h-[396px] rounded-lg overflow-hidden border">
                 <img
                   src={previewUrl}
                   alt="Banner preview"
@@ -133,36 +134,40 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                 />
               </div>
 
-              {/* ✅ Buttons layout (below on mobile, overlay on desktop) */}
               <div
                 className="
-                  flex flex-col md:flex-row 
-                  md:absolute md:top-3 md:right-3 
-                  gap-2 mt-3 md:mt-0 justify-end
-                  md:bg-transparent 
-                  bg-white/80 backdrop-blur-sm p-2 md:p-0 
-                  rounded-md md:rounded-none
-                "
+    flex flex-col md:flex-row 
+    md:absolute md:top-3 md:right-3 
+    gap-2 mt-3 md:mt-0 justify-end
+    md:bg-transparent 
+    bg-white/80 backdrop-blur-sm p-2 md:p-0 
+    rounded-md md:rounded-none
+  "
               >
-                <Button
-                  variant="outline"
-                  size="sm"
+                {/* Change / Replace button */}
+                <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
+                  className="p-2 rounded-md bg-white/80 backdrop-blur-sm hover:bg-white"
+                  aria-label="Change banner"
+                  title="Change"
                 >
-                  Replace
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
+                  <Edit2 className="h-4 w-4" />
+                </button>
+
+                {/* Remove button */}
+                <button
+                  type="button"
                   onClick={removeBanner}
+                  className="p-2 rounded-md bg-white/80 backdrop-blur-sm hover:bg-white"
                   aria-label="Remove banner"
+                  title="Remove"
                 >
-                  <X className="h-4 w-4" />
-                </Button>
+                  <Trash2 className="h-4 w-4 " />
+                </button>
               </div>
             </div>
           ) : (
@@ -193,7 +198,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                 Choose Image
               </Button>
               <div className="text-xs text-gray-500 mt-3">
-                Supports JPG, PNG • Max 10MB • Cropped to 300px height
+                Supports JPG, PNG • Max 10MB • Cropped to 1584×396 px
               </div>
             </div>
           )}
@@ -212,7 +217,7 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
       <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Edit cover photo</DialogTitle>
+            <DialogTitle>Edit Cover Photo</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -229,12 +234,12 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
                   onRotationChange={setRotation}
                   onCropComplete={onCropComplete}
                   showGrid
-                  minZoom={1}   // ✅ Minimum zoom fixed
+                  minZoom={1}
                   maxZoom={3}
                 />
               )}
               <div className="absolute left-3 top-3 bg-black/40 text-white text-xs px-2 py-1 rounded">
-                Drag to reposition • Zoom/Rotate below
+                Focus main content in the center — LinkedIn crops edges
               </div>
             </div>
 
