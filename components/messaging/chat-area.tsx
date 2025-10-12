@@ -17,6 +17,17 @@ import { Socket } from "socket.io-client";
 import { toast } from "sonner";
 import type { ChatMessage, PagedMessages } from "./messaging";
 import Link from "next/link";
+import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+} from "chart.js/auto";
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 interface ChatAreaProps {
   roomId: string;
@@ -31,6 +42,7 @@ interface ChatAreaProps {
 interface SideUser {
   _id: string;
 }
+
 interface MessageRoom {
   _id: string;
   userId: SideUser;
@@ -53,9 +65,12 @@ export function ChatArea({
   const [message, setMessage] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const chartRef = useRef<HTMLCanvasElement>(null);
+  const chartInstanceRef = useRef<ChartJS | null>(null);
 
   const { data: rooms = [] } = useQuery<MessageRoom[]>({
     queryKey: ["message-rooms", userId, userRole],
@@ -154,7 +169,7 @@ export function ChatArea({
             data: [],
             meta: { page: 1, totalPages: 1 },
           };
-          pages[0] = { ...first, data: [newMessage, ...first.data] }; // newest page prepend
+          pages[0] = { ...first, data: [newMessage, ...first.data] };
           return { ...oldData, pages };
         }
       );
@@ -167,7 +182,6 @@ export function ChatArea({
 
     socket.on("newMessage", handleNewMessage);
 
-    // ✅ cleanup must return void
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
@@ -177,6 +191,61 @@ export function ChatArea({
   useEffect(() => {
     if (!isLoading) requestAnimationFrame(scrollToBottom);
   }, [isLoading, roomId]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [allMessages]);
+
+  // Initialize Chart
+  useEffect(() => {
+    if (chartRef.current && !chartInstanceRef.current) {
+      const ctx = chartRef.current.getContext("2d");
+      if (ctx) {
+        chartInstanceRef.current = new ChartJS(ctx, {
+          type: "pie",
+          data: {
+            labels: ["😊", "👍", "😂", "😢", "😡"],
+            datasets: [
+              {
+                label: "Emoji Usage",
+                data: [50, 30, 20, 10, 5],
+                backgroundColor: [
+                  "#4CAF50", // Green
+                  "#2196F3", // Blue
+                  "#FFC107", // Yellow
+                  "#F44336", // Red
+                  "#9C27B0", // Purple
+                ],
+                borderColor: [
+                  "#388E3C",
+                  "#1976D2",
+                  "#FFA000",
+                  "#D32F2F",
+                  "#7B1FA2",
+                ],
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { position: "top" },
+              title: {
+                display: true,
+                text: "Emoji Usage Distribution in Chat",
+              },
+            },
+          },
+        });
+      }
+    }
+    return () => {
+      if (chartInstanceRef.current) {
+        chartInstanceRef.current.destroy();
+        chartInstanceRef.current = null;
+      }
+    };
+  }, [roomId]);
 
   const appendLocalMessage = (created: ChatMessage) => {
     queryClient.setQueryData(
@@ -233,6 +302,11 @@ export function ChatArea({
     sendMessageMutation.mutate(formData);
   };
 
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    setMessage((prev) => prev + emojiData.emoji);
+    setShowEmojiPicker(false);
+  };
+
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop } = e.currentTarget;
     if (scrollTop === 0 && hasNextPage && !isFetchingNextPage) fetchNextPage();
@@ -247,7 +321,7 @@ export function ChatArea({
   }
 
   return (
-    <div className="flex flex-col h-[85vh]">
+    <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="p-4 border-b bg-white flex items-center">
         {onBackToList && (
@@ -283,6 +357,11 @@ export function ChatArea({
         </Link>
       </div>
 
+      {/* Emoji Chart */}
+      {/* <div className="p-4">
+        <canvas ref={chartRef} />
+      </div> */}
+
       {/* Messages */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-4"
@@ -315,7 +394,7 @@ export function ChatArea({
       <div className="p-3 md:p-4 border-t bg-white">
         <form onSubmit={handleSendMessage} className="flex items-end space-x-2">
           <div className="flex-1">
-            <div className="flex items-center space-x-1 md:space-x-2">
+            <div className="flex items-center space-x-1 md:space-x-2 relative">
               <FileUpload files={files} onFilesChange={setFiles} />
               <Input
                 value={message}
@@ -330,9 +409,15 @@ export function ChatArea({
                 size="sm"
                 className="p-2 flex-shrink-0"
                 title="Emoji"
+                onClick={() => setShowEmojiPicker((prev) => !prev)}
               >
                 <Smile className="w-4 h-4" />
               </Button>
+              {showEmojiPicker && (
+                <div className="absolute bottom-12 right-0 z-10">
+                  <EmojiPicker onEmojiClick={handleEmojiClick} />
+                </div>
+              )}
             </div>
           </div>
           <Button

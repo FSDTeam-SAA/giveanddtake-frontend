@@ -1,7 +1,7 @@
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "./messaging";
 
@@ -60,11 +60,19 @@ export function MessageBubble({
     );
   };
 
-  // derive per-message avatar for inbound bubbles
+  // Derive per-message avatar for inbound bubbles
   const perMessageAvatar =
     typeof message.userId === "string"
       ? undefined
       : message.userId?.avatar?.url;
+
+  // Check if the message contains any emoji using Unicode regex
+  const containsEmoji = (text: string) => {
+    return /[\p{Emoji}]/u.test(text);
+  };
+
+  // Determine if background color should be applied (exclude for messages with emojis)
+  const shouldApplyBackground = !containsEmoji(message.message || "");
 
   return (
     <div className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
@@ -96,7 +104,8 @@ export function MessageBubble({
             <div
               className={cn(
                 "px-3 py-2 md:px-4 md:py-2 rounded-2xl break-words",
-                isOwn ? "bg-primary text-white" : "bg-gray-200 text-gray-900"
+                shouldApplyBackground &&
+                  (isOwn ? "bg-primary text-white" : "bg-gray-200 text-gray-900")
               )}
             >
               <>
