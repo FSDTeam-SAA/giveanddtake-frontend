@@ -131,8 +131,6 @@ const degreeLabels: Record<string, string> = {
   phd: "Ph.D",
 };
 
-
-
 // Helper function to validate URLs
 const isValidUrl = (urlString: string): boolean => {
   try {
@@ -159,6 +157,8 @@ export default function ApplicantDetailsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+
+  const role = session?.user?.role;
 
   const MyId = session?.user.id;
   const token = session?.accessToken;
@@ -302,8 +302,6 @@ export default function ApplicantDetailsPage() {
     enabled: !!token && !!applicationId,
   });
 
- 
-
   // Function to handle message room creation
   const handleCreateMessageRoom = async () => {
     if (!resume?.userId || !token) {
@@ -315,6 +313,10 @@ export default function ApplicantDetailsPage() {
     try {
       setCreatingRoom(true);
 
+      // Determine the ID field based on role
+      const idField =
+        role === "recruiter" ? { recruiterId: MyId } : { companyId: MyId };
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/message-room/create-message-room`,
         {
@@ -325,7 +327,7 @@ export default function ApplicantDetailsPage() {
           },
           body: JSON.stringify({
             userId: resume.userId, // applicant user
-            recruiterId: MyId, // current recruiter
+            ...idField,  // current recruiter
           }),
         }
       );
@@ -617,8 +619,6 @@ export default function ApplicantDetailsPage() {
             </CardContent>
           </Card>
         )}
-
-      
 
         {resume.skills && resume.skills.length > 0 && (
           <Card className="mb-6">

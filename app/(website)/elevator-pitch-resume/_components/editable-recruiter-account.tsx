@@ -403,7 +403,7 @@ export default function EditableRecruiterAccount({
       ) : (
         /* Show static banner when not editing */
         recruiter.banner && (
-          <div className="w-full h-auto">
+          <div className="w-full h-auto ">
             {recruiter.banner ? (
               <Image
                 src={recruiter.banner}
@@ -440,7 +440,7 @@ export default function EditableRecruiterAccount({
                     alt={`${recruiter.firstName || ""}`}
                     height={500}
                     width={500}
-                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top"
+                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top bg-gray-300 ring-2 ring-background shadow-md overflow-hidden bg-muted  rounded"
                   />
                 ) : (
                   // Fallback gradient avatar
