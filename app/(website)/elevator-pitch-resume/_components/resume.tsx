@@ -321,6 +321,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         onClick={openDeleteModal}
                         disabled={deleteElevatorPitchMutation.isPending}
                         title="Delete Elevator Pitch"
+                        className="bg-gray-200 text-red-500 hover:text-red-600 hover:bg-gray-300"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -561,13 +562,16 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                             {formatDate(edu.graduationDate)}
                           </p>
                         </div>
-                        <p className="text-gray-600 text-sm flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          <span>
-                            {edu.city && `${edu.city}, `}
-                            {edu.country}
-                          </span>
-                        </p>
+
+                        {edu.country && (
+                          <p className="text-gray-600 text-sm flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>
+                              {edu.city && `${edu.city}, `}
+                              {edu.country}
+                            </span>
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>

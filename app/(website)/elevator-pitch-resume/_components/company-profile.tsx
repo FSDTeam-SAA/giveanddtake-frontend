@@ -568,6 +568,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   onClick={openDeleteModal}
                   disabled={deleteElevatorPitchMutation.isPending}
                   title="Delete Elevator Pitch"
+                  className="bg-gray-200 text-red-500 hover:text-red-600 hover:bg-gray-300"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

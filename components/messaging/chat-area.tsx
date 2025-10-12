@@ -131,6 +131,8 @@ export function ChatArea({
         return;
       }
 
+      if (senderIdOf(newMessage.userId) === userId) return;
+
       queryClient.setQueryData(
         ["messages", roomId],
         (

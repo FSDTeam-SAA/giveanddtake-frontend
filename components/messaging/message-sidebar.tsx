@@ -22,8 +22,9 @@ interface SideUser {
 interface MessageRoom {
   _id: string;
   userId: SideUser;
-  recruiterId: SideUser;
-  messsageAccepted: boolean;
+  recruiterId?: SideUser;
+  companyId?: SideUser;
+  messageAccepted: boolean;
   lastMessage: string;
   lastMessageSender?: string;
   createdAt: string;
@@ -53,32 +54,44 @@ export function MessageSidebar({
     queryKey: ["message-rooms", userId, userRole],
     queryFn: async () => {
       if (!userId || !userRole) return [];
-      const response = await fetch(
-        `/api/message-room/get-message-rooms?type=${userRole}&userId=${userId}`
-      );
-      const data = await response.json();
-      return data.success ? (data.data as MessageRoom[]) : [];
+      try {
+        const response = await fetch(
+          `/api/message-room/get-message-rooms?type=${userRole}&userId=${userId}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch rooms");
+        const data = await response.json();
+        return data.success ? (data.data as MessageRoom[]) : [];
+      } catch (error) {
+        console.error("Error fetching rooms:", error);
+        return [];
+      }
     },
     enabled: !!userId && !!userRole,
     staleTime: 10_000,
     refetchOnWindowFocus: true,
   });
 
-  // When landing with ?roomId=..., fill in name + avatar into header
   useEffect(() => {
     if (!selectedRoomId || roomName) return;
     const room = rooms.find((r) => r._id === selectedRoomId);
     if (room && userId) {
-      const otherUser = room.userId._id === userId ? room.recruiterId : room.userId;
-      onRoomSelect(selectedRoomId, otherUser.name, otherUser?.avatar?.url);
+      const otherUser =
+        room.userId._id === userId
+          ? room.recruiterId || room.companyId
+          : room.userId;
+      if (otherUser) {
+        onRoomSelect(selectedRoomId, otherUser.name, otherUser?.avatar?.url);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rooms, selectedRoomId, roomName, userId]);
+  }, [rooms, selectedRoomId, roomName, userId, onRoomSelect]);
 
-  // Realtime sidebar refresh on any newMessage
   useEffect(() => {
     if (!socket) return;
-    const handleNewMessage = (msg: { roomId: string; message?: string; file?: any[] }) => {
+    const handleNewMessage = (msg: {
+      roomId: string;
+      message?: string;
+      file?: any[];
+    }) => {
       queryClient.setQueryData(
         ["message-rooms", userId, userRole],
         (old: MessageRoom[] | undefined) => {
@@ -86,9 +99,15 @@ export function MessageSidebar({
           const idx = old.findIndex((r) => r._id === msg.roomId);
           if (idx === -1) return old;
           const updated = [...old];
-          const lastMessage = msg.message && msg.message.trim().length > 0 ? msg.message : "📎 Attachment";
-          updated[idx] = { ...updated[idx], lastMessage, updatedAt: new Date().toISOString() };
-          // move to top
+          const lastMessage =
+            msg.message && msg.message.trim().length > 0
+              ? msg.message
+              : "📎 Attachment";
+          updated[idx] = {
+            ...updated[idx],
+            lastMessage,
+            updatedAt: new Date().toISOString(),
+          };
           const [room] = updated.splice(idx, 1);
           updated.unshift(room);
           return updated;
@@ -103,7 +122,10 @@ export function MessageSidebar({
 
   const filteredRooms =
     rooms?.filter((room: MessageRoom) => {
-      const otherUser = room?.userId?._id === userId ? room.recruiterId : room.userId;
+      const otherUser =
+        room?.userId?._id === userId
+          ? room.recruiterId || room.companyId
+          : room.userId;
       return otherUser?.name?.toLowerCase().includes(searchQuery.toLowerCase());
     }) || [];
 
@@ -113,11 +135,18 @@ export function MessageSidebar({
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
     if (diffInHours < 24) {
-      return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
     } else if (diffInHours < 168) {
       return `${Math.floor(diffInHours / 24)}d ago`;
     } else {
-      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
     }
   };
 
@@ -183,13 +212,19 @@ export function MessageSidebar({
 
       <div className="flex-1 overflow-y-auto">
         {filteredRooms.map((room: MessageRoom) => {
-          const otherUser = room.userId._id === userId ? room.recruiterId : room.userId;
+          const otherUser =
+            room.userId._id === userId
+              ? room.recruiterId || room.companyId || ({} as SideUser)
+              : room.userId;
           const isSelected = selectedRoomId === room._id;
 
           return (
             <div
               key={room._id}
-              onClick={() => onRoomSelect(room._id, otherUser.name, otherUser?.avatar?.url)}
+              onClick={() =>
+                otherUser.name &&
+                onRoomSelect(room._id, otherUser.name, otherUser?.avatar?.url)
+              }
               className={cn(
                 "flex items-center p-4 cursor-pointer border-b transition-colors active:bg-gray-100",
                 "hover:bg-gray-50",
@@ -201,7 +236,9 @@ export function MessageSidebar({
                   <AvatarImage
                     src={
                       otherUser?.avatar?.url ||
-                      `/placeholder.svg?height=48&width=48&text=${otherUser.name?.charAt(0) || "U"}`
+                      `/placeholder.svg?height=48&width=48&text=${
+                        otherUser.name?.charAt(0) || "U"
+                      }`
                     }
                   />
                 </Avatar>
@@ -210,7 +247,9 @@ export function MessageSidebar({
 
               <div className="ml-3 flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-gray-900 truncate">{otherUser.name}</h3>
+                  <h3 className="font-medium text-gray-900 truncate">
+                    {otherUser.name || "Unknown User"}
+                  </h3>
                   <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
                     {formatTime(room.updatedAt)}
                   </span>
@@ -219,9 +258,13 @@ export function MessageSidebar({
                   <p className="text-sm text-gray-600 truncate pr-2">
                     {room.lastMessage || "No messages yet"}
                   </p>
-                  {otherUser.role === "recruiter" && (
-                    <Badge variant="secondary" className="text-xs flex-shrink-0">
-                      {otherUser.role}
+                  {(otherUser.role === "recruiter" ||
+                    otherUser.role === "company") && (
+                    <Badge
+                      variant="secondary"
+                      className="text-xs flex-shrink-0"
+                    >
+                      {otherUser.role.charAt(0).toUpperCase() + otherUser.role.slice(1)}
                     </Badge>
                   )}
                 </div>
