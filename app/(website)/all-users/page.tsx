@@ -369,14 +369,7 @@ function AllUsersContent() {
                               {user?.address ?? "No address available"}
                             </span>
                           </div>
-                          {/* phone (optional) */}
-                          {user.phoneNum && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 truncate">
-                                {user.phoneNum}
-                              </span>
-                            </div>
-                          )}
+                         
                         </div>
                       </div>
                     </div>
