@@ -453,7 +453,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                           <h4 className="font-semibold text-lg text-[#595959]">
                             {degree}
                             {field && (
-                              <span className="font-normal"> in {field}</span>
+                              <span className="font-normal">, {field}</span>
                             )}
                           </h4>
 
