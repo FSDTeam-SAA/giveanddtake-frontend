@@ -377,11 +377,7 @@ export function SiteHeader() {
             : "bg-white/80 border-transparent supports-[backdrop-filter]:backdrop-blur-md"
         }`}
       >
-        <div
-          className={`container flex items-center justify-between px-4 md:px-6 transition-all duration-500 ${
-            isScrolled ? "h-14" : "h-16"
-          }`}
-        >
+        <div className="container flex h-14 items-center justify-between px-4 md:px-6 transition-colors duration-200">
           {/* Left Section: Logo */}
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2 font-bold text-lg">
