@@ -554,7 +554,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-800 capitalize text-lg">
                             {edu.degree}
-                            {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
+                            {edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}
                           </h4>
                           <p className="text-sm">{edu.instituteName}</p>
                           <p className="text-gray-500 text-sm">

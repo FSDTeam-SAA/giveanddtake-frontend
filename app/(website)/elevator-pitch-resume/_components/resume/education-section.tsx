@@ -450,13 +450,13 @@ export function EducationSection({
                           <SelectValue placeholder="Select a qualification" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="BSc.">BSc.</SelectItem>
-                          <SelectItem value="B.Tech.">B.Tech.</SelectItem>
+                          <SelectItem value="BSc">BSc</SelectItem>
+                          <SelectItem value="B.Tech">B.Tech</SelectItem>
                           <SelectItem value="B.A">B.A</SelectItem>
-                          <SelectItem value="B.Ed.">B.Ed.</SelectItem>
-                          <SelectItem value="M.B.A.">M.B.A.</SelectItem>
-                          <SelectItem value="MSc.">MSc.</SelectItem>
-                          <SelectItem value="M.Phil.">M.Phil.</SelectItem>
+                          <SelectItem value="B.Ed">B.Ed</SelectItem>
+                          <SelectItem value="M.B.A">M.B.A</SelectItem>
+                          <SelectItem value="MSc">MSc</SelectItem>
+                          <SelectItem value="M.Phil">M.Phil</SelectItem>
                           <SelectItem value="Ph.D">Ph.D</SelectItem>
                           <SelectItem value="High School">
                             High School
