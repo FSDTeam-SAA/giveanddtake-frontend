@@ -52,7 +52,6 @@ interface Resume {
   city: string;
   zipCode: string;
   email: string;
-  phoneNumber: string;
   skills: string[];
   sLink: { label: string; url: string; _id: string }[];
   certifications: string[];
@@ -284,12 +283,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         {resume.resume.zipCode && `, ${resume.resume.zipCode}`}
                       </p>
                     </div>
-                    <div>
-                      <p className="font-semibold text-base">Phone</p>
-                      <p className="text-gray-600">
-                        {resume.resume.phoneNumber}
-                      </p>
-                    </div>
+                 
                     <div>
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
@@ -308,12 +302,12 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
             {/* Elevator Pitch */}
             <div className="lg:pb-12 pb-5">
               <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
-                Elevator Pitch
+                Elevator Video Pitch©
               </h2>
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle>Elevator Pitch</CardTitle>
+                    <CardTitle>Elevator Video Pitch©</CardTitle>
                     {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
                       <Button
                         variant="destructive"

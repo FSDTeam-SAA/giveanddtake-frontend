@@ -109,7 +109,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Elevator Pitch
+            Elevator Video Pitch©
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link href="/alljobs" className="text-white/80 hover:underline">
@@ -144,7 +144,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Elevator Pitch
+            Elevator Video Pitch©
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
@@ -165,7 +165,7 @@ export function Footer() {
             variant="secondary"
             className="bg-white text-v0-blue-500 hover:bg-gray-100 w-fit"
           >
-            Elevator Pitch
+            Elevator Video Pitch©
           </Button>
           <nav className="grid gap-2 text-sm">
             <Link
@@ -179,7 +179,7 @@ export function Footer() {
         </div>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
-        <p>&copy; 2025 Elevator Video Pitch Ltd. All rights reserved.</p>
+        <p>&copy; 2025 Elevator Video Pitch©. All rights reserved.</p>
       </div>
     </footer>
   );

@@ -104,19 +104,7 @@ export const PersonalInfoSection = ({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="phoneNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone*</FormLabel>
-                <FormControl>
-                  <Input placeholder="+1 234 567 8900" disabled {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+         
           {/* <FormField
             control={form.control}
             name="title"

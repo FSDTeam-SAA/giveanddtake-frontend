@@ -42,7 +42,6 @@ interface Company {
   city: string;
   zipcode: string;
   cemail: string;
-  cPhoneNumber: string;
   sLink: Array<{
     label: string;
     url: string;

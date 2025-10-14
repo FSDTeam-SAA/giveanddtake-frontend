@@ -393,12 +393,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   {userData.email || "Not provided"}
                 </p>
               </div>
-              <div>
-                <p className="text-black text-[22px] font-semibold">Phone</p>
-                <p className="font-normal text-[20px] text-[#707070]">
-                  {userData.phoneNum || "Not provided"}
-                </p>
-              </div>
+            
 
               {userData.sLink?.find((link) => link.label === "LinkedIn") && (
                 <div>

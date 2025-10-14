@@ -146,7 +146,6 @@ export function PersonalInformation() {
     firstName: initialNames.firstName || "",
     surname: initialNames.surname || "",
     email: data?.data?.email || "",
-    phone: data?.data?.phoneNum || "",
     country: data?.data?.address || "",
     cityState: "",
     town: "",
@@ -160,7 +159,6 @@ export function PersonalInformation() {
         firstName: split.firstName,
         surname: split.surname,
         email: data.data.email || "",
-        phone: data.data.phoneNum || "",
         country: data.data.address || "",
         cityState: "",
         town: "",
@@ -272,8 +270,6 @@ export function PersonalInformation() {
       token,
       data: {
         name: mergedName,
-        // Email cannot be changed; do not send email if back-end treats it as immutable
-        phoneNum: formData.phone,
         address: formData.country,
       },
     });
@@ -415,33 +411,7 @@ export function PersonalInformation() {
           />
         </div>
 
-        {/* Phone */}
-        <div>
-          <Label
-            htmlFor="phone"
-            className="text-sm font-medium text-gray-700 mb-2 block"
-          >
-            Phone
-          </Label>
-          <Input
-            id="phone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => {
-              if (e.target.value.length <= 20) {
-                handleInputChange("phone", e.target.value);
-              }
-            }}
-            onInput={(e) => {
-              // Remove any non-digit characters except +, -, (, )
-              e.target.value = e.target.value.replace(/[^\d+\-()\s]/g, "");
-            }}
-            pattern="[\d+\-()\s]{10,}"
-            disabled={!isEditing}
-            className="bg-gray-50 border-gray-200"
-            maxLength={20}
-          />
-        </div>
+       
 
         {/* Country */}
         <div>

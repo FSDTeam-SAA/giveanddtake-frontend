@@ -288,7 +288,7 @@ export default function PricingPage() {
           <h1 className="mb-2 text-4xl font-bold text-gray-800">
             Company Price List
           </h1>
-          <p className="text-xl text-gray-600">For Elevator Pitch</p>
+          <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
         </div>
 
         {/* Current Plan Banner */}

@@ -4,8 +4,8 @@ import { SiteHeader } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
 
 export const metadata: Metadata = {
-  title: "Elevator Pitch",
-  description: "Shape Your Future with the Right Elevator Pitch",
+  title: "Elevator Video Pitch©",
+  description: "Shape Your Future with the Right Elevator Video Pitch©",
 };
 
 export default function RootLayout({
