@@ -55,7 +55,6 @@ type Company = {
   city?: string;
   zipcode?: string;
   cemail?: string;
-  cPhoneNumber?: string;
   links?: MaybeStringifiedArray;
   industry?: string;
   service?: MaybeStringifiedArray;
@@ -90,7 +89,6 @@ export type Recruiter = {
   zipCode?: string;
   location?: string;
   emailAddress?: string;
-  phoneNumber?: string;
   upworkUrl?: string;
   linkedIn?: string;
   xLink?: string;

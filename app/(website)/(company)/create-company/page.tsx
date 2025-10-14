@@ -198,7 +198,7 @@ export default function CreateCompanyPage() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                  Upload Company Elevator Pitch
+                  Upload Company Elevator Video Pitch©
                 </h2>
                 <p className="text-sm text-gray-600 max-w-2xl">
                   Upload a 60-second elevator video pitch introducing your
@@ -209,7 +209,7 @@ export default function CreateCompanyPage() {
                 type="button"
                 className="bg-primary hover:bg-blue-700 text-white px-6"
               >
-                Upload/Change Elevator Pitch
+                Upload/Change Elevator Video Pitch©
               </Button>
             </div>
 

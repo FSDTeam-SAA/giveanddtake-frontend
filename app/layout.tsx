@@ -16,8 +16,8 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "Elevator Pitch",
-  description: "Shape Your Future with the Right Elevator Pitch",
+  title: "Elevator Video Pitch©",
+  description: "Shape Your Future with the Right Elevator Video Pitch©",
   icons: {
     icon: "/assets/fav.ico",
   },

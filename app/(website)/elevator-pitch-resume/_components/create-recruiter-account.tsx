@@ -350,7 +350,6 @@ const recruiterSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   sureName: z.string().optional(),
   emailAddress: z.string().email("Invalid email address"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
   title: z.string().min(1, "Current position is required"),
   bio: z.string().optional(),
   country: z.string().min(1, "Country is required"),
@@ -486,7 +485,6 @@ export default function CreateRecruiterAccountForm() {
       firstName: "",
       sureName: "",
       emailAddress: "",
-      phoneNumber: "",
       title: "",
       bio: "",
       country: "",
@@ -780,8 +778,6 @@ export default function CreateRecruiterAccountForm() {
         form.getValues("emailAddress") || (session.user.email ?? ""),
       firstName: form.getValues("firstName") || first,
       sureName: form.getValues("sureName") || rest.join(" "),
-      phoneNumber:
-        form.getValues("phoneNumber") || (session.user.phoneNumber ?? ""),
       country: form.getValues("country") || (session.user.country ?? ""),
     });
   }, [session, form]);
@@ -808,7 +804,7 @@ export default function CreateRecruiterAccountForm() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg font-medium">
-                Elevator Pitch
+                Elevator Video Pitch©
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Upload a short video introducing yourself. This is required
@@ -961,23 +957,6 @@ export default function CreateRecruiterAccountForm() {
                           disabled
                           type="email"
                           placeholder="Enter email address"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="phoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number*</FormLabel>
-                      <FormControl>
-                        <Input
-                          disabled
-                          placeholder="Enter phone number"
                           {...field}
                         />
                       </FormControl>

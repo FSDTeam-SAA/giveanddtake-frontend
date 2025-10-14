@@ -8,7 +8,7 @@ export const faqData = [
   {
     question: "Who has access to my elevator video pitch?",
     answer:
-      "Only you have access to your elevator pitch video and resume, and any recruiter when you apply for a role with them.",
+      "Only you have access to your Elevator Video Pitch© video and resume, and any recruiter when you apply for a role with them.",
   },
   {
     question:

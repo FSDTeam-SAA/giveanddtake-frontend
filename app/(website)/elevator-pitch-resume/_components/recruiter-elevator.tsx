@@ -162,12 +162,12 @@ export default function RecruiterElevator({
     <div className="container mx-auto">
       <div className="lg:pb-12 pb-5">
         <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
-          Elevator Pitch
+          Elevator Video Pitch©
         </h2>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Elevator Pitch</CardTitle>
+              <CardTitle>Elevator Video Pitch©</CardTitle>
               {isElevatorPitchUploaded && pitchData && (
                 <Button
                   variant="destructive"
