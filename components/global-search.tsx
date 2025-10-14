@@ -109,18 +109,24 @@ export function GlobalSearch() {
           .filter(Boolean)
           .map((u) => u as SearchUser)
           .filter((user) => {
-            if (!user) return false;
-            const name = safeLower(user.name);
-            const role = safeLower(user.role);
-            const address = safeLower(user.address);
-            const position = safeLower(user.position);
-            return (
-              name.includes(q) ||
-              role.includes(q) ||
-              address.includes(q) ||
-              position.includes(q)
-            );
-          });
+  if (!user) return false;
+
+  // Exclude admin and super-admin roles
+  const role = safeLower(user.role);
+  if (role === "admin" || role === "super-admin") return false;
+
+  const name = safeLower(user.name);
+  const address = safeLower(user.address);
+  const position = safeLower(user.position);
+
+  return (
+    name.includes(q) ||
+    role.includes(q) ||
+    address.includes(q) ||
+    position.includes(q)
+  );
+});
+
 
         // sort: immediately available candidates first, then others
         filteredResults.sort(
