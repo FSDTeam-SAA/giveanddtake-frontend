@@ -203,7 +203,7 @@
 
 
 /* globals.css */
-h1 {
+/* h1 {
   @apply text-4xl font-bold leading-tight;
 }
 
@@ -233,4 +233,4 @@ p {
 
 small {
   @apply text-sm ;
-}
+} */
