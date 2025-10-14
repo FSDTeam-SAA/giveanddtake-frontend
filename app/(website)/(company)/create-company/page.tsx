@@ -37,7 +37,6 @@ const formSchema = z.object({
   city: z.string().min(1, "City is required"),
   zipcode: z.string().min(1, "Zip code is required"),
   cemail: z.string().email("Invalid email address"),
-  cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
   industry: z.string().min(1, "Industry is required"),
   linkedin: z.string().optional().or(z.literal("")),
@@ -97,7 +96,6 @@ export default function CreateCompanyPage() {
       city: "",
       zipcode: "",
       cemail: "",
-      cPhoneNumber: "",
       aboutUs: "",
       industry: "",
       linkedin: "",
@@ -391,21 +389,7 @@ export default function CreateCompanyPage() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="cPhoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Phone number*
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="+1 (555) 234567 2340" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+           
             </div>
           </div>
 

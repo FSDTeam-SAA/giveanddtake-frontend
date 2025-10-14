@@ -38,7 +38,6 @@ import {
   EyeOff,
   User,
   Mail,
-  Phone,
   Lock,
 } from "lucide-react";
 import Link from "next/link";

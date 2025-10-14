@@ -152,10 +152,7 @@ export default function ApplicantDetails({
               <span className="font-semibold">Email:</span>{" "}
               {applicantResume?.createResume?.email}
             </p>
-            <p className="text-lg">
-              <span className="font-semibold">Contact:</span>{" "}
-              {applicantResume?.createResume?.phoneNumber}
-            </p>
+            
             <Button className="bg-[#2B7FD0]/90 hover:bg-[#2B7FD0] h-8 sm:h-[35px] text-sm sm:text-base px-3 sm:px-4 rounded-[8px]">
               Resume <Download className="ml-2 h-4 w-4" />
             </Button>
