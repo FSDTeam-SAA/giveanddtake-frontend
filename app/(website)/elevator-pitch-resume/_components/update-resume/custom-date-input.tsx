@@ -84,7 +84,8 @@ export const CustomDateInput = ({
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let digits = e.target.value.replace(/\\D/g, "");
+    let digits = e.target.value.replace(/\D/g, "");
+
     if (digits.length > 6) digits = digits.slice(0, 6);
     const formatted = formatFromDigits(digits);
     setInternalValue(formatted);

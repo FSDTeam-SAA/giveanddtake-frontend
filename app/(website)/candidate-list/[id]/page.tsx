@@ -24,7 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"; // Import Dialog components from Shadcn UI
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface User {
   _id: string;
@@ -59,7 +60,7 @@ interface Application {
   createdAt: string;
   updatedAt: string;
   experience?: string;
-  answer?: Answer[]; // Add answer field to the interface
+  answer?: Answer[];
 }
 
 interface ApiResponse {
@@ -74,34 +75,27 @@ interface ApiResponse {
   };
 }
 
-// Map UI labels -> backend enum values
-const STATUS_OPTIONS: {
-  label: string;
-  value: "pending" | "shortlisted" | "rejected";
-  color: string;
-  active: string;
-}[] = [
+const STATUS_OPTIONS = [
   {
     label: "Application Received",
     value: "pending",
     color: "border-slate-600 text-slate-700 hover:bg-slate-50",
-    active: "bg-slate-100 border-slate-600 text-slate-800",
+    active: "bg-slate-200 border-slate-700 text-slate-900 font-bold",
   },
   {
     label: "Shortlisted",
     value: "shortlisted",
     color: "border-blue-600 text-blue-600 hover:bg-blue-50",
-    active: "bg-blue-100 border-blue-600 text-blue-700",
+    active: "bg-blue-200 border-blue-700 text-blue-900 font-bold",
   },
   {
     label: "Unsuccessful",
     value: "rejected",
     color: "border-red-600 text-red-600 hover:bg-red-50",
-    active: "bg-red-100 border-red-600 text-red-700",
+    active: "bg-red-200 border-red-700 text-red-900 font-bold",
   },
 ];
 
-// Normalize any incoming status to our canonical 3 values for highlighting
 const normalizeStatus = (
   status: Application["status"]
 ): "pending" | "shortlisted" | "rejected" | null => {
@@ -110,7 +104,7 @@ const normalizeStatus = (
   if (s === "pending" || s === "application received") return "pending";
   if (s === "shortlisted") return "shortlisted";
   if (s === "rejected" || s === "unsuccessful") return "rejected";
-  return null; // for statuses like interviewed/selected
+  return null;
 };
 
 export default function JobApplicantsPage() {
@@ -130,11 +124,14 @@ export default function JobApplicantsPage() {
     itemsPerPage: 10,
   });
   const [statusLoading, setStatusLoading] = useState<string[]>([]);
-  const [selectedApplicationId, setSelectedApplicationId] = useState(
-    "689b0fc1167718bb391da85d"
-  );
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal
-  const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>([]); // State for answers
+  const [selectedApplicationId, setSelectedApplicationId] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState<Answer[]>([]);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    applicationId?: string;
+    newStatus?: "pending" | "shortlisted" | "rejected";
+  }>({ open: false });
 
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
@@ -151,17 +148,12 @@ export default function JobApplicantsPage() {
         `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}?page=${currentPage}`
       );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch applications");
-      }
+      if (!response.ok) throw new Error("Failed to fetch applications");
 
       const result: ApiResponse = await response.json();
-
       if (result.success) {
         setApplications(result.data);
-        if (result.meta) {
-          setMeta(result.meta);
-        }
+        if (result.meta) setMeta(result.meta);
       } else {
         throw new Error(result.message || "Failed to fetch applications");
       }
@@ -191,10 +183,7 @@ export default function JobApplicantsPage() {
         }
       );
 
-      if (!response.ok) {
-        toast.error("Failed to update status");
-        throw new Error("Failed to update status");
-      }
+      if (!response.ok) throw new Error("Failed to update status");
 
       setApplications((prev) =>
         prev.map((app) =>
@@ -208,31 +197,30 @@ export default function JobApplicantsPage() {
     }
   };
 
-  const updateStatusWithLoading = async (
-    applicationId: string,
-    newStatus: "pending" | "shortlisted" | "rejected"
-  ) => {
-    setStatusLoading((prev) => [...prev, applicationId]);
-    await handleStatusUpdate(applicationId, newStatus);
-    setStatusLoading((prev) => prev.filter((id) => id !== applicationId));
+  const confirmStatusChange = async () => {
+    if (!confirmDialog.applicationId || !confirmDialog.newStatus) return;
+    setStatusLoading((prev) => [...prev, confirmDialog.applicationId]);
+    await handleStatusUpdate(confirmDialog.applicationId, confirmDialog.newStatus);
+    setStatusLoading((prev) =>
+      prev.filter((id) => id !== confirmDialog.applicationId)
+    );
+    setConfirmDialog({ open: false });
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
-  };
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
 
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -240,7 +228,6 @@ export default function JobApplicantsPage() {
     router.push(`?${params.toString()}`);
   };
 
-  // Handle opening the modal and setting the answers
   const handleOpenModal = (answers: Answer[] | undefined) => {
     setSelectedAnswers(answers || []);
     setIsModalOpen(true);
@@ -262,41 +249,41 @@ export default function JobApplicantsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-2 sm:px-4 py-8 w-full">
       <div className="mb-6">
         <Button variant="ghost" onClick={() => router.back()} className="mb-4">
           <ChevronLeft className="h-4 w-4 mr-2" />
           Back to Jobs
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">Applicant List</h1>
-        <p className="text-gray-600 mt-2">
-          Please help all applicants by updating each candidate at every stage
-          of the recruitment process. To update applicants, click on the correct
-          button, which will trigger a response to the applicant.
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Applicant List
+        </h1>
+        <p className="text-gray-600 mt-2 text-sm sm:text-base">
+          Please update each applicant’s status at every stage of recruitment.
         </p>
       </div>
 
-      <div className="rounded-lg overflow-hidden">
-        <Table>
+      <div className="rounded-lg overflow-x-auto">
+        <Table className="min-w-full w-full">
           <TableHeader>
             <TableRow>
-              <TableHead className="text-base text-[#2B7FD0] font-bold">
+              <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
                 Name
               </TableHead>
-              <TableHead className="text-base text-[#2B7FD0] font-bold">
+              <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
                 Applied
               </TableHead>
-              <TableHead className="text-base text-[#2B7FD0] font-bold">
+              <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
                 Details
               </TableHead>
-
-              {applications.length > 0 && applications[0].answer && applications[0].answer.length > 0 && (
-                <TableHead className="text-base text-[#2B7FD0] font-bold">
-                  Custom Question
-                </TableHead>
-              )}
-
-              <TableHead className="text-base text-[#2B7FD0] font-bold">
+              {applications.length > 0 &&
+                applications[0].answer &&
+                applications[0].answer.length > 0 && (
+                  <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
+                    Custom Question
+                  </TableHead>
+                )}
+              <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
                 Status
               </TableHead>
             </TableRow>
@@ -305,27 +292,8 @@ export default function JobApplicantsPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-16" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-4 w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-8 w-28" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Skeleton className="h-8 w-28" />
-                      <Skeleton className="h-8 w-28" />
-                      <Skeleton className="h-8 w-28" />
-                    </div>
+                  <TableCell colSpan={5}>
+                    <Skeleton className="h-10 w-full" />
                   </TableCell>
                 </TableRow>
               ))
@@ -337,7 +305,7 @@ export default function JobApplicantsPage() {
                 return (
                   <TableRow
                     key={application._id}
-                    className={`text-base text-[#000000] font-medium ${
+                    className={`text-sm sm:text-base ${
                       application._id === selectedApplicationId
                         ? "bg-blue-50 border-l-4 border-l-blue-500"
                         : ""
@@ -346,44 +314,33 @@ export default function JobApplicantsPage() {
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10">
+                        <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                           <AvatarImage src={application.userId.avatar.url} />
                           <AvatarFallback className="bg-gray-200 text-gray-700">
                             {getInitials(application.userId.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <div className="font-medium">
-                            {application.userId.name}
-                          </div>
-                        </div>
+                        <div>{application.userId.name}</div>
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link
-                        href={`/applicant-details/${
-                          application.userId._id
-                        }?resumeId=${
+                        href={`/applicant-details/${application.userId._id}?resumeId=${
                           application.resumeId?._id || ""
                         }&applicationId=${application._id}`}
-                        className="text-sm bg-[#2B7FD0] text-white py-2 px-4 rounded-lg font-medium"
+                        className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >
                         Details
                       </Link>
                     </TableCell>
-                    {applications.length > 0 && applications[0] && applications[0].answer && applications[0].answer.length > 0 && (
+                    {application.answer && application.answer.length > 0 && (
                       <TableCell>
-                        <Dialog
-                          open={isModalOpen}
-                          onOpenChange={setIsModalOpen}
-                        >
+                        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              onClick={() =>
-                                handleOpenModal(application.answer)
-                              }
+                              onClick={() => handleOpenModal(application.answer)}
                             >
                               Answer
                             </Button>
@@ -394,21 +351,16 @@ export default function JobApplicantsPage() {
                             </DialogHeader>
                             <div className="mt-4">
                               {selectedAnswers.length > 0 ? (
-                                <div className="space-y-4">
-                                  {selectedAnswers.map((answer) => (
-                                    <div
-                                      key={answer._id}
-                                      className="border-b pb-4"
-                                    >
-                                      <h3 className="font-semibold text-gray-800">
-                                        {answer.question}
-                                      </h3>
-                                      <p className="text-gray-600 mt-1">
-                                        {answer.ans}
-                                      </p>
-                                    </div>
-                                  ))}
-                                </div>
+                                selectedAnswers.map((answer) => (
+                                  <div key={answer._id} className="border-b pb-4">
+                                    <h3 className="font-semibold text-gray-800">
+                                      {answer.question}
+                                    </h3>
+                                    <p className="text-gray-600 mt-1">
+                                      {answer.ans}
+                                    </p>
+                                  </div>
+                                ))
                               ) : (
                                 <p className="text-gray-500">
                                   No answers provided.
@@ -420,36 +372,35 @@ export default function JobApplicantsPage() {
                       </TableCell>
                     )}
                     <TableCell>
-                      <div className="flex gap-2 items-center">
+                      <div className="flex flex-wrap gap-2">
                         {STATUS_OPTIONS.map((opt) => {
                           const active = normalized === opt.value;
+                          const isDisabled =
+                            opt.value === "pending" && normalized === "pending";
                           return (
                             <Button
                               key={opt.value}
                               variant={active ? "default" : "outline"}
-                              className={`h-9 px-3 rounded-lg border ${
+                              className={`h-9 px-3 border rounded-lg ${
                                 active ? opt.active : opt.color
                               } ${
                                 isUpdating
                                   ? "opacity-60 cursor-not-allowed"
                                   : ""
                               }`}
-                              disabled={isUpdating}
+                              disabled={isUpdating || isDisabled}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 if (!active) {
-                                  updateStatusWithLoading(
-                                    application._id,
-                                    opt.value
-                                  );
+                                  setConfirmDialog({
+                                    open: true,
+                                    applicationId: application._id,
+                                    newStatus: opt.value,
+                                  });
                                 }
                               }}
                             >
-                              {isUpdating && active ? (
-                                <span className="animate-pulse">Updating…</span>
-                              ) : (
-                                opt.label
-                              )}
+                              {opt.label}
                             </Button>
                           );
                         })}
@@ -461,12 +412,7 @@ export default function JobApplicantsPage() {
             ) : (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-8">
-                  <div className="text-gray-500">
-                    <p className="text-lg font-medium">No applications found</p>
-                    <p className="text-sm">
-                      This job hasn't received any applications yet.
-                    </p>
-                  </div>
+                  <p className="text-gray-500">No applications found</p>
                 </TableCell>
               </TableRow>
             )}
@@ -474,14 +420,32 @@ export default function JobApplicantsPage() {
         </Table>
       </div>
 
+      {/* Confirm Dialog */}
+      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ open })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Status Change</DialogTitle>
+          </DialogHeader>
+          <p className="text-gray-600">
+            Are you sure you want to change the applicant's status to{" "}
+            <strong>{confirmDialog.newStatus}</strong>?
+          </p>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setConfirmDialog({ open: false })}>
+              Cancel
+            </Button>
+            <Button onClick={confirmStatusChange}>Confirm</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {meta.totalPages > 1 && (
-        <div className="flex items-center justify-between mt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between mt-6 gap-3">
           <div className="text-sm text-gray-500">
             Showing {(meta.currentPage - 1) * meta.itemsPerPage + 1} to{" "}
             {Math.min(meta.currentPage * meta.itemsPerPage, meta.totalItems)} of{" "}
             {meta.totalItems} results
           </div>
-
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -492,16 +456,13 @@ export default function JobApplicantsPage() {
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-
             <div className="flex gap-1">
               {Array.from({ length: Math.min(5, meta.totalPages) }, (_, i) => {
                 const pageNum = i + 1;
                 return (
                   <Button
                     key={pageNum}
-                    variant={
-                      pageNum === meta.currentPage ? "default" : "outline"
-                    }
+                    variant={pageNum === meta.currentPage ? "default" : "outline"}
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
                     disabled={loading}
@@ -511,7 +472,6 @@ export default function JobApplicantsPage() {
                 );
               })}
             </div>
-
             <Button
               variant="outline"
               size="sm"

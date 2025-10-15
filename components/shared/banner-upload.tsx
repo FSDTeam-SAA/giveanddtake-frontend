@@ -114,11 +114,11 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
           {previewUrl ? (
             <div className="relative">
               {/* ✅ LinkedIn ratio preview */}
-              <div className="relative w-full h-auto md:h-[396px] rounded-lg overflow-hidden border">
+              <div className="relative w-full h-auto rounded-lg overflow-hidden border">
                 <img
                   src={previewUrl}
                   alt="Banner preview"
-                  className="w-full h-auto md:h-full object-cover"
+                  className="w-full h-auto object-cover"
                 />
               </div>
 

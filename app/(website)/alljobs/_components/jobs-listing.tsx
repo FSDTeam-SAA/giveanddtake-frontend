@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react"; // Import useEffect
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,7 +8,6 @@ import JobCard from "@/components/shared/card/job-card";
 import { Pagination } from "@/components/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search } from "lucide-react";
-import Link from "next/link";
 
 interface Job {
   _id: string;
@@ -67,23 +66,13 @@ export default function JobsListing() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Local states for filter inputs
-  const [localSearchTerm, setLocalSearchTerm] = useState(
-    searchParams.get("title") || ""
-  );
-  const [localLocationFilter, setLocalLocationFilter] = useState(
-    searchParams.get("location") || ""
-  );
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get("title") || "");
 
-  // Actual query parameters derived from URL
   const querySearchTerm = searchParams.get("title") || "";
-  const queryLocationFilter = searchParams.get("location") || "";
   const currentPage = Number.parseInt(searchParams.get("page") || "1", 10);
 
-  // Effect to update local state when URL search params change (e.g., from HeroSection redirect)
   useEffect(() => {
     setLocalSearchTerm(searchParams.get("title") || "");
-    setLocalLocationFilter(searchParams.get("location") || "");
   }, [searchParams]);
 
   const { data: session, status } = useSession();
@@ -93,47 +82,30 @@ export default function JobsListing() {
   const {
     data: jobsData,
     isLoading: isJobsLoading,
-    error: jobsError,
   } = useQuery<JobsResponse, Error>({
-    queryKey: ["jobs", currentPage, querySearchTerm, queryLocationFilter], // Use query params for fetching
+    queryKey: ["jobs", currentPage, querySearchTerm],
     queryFn: async () => {
       const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs`);
       url.searchParams.append("page", currentPage.toString());
-      if (querySearchTerm) {
-        url.searchParams.append("title", querySearchTerm);
-      }
-      if (queryLocationFilter) {
-        url.searchParams.append("location", queryLocationFilter);
-      }
+      if (querySearchTerm) url.searchParams.append("title", querySearchTerm);
 
       const response = await fetch(url.toString());
-      if (!response.ok) {
-        throw new Error("Failed to fetch jobs");
-      }
+      if (!response.ok) throw new Error("Failed to fetch jobs");
       return response.json();
     },
   });
 
   // Fetch recommended jobs
-  const {
-    data: recommendedData,
-    isLoading: isRecommendedLoading,
-    error: recommendedError,
-  } = useQuery<RecommendedJobsResponse, Error>({
+  const { data: recommendedData, isLoading: isRecommendedLoading } = useQuery<
+    RecommendedJobsResponse,
+    Error
+  >({
     queryKey: ["recommendedJobs", token],
     queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/recommend`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log(response);
-      if (!response.ok) {
-        throw new Error("Failed to fetch recommended jobs");
-      }
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs/recommend`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) throw new Error("Failed to fetch recommended jobs");
       return response.json();
     },
     enabled: !!token,
@@ -147,10 +119,6 @@ export default function JobsListing() {
     );
   }
 
-  // if (selectedJobId) {
-  //   return <JobDetails jobId={selectedJobId} />;
-  // }
-
   const jobs = jobsData?.data.jobs || [];
   const meta = jobsData?.data.meta || {
     currentPage: 1,
@@ -159,15 +127,11 @@ export default function JobsListing() {
     itemsPerPage: 10,
   };
   const recommended =
-    recommendedData?.data?.exactMatches &&
-    recommendedData.data.exactMatches.length > 0
+    recommendedData?.data?.exactMatches && recommendedData.data.exactMatches.length > 0
       ? recommendedData.data.exactMatches
       : recommendedData?.data?.partialMatches || [];
 
-  console.log(recommended);
-  console.log(jobs);
-
-  // Function to handle filter button click
+  // Handle filter click
   const handleFilter = () => {
     const newParams = new URLSearchParams(searchParams.toString());
     if (localSearchTerm) {
@@ -175,54 +139,35 @@ export default function JobsListing() {
     } else {
       newParams.delete("title");
     }
-    if (localLocationFilter) {
-      newParams.set("location", localLocationFilter);
-    } else {
-      newParams.delete("location");
-    }
-    newParams.set("page", "1"); // Reset to page 1 on new filter
+    newParams.set("page", "1");
     router.push(`?${newParams.toString()}`);
   };
 
   return (
     <div className="container mx-auto px-4">
-      {/* Filters */}
+      {/* Search Filter */}
       <div className="bg-[#E9ECFC] p-6 mb-12 w-full rounded-md">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
-          <div className="flex gap-4 w-full">
-            {/* Keywords input */}
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Keywords; Title, Skill, Category"
-                className="pl-10 p-2 border rounded w-full"
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)} // Make editable
-              />
-            </div>
-
-            {/* Location input */}
-            <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Location"
-                className="pl-10 p-2 border rounded w-full"
-                value={localLocationFilter}
-                onChange={(e) => setLocalLocationFilter(e.target.value)} // Make editable
-              />
-            </div>
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Title, Skill, Category, Location, Location Type"
+              className="pl-10 p-2 border rounded w-full"
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
+            />
           </div>
-
           <button
-            onClick={handleFilter} // Re-added onClick handler
+            onClick={handleFilter}
             className="bg-primary hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
           >
-            Filter
+            Search
           </button>
         </div>
       </div>
+
+      {/* Recommended Jobs */}
       {recommended.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested jobs for you</h2>
@@ -249,6 +194,7 @@ export default function JobsListing() {
           )}
         </div>
       )}
+
       {/* All Jobs */}
       <div>
         <h2 className="text-2xl font-bold mb-6">Recent jobs</h2>
@@ -273,9 +219,7 @@ export default function JobsListing() {
               currentPage={meta.currentPage}
               totalPages={meta.totalPages}
               onPageChange={(page) => {
-                const currentParams = new URLSearchParams(
-                  searchParams.toString()
-                );
+                const currentParams = new URLSearchParams(searchParams.toString());
                 currentParams.set("page", page.toString());
                 router.push(`?${currentParams.toString()}`);
               }}
