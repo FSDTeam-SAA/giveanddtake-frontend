@@ -404,47 +404,6 @@ export function PersonalInfoSection({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="phoneNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number*</FormLabel>
-                  <FormControl>
-                    <Input
-                      disabled
-                      placeholder={
-                        isLoadingDialCodes
-                          ? "Loading..."
-                          : selectedCountry
-                          ? `${
-                              dialCodesData?.find(
-                                (dc) => dc.name === selectedCountry
-                              )?.dial_code || ""
-                            } Enter phone number`
-                          : "Select country first"
-                      }
-                      {...field}
-                      onChange={(e) => {
-                        const selectedDialCode = dialCodesData?.find(
-                          (dc) => dc.name === selectedCountry
-                        )?.dial_code;
-                        let value = e.target.value;
-                        if (
-                          selectedDialCode &&
-                          !value.startsWith(selectedDialCode)
-                        ) {
-                          value =
-                            selectedDialCode + value.replace(/^\+\d+/, "");
-                        }
-                        field.onChange(value);
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <div className="space-y-5 lg:space-y-0 lg:mt-7">
               <FormField
                 control={form.control}

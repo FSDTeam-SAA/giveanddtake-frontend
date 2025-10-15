@@ -81,7 +81,6 @@ interface EmployeeData {
   _id: string;
   name: string;
   email: string;
-  phoneNum: string;
   photo: {
     url: string;
   };
@@ -555,12 +554,12 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* Elevator Pitch */}
       <div className="lg:pb-12 pb-5">
         <h2 className="text-xl lg:text-4xl font-bold text-center my-10 text-gray-900">
-          Elevator Pitch
+          Elevator Video Pitch©
         </h2>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Elevator Pitch</CardTitle>
+              <CardTitle>Elevator Video Pitch©</CardTitle>
               {pitchData && (
                 <Button
                   variant="destructive"
@@ -701,9 +700,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                     Role
                   </TableHead>
                   <TableHead className="font-medium text-gray-700">
-                    Phone Number
-                  </TableHead>
-                  <TableHead className="font-medium text-gray-700">
                     Action
                   </TableHead>
                 </TableRow>
@@ -737,9 +733,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       >
                         {recruiter.role}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-600">
-                      {recruiter.phoneNum}
                     </TableCell>
                     <TableCell>
                       <Button

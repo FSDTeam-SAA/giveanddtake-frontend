@@ -17,7 +17,6 @@ interface EmployeeData {
   _id: string;
   name: string;
   email: string;
-  phoneNum: string;
   role: string;
   photo?: { url: string };
   skills: string[];
@@ -53,9 +52,7 @@ export default function RecruiterTable({
               Recruiter Name
             </TableHead>
             <TableHead className="font-medium text-gray-700">Role</TableHead>
-            <TableHead className="font-medium text-gray-700">
-              Phone Number
-            </TableHead>
+          
             <TableHead className="font-medium text-gray-700">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -85,9 +82,6 @@ export default function RecruiterTable({
                 >
                   {recruiter.role}
                 </Badge>
-              </TableCell>
-              <TableCell className="text-gray-600">
-                {recruiter.phoneNum}
               </TableCell>
               <TableCell>
                 <Button

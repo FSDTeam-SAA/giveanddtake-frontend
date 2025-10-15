@@ -138,8 +138,8 @@ function RightBackgroundBubbles() {
 }
 
 export const metadata: Metadata = {
-  title: "About | Elevator Pitch",
-  description: "Learn more about Elevator Pitch",
+  title: "About | Elevator Video Pitch©",
+  description: "Learn more about Elevator Video Pitch©",
 };
 
 export default function AboutUsPage() {
@@ -171,7 +171,8 @@ export default function AboutUsPage() {
               our platform available to global jobseekers of all professions and
               trades, from doctors, to lawyers to pilots, tradespersons,
               mechanics, models, engineers, IT professionals; i.e. all are
-              welcome to record an elevator pitch to articulate your needs.
+              welcome to record an Elevator Video Pitch© to articulate your
+              needs.
             </p>
             <p className="text-base font-normal text-[#545454] leading-relaxed">
               2026 is your year of elevation!

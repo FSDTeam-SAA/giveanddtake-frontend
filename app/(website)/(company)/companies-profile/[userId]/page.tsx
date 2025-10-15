@@ -505,7 +505,7 @@ export default function CompanyProfilePage() {
         {/* Elevator Pitch */}
         <div>
           <h2 className="text-xl font-semibold mb-6 text-gray-900">
-            Elevator Pitch
+            Elevator Video Pitch©
           </h2>
           <div className="rounded-lg md:p-6 bg-gray-50">
             <VideoPlayer

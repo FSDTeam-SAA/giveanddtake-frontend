@@ -18,7 +18,7 @@ export function HowItWorksSection() {
         </h2>
         <div className="w-[180px] md:w-[240px] h-[4px] bg-primary rounded-[35px] mt-4"></div>
 
-        {/* let the cards grow naturally; no fixed height */}
+        {/* Cards grid */}
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mt-12">
           {/* Candidates Card */}
           <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow rounded-2xl h-auto min-h-[350px] overflow-hidden">
@@ -38,11 +38,14 @@ export function HowItWorksSection() {
               </CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
                 <li>Gain an edge over millions of jobseekers</li>
-                <li>Create your elevator video pitch today</li>
+                <li>Create your private Elevator Video Pitch© today</li>
                 <li>Pitch the real you in 30 seconds</li>
                 <li>Make a lasting impression from the first hello</li>
-                <li>Apply for jobs online or with the EVP app</li>
-                <li>Mobile app coming soon!</li>
+                <li>Share your private EVPitch© with each application</li>
+                <li>
+                  Manage your account online (or through your EVP app coming
+                  soon!)
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -65,10 +68,12 @@ export function HowItWorksSection() {
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
                 <li>Create a 60-seconds recruiters’ pitch</li>
                 <li>Schedule job adverts</li>
-                <li>Screen elevator pitches online</li>
+                <li>View each applicant’s private Elevator Video Pitch©</li>
                 <li>One-click feedback to applicants</li>
-                <li>Manage your account with the EVP app</li>
-                <li>Mobile app coming soon!</li>
+                <li>
+                  Manage your account online (or through your EVP app coming
+                  soon!)
+                </li>
               </ul>
             </CardContent>
           </Card>
@@ -87,12 +92,22 @@ export function HowItWorksSection() {
             <CardContent className="flex flex-col justify-between flex-1 space-y-3 w-full">
               <CardTitle className="text-xl font-semibold">Companies</CardTitle>
               <ul className="text-gray-600 text-sm space-y-2 text-left pl-5 list-disc break-words leading-relaxed">
-                <li>Amplify your company brand in a 60-seconds pitch</li>
-                <li>Create your powerful elevator pitch</li>
-                <li>Directly screen experienced candidates online</li>
+                <li>
+                  Amplify your corporate brand in a powerful 60-seconds Elevator
+                  Video Pitch© today
+                </li>
                 <li>Hire strong talent for your business to thrive</li>
-                <li>Manage your account with the EVP app</li>
-                <li>Mobile app coming soon!</li>
+                <li>
+                  Add multiple in-house recruiters to your corporate account
+                </li>
+                <li>
+                  Directly screen each applicant’s private Elevator Video Pitch©
+                  online
+                </li>
+                <li>
+                  Manage your account online (or through your EVP app coming
+                  soon!)
+                </li>
               </ul>
             </CardContent>
           </Card>

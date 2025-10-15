@@ -18,14 +18,13 @@ import { Input } from "@/components/ui/input";
 interface SearchUser {
   _id: string;
   name: string;
-  role: "candidate" | "recruiter" | "company";
+  role: "candidate" | "recruiter" | "company" | "admin" | "super-admin";
   phoneNum: string | null;
   address: string | null;
   position?: string | null;
   avatar?: {
     url?: string | null;
   } | null;
-  // from API
   immediatelyAvailable?: boolean | null;
 }
 
@@ -50,7 +49,7 @@ function AllUsersContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Read initial params (run only on mount)
+  // Initial params
   useEffect(() => {
     const s = searchParams.get("s") ?? "";
     const role = searchParams.get("role") ?? "all";
@@ -65,19 +64,19 @@ function AllUsersContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch all users once
+  // Fetch all users
   useEffect(() => {
     fetchAllUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Apply filters whenever dependencies change
+  // Apply filters
   useEffect(() => {
     filterUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, searchQuery, selectedRole, onlyImmediate]);
 
-  // Keep URL params in sync (s, role, page, immediate) with light debounce
+  // Sync URL params
   useEffect(() => {
     const id = setTimeout(() => {
       const params = new URLSearchParams();
@@ -90,11 +89,12 @@ function AllUsersContent() {
     return () => clearTimeout(id);
   }, [searchQuery, selectedRole, page, onlyImmediate, router, pathname]);
 
-  // Reset to page 1 when search or role or immediate toggle changes
+  // Reset pagination when filters change
   useEffect(() => {
     setPage(1);
   }, [searchQuery, selectedRole, onlyImmediate]);
 
+  // Fetch and clean user data
   const fetchAllUsers = async () => {
     setIsLoading(true);
     try {
@@ -105,7 +105,6 @@ function AllUsersContent() {
       const result: SearchResult = await response.json();
 
       if (result?.success && Array.isArray(result?.data)) {
-        // Clean, filter out null/undefined and malformed
         const safe = result.data
           .filter(
             (u): u is SearchUser => !!u && typeof u === "object" && !!u._id
@@ -120,7 +119,12 @@ function AllUsersContent() {
               typeof u.immediatelyAvailable === "boolean"
                 ? u.immediatelyAvailable
                 : null,
-          }));
+          }))
+          // 🚫 Exclude admin/super-admin users right after fetch
+          .filter(
+            (u) => u.role !== "admin" && u.role !== "super-admin"
+          );
+
         setUsers(safe);
         setFilteredUsers(safe);
       } else {
@@ -136,10 +140,16 @@ function AllUsersContent() {
     }
   };
 
+  // Filter users
   const filterUsers = () => {
     let filtered = users.slice();
 
-    // Filter by search query (if query is empty we show nothing per your earlier logic)
+    // 🚫 Always exclude admin/super-admin just in case
+    filtered = filtered.filter(
+      (u) => u.role !== "admin" && u.role !== "super-admin"
+    );
+
+    // Filter by search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((user) => {
@@ -163,14 +173,14 @@ function AllUsersContent() {
       filtered = filtered.filter((user) => user?.role === selectedRole);
     }
 
-    // Filter by immediate toggle (only relevant for candidates)
+    // Immediate-only toggle
     if (onlyImmediate) {
       filtered = filtered.filter(
         (u) => u.role === "candidate" && u.immediatelyAvailable === true
       );
     }
 
-    // Sort: immediate candidates first (keeps original relative order)
+    // Sort: immediately available candidates first
     filtered.sort((a, b) => {
       const aAvail = a.immediatelyAvailable === true ? 1 : 0;
       const bAvail = b.immediatelyAvailable === true ? 1 : 0;
@@ -180,6 +190,7 @@ function AllUsersContent() {
     setFilteredUsers(filtered);
   };
 
+  // Handle click
   const handleUserClick = (user?: SearchUser) => {
     if (!user) return;
     const role = user.role ?? "candidate";
@@ -193,6 +204,7 @@ function AllUsersContent() {
     router.push(profileUrl);
   };
 
+  // Role icon
   const getRoleIcon = (role?: string) => {
     switch (role) {
       case "candidate":
@@ -206,7 +218,7 @@ function AllUsersContent() {
     }
   };
 
-  // Pagination calc
+  // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const paginatedUsers = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -214,7 +226,6 @@ function AllUsersContent() {
     return filteredUsers.slice(start, end).filter(Boolean);
   }, [filteredUsers, page]);
 
-  // counts
   const totalResults = filteredUsers.length;
   const immediateCount = filteredUsers.filter(
     (u) => u.role === "candidate" && u.immediatelyAvailable === true
@@ -227,7 +238,9 @@ function AllUsersContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Search Results</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Search Results
+              </h1>
               <p className="text-gray-600 mt-1">
                 {isLoading
                   ? "Loading..."
@@ -266,7 +279,7 @@ function AllUsersContent() {
                   <option value="company">Companies</option>
                 </select>
 
-                {/* Immediate-only toggle */}
+                {/* Immediate toggle */}
                 <button
                   type="button"
                   onClick={() => setOnlyImmediate((v) => !v)}
@@ -276,7 +289,6 @@ function AllUsersContent() {
                       : "bg-white border-gray-200 text-gray-700"
                   } focus:outline-none`}
                   aria-pressed={onlyImmediate}
-                  aria-label="Toggle only immediately available candidates"
                 >
                   {onlyImmediate ? (
                     <>
@@ -296,7 +308,7 @@ function AllUsersContent() {
         </div>
       </div>
 
-      {/* Grid */}
+      {/* User grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -322,8 +334,6 @@ function AllUsersContent() {
                   key={user._id}
                   className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-[#4B98DE] hover:border-l-[#3a7bc8]"
                   onClick={() => handleUserClick(user)}
-                  role="button"
-                  aria-label={`Open profile for ${user.name}`}
                 >
                   <CardContent className="p-6">
                     <div className="flex items-start gap-4">
@@ -346,14 +356,9 @@ function AllUsersContent() {
                             {user?.name ?? "Unknown"}
                           </h3>
 
-                          {/* Immediate badge for candidates */}
                           {user.role === "candidate" &&
                             user.immediatelyAvailable === true && (
-                              <span
-                                className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800"
-                                aria-label="Immediately available"
-                                title="Immediately available"
-                              >
+                              <span className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800">
                                 <span className="h-2 w-2 rounded-full bg-green-600 inline-block" />
                                 Immediate
                               </span>
@@ -369,14 +374,6 @@ function AllUsersContent() {
                               {user?.address ?? "No address available"}
                             </span>
                           </div>
-                          {/* phone (optional) */}
-                          {user.phoneNum && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500 truncate">
-                                {user.phoneNum}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -390,7 +387,6 @@ function AllUsersContent() {
                           e.stopPropagation();
                           handleUserClick(user);
                         }}
-                        aria-label={`View profile of ${user.name}`}
                       >
                         View Profile
                       </Button>
@@ -408,7 +404,6 @@ function AllUsersContent() {
                   size="sm"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  aria-label="Previous page"
                 >
                   Previous
                 </Button>
@@ -420,7 +415,6 @@ function AllUsersContent() {
                   size="sm"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  aria-label="Next page"
                 >
                   Next
                 </Button>

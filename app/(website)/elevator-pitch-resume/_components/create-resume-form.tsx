@@ -44,11 +44,6 @@ export const resumeSchema = z.object({
     .trim()
     .email("Invalid email address")
     .max(254, "Email can be at most 254 characters"),
-  phoneNumber: z
-    .string()
-    .trim()
-    .min(1, "Phone number is required")
-    .max(20, "Phone number can be at most 20 characters"),
   title: z
     .string()
     .trim()
@@ -297,7 +292,6 @@ export default function CreateResumeForm() {
       firstName: "",
       lastName: "",
       email: "",
-      phoneNumber: "",
       title: "",
       city: "",
       zip: "",
@@ -507,7 +501,6 @@ export default function CreateResumeForm() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phoneNumber: data.phoneNumber,
         title: data.title,
         city: data.city,
         zip: data.zip,
@@ -557,7 +550,6 @@ export default function CreateResumeForm() {
     if (form.formState.isDirty) return;
 
     const customUser = session.user as typeof session.user & {
-      phoneNumber?: string | null;
       country?: string | null;
     };
 
@@ -569,8 +561,6 @@ export default function CreateResumeForm() {
       email: form.getValues("email") || (customUser.email ?? ""),
       firstName: form.getValues("firstName") || first,
       lastName: form.getValues("lastName") || rest.join(" "),
-      phoneNumber:
-        form.getValues("phoneNumber") || (customUser.phoneNumber ?? ""),
       country: form.getValues("country") || (customUser.country ?? ""),
     });
   }, [session, form]);
@@ -739,8 +729,8 @@ export default function CreateResumeForm() {
 
           {!isElevatorPitchUploaded && (
             <p className="text-center text-sm text-red-600">
-              Please upload your elevator pitch video before submitting the
-              form.
+              Please upload your Elevator Video Pitch© video before submitting
+              the form.
             </p>
           )}
         </form>

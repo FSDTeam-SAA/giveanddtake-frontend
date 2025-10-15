@@ -38,7 +38,6 @@ import {
   EyeOff,
   User,
   Mail,
-  Phone,
   Lock,
 } from "lucide-react";
 import Link from "next/link";
@@ -87,23 +86,7 @@ const nameRegex = /^[A-Za-z' -]*$/; // letters, spaces, apostrophes, hyphens
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/; // practical RFC 5322–ish
 
 // normalize to one optional leading + and digits only after
-const sanitizePhone = (raw: string) => {
-  const trimmed = raw.replace(/\s+/g, "");
-  // remove all non + or digits
-  let cleaned = trimmed.replace(/[^+\d]/g, "");
-  // ensure at most a single leading +
-  cleaned = cleaned.replace(/\+/g, (m, offset) => (offset === 0 ? "+" : ""));
-  // strip any '+' that is not at the start
-  if (cleaned.length > 0 && cleaned[0] !== "+") {
-    cleaned = cleaned.replace(/\+/g, "");
-  }
-  // also prevent things like "+123+45"
-  const plusIndex = cleaned.indexOf("+");
-  if (plusIndex > 0) {
-    cleaned = cleaned.replace(/\+/g, "");
-  }
-  return cleaned;
-};
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -115,7 +98,6 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
-    phoneNum: "",
     address: "",
     role: "candidate",
   });
@@ -192,10 +174,6 @@ export default function RegisterPage() {
             setFormData((prev) => ({
               ...prev,
               address: initial.name,
-              phoneNum:
-                prev.phoneNum && prev.phoneNum.startsWith(initial.dial_code)
-                  ? prev.phoneNum
-                  : initial.dial_code,
             }));
           }
         }
@@ -237,25 +215,7 @@ export default function RegisterPage() {
       validatePassword(value);
     }
 
-    // Phone special handling: keep leading dial code behavior and enforce numeric characters
-    if (field === "phoneNum") {
-      let next = sanitizePhone(value);
-
-      const selectedCountryData = countries.find(
-        (country) => country.name === formData.address
-      );
-      const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
-
-      if (dialCode) {
-        if (!next.startsWith(dialCode)) {
-          const withoutDial = next.replace(/^\+\d+/, "");
-          next = dialCode + withoutDial;
-        }
-      }
-
-      setFormData((prev) => ({ ...prev, phoneNum: next }));
-      return;
-    }
+  
 
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -265,12 +225,9 @@ export default function RegisterPage() {
     const selectedCountryData = countries.find((c) => c.name === value);
     const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
     setFormData((prev) => {
-      const stripped = sanitizePhone(prev.phoneNum).replace(/^\+\d+/, "");
-      const nextPhone = dialCode + stripped;
       return {
         ...prev,
-        address: value,
-        phoneNum: nextPhone,
+        address: value
       };
     });
   };
@@ -310,14 +267,7 @@ export default function RegisterPage() {
     e.preventDefault();
   };
 
-  const onPhonePaste: React.ClipboardEventHandler<HTMLInputElement> = (e) => {
-    const text = e.clipboardData.getData("text");
-    const sanitized = sanitizePhone(text);
-    if (sanitized.length === 0) {
-      e.preventDefault();
-      return;
-    }
-  };
+  
 
   /* =========================
      DOB / Age helpers (unchanged logic)
@@ -396,13 +346,6 @@ export default function RegisterPage() {
       return false;
     }
 
-    const sanitizedPhone = sanitizePhone(formData.phoneNum);
-    if (!/^\+\d{4,15}$/.test(sanitizedPhone)) {
-      toast.error(
-        "Please enter a valid phone number (e.g., +123456789) with a maximum of 15 digits."
-      );
-      return false;
-    }
 
     if (needsDob) {
       if (!dob) {
@@ -580,31 +523,7 @@ export default function RegisterPage() {
               </Select>
             </div>
 
-            {/* Phone */}
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  placeholder="Enter Phone Number"
-                  value={formData.phoneNum}
-                  inputMode="tel"
-                  autoComplete="tel"
-                  onKeyDown={preventInvalidPhoneKey}
-                  onPaste={onPhonePaste}
-                  onChange={(e) =>
-                    handleInputChange("phoneNum", e.target.value)
-                  }
-                  className="pl-10"
-                  required
-                  maxLength={15}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Only digits allowed. Keep the leading “+” and country code.
-              </p>
-            </div>
+        
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">

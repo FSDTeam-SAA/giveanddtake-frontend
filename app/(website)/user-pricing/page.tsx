@@ -263,7 +263,7 @@ export default function PricingList() {
       <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Price List</h1>
-          <p className="text-xl text-gray-600">For Elevator Pitch</p>
+          <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
         </div>
 
         {/* Current Plan Banner */}
@@ -333,7 +333,7 @@ export default function PricingList() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Price List</h1>
-        <p className="text-xl text-gray-600">For Elevator Pitch</p>
+        <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
       </div>
 
       {currentPlanMeta.titleNorm && (

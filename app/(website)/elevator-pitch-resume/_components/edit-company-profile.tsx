@@ -66,7 +66,6 @@ const formSchema = z.object({
   city: z.string().min(1, "City is required"),
   zipcode: z.string().min(1, "Zip code is required"),
   cemail: z.string().email("Invalid email address"),
-  cPhoneNumber: z.string().min(1, "Phone number is required"),
   aboutUs: z.string().min(1, "About us is required"),
   sLink: z
     .array(
@@ -160,7 +159,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       city: "",
       zipcode: "",
       cemail: "",
-      cPhoneNumber: "",
       aboutUs: "",
       sLink: FIXED_PLATFORMS.map((label) => ({
         label,
@@ -270,7 +268,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         city: company.city || "",
         zipcode: company.zipcode || "",
         cemail: company.cemail || "",
-        cPhoneNumber: company.cPhoneNumber || "",
         aboutUs: company.aboutUs || "",
         sLink: processedSocialLinks,
       });
@@ -782,25 +779,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="cPhoneNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          Phone number*
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            disabled
-                            {...field}
-                            placeholder="+1 (555) 234567 2340"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                 
                 </div>
               </div>
 

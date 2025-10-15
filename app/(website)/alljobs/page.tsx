@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/breadcrumb";
 
 export const metadata: Metadata = {
-  title: "Jobs | Elevator Pitch",
+  title: "Jobs | Elevator Video Pitch©",
   description:
     "Browse curated job openings across industries and locations. Use smart filters to find roles that match your skills, experience, and career goals.",
 };

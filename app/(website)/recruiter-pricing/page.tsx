@@ -331,7 +331,7 @@ export default function PricingPlans() {
         <h1 className="mb-2 text-4xl font-bold text-gray-800">
           Recruiter Price List
         </h1>
-        <p className="text-xl text-gray-600">For Elevator Pitch</p>
+        <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
       </div>
 
       {plan && (
