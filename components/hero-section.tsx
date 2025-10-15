@@ -13,22 +13,14 @@ export function HeroSection() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialJobTitle = searchParams.get("title") || "";
-  const initialLocation = searchParams.get("location") || "";
   const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle);
-  const [locationInput, setLocationInput] = useState(initialLocation);
 
-  useEffect(() => {
-    setJobTitleInput(searchParams.get("title") || "");
-    setLocationInput(searchParams.get("location") || "");
-  }, [searchParams]);
+
 
   const handleSearch = () => {
     const currentParams = new URLSearchParams();
     if (jobTitleInput) {
       currentParams.set("title", jobTitleInput);
-    }
-    if (locationInput) {
-      currentParams.set("location", locationInput);
     }
     currentParams.set("page", "1");
     router.push(`/alljobs?${currentParams.toString()}`);
@@ -362,7 +354,7 @@ export function HeroSection() {
                 <motion.div
                   whileHover={{ scale: 1.02 }}
                   transition={{ duration: 0.2 }}
-                  className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300"
+                  className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-300"
                 >
                   {/* Job Title Input */}
                   <div className="space-y-1 text-start">
@@ -370,13 +362,13 @@ export function HeroSection() {
                       htmlFor="job-title"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Job Title
+                      Search for
                     </Label>
                     <div className="relative">
                       <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
                         id="job-title"
-                        placeholder="Input Job type"
+                        placeholder="Title, Skill, Category, Location, Location Type"
                         className="w-full pl-8 border-none h-[28px] px-0 !focus:outline-none !focus:ring-0 outline-none"
                         value={jobTitleInput}
                         onChange={(e) => setJobTitleInput(e.target.value)}
@@ -384,25 +376,7 @@ export function HeroSection() {
                     </div>
                   </div>
 
-                  {/* Location Input */}
-                  <div className="space-y-1 sm:border-l sm:pl-4 border-gray-200 text-start">
-                    <Label
-                      htmlFor="location"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Location
-                    </Label>
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        id="location"
-                        placeholder="Search Location"
-                        className="w-full pl-8 border-none h-[28px] px-0 !focus:outline-none !focus:ring-0 outline-none"
-                        value={locationInput}
-                        onChange={(e) => setLocationInput(e.target.value)}
-                      />
-                    </div>
-                  </div>
+                 
                 </motion.div>
 
                 {/* Search Button */}
