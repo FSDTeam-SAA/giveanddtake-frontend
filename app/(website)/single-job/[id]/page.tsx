@@ -329,7 +329,7 @@ export default function JobPreview() {
               Back
             </Button>
           </Link>
-          <h1 className="text-3xl font-bold text-gray-900 mx-auto">
+          <h1 className="text-xl md:text-3xl font-bold text-gray-900 mx-auto">
             Preview Job Posting
           </h1>
           {role !== "company" && (
@@ -341,7 +341,7 @@ export default function JobPreview() {
 
         {/* Job Details Section */}
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">
             Job Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
