@@ -413,7 +413,7 @@ export default function PricingPlans() {
                   <CardTitle
                     className={`font-medium ${
                       plan.isPayAsYouGo
-                        ? "text-gray-800"
+                        ? "text-base text-[#2B7FD0]"
                         : "text-base text-[#2B7FD0]"
                     }`}
                   >
@@ -423,7 +423,7 @@ export default function PricingPlans() {
                   {/* Price row with responsive delimiter and clean spacing */}
                   <div className="mt-2">
                     {plan.description ? (
-                      <p className="text-gray-500 text-sm">
+                      <p className="font-bold text-[#282828]">
                         {plan.description}
                       </p>
                     ) : (

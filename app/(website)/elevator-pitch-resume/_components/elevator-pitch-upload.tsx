@@ -69,20 +69,6 @@ export function ElevatorPitchUpload({
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <Video className="h-5 w-5 text-blue-600" />
-          <div>
-            <CardTitle className="text-lg font-medium">
-              Upload Your Elevator Pitch
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Share a video introduction to make your resume stand out
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div>
         {videoUrl ? (
           <div className="space-y-4">

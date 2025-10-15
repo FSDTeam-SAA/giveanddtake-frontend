@@ -846,7 +846,7 @@ export default function RecruiterDashboard() {
                     Status
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
-                    Publish Date
+                    Posting Date
                   </TableHead>
                   <TableHead className="text-base text-[#2B7FD0] font-bold">
                     Applicants list
