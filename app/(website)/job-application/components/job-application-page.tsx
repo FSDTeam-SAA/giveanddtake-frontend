@@ -281,7 +281,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       return;
     }
     if (!agreedToShareCV) {
-      toast.error("Please agree to share your CV.");
+      toast.error("Please agree to share your EVP.");
       return;
     }
 
@@ -377,7 +377,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
             </div>
           </div>
           <div className="col-span-8 lg:col-span-6">
-            <h2 className="text-[40px] font-semibold mb-4 border-b pb-4">
+            <h2 className="text-[20px] lg:text-[30px] font-semibold mb-4 border-b pb-4">
               Contact Info
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -426,7 +426,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
         {(jobData?.data.customQuestion?.length ?? 0) > 0 && (
           <div className="my-12">
-            <h2 className="text-[40px] font-semibold mb-4 border-b pb-4">
+            <h2 className="text-[20px] lg:text-[30px] font-semibold mb-4 border-b pb-4">
               Custom Questions
             </h2>
             <div className="space-y-6">
@@ -457,7 +457,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
         {/* Conditionally render resume section based on requirement */}
         {(isResumeRequired || isResumeOptional) && (
           <div className="my-12">
-            <h2 className="text-[40px] font-semibold mb-4 border-b pb-4">
+            <h2 className="text-[20px] lg:text-[30px] font-semibold mb-4 border-b pb-4">
               Resume {isResumeRequired ? "(Required)" : "(Optional)"}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-8">

@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image"; // Added for Image component
 import { X } from "lucide-react"; // Added for X icon
+import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 
 interface Country {
   country: string;
@@ -78,7 +79,11 @@ const formSchema = z.object({
   aboutUs: z
     .string()
     .min(1, "About us is required")
-    .max(1000, "About us is too long"),
+    .refine(
+      (value) => value.trim().split(/\s+/).length <= 200,
+      "About us must not exceed 200 words"
+    ),
+
   industry: z
     .string()
     .min(1, "Industry is required")
@@ -510,13 +515,13 @@ export default function CreateCompanyPage() {
   });
 
   const industryOptions = useMemo(
-  () =>
-    industriesData?.map((category: { name: string }) => ({
-      value: category.name,
-      label: category.name,
-    })) || [],
-  [industriesData]
-);
+    () =>
+      industriesData?.map((category: { name: string }) => ({
+        value: category.name,
+        label: category.name,
+      })) || [],
+    [industriesData]
+  );
 
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: async ({
@@ -768,16 +773,16 @@ export default function CreateCompanyPage() {
                 name="aboutUs"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      About Us*
-                    </FormLabel>
                     <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Write your description here (400 words)"
-                        className="min-h-[140px] resize-none"
+                      <TextEditor
+                        value={field.value}
+                        onChange={field.onChange}
                       />
                     </FormControl>
+                    <p className="text-sm text-muted-foreground">
+                      Word count: {field.value.trim().split(/\s+/).length}
+                      /200
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -921,7 +926,7 @@ export default function CreateCompanyPage() {
           <SocialLinksSection form={form} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           <FormField
+            <FormField
               control={form.control}
               name="industry"
               render={({ field }) => (
@@ -935,7 +940,9 @@ export default function CreateCompanyPage() {
                       value={field.value || ""}
                       onChange={field.onChange}
                       placeholder={
-                        isLoadingIndustries ? "Loading industries..." : "Select Industry"
+                        isLoadingIndustries
+                          ? "Loading industries..."
+                          : "Select Industry"
                       }
                       disabled={isLoadingIndustries}
                     />
