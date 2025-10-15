@@ -307,7 +307,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle>Elevator Video Pitch©</CardTitle>
+                    <CardTitle>Upload or view a short video introducing yourself.</CardTitle>
                     {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
                       <Button
                         variant="destructive"
@@ -321,9 +321,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       </Button>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Upload or view a short video introducing yourself.
-                  </p>
+                
                 </CardHeader>
                 <CardContent>
                   {isElevatorPitchUploaded && resume.elevatorPitch[0] ? (

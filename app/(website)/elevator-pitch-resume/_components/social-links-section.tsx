@@ -53,9 +53,8 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
     <Card className="mt-6">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <LinkIcon className="h-5 w-5 text-blue-600" />
           <div>
-            <CardTitle className="text-lg font-medium">Social Links</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-900">Social Links</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
               Add URLs for your social and professional profiles (optional)
             </p>
