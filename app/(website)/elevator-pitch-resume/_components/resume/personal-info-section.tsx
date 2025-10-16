@@ -312,7 +312,7 @@ export function PersonalInfoSection({
               name="lastName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sur Name*</FormLabel>
+                  <FormLabel>Surname*</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter Your Last Name" {...field} />
                   </FormControl>

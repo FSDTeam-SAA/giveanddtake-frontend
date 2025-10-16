@@ -329,7 +329,7 @@ export function SiteHeader() {
               href={getProfileLink()}
               className="flex items-center w-full px-2 py-1.5"
             >
-              <User className="mr-2 h-4 w-4" /> Profile
+              <User className="mr-2 h-4 w-4" /> Account
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>

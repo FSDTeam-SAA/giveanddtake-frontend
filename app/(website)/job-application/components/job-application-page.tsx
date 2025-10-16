@@ -447,7 +447,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                         }
                       />
                       <Label htmlFor={`resume-${resume.id}`}>
-                        {resume.name} – Last used: {resume.lastUsed}
+                        {resume.name} 
                       </Label>
                     </div>
                   ))}
@@ -465,7 +465,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                 htmlFor="agree-cv"
                 className="text-sm sm:text-base text-gray-700"
               >
-                I agree to my video pitch shared with the recruiter
+                I agree with my video pitch being shared with the recruiter
               </Label>
             </div>
 
