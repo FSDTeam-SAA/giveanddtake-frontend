@@ -24,7 +24,7 @@ export function DynamicTitle() {
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
 
-    document.title = `${routeName} | Elevator Pitch`;
+    document.title = `${routeName} | Elevator Video Pitch`;
   }, [pathname]);
 
   return null; // no UI

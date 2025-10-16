@@ -294,7 +294,7 @@ export default function PricingPage() {
         {/* Current Plan Banner */}
         {currentPlanMeta.titleNorm && (
           <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-            You're currently on <strong>{currentPlanMeta.titleNorm}</strong> plan
+            You're currently on our <strong>{currentPlanMeta.titleNorm}</strong> plan
             {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
           </div>
         )}

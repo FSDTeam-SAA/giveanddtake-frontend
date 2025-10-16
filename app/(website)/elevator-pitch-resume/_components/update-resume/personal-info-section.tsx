@@ -79,7 +79,7 @@ export const PersonalInfoSection = ({
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sur Name*</FormLabel>
+                <FormLabel>Surname*</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} />
                 </FormControl>
