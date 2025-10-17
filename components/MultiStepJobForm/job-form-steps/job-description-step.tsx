@@ -89,15 +89,9 @@ export default function JobDescriptionStep({
                 <h3 className="text-base font-semibold text-[#9EC7DC]">TIP</h3>
               </div>
               <p className="text-base text-[#000000] mb-4">
-                To ensure that your job description matches the requirements for
-                job boards, consider the following guidelines:
+                To help candidates understand on the job expectations, please only cite the actual skills, experience, qualifications and/or certifications required for this role. 
               </p>
-              <ul className="list-disc list-inside text-base text-[#000000] space-y-2">
-                <li>Do not use discriminatory language</li>
-                <li>
-                  Help the candidate understand the expectations for this role
-                </li>
-              </ul>
+              
             </CardContent>
           </Card>
           <Card className="border-none shadow-none">

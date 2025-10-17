@@ -94,8 +94,7 @@ async function postJob(data: any, retries = 2): Promise<any> {
         .json()
         .catch(() => ({ message: "Unknown error" }));
       throw new Error(
-        `Failed to publish job: ${response.status} - ${
-          errorData.message || "Unknown error"
+        `Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"
         }`
       );
     }
@@ -281,7 +280,7 @@ export default function MultiStepJobForm() {
           const firstError = Object.values(errors)[0];
           toast.error(
             firstError?.message ||
-              `Please complete step ${step} before proceeding.`
+            `Please complete step ${step} before proceeding.`
           );
           canNavigate = false;
           break;
@@ -349,17 +348,19 @@ export default function MultiStepJobForm() {
         .map((line) => DOMPurify.sanitize(line.substring(2)))
         .filter((line) => line);
 
-      const getExpirationDate = () => {
-        const days = Number.parseInt(data.expirationDate) || 30;
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + days);
-        return expDate.toISOString();
-      };
-
       const getPublishDate = () => {
         if (publishNow) return new Date().toISOString();
         return selectedDate?.toISOString() || new Date().toISOString();
       };
+
+      const getExpirationDate = (publishDate: string) => {
+        const days = Number.parseInt(data.expirationDate) || 30;
+        const expDate = new Date(publishDate);
+        expDate.setDate(expDate.getDate() + days);
+        return expDate.toISOString();
+      };
+
+      const publishDate = getPublishDate();
 
       const selectedCategory = jobCategories.data.category.find(
         (cat) => cat._id === data.categoryId
@@ -377,14 +378,13 @@ export default function MultiStepJobForm() {
         benefits: [],
         vacancy: data.vacancy,
         experience: data.experience || "Not Specified",
-        deadline: getExpirationDate(),
+        deadline: getExpirationDate(publishDate), // ← uses publish date
         status: "active" as const,
         jobCategoryId: data.categoryId,
         name: selectedCategory?.name || "",
         role: DOMPurify.sanitize(data.role),
         compensation: data.compensation ? "Monthly" : "Negotiable",
         archivedJob: false,
-        // Map to backend shape and only include items with a non-empty status
         applicationRequirement:
           data.applicationRequirements
             ?.filter((req) => req.status && req.status.trim() !== "")
@@ -397,12 +397,12 @@ export default function MultiStepJobForm() {
             ?.filter((q) => q.question)
             .map((q) => ({ question: DOMPurify.sanitize(q.question!) })) || [],
         employement_Type: data.employement_Type,
-        websiteUrl: data.companyUrl
+        website_Url: data.companyUrl
           ? DOMPurify.sanitize(data.companyUrl)
           : undefined,
-        publishDate: getPublishDate(),
-        careerStage: data.careerStage,
-        locationType: data.locationType,
+        publishDate, // ← stored once here
+        career_Stage: data.careerStage,
+        location_Type: data.locationType,
       };
 
       await postJob(postData);
@@ -421,6 +421,7 @@ export default function MultiStepJobForm() {
       setIsPending(false);
     }
   };
+
 
   const steps = [
     { number: 1, title: "Job Details", active: currentStep >= 1 },

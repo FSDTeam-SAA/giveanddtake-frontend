@@ -223,7 +223,7 @@ const fetchRecruiterAccount = async (
   // Normalize oddly-shaped arrays that come down as JSON strings
   if (Array.isArray(data.data.companyId?.links) && data.data.companyId?.links.length === 1) {
     try {
-      
+
       data.data.companyId.links = JSON.parse(data.data.companyId.links[0]);
     } catch (e) {
       console.warn("Failed to parse company links", e);
@@ -232,7 +232,7 @@ const fetchRecruiterAccount = async (
   }
   if (Array.isArray(data.data.companyId?.service) && data.data.companyId?.service.length === 1) {
     try {
-      
+
       data.data.companyId.service = JSON.parse(data.data.companyId.service[0]);
     } catch (e) {
       console.warn("Failed to parse company services", e);
@@ -345,6 +345,7 @@ export default function RecruiterDashboard() {
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isApplicantWarningModalOpen, setIsApplicantWarningModalOpen] = useState(false);
   const itemsPerPage = 4;
 
   // -------- Queries
@@ -453,10 +454,15 @@ export default function RecruiterDashboard() {
   const handleNextTable = () => setCurrentPageTable((p) => Math.min(totalPagesTable, p + 1));
 
   const handleDeleteClick = (jobId: string) => {
-    setDeleteJobId(jobId);
-    setIsDeleteModalOpen(true);
+    const job = jobs.find((j) => j._id === jobId);
+    if (job && job.applicantCount > 0) {
+      setDeleteJobId(jobId);
+      setIsApplicantWarningModalOpen(true); // New state for applicant warning modal
+    } else {
+      setDeleteJobId(jobId);
+      setIsDeleteModalOpen(true);
+    }
   };
-
   const handleConfirmDelete = () => deleteJobId && deleteMutation.mutate(deleteJobId);
 
   const handleConnectWithCompany = () => {
@@ -684,9 +690,8 @@ export default function RecruiterDashboard() {
                           onClick={() => handleDeleteClick(job._id)}
                           disabled={deleteMutation.isPending && deleteJobId === job._id}
                           aria-label={`Delete job ${job.title}`}
-                          className={`text-red-600 hover:text-red-700 ${
-                            deleteMutation.isPending && deleteJobId === job._id ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
+                          className={`text-red-600 hover:text-red-700 ${deleteMutation.isPending && deleteJobId === job._id ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
                         >
                           <Trash2 className="h-5 w-5" />
                         </button>
@@ -744,9 +749,8 @@ export default function RecruiterDashboard() {
                         <button
                           onClick={() => handleDeleteClick(job._id)}
                           disabled={deleteMutation.isPending && deleteJobId === job._id}
-                          className={`text-red-600 hover:text-red-700 transition-colors ${
-                            deleteMutation.isPending && deleteJobId === job._id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
-                          }`}
+                          className={`text-red-600 hover:text-red-700 transition-colors ${deleteMutation.isPending && deleteJobId === job._id ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                            }`}
                           aria-label={`Delete job ${job.title}`}
                         >
                           <Trash2 className="h-6 w-6" />
@@ -831,9 +835,8 @@ export default function RecruiterDashboard() {
                     <button
                       key={company.id}
                       type="button"
-                      className={`w-full text-left p-3 md:p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${
-                        selectedCompanyId === company.id ? "bg-gray-100 border-gray-300" : ""
-                      }`}
+                      className={`w-full text-left p-3 md:p-4 border rounded-lg cursor-pointer transition-colors hover:bg-gray-50 ${selectedCompanyId === company.id ? "bg-gray-100 border-gray-300" : ""
+                        }`}
                       onClick={() => handleSelectCompany(company.id)}
                     >
                       <div className="flex items-center gap-3 md:gap-4">
@@ -885,6 +888,47 @@ export default function RecruiterDashboard() {
         </Dialog>
 
         {/* Delete Confirmation Modal */}
+        {/* Applicant Warning Modal */}
+        <Dialog open={isApplicantWarningModalOpen} onOpenChange={setIsApplicantWarningModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Applicants Before Deletion</DialogTitle>
+              <DialogDescription>
+                Kindly remember to update each applicant on the final status of their application, using our intuitive one-click feedback tool in your job applicants panel.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsApplicantWarningModalOpen(false);
+                  setDeleteJobId(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                    </svg>
+                    Deleting...
+                  </span>
+                ) : (
+                  "Force Delete"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Modal */}
         <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
           <DialogContent>
             <DialogHeader>
@@ -903,7 +947,11 @@ export default function RecruiterDashboard() {
               >
                 Cancel
               </Button>
-              <Button variant="destructive" onClick={handleConfirmDelete} disabled={deleteMutation.isPending}>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmDelete}
+                disabled={deleteMutation.isPending}
+              >
                 {deleteMutation.isPending ? (
                   <span className="flex items-center gap-2">
                     <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">

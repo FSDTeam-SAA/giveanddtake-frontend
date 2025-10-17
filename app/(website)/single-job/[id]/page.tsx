@@ -64,8 +64,7 @@ async function updateJob(id: string, data: JobPostData) {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      `Failed to update job: ${response.status} - ${
-        errorData.message || "Unknown error"
+      `Failed to update job: ${response.status} - ${errorData.message || "Unknown error"
       }`
     );
   }
@@ -161,9 +160,7 @@ export default function JobPreview() {
         compensation: jobData.salaryRange
           ? `${jobData.salaryRange} ${jobData.compensation}`
           : "N/A",
-        expirationDate: jobData.deadline
-          ? new Date(jobData.deadline).toLocaleDateString()
-          : "N/A",
+        expirationDate: jobData.deadline || "",
         jobDescription: jobData.description || "N/A",
         publishDate: createdAt ? createdAt.toLocaleDateString() : "N/A",
         companyUrl: "N/A", // Assuming companyUrl is not in jobData, or needs to be derived
@@ -278,6 +275,8 @@ export default function JobPreview() {
       ? Number.parseInt(experienceMatch[0], 10)
       : 0;
 
+    const deadlineDate = new Date(formData.expirationDate);
+
     const postData: JobPostData = {
       userId,
       companyId: jobData.companyId,
@@ -292,9 +291,9 @@ export default function JobPreview() {
       benefits,
       vacancy: jobData.vacancy, // Keep existing vacancy
       experience,
-      deadline: formData.expirationDate
-        ? new Date(formData.expirationDate).toISOString()
-        : jobData.deadline, // Use existing deadline if not updated
+      deadline: !isNaN(deadlineDate.getTime())
+        ? deadlineDate.toISOString()
+        : jobData.deadline,
       publishDate: publishNow
         ? new Date().toISOString()
         : selectedDate?.toISOString() || jobData.createdAt, // Use selectedDate or existing createdAt
@@ -333,7 +332,7 @@ export default function JobPreview() {
             Preview Job Posting
           </h1>
           {role !== "company" && (
-            <Button variant="ghost" size="icon" onClick={onBackToEdit}>
+            <Button variant="ghost" size="icon" onClick={onBackToEdit} className="hidden">
               <Edit className="h-6 w-6 text-gray-500" />
             </Button>
           )}
@@ -709,11 +708,10 @@ export default function JobPreview() {
                 <div className="flex space-x-2">
                   <Button
                     variant={!requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      !requirement.required
+                    className={`h-9 px-4 rounded-lg text-sm font-medium ${!requirement.required
                         ? "bg-[#2B7FD0] text-white"
                         : "border-[#2B7FD0] text-[#2B7FD0]"
-                    }`}
+                      }`}
                     onClick={() => handleToggleRequired(requirement.id, false)}
                     disabled={!isEditing}
                   >
@@ -721,11 +719,10 @@ export default function JobPreview() {
                   </Button>
                   <Button
                     variant={requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      requirement.required
+                    className={`h-9 px-4 rounded-lg text-sm font-medium ${requirement.required
                         ? "bg-[#2B7FD0] text-white"
                         : "border-[#2B7FD0] text-[#2B7FD0]"
-                    }`}
+                      }`}
                     onClick={() => handleToggleRequired(requirement.id, true)}
                     disabled={!isEditing}
                   >
@@ -813,7 +810,7 @@ export default function JobPreview() {
                 <>
                   <Button
                     variant="outline"
-                    className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent"
+                    className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent hidden"
                     onClick={onBackToEdit}
                   >
                     Edit
