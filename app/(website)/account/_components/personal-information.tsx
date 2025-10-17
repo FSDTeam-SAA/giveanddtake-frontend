@@ -16,6 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { ChangeEmailModal } from "./ChangeEmailModal";
 
 /* ----------------------------- API helpers ----------------------------- */
 
@@ -119,6 +120,7 @@ export function PersonalInformation() {
   const [isDisableModalOpen, setIsDisableModalOpen] = useState(false);
   const [disablePassword, setDisablePassword] = useState("");
   const [showDisablePassword, setShowDisablePassword] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   const { data: session } = useSession();
   const token = session?.accessToken || "";
@@ -393,23 +395,32 @@ export function PersonalInformation() {
           />
         </div>
 
-        {/* Email Address */}
-        <div>
-          <Label
-            htmlFor="email"
-            className="text-sm font-medium text-gray-700 mb-2 block"
-          >
-            Email Address
-          </Label>
-          <Input
-            id="email"
-            type="email"
-            value={formData.email}
-            disabled
-            className="bg-gray-50 border-gray-200"
-            maxLength={254}
-          />
-        </div>
+        <div className="relative">
+  <Label
+    htmlFor="email"
+    className="text-sm font-medium text-gray-700 mb-2 block"
+  >
+    Email Address
+  </Label>
+  <Input
+    id="email"
+    type="email"
+    value={formData.email}
+    disabled
+    className="bg-gray-50 border-gray-200 pr-24"
+    maxLength={254}
+  />
+
+  {/* Inline Change Button */}
+  <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => setIsEmailModalOpen(true)}
+    className="absolute right-1.5 top-[30px] text-sm text-blue-600 hover:text-blue-800 hover:bg-transparent"
+  >
+    Change
+  </Button>
+</div>
 
        
 
@@ -660,6 +671,12 @@ export function PersonalInformation() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ChangeEmailModal
+  open={isEmailModalOpen}
+  onOpenChange={setIsEmailModalOpen}
+  currentEmail={formData.email}
+/>
+
     </div>
   );
 }

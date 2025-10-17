@@ -118,7 +118,7 @@ export function SecurityQuestions({
 
       if (response.ok && data.success) {
         toast.success(
-          data.message || "Security answers verified successfully!"
+           "Security answers verified successfully!"
         );
 
         // Extract reset token from response
@@ -174,8 +174,7 @@ export function SecurityQuestions({
           Verify Your Security Questions
         </CardTitle>
         <CardDescription>
-          Please answer your security questions to verify your identity and
-          reset your password.
+          Please answer your security questions to verify your identity.
         </CardDescription>
       </div>
       <div>
