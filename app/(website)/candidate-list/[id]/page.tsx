@@ -50,13 +50,13 @@ interface Application {
   resumeId?: resumeId;
   userId: User;
   status:
-    | "pending"
-    | "shortlisted"
-    | "rejected"
-    | "interviewed"
-    | "selected"
-    | "application received"
-    | "unsuccessful";
+  | "pending"
+  | "shortlisted"
+  | "rejected"
+  | "interviewed"
+  | "selected"
+  | "application received"
+  | "unsuccessful";
   createdAt: string;
   updatedAt: string;
   experience?: string;
@@ -305,11 +305,10 @@ export default function JobApplicantsPage() {
                 return (
                   <TableRow
                     key={application._id}
-                    className={`text-sm sm:text-base ${
-                      application._id === selectedApplicationId
-                        ? "bg-blue-50 border-l-4 border-l-blue-500"
-                        : ""
-                    }`}
+                    className={`text-sm sm:text-base ${application._id === selectedApplicationId
+                      ? "bg-blue-50 border-l-4 border-l-blue-500"
+                      : ""
+                      }`}
                     onClick={() => setSelectedApplicationId(application._id)}
                   >
                     <TableCell>
@@ -326,9 +325,8 @@ export default function JobApplicantsPage() {
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link
-                        href={`/applicant-details/${application.userId._id}?resumeId=${
-                          application.resumeId?._id || ""
-                        }&applicationId=${application._id}`}
+                        href={`/applicant-details/${application.userId._id}?resumeId=${application.resumeId?._id || ""
+                          }&applicationId=${application._id}`}
                         className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >
                         Details
@@ -376,22 +374,22 @@ export default function JobApplicantsPage() {
                         {STATUS_OPTIONS.map((opt) => {
                           const active = normalized === opt.value;
                           const isDisabled =
-                            opt.value === "pending" && normalized === "pending";
+                            opt.value === "pending";
                           return (
                             <Button
                               key={opt.value}
                               variant={active ? "default" : "outline"}
-                              className={`h-9 px-3 border rounded-lg ${
-                                active ? opt.active : opt.color
-                              } ${
-                                isUpdating
+                              className={`h-9 px-3 border rounded-lg ${active ? opt.active : opt.color
+                                } ${isUpdating
                                   ? "opacity-60 cursor-not-allowed"
-                                  : ""
-                              }`}
+                                  : isDisabled
+                                    ? "opacity-50 cursor-not-allowed"
+                                    : ""
+                                }`}
                               disabled={isUpdating || isDisabled}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (!active) {
+                                if (!active && !isDisabled) {
                                   setConfirmDialog({
                                     open: true,
                                     applicationId: application._id,
@@ -402,6 +400,7 @@ export default function JobApplicantsPage() {
                             >
                               {opt.label}
                             </Button>
+
                           );
                         })}
                       </div>

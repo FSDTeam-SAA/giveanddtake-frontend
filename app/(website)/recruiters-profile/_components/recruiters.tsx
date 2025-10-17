@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useSession } from "next-auth/react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Globe, Linkedin, Twitter, LinkIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,7 @@ interface SingleUserResponse {
 }
 
 export default function Recruiters({ userId }: MydataProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
   const myId = session?.user?.id as string | undefined;
 
@@ -144,8 +144,14 @@ export default function Recruiters({ userId }: MydataProps) {
       );
       return json.data;
     },
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) ,
   });
+
+  useEffect(() => {
+  if (status === "authenticated" && myId === userId) {
+    queryClient.invalidateQueries({ queryKey: ["recruiter", userId] });
+  }
+}, [status, myId, userId, queryClient]);
 
   // Safe IDs
   const recruiterId = recruiterData?.userId; // the person being followed
