@@ -211,3 +211,4 @@ const CustomDateInput: React.FC<CustomDateInputProps> = ({
 };
 
 export default CustomDateInput;
+export { CustomDateInput };
