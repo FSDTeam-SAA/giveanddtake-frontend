@@ -571,7 +571,7 @@ export default function RegisterPage() {
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
-              <Label className="mr-5">Age Verification(Compliant minimum age 16)</Label>
+              <Label className="mr-5 text-nowrap">Age Verification(Compliant minimum age 16)</Label>
 
               <div className="relative">
 
