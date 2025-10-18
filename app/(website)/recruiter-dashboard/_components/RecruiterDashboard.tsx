@@ -1072,9 +1072,9 @@ export default function RecruiterDashboard() {
             <DialogHeader>
               <DialogTitle>Update applicants before deletion</DialogTitle>
               <DialogDescription>
-                Kindly remember to update each applicant about the final status
-                of their application using the one-click feedback tool in your
-                job applicants panel.
+                Kindly remember to update each applicant on the final status of
+                their application, using our intuitive one-click feedback tool
+                in your job applicants panel.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
