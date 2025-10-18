@@ -9,6 +9,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -215,7 +229,7 @@ export default function RegisterPage() {
       validatePassword(value);
     }
 
-  
+
 
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -267,7 +281,7 @@ export default function RegisterPage() {
     e.preventDefault();
   };
 
-  
+
 
   /* =========================
      DOB / Age helpers (unchanged logic)
@@ -294,8 +308,8 @@ export default function RegisterPage() {
     () =>
       dob
         ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), 1))
-            .toISOString()
-            .slice(0, 10)
+          .toISOString()
+          .slice(0, 10)
         : "",
     [dob]
   );
@@ -492,45 +506,60 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Country */}
+            {/* Country (with Combobox) */}
             <div className="space-y-2">
               <Label htmlFor="address">Country</Label>
-              <Select
-                onValueChange={handleCountryChange}
-                disabled={isLoadingCountries}
-                value={selectedCountry}
-              >
-                <SelectTrigger>
-                  <SelectValue
-                    placeholder={
-                      isLoadingCountries ? "Loading countries..." : "Country"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {isLoadingCountries ? (
-                    <SelectItem value="loading" disabled>
-                      Loading...
-                    </SelectItem>
-                  ) : (
-                    countries.map((country) => (
-                      <SelectItem key={country.code} value={country.name}>
-                        {country.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className={cn(
+                      "w-full justify-between",
+                      !selectedCountry && "text-muted-foreground"
+                    )}
+                  >
+                    {selectedCountry || "Select country"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search country..." />
+                    <CommandList>
+                      <CommandEmpty>No country found.</CommandEmpty>
+                      <CommandGroup>
+                        {countries.map((country) => (
+                          <CommandItem
+                            key={country.code}
+                            onSelect={() => handleCountryChange(country.name)}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                country.name === selectedCountry
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {country.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
-        
+
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
               <Label className="mr-5">Age Verification</Label>
 
               <div className="relative">
-                
+
                 <CustomDateInput
                   value={dobInput}
                   onChange={(val) => {
@@ -732,8 +761,8 @@ export default function RegisterPage() {
                     value === "recruiter"
                       ? "Sign up as a Recruiter"
                       : value === "company"
-                      ? "Sign up as a Company"
-                      : "Sign up as a Candidate";
+                        ? "Sign up as a Company"
+                        : "Sign up as a Candidate";
 
                   return (
                     <button
