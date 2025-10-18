@@ -776,7 +776,7 @@ export default function EditableRecruiterAccount({
                   </div>
 
                   <div
-                    className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start"
+                    className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start list-item list-none"
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(
                         companyId?.aboutUs ||

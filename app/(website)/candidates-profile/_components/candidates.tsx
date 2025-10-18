@@ -340,7 +340,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
             <div>
               <p
-                className="text-gray-600 leading-relaxed"
+                className="text-gray-600 leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
                   __html: resume.aboutUs || "No description provided",
                 }}

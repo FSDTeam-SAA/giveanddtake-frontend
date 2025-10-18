@@ -437,7 +437,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </CardHeader>
               <CardContent>
                 <div
-                  className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
+                  className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed list-item list-none"
                   dangerouslySetInnerHTML={{
                     __html: job.description
                       ? DOMPurify.sanitize(job.description)

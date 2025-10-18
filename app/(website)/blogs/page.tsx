@@ -136,7 +136,7 @@ export default function BlogListingPage() {
                       {blog.title}
                     </h3>
                     <div
-                      className="text-gray-600 dark:text-gray-300 prose"
+                      className="text-gray-600 dark:text-gray-300 prose list-item list-none"
                       dangerouslySetInnerHTML={{
                         __html: blog.description
                           ? `${blog.description

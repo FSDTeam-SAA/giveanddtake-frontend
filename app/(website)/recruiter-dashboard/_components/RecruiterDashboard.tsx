@@ -696,7 +696,7 @@ export default function RecruiterDashboard() {
                 </div>
                 {sanitizedContent ? (
                   <div
-                    className="text-gray-700 mt-2 prose max-w-none"
+                    className="text-gray-700 mt-2 prose max-w-none list-item list-none"
                     dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                   />
                 ) : (

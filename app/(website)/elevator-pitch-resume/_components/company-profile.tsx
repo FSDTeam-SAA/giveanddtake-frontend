@@ -646,7 +646,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       <div>
         <h2 className="text-xl font-semibold mb-4 text-gray-900">About Us</h2>
         <div
-          className="prose prose-sm text-gray-700 leading-relaxed"
+          className="prose prose-sm text-gray-700 leading-relaxed list-item list-none"
           dangerouslySetInnerHTML={{ __html: company.aboutUs }}
         />
       </div>

@@ -430,7 +430,7 @@ export default function CompanyProfilePage() {
 
               <div>
                 <p
-                  className="text-gray-600 leading-relaxed"
+                  className="text-gray-600 leading-relaxed list-item list-none"
                   dangerouslySetInnerHTML={{
                     __html: company.aboutUs || "No description provided",
                   }}
