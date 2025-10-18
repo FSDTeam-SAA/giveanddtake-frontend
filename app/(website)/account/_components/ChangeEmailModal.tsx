@@ -15,7 +15,8 @@ import { toast } from "sonner";
 
 import { SecurityQuestions } from "./security-questions";
 import { VerifyOTP } from "./VerifyOTP";
-import { authAPI } from "@/lib/auth-api"; // Make sure this file has sendEmailOTP & verifyOTP
+import axios from "axios";
+import { useSession } from "next-auth/react";
 
 interface ChangeEmailModalProps {
   open: boolean;
@@ -29,21 +30,19 @@ export function ChangeEmailModal({
   currentEmail,
 }: ChangeEmailModalProps) {
   const [step, setStep] = useState<"security" | "email" | "otp">("security");
-  const [resetToken, setResetToken] = useState<string | null>(null);
   const [newEmail, setNewEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // resend timer
-  const [resendTimer, setResendTimer] = useState(0);
   const [isResending, setIsResending] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const { data: session } = useSession();
+  const token = session?.accessToken;
 
   /* ---------------- Step 1: Security Questions ---------------- */
-  const handleSecurityComplete = (token: string) => {
-    setResetToken(token);
+  const handleSecurityComplete = () => {
     setStep("email");
   };
 
-  /* ---------------- Step 2: Send OTP ---------------- */
+  /* ---------------- Step 2: Submit new email ---------------- */
   const handleEmailSubmit = async () => {
     if (!newEmail) {
       toast.error("Please enter a new email address.");
@@ -52,13 +51,24 @@ export function ChangeEmailModal({
 
     setIsSubmitting(true);
     try {
-      await authAPI.sendEmailOTP({ email: newEmail });
-      toast.success("OTP sent to your new email!");
-      setStep("otp");
-      setResendTimer(60); // start countdown
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to send OTP. Please try again.");
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/change-email`,
+        { email: newEmail },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // or whatever your backend expects
+          },
+        }
+      );
+      if (res.data?.success) {
+        toast.success("Email change initiated. OTP sent to your new email.");
+        setStep("otp");
+        setResendTimer(60);
+      }
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message || "Failed to send OTP. Please try again.";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -69,30 +79,37 @@ export function ChangeEmailModal({
     if (!newEmail) return;
     setIsResending(true);
     try {
-      await authAPI.sendEmailOTP({ email: newEmail });
-      toast.success("OTP resent successfully!");
-      setResendTimer(60);
-    } catch (error) {
-      toast.error("Failed to resend OTP.");
+      const res = await axios.post("/api/change-email", { email: newEmail });
+      if (res.data?.success) {
+        toast.success("OTP resent successfully!");
+        setResendTimer(60);
+      }
+    } catch (error: any) {
+      const msg =
+        error?.response?.data?.message || "Failed to resend OTP.";
+      toast.error(msg);
     } finally {
       setIsResending(false);
     }
   };
 
-  // countdown effect
+  /* ---------------- Countdown Effect ---------------- */
   useEffect(() => {
     if (resendTimer <= 0) return;
     const timer = setInterval(() => setResendTimer((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [resendTimer]);
 
-  /* ---------------- Step 4: OTP Success ---------------- */
-  const handleOtpSuccess = () => {
-    toast.success("Email changed successfully!");
-    onOpenChange(false);
+  /* ---------------- Step 4: Verify OTP ---------------- */
+  const handleOtpVerify = () => {
+    return history;
+  };
+
+  /* ---------------- Helper: Reset modal ---------------- */
+  const resetState = () => {
     setStep("security");
     setNewEmail("");
-    setResetToken(null);
+    setResendTimer(0);
   };
 
   return (
@@ -121,7 +138,7 @@ export function ChangeEmailModal({
             <DialogHeader>
               <DialogTitle>Enter New Email</DialogTitle>
               <DialogDescription>
-                After verifying, we’ll send a one-time passcode (OTP) to confirm your new email address.
+                We’ll send a one-time passcode (OTP) to confirm your new email address.
               </DialogDescription>
             </DialogHeader>
 
@@ -193,29 +210,10 @@ export function ChangeEmailModal({
             <VerifyOTP
               email={newEmail}
               onBack={() => setStep("email")}
-              onSuccess={handleOtpSuccess}
+              onSuccess={handleOtpVerify}
             />
 
-            {/* Resend OTP Section */}
-            <div className="flex justify-center items-center mt-6">
-              {resendTimer > 0 ? (
-                <p className="text-sm text-gray-500">
-                  You can resend the OTP in{" "}
-                  <span className="font-medium text-gray-700">
-                    {resendTimer}s
-                  </span>
-                </p>
-              ) : (
-                <Button
-                  variant="link"
-                  onClick={handleResendOTP}
-                  disabled={isResending}
-                  className="text-blue-600 hover:text-blue-800"
-                >
-                  {isResending ? "Resending..." : "Resend OTP"}
-                </Button>
-              )}
-            </div>
+            
           </>
         )}
       </DialogContent>

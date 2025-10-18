@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,7 @@ export default function OtpStep({
   const [timeLeft, setTimeLeft] = useState(123);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Timer countdown
+  /* ---------------- Timer Countdown ---------------- */
   useEffect(() => {
     if (timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
@@ -35,41 +34,50 @@ export default function OtpStep({
     }
   }, [timeLeft]);
 
+  /* ---------------- OTP Input Change ---------------- */
   const handleInputChange = (index: number, value: string) => {
     if (value.length > 1) return;
 
     const newOtpValues = [...otpValues];
-    newOtpValues[index] = value;
+    newOtpValues[index] = value.replace(/\D/g, ""); // allow only digits
     setOtpValues(newOtpValues);
+    onOtpChange(newOtpValues.join(""));
 
-    const otpString = newOtpValues.join("");
-    onOtpChange(otpString);
-
-    // Move to next input
+    // Move focus to next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  /* ---------------- Paste Handler (Any Input) ---------------- */
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>, index: number) => {
     e.preventDefault();
-    const pasteData = e.clipboardData.getData("text/plain").replace(/\D/g, ""); // Remove non-digits
-    if (pasteData.length === 6) {
-      const newOtpValues = pasteData.split("").slice(0, 6);
-      setOtpValues(newOtpValues);
-      onOtpChange(newOtpValues.join(""));
+    const pastedData = e.clipboardData.getData("text/plain").replace(/\D/g, "");
+    if (!pastedData) return;
 
-      // Focus the last input after paste
-      inputRefs.current[5]?.focus();
+    const newOtpValues = [...otpValues];
+    for (let i = 0; i < 6 - index; i++) {
+      if (pastedData[i]) newOtpValues[index + i] = pastedData[i];
     }
+
+    // If pasted more than needed, still only use 6 total digits
+    const merged = newOtpValues.slice(0, 6);
+    setOtpValues(merged);
+    onOtpChange(merged.join(""));
+
+    // Focus last filled input
+    const nextIndex = Math.min(index + pastedData.length, 5);
+    inputRefs.current[nextIndex]?.focus();
   };
 
+  /* ---------------- Backspace Navigation ---------------- */
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === "Backspace" && !otpValues[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
+  /* ---------------- Submit Handler ---------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -77,7 +85,7 @@ export default function OtpStep({
 
     const otpString = otpValues.join("");
     if (otpString.length !== 6) {
-      setError("Please enter the complete 6-digit code");
+      setError("Please enter the complete 6-digit code.");
       setIsLoading(false);
       return;
     }
@@ -91,6 +99,7 @@ export default function OtpStep({
     }
   };
 
+  /* ---------------- Resend OTP ---------------- */
   const handleResendCode = async () => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -112,11 +121,9 @@ export default function OtpStep({
     <div className="space-y-6">
       <div className="text-center">
         <h1 className="text-2xl font-semibold text-gray-900">Verify OTP</h1>
-        {error && (
-          <p className="text-red-500 text-sm mt-2">Error please try again!</p>
-        )}
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         <p className="text-gray-600 mt-2">
-          We have sent a code to your registered email address
+          We’ve sent a code to your registered email address.
         </p>
       </div>
 
@@ -125,17 +132,15 @@ export default function OtpStep({
           {otpValues.map((value, index) => (
             <Input
               key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
+              ref={(el) => (inputRefs.current[index] = el)}
               type="text"
               inputMode="numeric"
               maxLength={1}
               value={value}
               onChange={(e) => handleInputChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={index === 0 ? handlePaste : undefined} // Only need to handle paste on first input
-              className="w-12 h-12 text-center text-lg font-semibold border-2"
+              onPaste={(e) => handlePaste(e, index)} // 👈 works on ANY input
+              className="w-12 h-12 text-center text-lg font-semibold border-2 focus:ring-2 focus:ring-blue-500"
               placeholder={value ? "•" : ""}
             />
           ))}
@@ -143,13 +148,15 @@ export default function OtpStep({
 
         <div className="flex justify-between items-center text-sm">
           <span className="text-gray-600">
-            Your code will expire in {Math.floor(timeLeft / 60)}:
+            Code expires in {Math.floor(timeLeft / 60)}:
             {(timeLeft % 60).toString().padStart(2, "0")}
           </span>
           <button
             type="button"
             onClick={handleResendCode}
-            className="text-blue-600 hover:text-blue-700 font-medium"
+            className={`font-medium ${
+              timeLeft > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:text-blue-700"
+            }`}
             disabled={timeLeft > 0}
           >
             Resend Code

@@ -32,6 +32,7 @@ interface SingleUserResponse {
   success: boolean;
   data: {
     id: string;
+    email?: string;
     securityQuestions: SecurityQuestion[];
   };
 }
@@ -48,7 +49,8 @@ export function SecurityQuestions({
 
   const session = useSession();
   const token = session.data?.accessToken;
-  const userEmail = session.data?.user?.email;
+  
+
 
   // Fetch user data including security questions
   const { data: singleUser } = useQuery<SingleUserResponse, Error>({
@@ -65,6 +67,7 @@ export function SecurityQuestions({
     enabled: !!token,
     retry: 1,
   });
+  const userEmail = singleUser?.data?.email;
 
   // Set questions from user data when available
   useEffect(() => {
@@ -169,13 +172,8 @@ export function SecurityQuestions({
 
   return (
     <div className="space-y-4">
-      <div className="text-center space-y-4">
-        <CardTitle className="text-2xl font-bold">
-          Verify Your Security Questions
-        </CardTitle>
-        <CardDescription>
-          Please answer your security questions to verify your identity.
-        </CardDescription>
+      <div className="text-center space-y-2">
+        
       </div>
       <div>
         <form onSubmit={handleSubmit} className="space-y-6">

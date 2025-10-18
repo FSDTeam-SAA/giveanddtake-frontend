@@ -349,7 +349,7 @@ export default function RegisterPage() {
 
     if (needsDob) {
       if (!dob) {
-        toast.error("Please select your Date of Birth (MM/YYYY).");
+        toast.error("Please select your Age (MM/YYYY).");
         return false;
       }
       if (isUnder16) {
@@ -357,7 +357,7 @@ export default function RegisterPage() {
         return false;
       }
       if (dob > today || dob < oldestAllowed) {
-        toast.error("Please select a valid Date of Birth.");
+        toast.error("Please select a valid Age.");
         return false;
       }
     }
@@ -527,10 +527,10 @@ export default function RegisterPage() {
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
-              <Label className="mr-5">Date of Birth</Label>
+              <Label className="mr-5">Age Verification</Label>
 
               <div className="relative">
-                <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                
                 <CustomDateInput
                   value={dobInput}
                   onChange={(val) => {
@@ -560,7 +560,7 @@ export default function RegisterPage() {
                     setDob(normalized);
                   }}
                   placeholder="MMYYYY"
-                  className="pl-10 h-11"
+                  className="pl-10 h-11 w-full"
                 />
               </div>
 
