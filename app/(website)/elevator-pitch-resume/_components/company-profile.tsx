@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -127,6 +126,13 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer
   const queryClient = useQueryClient();
+  const [isDeleteEmployeeModalOpen, setIsDeleteEmployeeModalOpen] =
+    useState(false);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(
+    null
+  );
+
+  const token = (session as any)?.accessToken as string | undefined;
 
   const {
     data: companyData,
@@ -142,6 +148,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
   const company = companyData?.companies?.[0];
   const companyId = company?._id;
+
 
   const {
     data: jobs = [],
@@ -175,7 +182,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     isError: isEmployeesError,
     error: employeesError,
   } = useQuery<EmployeeApiResponse, Error>({
-    queryKey: ["employees", companyId, currentPage],
+    queryKey: ["employees", company?.userId, currentPage],
     queryFn: async () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/company/company-employess/skills/${company.userId}?page=${currentPage}`
@@ -196,89 +203,45 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    enabled: !!companyId,
+    enabled: !!company?.userId,
   });
 
   const deleteMutation = useMutation<DeleteResponse, Error, string>({
     mutationFn: async (employeeId: string) => {
-      const companyRes = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`
-      );
-      if (!companyRes.ok) {
-        throw new Error("Failed to fetch company data");
-      }
-      const companyData = await companyRes.json();
-      const currentEmployeesId = companyData.data.companies[0].employeesId;
-
-      const updatedEmployeesId = currentEmployeesId.filter(
-        (id: string) => id !== employeeId
-      );
-
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/${companyId}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/remove-employee-to-company`,
         {
-          method: "PUT",
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            employeesId: updatedEmployeesId,
+            employeeId,
+            companyId: userId
           }),
         }
       );
 
       if (!res.ok) {
-        throw new Error("Failed to delete employee");
+        throw new Error("Failed to remove employee");
       }
 
       const response = (await res.json()) as DeleteResponse;
       if (!response.success) {
         throw new Error(response.message || "Failed to delete employee");
       }
+
       return response;
     },
-    onMutate: async (employeeId: string) => {
-      await queryClient.cancelQueries({
-        queryKey: ["employees", companyId, currentPage],
-      });
-
-      const previousData = queryClient.getQueryData([
-        "employees",
-        companyId,
-        currentPage,
-      ]);
-
-      queryClient.setQueryData(
-        ["employees", companyId, currentPage],
-        (old: EmployeeApiResponse | undefined) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: {
-              ...old.data,
-              employees: old.data.employees.filter((e) => e._id !== employeeId),
-            },
-          };
-        }
-      );
-
-      return { previousData };
-    },
-    onError: (err, employeeId, context) => {
-      const ctx = context as { previousData?: EmployeeApiResponse } | undefined;
-      queryClient.setQueryData(
-        ["employees", companyId, currentPage],
-        ctx?.previousData
-      );
-      console.error(
-        "Error deleting employee:",
-        err instanceof Error ? err.message : err
-      );
-    },
     onSuccess: () => {
+      toast.success("Recruiter removed successfully");
       queryClient.invalidateQueries({
-        queryKey: ["employees", companyId, currentPage],
+        queryKey: ["employees", company?.userId, currentPage],
       });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete employee");
     },
   });
 
@@ -507,7 +470,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               </div>
             </div>
             <div className="md:hidden absolute top-4 right-4">
-              <Drawer direction="left" open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
+              <Drawer
+                direction="left"
+                open={isDrawerOpen}
+                onOpenChange={setIsDrawerOpen}
+              >
                 <DrawerTrigger asChild>
                   <Button
                     variant="ghost"
@@ -522,7 +489,10 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                     <DrawerTitle>Menu</DrawerTitle>
                   </DrawerHeader>
                   <div className="flex flex-col gap-4 p-4 h-full overflow-y-auto">
-                    <Link href="/add-job" onClick={() => setIsDrawerOpen(false)}>
+                    <Link
+                      href="/add-job"
+                      onClick={() => setIsDrawerOpen(false)}
+                    >
                       <Button className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-4 text-lg">
                         Post A Job
                       </Button>
@@ -683,7 +653,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
       {/* Employees */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">Employees</h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Recruiters</h2>
         {isLoadingEmployees && !employeeData ? (
           <div>Loading employees...</div>
         ) : isEmployeesError ? (
@@ -739,8 +709,10 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                         size="sm"
                         variant="destructive"
                         className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                        onClick={() => handleDelete(recruiter._id)}
-                        disabled={deleteMutation.isPending}
+                        onClick={() => {
+                          setSelectedEmployeeId(recruiter._id);
+                          setIsDeleteEmployeeModalOpen(true);
+                        }}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
@@ -796,7 +768,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         )}
         <div className="mt-4 flex justify-end">
           <Link href={`/recruiter-list/${company.userId}`}>
-            <Button>See all</Button>
+            <Button>Manage all recruiters</Button>
           </Link>
         </div>
       </div>
@@ -833,6 +805,39 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 </Card>
               )
             )}
+          </div>
+        </div>
+      )}
+
+      {isDeleteEmployeeModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to remove this employee from the company?
+            </p>
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteEmployeeModalOpen(false)}
+                className="px-4 py-2"
+              >
+                No
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (selectedEmployeeId) {
+                    deleteMutation.mutate(selectedEmployeeId);
+                  }
+                  setIsDeleteEmployeeModalOpen(false);
+                }}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2"
+              >
+                Yes
+              </Button>
+            </div>
           </div>
         </div>
       )}

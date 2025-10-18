@@ -69,7 +69,7 @@ export function EmployeeSelector({
     <div className="space-y-4">
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-900">
-          Add Profiles of Employees
+          Add Profiles of Recruiters
         </label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>

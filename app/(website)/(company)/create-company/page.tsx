@@ -35,7 +35,7 @@ const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
-  zipcode: z.string().min(1, "Zip code is required"),
+  zipcode: z.string(),
   cemail: z.string().email("Invalid email address"),
   aboutUs: z.string().min(1, "About us is required"),
   industry: z.string().min(1, "Industry is required"),
@@ -332,34 +332,6 @@ export default function CreateCompanyPage() {
                         <SelectItem value="los-angeles">Los Angeles</SelectItem>
                         <SelectItem value="chicago">Chicago</SelectItem>
                         <SelectItem value="houston">Houston</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="zipcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-gray-900">
-                      Zip Code / Postal Code
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Enter Zip/Postal Code" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="10001">10001</SelectItem>
-                        <SelectItem value="90210">90210</SelectItem>
-                        <SelectItem value="60601">60601</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

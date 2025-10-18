@@ -64,7 +64,7 @@ const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
-  zipcode: z.string().min(1, "Zip code is required"),
+  zipcode: z.string(),
   cemail: z.string().email("Invalid email address"),
   aboutUs: z.string().min(1, "About us is required"),
   sLink: z
@@ -737,24 +737,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="zipcode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          Zip Code / Postal Code*
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            placeholder="Enter Zip/Postal Code"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -830,7 +812,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  View your company employees
+                  View your company recruiters
                 </h3>
                 <EmployeeSelector
                   selectedEmployees={selectedEmployees}

@@ -375,19 +375,6 @@ export function PersonalInfoSection({
             />
             <FormField
               control={form.control}
-              name="zip"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Zip Code / Postal Code</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter Zip/Postal Code" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>

@@ -66,7 +66,6 @@ const formSchema = z.object({
   city: z.string().min(1, "City is required").max(50, "City name is too long"),
   zipcode: z
     .string()
-    .min(1, "Zip code is required")
     .max(20, "Zip code is too long"),
   cemail: z
     .string()
@@ -934,7 +933,7 @@ export default function CreateCompanyPage() {
 
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">
-              View your company employees
+              View your company recruiters
             </h3>
             <EmployeeSelector
               selectedEmployees={selectedEmployees}

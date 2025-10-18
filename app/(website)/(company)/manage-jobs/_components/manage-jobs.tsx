@@ -253,7 +253,7 @@ function ManagePage({ userId }: ManagePageProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Title</TableHead>
-                    <TableHead>Role</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Location</TableHead>
                     <TableHead>Experience</TableHead>
                     <TableHead>Deadline</TableHead>
@@ -280,7 +280,7 @@ function ManagePage({ userId }: ManagePageProps) {
                         <TableCell className="font-medium">
                           {job.title}
                         </TableCell>
-                        <TableCell>{job.role}</TableCell>
+                        <TableCell>{job.name}</TableCell>
                         <TableCell>{job.location}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize">

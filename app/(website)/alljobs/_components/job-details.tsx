@@ -46,6 +46,7 @@ interface JobDetailsData {
   experience: string;
   deadline: string;
   status: string;
+  location_Type: string;
   publishDate: string;
   compensation: string;
   applicationRequirement: Array<{
@@ -583,6 +584,15 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <span className="text-gray-600">Application Deadline</span>
                   <span className="font-medium">
                     {formatDate(job.deadline)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
+                  <span className="text-gray-600">Location_Type</span>
+                  <span className="font-medium">
+                    {job.location_Type
+                      ? job.location_Type.charAt(0).toUpperCase() +
+                        job.location_Type.slice(1)
+                      : ""}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
