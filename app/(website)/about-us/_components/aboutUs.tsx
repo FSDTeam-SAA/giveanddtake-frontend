@@ -3,8 +3,10 @@
 import { Metadata } from "next";
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-// Bubble animation variants
+// 🫧 Bubble animation variants
 const bubbleVariants: Variants = {
   float: {
     y: [0, -10, 0],
@@ -20,122 +22,50 @@ const bubbleVariants: Variants = {
   },
 };
 
-// Right side floating bubbles component (inside container)
+// 🫧 Floating bubbles
 function RightBackgroundBubbles() {
   return (
     <div className="absolute inset-0 flex justify-center items-center overflow-hidden pointer-events-none">
       <div className="relative w-full h-full">
-        {/* Bubble 1 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="floatSlow"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 0.8, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="absolute top-[15%] right-[10%] hidden lg:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={80}
-            height={80}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[60px] h-[60px] opacity-80 hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
-
-        {/* Bubble 2 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="floatFast"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 0.6, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="absolute top-[25%] right-[25%] hidden md:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={40}
-            height={40}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[30px] h-[30px] opacity-60 hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
-
-        {/* Bubble 3 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="float"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="absolute top-[40%] right-[15%] hidden md:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={100}
-            height={100}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[70px] h-[70px] hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
-
-        {/* Bubble 4 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="floatSlow"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 0.75, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="absolute top-[55%] right-[8%] hidden lg:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={60}
-            height={60}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[50px] h-[50px] opacity-75 hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
-
-        {/* Bubble 5 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="floatFast"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 1.0 }}
-          className="absolute top-[60%] right-[25%] hidden md:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={200}
-            height={200}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[50px] h-[50px] hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
-
-        {/* Bubble 6 */}
-        <motion.div
-          variants={bubbleVariants}
-          animate="floatSlow"
-          initial={{ opacity: 0, scale: 0 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="absolute bottom-[20%] right-[20%] hidden md:block"
-        >
-          <Image
-            src="/assets/hero.png"
-            alt="Abstract bubble"
-            width={100}
-            height={100}
-            className="border border-[#9EC7DC] rounded-full p-2 w-[80px] h-[80px] hover:scale-110 transition-transform duration-300"
-          />
-        </motion.div>
+        {[
+          { top: "15%", right: "10%", size: 60, variant: "floatSlow", delay: 0.2 },
+          { top: "25%", right: "25%", size: 30, variant: "floatFast", delay: 0.4 },
+          { top: "40%", right: "15%", size: 70, variant: "float", delay: 0.6 },
+          { top: "55%", right: "8%", size: 50, variant: "floatSlow", delay: 0.8 },
+          { top: "60%", right: "25%", size: 50, variant: "floatFast", delay: 1.0 },
+          { bottom: "20%", right: "20%", size: 80, variant: "floatSlow", delay: 1.2 },
+        ].map((b, i) => (
+          <motion.div
+            key={i}
+            variants={bubbleVariants}
+            animate={b.variant as keyof typeof bubbleVariants}
+            initial={{ opacity: 0, scale: 0 }}
+            whileInView={{ opacity: 0.8, scale: 1 }}
+            transition={{ duration: 0.8, delay: b.delay }}
+            className={`absolute hidden md:block`}
+            style={{ top: b.top, right: b.right, bottom: b.bottom }}
+          >
+            <Image
+              src="/assets/hero.png"
+              alt="Abstract bubble"
+              width={b.size}
+              height={b.size}
+              className="border border-[#9EC7DC] rounded-full p-2 opacity-80 hover:scale-110 transition-transform duration-300"
+            />
+          </motion.div>
+        ))}
       </div>
     </div>
   );
 }
+
+// 🧠 Fetch data using TanStack Query
+const fetchAboutContent = async () => {
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/content/about`
+  );
+  return data;
+};
 
 export const metadata: Metadata = {
   title: "About | Elevator Video Pitch©",
@@ -143,95 +73,39 @@ export const metadata: Metadata = {
 };
 
 export default function AboutUsPage() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["content", "about"],
+    queryFn: fetchAboutContent,
+  });
+
   return (
     <div className="relative bg-white py-20 overflow-hidden">
       <div className="container relative">
-        {/* Right Background Bubbles inside container */}
         <RightBackgroundBubbles />
 
         <div className="relative z-10">
-          {/* About Section */}
-          <div className="mb-6 space-y-2 max-w-2xl">
-            <h2 className="text-3xl md:text-[40px] font-semibold text-[#131313] mb-3">
-              About Us
-            </h2>
-            <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Elevator Video Pitch© was initially conceived in 2016 at a time of
-              high employment amidst a skills shortage, which no longer exists.
+          {isLoading && (
+            <p className="text-center text-gray-500">Loading About Us...</p>
+          )}
+          {isError && (
+            <p className="text-center text-red-600">
+              ❌ Failed to load About content
             </p>
-            <p className="text-base font-normal text-[#545454] leading-relaxed">
-              Today, millions of knowledgeable, skilled and willing
-              professionals, graduates, and school leavers are open to work,
-              apprenticeships, internships, and tradesmanship roles, with many
-              posting written unheard pleas for help to find a job, on sites,
-              having been out of work for several months.
-            </p>
-            <p className="text-base font-normal text-[#545454] leading-relaxed">
-              At EVP, we see you, we hear you, we care and are therefore making
-              our platform available to global jobseekers of all professions and
-              trades, from doctors, to lawyers to pilots, tradespersons,
-              mechanics, models, engineers, IT professionals; i.e. all are
-              welcome to record an Elevator Video Pitch© to articulate your
-              needs.
-            </p>
-            <p className="text-base font-normal text-[#545454] leading-relaxed">
-              2026 is your year of elevation!
-            </p>
-          </div>
+          )}
 
-          {/* Vision & Mission */}
-          <div className="flex flex-col md:flex-row items-start justify-between mb-6 gap-y-10">
-            <div className="flex-1 space-y-6 text-left">
-              <div>
-                <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-3">
-                  Our Vision
-                </h2>
-                <p className="text-base text-[#545454] leading-relaxed">
-                  To amplify the voices of millions of jobseekers globally and
-                  enable everyone to pitch themselves into their desired role.
-                </p>
-              </div>
-              <div>
-                <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-3">
-                  Our Mission
-                </h2>
-                <p className="text-base text-[#545454] leading-relaxed">
-                  To provide jobseekers and professionals globally with a
-                  platform to be seen and heard by leading employers, beyond a
-                  paper resume.
-                </p>
-              </div>
-            </div>
-          </div>
+          {data && (
+            <>
+              <h1 className="text-3xl md:text-4xl font-semibold text-[#131313] mb-6">
+                {data.title || "About Us"}
+              </h1>
 
-          {/* What We Offer */}
-          <div className="mb-6 max-w-3xl">
-            <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-3">
-              What We Offer
-            </h2>
-            <p className="text-base text-[#545454] leading-relaxed">
-              We offer the opportunity for each candidate, i.e., including
-              technologists, doctors, tradesmen, pilots, project managers, event
-              planners, administrators, chefs, etc. to pitch yourself to
-              companies, and for cross-sector companies to pitch their corporate
-              culture to candidates. After all, it’s often said that interviews
-              are two-way meetings between a candidate and the hiring company!
-            </p>
-          </div>
-
-          {/* Unique Business Content */}
-          <div className="mb-10 max-w-4xl space-y-2">
-            <h2 className="text-3xl md:text-[36px] font-semibold text-[#131313] mb-4">
-              Unique Business Content
-            </h2>
-            <p className="text-base text-[#545454] leading-relaxed">
-              Our platform is the first global point where you can apply for
-              jobs seamlessly with your elevator video pitch and, receive timely
-              positive or constructive feedback through our intuitive EVP
-              dashboard. Stay confident, your dream job is a pitch away so don’t
-              give up!
-            </p>
-          </div>
+              {/* Render Quill HTML safely */}
+              <div
+                className="prose max-w-4xl list-item list-none"
+                dangerouslySetInnerHTML={{ __html: data.description || "" }}
+              />
+            </>
+          )}
         </div>
       </div>
     </div>

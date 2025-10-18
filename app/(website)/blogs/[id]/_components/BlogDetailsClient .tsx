@@ -163,7 +163,7 @@ export function BlogDetailsClient({ id }: { id: string }) {
             </h1>
             <p className="text-sm text-gray-500 mb-4">{formattedDate}</p>
             <div
-              className=""
+              className="list-item list-none"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(blogPost.description),
               }}

@@ -62,7 +62,7 @@ export default function AppliedJobs() {
             </div>
           </div>
           <p
-            className="lg:text-base text-sm"
+            className="lg:text-base text-sm list-item list-none"
             dangerouslySetInnerHTML={{
               __html: DOMPurify.sanitize(job.jobId.description),
             }}

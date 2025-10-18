@@ -549,7 +549,7 @@ export default function ApplicantDetailsPage() {
             </CardHeader>
             <CardContent>
               <div
-                className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed"
+                className="prose prose-sm sm:prose-base max-w-none text-gray-700 leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
                   __html: resume.aboutUs
                     ? DOMPurify.sanitize(resume.aboutUs)

@@ -449,7 +449,7 @@ export default function Recruiters({ userId }: MydataProps) {
 
             <div>
               <p
-                className="text-gray-600 leading-relaxed"
+                className="text-gray-600 leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
                   __html: recruiterData.bio || "No description provided",
                 }}

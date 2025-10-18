@@ -160,33 +160,70 @@
   height: 40px;
   width: 100%;
 }
-/* Quill content wrapper */
+/* QuillEditor custom styles */
 .list-item {
-  @apply text-base leading-relaxed;
+  @apply text-base leading-relaxed ;
 }
 
-/* Unordered lists (bullets) */
-.list-item ul {
-  list-style-type: disc; /* restore default bullets */
-  padding-left: 1.5rem;
-  margin-top: 0.5em;
-  margin-bottom: 1em;
-}
-
-
-/* Ordered lists (numbers) */
+.list-item ul,
 .list-item ol {
-  list-style-type: decimal; /* restore default numbering */
-  padding-left: 1.5rem;
+  @apply pl-5 ;
   margin-top: 0.5em;
   margin-bottom: 1em;
 }
 
-.list-item li {
-  margin-bottom: 0.5em;
+.list-item ul li,
+.list-item ol li {
+  @apply mb-2 ;
+  position: relative;
+  text-decoration: #d00;
 }
 
-/* Headings inside the editor content */
+.list-item ul li::before {
+  content: "•";
+  position: absolute;
+  left: -1em;
+}
+
+.list-item .ql-align-center {
+  @apply text-center;
+}
+
+.list-item .ql-align-right {
+  @apply text-right;
+}
+
+.list-item .ql-align-left {
+  @apply text-left;
+}
+
+.list-item .ql-align-justify {
+  @apply text-justify;
+}
+
+
+.list-item p a {
+  @apply !text-blue-600 hover:underline;
+}
+
+
+
+.list-item ol {
+  counter-reset: item;
+}
+
+.list-item ol li {
+  counter-increment: item;
+}
+
+.list-item ol li::before {
+  content: counter(item) ".";
+  @apply text-gray-700;
+  position: absolute;
+  left: -1em;
+}
+
+/* Heading styles for the list items */
 .list-item h1,
 .list-item h2,
 .list-item h3,
@@ -196,8 +233,54 @@
   margin-top: 1em;
   margin-bottom: 0.5em;
   font-weight: bold;
-  color: white !important;
 }
+
+
+.list-item h1 {
+  @apply text-3xl;
+}
+
+.list-item h2 {
+  @apply text-2xl;
+}
+
+.list-item h3 {
+  @apply text-xl;
+}
+
+.list-item h4 {
+  @apply text-lg;
+}
+
+.list-item h5 {
+  @apply text-base;
+}
+
+.list-item h6 {
+  @apply text-sm;
+}
+
+
+
+/* Nested list styling */
+.list-item ul ul,
+.list-item ol ol,
+.list-item ul ol,
+.list-item ol ul {
+  @apply pl-5;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+/* Remove default list markers */
+.list-item ::marker {
+  display: none;
+  content: none;
+}
+
+
+
+
 
 
 

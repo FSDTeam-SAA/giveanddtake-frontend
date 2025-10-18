@@ -266,7 +266,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
             </div>
 
             <div
-              className="prose prose-sm max-w-none text-gray-700 line-clamp-3 sm:line-clamp-2"
+              className="prose prose-sm max-w-none text-gray-700 line-clamp-3 sm:line-clamp-2 list-item list-none"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(job.description),
               }}
@@ -349,7 +349,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
 
               <div className="mt-2 sm:mt-3">
                 <div
-                  className="text-gray-700 text-sm sm:text-[15px] leading-relaxed line-clamp-3 sm:line-clamp-2 prose prose-sm max-w-none text-start"
+                  className="text-gray-700 text-sm sm:text-[15px] leading-relaxed line-clamp-3 sm:line-clamp-2 prose prose-sm max-w-none text-start list-item list-none"
                   dangerouslySetInnerHTML={{
                     __html: DOMPurify.sanitize(job.description),
                   }}

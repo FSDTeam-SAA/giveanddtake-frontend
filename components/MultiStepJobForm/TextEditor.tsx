@@ -1,101 +1,98 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import "quill/dist/quill.snow.css";
+import dynamic from "next/dynamic";
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
-interface TextEditorProps {
+import { useMemo } from "react";
+
+interface QuillEditorProps {
   value: string;
   onChange: (value: string) => void;
-  placeholder?: string;
-  className?: string;
+  id?: string;
 }
 
-const TextEditor = ({
-  value,
-  onChange,
-  placeholder,
-  className,
-}: TextEditorProps) => {
-  const quillRef = useRef<any>(null);
-  const editorRef = useRef<HTMLDivElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const [initialized, setInitialized] = useState(false);
+// const ReactQuill = dynamic(() => import("react-quill"), {
+//   ssr: false,
+//   loading: () => (
+//     <div className="min-h-[200px] bg-gray-100 animate-pulse rounded-md" />
+//   ),
+// });
 
-  useEffect(() => {
-    if (editorRef.current && toolbarRef.current && !quillRef.current) {
-      const loadQuill = async () => {
-        const Quill = (await import("quill")).default;
+import "react-quill/dist/quill.snow.css";
 
-        quillRef.current = new Quill(editorRef.current!, {
-          theme: "snow",
-          placeholder: placeholder || "Start typing...",
-          modules: {
-            toolbar: toolbarRef.current,
-          },
-        });
+const modules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    [{ align: [] }],
+    [{ color: [] }, { background: [] }],
+    ["link", "image"],
+    ["clean"],
+  ],
+};
 
-        // Set initial value if available
-        if (value) {
-          quillRef.current.root.innerHTML = value;
-        }
-
-        // Listen for user input
-        quillRef.current.on("text-change", () => {
-          const html = quillRef.current.root.innerHTML;
-          onChange(html === "<p><br></p>" ? "" : html);
-        });
-
-        setInitialized(true);
-      };
-
-      loadQuill();
-    }
-  }, []);
-
-  // Sync external value updates (like from form reset or API load)
-  useEffect(() => {
-    if (initialized && quillRef.current) {
-      const editorHTML = quillRef.current.root.innerHTML.trim();
-      const newValue = (value || "").trim();
-
-      if (editorHTML !== newValue) {
-        quillRef.current.root.innerHTML = newValue;
-      }
-    }
-  }, [value, initialized]);
+const TextEditor = ({ value, onChange, id }: QuillEditorProps) => {
+  const formats = useMemo(
+    () => [
+      "header",
+      "bold",
+      "align",
+      "italic",
+      "underline",
+      "strike",
+      "list",
+      "bullet",
+      "color",
+      "background",
+      "link",
+      "image",
+    ],
+    []
+  );
 
   return (
-    <div className={`border rounded-lg bg-white ${className || ""}`}>
-      {/* Toolbar */}
-      <div ref={toolbarRef} className="quill-toolbar">
-        <div className="ql-formats">
-          <select className="ql-header" defaultValue="">
-            <option value="1"></option>
-            <option value="2"></option>
-            <option value=""></option>
-          </select>
-        </div>
-        <div className="ql-formats">
-          <button className="ql-bold"></button>
-          <button className="ql-italic"></button>
-          <button className="ql-underline"></button>
-        </div>
-        <div className="ql-formats">
-          <button className="ql-list" value="ordered"></button>
-          <button className="ql-list" value="bullet"></button>
-        </div>
-        <div className="ql-formats">
-          <button className="ql-blockquote"></button>
-          <button className="ql-code-block"></button>
-        </div>
-        <div className="ql-formats">
-          <button className="ql-link"></button>
-          <button className="ql-clean"></button>
-        </div>
-      </div>
+    <div className="quill-editor-wrapper">
+      <ReactQuill
+        id={id}
+        value={value}
+        onChange={(content) => {
+          const cleaned = content === "<p><br></p>" ? "" : content;
+          onChange(cleaned);
+        }}
+        modules={modules}
+        formats={formats}
+        theme="snow"
+      />
 
-      {/* Editor */}
-      <div ref={editorRef} style={{ minHeight: "200px" }} />
+      <style jsx global>{`
+        .quill-editor-wrapper .ql-toolbar {
+          border-color: #e2e8f0;
+          border-top-left-radius: 0.375rem;
+          border-top-right-radius: 0.375rem;
+          background: #f8fafc;
+        }
+
+        /* Cap overall editor area and allow inner content to scroll */
+        .quill-editor-wrapper .ql-container {
+          border-color: #e2e8f0;
+          border-bottom-left-radius: 0.375rem;
+          border-bottom-right-radius: 0.375rem;
+          min-height: 200px;
+          max-height: 50vh; /* ⬅️ cap the height */
+          font-size: 1rem;
+
+          display: flex; /* make editor area flex so child can scroll */
+          flex-direction: column;
+        }
+
+        .quill-editor-wrapper .ql-editor {
+          min-height: 200px;
+          flex: 1 1 auto; /* fill remaining space */
+          overflow-y: auto; /* scroll when content is long */
+          padding-bottom: 2.5rem; /* cushion so caret isn’t hidden at bottom */
+        }
+      `}</style>
     </div>
   );
 };

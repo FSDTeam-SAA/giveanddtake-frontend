@@ -587,7 +587,7 @@ export default function JobPreview() {
                   />
                 ) : (
                   <div
-                    className="p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap"
+                    className="p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap list-item list-none"
                     dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                   />
                 )}
