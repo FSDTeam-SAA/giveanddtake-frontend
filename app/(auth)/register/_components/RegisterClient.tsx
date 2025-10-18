@@ -484,27 +484,42 @@ export default function RegisterPage() {
             </div>
 
             {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter Email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  onBlur={(e) => {
-                    const v = e.target.value.trim();
-                    if (v && !emailRegex.test(v)) {
-                      toast.error("Invalid email format.");
-                    }
-                  }}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
+           {/* Email (Dynamic Label) */}
+<div className="space-y-2">
+  <Label htmlFor="email">
+    {selectedRole === "recruiter"
+      ? "Recruiter Email"
+      : selectedRole === "company"
+      ? "Company Email"
+      : "Personal Email"}
+  </Label>
+
+  <div className="relative">
+    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+    <Input
+      id="email"
+      type="email"
+      placeholder={
+        selectedRole === "recruiter"
+          ? "Enter your recruiter email"
+          : selectedRole === "company"
+          ? "Enter your company email"
+          : "Enter your personal email"
+      }
+      value={formData.email}
+      onChange={(e) => handleInputChange("email", e.target.value)}
+      onBlur={(e) => {
+        const v = e.target.value.trim();
+        if (v && !emailRegex.test(v)) {
+          toast.error("Invalid email format.");
+        }
+      }}
+      className="pl-10"
+      required
+    />
+  </div>
+</div>
+
 
             {/* Country (with Combobox) */}
             <div className="space-y-2">
@@ -556,7 +571,7 @@ export default function RegisterPage() {
 
             {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
             <div className="space-y-2">
-              <Label className="mr-5">Age Verification</Label>
+              <Label className="mr-5">Age Verification(Compliant minimum age 16)</Label>
 
               <div className="relative">
 
