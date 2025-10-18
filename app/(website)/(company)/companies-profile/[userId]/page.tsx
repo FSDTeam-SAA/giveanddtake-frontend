@@ -354,16 +354,19 @@ export default function CompanyProfilePage() {
                 <h1 className="text-2xl font-bold mb-2 text-gray-900">
                   {company.cname}
                 </h1>
-                <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 mb-4">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {company.city}, {company.country}
+                    <span>
+                      {company.city}, {company.country}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    {company.employeesId?.length || 0} employees
+                    <span>{company.employeesId?.length || 0} employees</span>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-1 text-sm text-gray-600">
                   <Building2 className="h-4 w-4" />
                   {company.industry}

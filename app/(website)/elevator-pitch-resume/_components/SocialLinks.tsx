@@ -8,7 +8,9 @@ import {
   FaInstagram,
   FaTiktok,
   FaUpwork,
+  FaGlobe, // 🌐 for "Others"
 } from "react-icons/fa6";
+import { SiFiverr } from "react-icons/si"; // ✅ Official Fiverr icon
 
 // Supported platforms + icons
 const socialIcons = {
@@ -18,30 +20,35 @@ const socialIcons = {
   Facebook: { icon: <FaFacebook /> },
   TikTok: { icon: <FaTiktok /> },
   Instagram: { icon: <FaInstagram /> },
+  Fiverr: { icon: <SiFiverr /> }, // ✅ Added Fiverr
+  Others: { icon: <FaGlobe /> }, // 🌐 Fallback for unknowns
 } as const;
 
 type SocialLabel = keyof typeof socialIcons;
 
-// Type guard to narrow arbitrary strings to our supported labels
+// Type guard to narrow arbitrary strings to supported labels
 function isSocialLabel(label: string): label is SocialLabel {
   return label in socialIcons;
 }
 
 interface SocialLinksProps {
-  // Accept the loose upstream shape (don't reuse the upstream SLinkItem name)
   sLink?: {
-    label: string;   // note: loose
+    label: string; // loose input from upstream
     url?: string;
     _id?: string;
   }[];
 }
 
 export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
-  // Build a map only for supported labels, ignoring unknown ones safely
+  // Build a map only for supported labels; everything else goes into “Others”
   const linkMap = new Map<SocialLabel, string>();
+
   for (const item of sLink) {
     if (isSocialLabel(item.label)) {
       linkMap.set(item.label, item.url ?? "");
+    } else if (item.url) {
+      // Anything unknown → treat as "Others"
+      linkMap.set("Others", item.url);
     }
   }
 
@@ -49,7 +56,7 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
     "w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-xl md:text-2xl transition-all duration-300 ease-in-out";
 
   return (
-    <div className="flex gap-3 mt-4">
+    <div className="flex flex-wrap gap-3 mt-4">
       {Object.entries(socialIcons).map(([label, { icon }]) => {
         const typedLabel = label as SocialLabel;
         const url = linkMap.get(typedLabel);

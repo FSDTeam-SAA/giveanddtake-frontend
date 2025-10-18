@@ -55,9 +55,6 @@ export const PersonalInfoSection = ({
     <Card>
       <CardHeader>
         <CardTitle>Personal Information</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Tell us about yourself and how to reach you.
-        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -240,19 +237,6 @@ export const PersonalInfoSection = ({
                     </Command>
                   </PopoverContent>
                 </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="zipCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Zip Code</FormLabel>
-                <FormControl>
-                  <Input placeholder="12345" {...field} />
-                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

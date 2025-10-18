@@ -1,10 +1,3 @@
-
-// =========================
-// social-links-section.tsx (UPDATED)
-// - Fixed 6 platforms with {label, url}
-// - Writes to form.sLink[*].url only
-// =========================
-
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +9,6 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Link as LinkIcon } from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 
@@ -29,24 +21,35 @@ interface SocialLinksSectionProps {
   form: UseFormReturn<any>;
 }
 
+// Added “Others” at the end
 const FIXED_PLATFORMS = [
   "LinkedIn",
+
   "Twitter",
-  "Upwork",
+
   "Facebook",
   "TikTok",
   "Instagram",
+  "Upwork",
+  "Fiverr",
+  "Other",
 ] as const;
 
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
-  // Seed exactly 6 rows with fixed labels
+  // Seed exactly 7 rows (6 fixed + 1 Others)
   const initialLinks: SocialLinkRow[] = useMemo(() => {
     const existing: SocialLinkRow[] = form.getValues("sLink") ?? [];
-    return FIXED_PLATFORMS.map((label, i) => ({ label, url: existing[i]?.url ?? "" }));
+    return FIXED_PLATFORMS.map((label, i) => ({
+      label,
+      url: existing[i]?.url ?? "",
+    }));
   }, [form]);
 
   useEffect(() => {
-    form.setValue("sLink", initialLinks, { shouldValidate: false, shouldDirty: false });
+    form.setValue("sLink", initialLinks, {
+      shouldValidate: false,
+      shouldDirty: false,
+    });
   }, [form, initialLinks]);
 
   return (
@@ -54,9 +57,11 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
       <CardHeader>
         <div className="flex items-center gap-2">
           <div>
-            <CardTitle className="text-sm font-medium text-gray-900">Social Links</CardTitle>
+            <CardTitle className="text-md font-medium text-gray-900">
+              Social Links
+            </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Add URLs for your social and professional profiles (optional)
+              Add URLs for your social and professional profiles
             </p>
           </div>
         </div>
@@ -74,12 +79,20 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
                   <FormLabel>{platform} URL</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder={`https://${platform.toLowerCase()}.com/your-profile`}
+                      placeholder={
+                        platform === "Other"
+                          ? "https://your-custom-link.com"
+                          : `https://${platform.toLowerCase()}.com/your-profile`
+                      }
                       {...field}
                     />
                   </FormControl>
-                  {/* Keep label in the form state so backend gets it */}
-                  <input type="hidden" value={platform} {...form.register(`sLink.${index}.label`)} />
+                  {/* Keep label in the form state for backend */}
+                  <input
+                    type="hidden"
+                    value={platform}
+                    {...form.register(`sLink.${index}.label`)}
+                  />
                   <FormMessage />
                 </FormItem>
               )}

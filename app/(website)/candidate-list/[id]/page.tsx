@@ -259,7 +259,7 @@ export default function JobApplicantsPage() {
           Applicant List
         </h1>
         <p className="text-gray-600 mt-2 text-sm sm:text-base">
-          Please update each applicant’s status at every stage of recruitment.
+          Please update each applicant’s status at every stage of the recruitment process.
         </p>
       </div>
 
