@@ -271,7 +271,7 @@ function ManagePage({ userId }: ManagePageProps) {
                         colSpan={7}
                         className="text-center py-8 text-muted-foreground"
                       >
-                        No job postings found
+                        No job postings found.
                       </TableCell>
                     </TableRow>
                   ) : (

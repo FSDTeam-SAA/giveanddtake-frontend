@@ -174,7 +174,7 @@ export default function JobsListing() {
           {isRecommendedLoading || !token ? (
             <div className="text-center text-gray-600">
               {!token ? (
-                "Please log in to see suggested jobs"
+                "Please log in to see suggested jobs."
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                   {Array(4)

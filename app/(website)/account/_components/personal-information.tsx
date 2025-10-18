@@ -84,7 +84,7 @@ async function verifyPassword(email: string, password: string) {
       body: JSON.stringify({ email, password }),
     }
   );
-  if (!response.ok) throw new Error("Please Check Your Password.");
+  if (!response.ok) throw new Error("Please check your password.");
   const json = await response.json();
   return json; // expects shape with { success: boolean, ... }
 }
@@ -282,7 +282,7 @@ export function PersonalInformation() {
 
   const confirmDelete = () => {
     if (!email) {
-      toast.error("No email found on session. Please re-login and try again.");
+      toast.error("No email found in session. Please log in again and try.");
       return;
     }
     if (!deletePassword) {
@@ -294,7 +294,7 @@ export function PersonalInformation() {
 
   const confirmDisable = () => {
     if (!email) {
-      toast.error("No email found on session. Please re-login and try again.");
+      toast.error("No email found in session. Please log in again and try.");
       return;
     }
     if (!disablePassword) {

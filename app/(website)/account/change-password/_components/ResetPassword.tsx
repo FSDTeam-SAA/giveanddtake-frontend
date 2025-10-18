@@ -42,7 +42,7 @@ export function ResetPassword({
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("Passwords do not match.");
       return;
     }
 

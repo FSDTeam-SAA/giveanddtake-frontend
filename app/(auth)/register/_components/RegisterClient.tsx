@@ -329,7 +329,7 @@ export default function RegisterPage() {
      CTA Text (unchanged)
   ========================= */
   const primaryCtaText = useMemo(() => {
-    if (registerMutation.isPending) return "Creating Account...";
+    if (registerMutation.isPending) return "Creating account...";
     if (selectedRole === "candidate") return "Sign up as a Candidate";
     if (selectedRole === "recruiter") return "Sign up as a Recruiter";
     return "Sign up as a Company";
@@ -342,11 +342,11 @@ export default function RegisterPage() {
   ========================= */
   const validateBeforeSubmit = () => {
     if (!firstName.trim() || !nameRegex.test(firstName)) {
-      toast.error("Please enter a valid First Name.");
+      toast.error("Please enter a valid first name.");
       return false;
     }
     if (!surname.trim() || !nameRegex.test(surname)) {
-      toast.error("Please enter a valid Surname.");
+      toast.error("Please enter a valid surname.");
       return false;
     }
 
@@ -363,7 +363,7 @@ export default function RegisterPage() {
 
     if (needsDob) {
       if (!dob) {
-        toast.error("Please select your Age (MM/YYYY).");
+        toast.error("Please select your age (MM/YYYY).");
         return false;
       }
       if (isUnder16) {
@@ -371,22 +371,22 @@ export default function RegisterPage() {
         return false;
       }
       if (dob > today || dob < oldestAllowed) {
-        toast.error("Please select a valid Age.");
+        toast.error("Please select a valid age.");
         return false;
       }
     }
 
     if (formData.password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("Passwords do not match.");
       return false;
     }
     if (!validatePassword(formData.password)) {
-      toast.error("Password does not meet the requirements");
+      toast.error("Password does not meet the requirements.");
       return false;
     }
 
     if (!agreeToTerms) {
-      toast.error("Please agree to the terms and conditions");
+      toast.error("Please agree to the terms and conditions.");
       return false;
     }
 

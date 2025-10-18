@@ -371,7 +371,7 @@ function AllUsersContent() {
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
                             <span className="truncate">
-                              {user?.address ?? "No address available"}
+                              {user?.address ?? "No address available."}
                             </span>
                           </div>
                         </div>

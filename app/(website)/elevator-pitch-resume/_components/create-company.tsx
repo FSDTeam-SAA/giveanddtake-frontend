@@ -601,7 +601,7 @@ export default function CreateCompanyPage() {
   const onSubmit = async (data: FormData) => {
     const userId = (session?.user as any)?.id;
     if (!userId) {
-      toast.error("Please log in to create a company");
+      toast.error("Please log in to create a company.");
       return;
     }
     if (!isElevatorPitchUploaded) {

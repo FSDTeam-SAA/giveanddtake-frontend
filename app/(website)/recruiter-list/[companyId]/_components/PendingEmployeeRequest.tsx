@@ -150,7 +150,7 @@ export default function PendingEmployeeRequest({
               {requests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className="text-center text-gray-500">
-                    No requests available
+                    No requests available.
                   </TableCell>
                 </TableRow>
               ) : (

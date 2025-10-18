@@ -125,7 +125,7 @@ export default function CreateCompanyPage() {
 
   const onSubmit = async (data: FormData) => {
     if (!session?.user?.id) {
-      toast.error("Please log in to create a company");
+      toast.error("Please log in to create a company.");
       return;
     }
 

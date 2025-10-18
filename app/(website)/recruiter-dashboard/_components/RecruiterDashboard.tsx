@@ -505,7 +505,7 @@ export default function RecruiterDashboard() {
   const handleConfirmApply = () =>
     selectedCompanyId
       ? applyMutation.mutate(selectedCompanyId)
-      : toast.error("Please select a company");
+      : toast.error("Please select a company.");
 
   // =============== UI ===============
   return (
@@ -700,7 +700,7 @@ export default function RecruiterDashboard() {
                     dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                   />
                 ) : (
-                  <p className="text-gray-700 mt-2">No description available</p>
+                  <p className="text-gray-700 mt-2">No description available.</p>
                 )}
               </div>
             </div>
@@ -798,7 +798,7 @@ export default function RecruiterDashboard() {
                 ))}
               </div>
             ) : (
-              <div className="text-center text-gray-500">No jobs found</div>
+              <div className="text-center text-gray-500">No jobs found.</div>
             )}
           </div>
 
@@ -911,7 +911,7 @@ export default function RecruiterDashboard() {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center">
-                      No jobs found
+                      No jobs found.
                     </TableCell>
                   </TableRow>
                 )}
@@ -1022,9 +1022,7 @@ export default function RecruiterDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-500">
-                  No companies available
-                </div>
+                <div className="text-center text-gray-500">No companies available.</div>
               )}
             </div>
             <DialogFooter>
@@ -1065,18 +1063,18 @@ export default function RecruiterDashboard() {
         </Dialog>
 
         {/* Delete Confirmation Modal */}
-        {/* Applicant Warning Modal */}
+        {/* Applicant warning modal */}
         <Dialog
           open={isApplicantWarningModalOpen}
           onOpenChange={setIsApplicantWarningModalOpen}
         >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Update Applicants Before Deletion</DialogTitle>
+              <DialogTitle>Update applicants before deletion</DialogTitle>
               <DialogDescription>
-                Kindly remember to update each applicant on the final status of
-                their application, using our intuitive one-click feedback tool
-                in your job applicants panel.
+                Kindly remember to update each applicant about the final status
+                of their application using the one-click feedback tool in your
+                job applicants panel.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
