@@ -266,7 +266,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       <div className="">
                         <Button
                           onClick={onEdit}
-                          className="bg-[#3b82f6] hover:bg-[#3b82f6]"
+                          className="bg-[#3b82f6] hover:bg-[#3b82f6] text-lg"
                         >
                           <SquarePen className="mr-2 h-4 w-4" />
                           Edit

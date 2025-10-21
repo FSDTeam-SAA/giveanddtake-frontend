@@ -262,6 +262,7 @@ function ManagePage({ userId }: ManagePageProps) {
                       Applicants list
                     </TableHead>
                     <TableHead>Vacancy</TableHead>
+                    <TableHead>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -302,6 +303,16 @@ function ManagePage({ userId }: ManagePageProps) {
                       </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{job.vacancy}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            <Link
+                              href={`/single-job/${job._id}`}
+                              className="text-blue-600 hover:underline"
+                            >
+                              Job details
+                            </Link>
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))

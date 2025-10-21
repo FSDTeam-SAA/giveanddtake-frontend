@@ -1,7 +1,7 @@
 // pages/EditCompanyPage.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -67,6 +67,7 @@ const formSchema = z.object({
   zipcode: z.string(),
   cemail: z.string().email("Invalid email address"),
   aboutUs: z.string().min(1, "About us is required"),
+  industry: z.string().min(1, "Industry is required"),
   sLink: z
     .array(
       z.object({
@@ -160,6 +161,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       zipcode: "",
       cemail: "",
       aboutUs: "",
+      industry: "",
       sLink: FIXED_PLATFORMS.map((label) => ({
         label,
         url: "",
@@ -189,6 +191,28 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       }
     };
   }, [logoFile]);
+
+  const { data: industriesData = [], isLoading: isLoadingIndustries } =
+    useQuery({
+      queryKey: ["industries"],
+      queryFn: async () => {
+        const response = await fetch(
+          "https://api.evpitch.com/api/v1/category/job-category"
+        );
+        const data = await response.json();
+        if (!data.success) throw new Error("Failed to fetch industries");
+        return data.data.category;
+      },
+    });
+
+  const industryOptions = useMemo(
+    () =>
+      industriesData?.map((category: { name: string }) => ({
+        value: category.name,
+        label: category.name,
+      })) || [],
+    [industriesData]
+  );
 
   useEffect(() => {
     const fetchCompany = async () => {
@@ -269,6 +293,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
         zipcode: company.zipcode || "",
         cemail: company.cemail || "",
         aboutUs: company.aboutUs || "",
+        industry: company.industry || "",
         sLink: processedSocialLinks,
       });
 
@@ -736,7 +761,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       </FormItem>
                     )}
                   />
-
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -760,14 +784,75 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                       </FormItem>
                     )}
                   />
-
-                 
                 </div>
               </div>
 
               <SocialLinksSection form={form} />
 
               <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="industry"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-gray-900">
+                        Industry*
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className={cn(
+                                "w-full justify-between font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value || "Select industry"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search industry..." />
+                            <CommandList>
+                              <CommandEmpty>
+                                {isLoadingIndustries
+                                  ? "Loading industries..."
+                                  : "No industry found."}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                {industryOptions.map((industry) => (
+                                  <CommandItem
+                                    key={industry.value}
+                                    value={industry.value}
+                                    onSelect={(value) => {
+                                      field.onChange(value);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        field.value === industry.value
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    {industry.label}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="">
                   <h3 className="text-lg font-semibold text-gray-900">
                     Services

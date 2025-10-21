@@ -361,10 +361,10 @@ export default function CompanyProfilePage() {
                       {company.city}, {company.country}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
+                  {/* <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    <span>{company.employeesId?.length || 0} employees</span>
-                  </div>
+                    <span>{company.employeesId?.length || 0} recruiters</span>
+                  </div> */}
                 </div>
 
                 <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -440,6 +440,19 @@ export default function CompanyProfilePage() {
           </div>
         </div>
 
+        {/* Elevator Pitch */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-6 text-gray-900">
+            Elevator Video Pitch©
+          </h2>
+          <div className="rounded-lg md:p-6 bg-gray-50">
+            <VideoPlayer
+              pitchId={companyData?.companies[0]?.elevatorPitch?._id}
+              className="w-full mx-auto"
+            />
+          </div>
+        </div>
+
         {/* Company Jobs */}
         <div className="my-12">
           {approvedJobs.length > 0 && (
@@ -503,19 +516,6 @@ export default function CompanyProfilePage() {
               )}
             </div>
           )}
-        </div>
-
-        {/* Elevator Pitch */}
-        <div>
-          <h2 className="text-xl font-semibold mb-6 text-gray-900">
-            Elevator Video Pitch©
-          </h2>
-          <div className="rounded-lg md:p-6 bg-gray-50">
-            <VideoPlayer
-              pitchId={companyData?.companies[0]?.elevatorPitch?._id}
-              className="w-full mx-auto"
-            />
-          </div>
         </div>
 
         {/* About Us */}

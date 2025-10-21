@@ -50,6 +50,8 @@ interface JobPostData {
   customQuestion: { question: string }[];
 }
 
+
+
 async function updateJob(id: string, data: JobPostData) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
@@ -64,7 +66,8 @@ async function updateJob(id: string, data: JobPostData) {
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(
-      `Failed to update job: ${response.status} - ${errorData.message || "Unknown error"
+      `Failed to update job: ${response.status} - ${
+        errorData.message || "Unknown error"
       }`
     );
   }
@@ -321,7 +324,11 @@ export default function JobPreview() {
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <Link
-            href={role === "company" ? "/manage-jobs" : "/recruiter-dashboard"}
+            href={
+              role === "company" && userId
+                ? `/manage-jobs/${jobData.companyId._id}`
+                : "/recruiter-dashboard"
+            }
           >
             <Button variant="ghost" size="icon" className="text-gray-500">
               <ArrowLeft className="h-6 w-6 text-gray-500" />
@@ -332,7 +339,12 @@ export default function JobPreview() {
             Preview Job Posting
           </h1>
           {role !== "company" && (
-            <Button variant="ghost" size="icon" onClick={onBackToEdit} className="hidden">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onBackToEdit}
+              className="hidden"
+            >
               <Edit className="h-6 w-6 text-gray-500" />
             </Button>
           )}
@@ -708,10 +720,11 @@ export default function JobPreview() {
                 <div className="flex space-x-2">
                   <Button
                     variant={!requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${!requirement.required
+                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
+                      !requirement.required
                         ? "bg-[#2B7FD0] text-white"
                         : "border-[#2B7FD0] text-[#2B7FD0]"
-                      }`}
+                    }`}
                     onClick={() => handleToggleRequired(requirement.id, false)}
                     disabled={!isEditing}
                   >
@@ -719,10 +732,11 @@ export default function JobPreview() {
                   </Button>
                   <Button
                     variant={requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${requirement.required
+                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
+                      requirement.required
                         ? "bg-[#2B7FD0] text-white"
                         : "border-[#2B7FD0] text-[#2B7FD0]"
-                      }`}
+                    }`}
                     onClick={() => handleToggleRequired(requirement.id, true)}
                     disabled={!isEditing}
                   >
