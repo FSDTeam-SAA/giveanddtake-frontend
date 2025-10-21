@@ -17,7 +17,7 @@ interface LogoUploadProps {
 
 const ASPECT = 1; // Square aspect ratio
 const DEFAULT_OUTPUT_SIZE = 200; // Default output size in px
-const DEFAULT_MAX_FILE_SIZE_MB = 5; // Default max file size in MB
+const DEFAULT_MAX_FILE_SIZE_MB = 10; // Default max file size in MB
 
 export function LogoUpload({
   onFileSelect,
