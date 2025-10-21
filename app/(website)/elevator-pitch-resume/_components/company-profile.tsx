@@ -431,7 +431,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               </div>
               <div className="flex items-center gap-1">
                 <Users className="h-4 w-4" />
-                {company.employeesId?.length || 0} employees
+                {company.employeesId?.length || 0} recruiters
               </div>
             </div>
 
