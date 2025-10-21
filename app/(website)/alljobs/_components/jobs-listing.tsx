@@ -156,6 +156,11 @@ export default function JobsListing() {
               className="pl-10 p-2 border rounded w-full"
               value={localSearchTerm}
               onChange={(e) => setLocalSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleFilter();
+                }
+              }}
             />
           </div>
           <button
@@ -167,8 +172,7 @@ export default function JobsListing() {
         </div>
       </div>
 
-      {/* Recommended Jobs */}
-      {recommended.length > 0 && (
+      {!querySearchTerm && recommended.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested jobs for you</h2>
           {isRecommendedLoading || !token ? (
@@ -195,9 +199,13 @@ export default function JobsListing() {
         </div>
       )}
 
+
       {/* All Jobs */}
       <div>
-        <h2 className="text-2xl font-bold mb-6">Recent jobs</h2>
+        <h2 className="text-2xl font-bold mb-6">
+          {querySearchTerm ? "Search results" : "Recent jobs"}
+        </h2>
+
         {isJobsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {Array(4)
@@ -206,6 +214,12 @@ export default function JobsListing() {
                 <JobCardSkeleton key={index} />
               ))}
           </div>
+        ) : jobs.length === 0 ? (
+          <div className="text-center text-gray-600 py-10">
+            {querySearchTerm
+              ? "No results found. Try a different query."
+              : "No jobs available at the moment."}
+          </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {jobs.map((job) => (
@@ -213,6 +227,7 @@ export default function JobsListing() {
             ))}
           </div>
         )}
+
         {meta.totalPages > 0 && (
           <div className="px-6 py-4">
             <Pagination
