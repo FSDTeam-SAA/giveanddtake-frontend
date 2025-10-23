@@ -94,7 +94,8 @@ async function postJob(data: any, retries = 2): Promise<any> {
         .json()
         .catch(() => ({ message: "Unknown error" }));
       throw new Error(
-        `Failed to publish job: ${response.status} - ${errorData.message || "Unknown error"
+        `Failed to publish job: ${response.status} - ${
+          errorData.message || "Unknown error"
         }`
       );
     }
@@ -280,7 +281,7 @@ export default function MultiStepJobForm() {
           const firstError = Object.values(errors)[0];
           toast.error(
             firstError?.message ||
-            `Please complete step ${step} before proceeding.`
+              `Please complete step ${step} before proceeding.`
           );
           canNavigate = false;
           break;
@@ -409,7 +410,7 @@ export default function MultiStepJobForm() {
       // console.log(postData);
       toast.success("Job published successfully!");
       if (role === "company") {
-        window.location.href = "/elevator-pitch-resume";
+        window.location.href = "/elevator-video-pitch";
       } else if (role === "recruiter") {
         window.location.href = "/recruiter-dashboard";
       }
@@ -421,7 +422,6 @@ export default function MultiStepJobForm() {
       setIsPending(false);
     }
   };
-
 
   const steps = [
     { number: 1, title: "Job Details", active: currentStep >= 1 },

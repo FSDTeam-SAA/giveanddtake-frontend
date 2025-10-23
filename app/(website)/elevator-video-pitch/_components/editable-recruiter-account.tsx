@@ -411,7 +411,7 @@ export default function EditableRecruiterAccount({
                 className="w-full h-auto object-cover"
               />
             ) : (
-              <div className="w-full h-auto bg-gray-200" />
+              <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
             )}
           </div>
         )

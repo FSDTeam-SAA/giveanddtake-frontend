@@ -149,7 +149,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const company = companyData?.companies?.[0];
   const companyId = company?._id;
 
-
   const {
     data: jobs = [],
     isLoading: isLoadingJobs,
@@ -218,7 +217,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           },
           body: JSON.stringify({
             employeeId,
-            companyId: userId
+            companyId: userId,
           }),
         }
       );
@@ -404,7 +403,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-6 shadow-md border relative">
         <div className="flex flex-col md:flex-row items-start gap-6">
-          <div className="w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0">
+          <div className="w-20 h-20 bg-gray-900 rounded-lg flex-shrink-0">
             {company.clogo ? (
               <Image
                 src={company.clogo || "/placeholder.svg"}
@@ -414,7 +413,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
-              <div className="w-full h-full bg-gray-600 rounded-lg" />
+              <div className="w-full h-full bg-gray-900 rounded-lg" />
             )}
           </div>
 
@@ -422,9 +421,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             <h1 className="text-2xl font-bold mb-2 text-gray-900">
               {company.cname}
             </h1>
-            <p className="text-gray-600 mb-4 text-sm">{company.industry}</p>
+            <p className="text-gray-900 mb-4 text-sm">{company.industry}</p>
 
-            <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+            <div className="flex items-center gap-6 text-sm text-gray-900 mb-4">
               <div className="flex items-center gap-1">
                 <MapPin className="h-4 w-4" />
                 {company.city}, {company.country}
@@ -442,10 +441,10 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
           <div className="flex flex-col items-end gap-4 w-full md:w-auto">
             <div className="text-right">
-              <p className="text-sm text-gray-600 mb-2 font-medium">
+              <p className="text-sm text-gray-900 mb-2 font-medium">
                 Try it Free - Post Your First Job in No Cost!
               </p>
-              <p className="text-xs text-gray-500 mb-4 max-w-xs">
+              <p className="text-xs mb-4 max-w-xs">
                 Easily post your company job openings and reach the right talent
                 fast. Get quality applications in no time.
               </p>
@@ -461,7 +460,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   </Button>
                 </Link>
                 <Link
-                  href={`/elevator-pitch-resume/edit-company/${company.userId}`}
+                  href={`/elevator-video-pitch/edit-company/${company.userId}`}
                 >
                   <Button className="bg-primary hover:bg-primary/90 text-white px-6">
                     Edit Profile
@@ -506,7 +505,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       </Button>
                     </Link>
                     <Link
-                      href={`/elevator-pitch-resume/edit-company/${company.userId}`}
+                      href={`/elevator-video-pitch/edit-company/${company.userId}`}
                       onClick={() => setIsDrawerOpen(false)}
                     >
                       <Button className="w-full bg-primary hover:bg-primary/90 text-white py-4 text-lg">
@@ -543,7 +542,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 </Button>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-black">
               Upload or view a short video introducing your company.
             </p>
           </CardHeader>
@@ -602,7 +601,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   </p>
                 )}
                 {!isElevatorPitchUploaded && !elevatorPitchFile && (
-                  <p className="mt-2 text-sm text-gray-600">No pitch available.</p>
+                  <p className="mt-2 text-sm text-gray-900">
+                    No pitch available.
+                  </p>
                 )}
               </>
             )}
@@ -615,7 +616,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
             <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-900 mb-6">
               Are you sure you want to delete your elevator pitch? This action
               cannot be undone.
             </p>
@@ -682,7 +683,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                             src={recruiter.photo.url}
                             alt={recruiter.name}
                           />
-                          <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                          <AvatarFallback className="bg-gray-200 text-gray-900 text-sm">
                             {recruiter.name
                               .split(" ")
                               .map((n) => n[0])
@@ -720,43 +721,46 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
               </TableBody>
             </Table>
 
-            <div className="flex items-center justify-center gap-2 p-4 border-t">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 bg-transparent"
-                onClick={handlePreviousPage}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <Button
-                    key={page}
-                    variant="outline"
-                    size="sm"
-                    className={`h-8 w-8 p-0 ${
-                      currentPage === page
-                        ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
-                        : "bg-transparent"
-                    }`}
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0 bg-transparent"
-                onClick={handleNextPage}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+            {recruiters.length > 3 && (
+              <div className="flex items-center justify-center gap-2 p-4 border-t">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-transparent"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <Button
+                      key={page}
+                      variant="outline"
+                      size="sm"
+                      className={`h-8 w-8 p-0 ${
+                        currentPage === page
+                          ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
+                          : "bg-transparent"
+                      }`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  )
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 w-8 p-0 bg-transparent"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
             {deleteMutation.isPending && (
               <div className="text-center text-gray-500 pb-4">
                 Updating list...
@@ -791,7 +795,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                     <h3 className="font-semibold text-gray-900">
                       {honor.title}
                     </h3>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-sm text-gray-900 mb-2">
                       {honor.programeName}
                     </p>
                     <p className="text-sm text-gray-500 mb-2">
@@ -811,7 +815,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full">
             <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-900 mb-6">
               Are you sure you want to remove this employee from the company?
             </p>
             <div className="flex justify-end gap-4">

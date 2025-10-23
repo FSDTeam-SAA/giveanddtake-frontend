@@ -356,6 +356,7 @@ const applyForCompanyEmployee = async (
 export default function RecruiterDashboard() {
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
+  const userId = (session as any)?.user?.id as string | undefined;
   const queryClient = useQueryClient();
 
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
@@ -376,7 +377,7 @@ export default function RecruiterDashboard() {
     isLoading: jobsLoading,
     error: jobsError,
   } = useQuery<JobApiResponse, Error>({
-    queryKey: ["jobs", token],
+    queryKey: ["jobs", userId, token],
     queryFn: () => fetchJobs(token),
     enabled: !!token, // prevents unauthenticated flashes
     refetchOnWindowFocus: false,
@@ -482,16 +483,40 @@ export default function RecruiterDashboard() {
   const handleNextTable = () =>
     setCurrentPageTable((p) => Math.min(totalPagesTable, p + 1));
 
-  const handleDeleteClick = (jobId: string) => {
-    const job = jobs.find((j) => j._id === jobId);
-    if (job && job.applicantCount > 0) {
-      setDeleteJobId(jobId);
-      setIsApplicantWarningModalOpen(true); // New state for applicant warning modal
-    } else {
-      setDeleteJobId(jobId);
-      setIsDeleteModalOpen(true);
+  const toggleArchive = async (jobId: string) => {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}/archive`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // if required
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to update archive status");
     }
+
+    const data = await res.json();
+    return data; // assume response includes updated job with arcrivedJob field
   };
+
+  const { mutate: handleArchive, isPending: isArchiving } = useMutation({
+    mutationFn: toggleArchive,
+    onSuccess: (data) => {
+      if (data?.arcrivedJob === true) {
+        toast.success("Job archived successfully!");
+      } else if (data?.arcrivedJob === false) {
+        toast.success("Job unarchived successfully!");
+      }
+      queryClient.invalidateQueries({ queryKey: ["jobs", userId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Something went wrong");
+    },
+  });
   const handleConfirmDelete = () =>
     deleteJobId && deleteMutation.mutate(deleteJobId);
 
@@ -700,7 +725,9 @@ export default function RecruiterDashboard() {
                     dangerouslySetInnerHTML={{ __html: sanitizedContent }}
                   />
                 ) : (
-                  <p className="text-gray-700 mt-2">No description available.</p>
+                  <p className="text-gray-700 mt-2">
+                    No description available.
+                  </p>
                 )}
               </div>
             </div>
@@ -779,18 +806,20 @@ export default function RecruiterDashboard() {
                           <Eye className="h-5 w-5" />
                         </Link>
                         <button
-                          onClick={() => handleDeleteClick(job._id)}
-                          disabled={
-                            deleteMutation.isPending && deleteJobId === job._id
-                          }
-                          aria-label={`Delete job ${job.title}`}
-                          className={`text-red-600 hover:text-red-700 ${
-                            deleteMutation.isPending && deleteJobId === job._id
-                              ? "opacity-50 cursor-not-allowed"
-                              : ""
+                          onClick={() => handleArchive(job._id)}
+                          className={`cursor-pointer transition px-3 rounded ${
+                            job.arcrivedJob
+                              ? "bg-red-100 text-red-600 hover:bg-red-200"
+                              : "bg-green-100 text-green-600 hover:bg-green-200"
+                          } ${
+                            isArchiving ? "opacity-50 pointer-events-none" : ""
                           }`}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          {isArchiving
+                            ? "Processing..."
+                            : job.arcrivedJob
+                            ? "Unarchive"
+                            : "Archive"}
                         </button>
                       </div>
                     </div>
@@ -892,18 +921,20 @@ export default function RecruiterDashboard() {
                           <Eye className="h-5 w-5" />
                         </Link>
                         <button
-                          onClick={() => handleDeleteClick(job._id)}
-                          disabled={
-                            deleteMutation.isPending && deleteJobId === job._id
-                          }
-                          className={`text-red-600 hover:text-red-700 transition-colors ${
-                            deleteMutation.isPending && deleteJobId === job._id
-                              ? "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer"
+                          onClick={() => handleArchive(job._id)}
+                          className={`cursor-pointer transition px-3 rounded ${
+                            job.arcrivedJob
+                              ? "bg-red-100 text-red-600 hover:bg-red-200"
+                              : "bg-green-100 text-green-600 hover:bg-green-200"
+                          } ${
+                            isArchiving ? "opacity-50 pointer-events-none" : ""
                           }`}
-                          aria-label={`Delete job ${job.title}`}
                         >
-                          <Trash2 className="h-6 w-6" />
+                          {isArchiving
+                            ? "Processing..."
+                            : job.arcrivedJob
+                            ? "Unarchive"
+                            : "Archive"}
                         </button>
                       </TableCell>
                     </TableRow>
@@ -1022,7 +1053,9 @@ export default function RecruiterDashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center text-gray-500">No companies available.</div>
+                <div className="text-center text-gray-500">
+                  No companies available.
+                </div>
               )}
             </div>
             <DialogFooter>

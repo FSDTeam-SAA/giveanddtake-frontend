@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"; // Import toast
+import { Link } from "lucide-react";
 
 interface UserData {
   _id: string;
@@ -171,7 +172,9 @@ export default function PendingEmployeeRequest({
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium text-gray-900">
-                          {req.userId.name}
+                          <Link href={`/recruiters-profile/${req.userId._id}`}>
+                            {req.userId.name}
+                          </Link>
                         </span>
                       </div>
                     </TableCell>
