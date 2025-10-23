@@ -17,7 +17,7 @@ export function Footer() {
     if (!token) {
       router.push("/login");
     } else {
-      router.push("/elevator-pitch-resume");
+      router.push("/elevator-video-pitch");
     }
   };
 
@@ -27,7 +27,7 @@ export function Footer() {
     } else if (role !== "recruiter") {
       router.push("/login"); // Redirect to login if user is not a company
     } else {
-      router.push("/elevator-pitch-resume");
+      router.push("/elevator-video-pitch");
     }
   };
 
@@ -37,7 +37,7 @@ export function Footer() {
     } else if (role !== "company") {
       router.push("/login"); // Redirect to login if user is not a company
     } else {
-      router.push("/ elevator-pitch-resume");
+      router.push("/ elevator-video-pitch");
     }
   };
 
@@ -65,7 +65,7 @@ export function Footer() {
     } else if (role == "company") {
       router.push("/add-job"); // Redirect to login if user is not a company
     } else {
-      router.push("/elelevator-pitch-resume");
+      router.push("/elelevator-video-pitch");
     }
   };
 

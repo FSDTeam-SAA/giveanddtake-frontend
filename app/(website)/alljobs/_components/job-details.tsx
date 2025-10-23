@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, DollarSign } from "lucide-react";
+import { ArrowLeft, MapPin, DollarSign, Building2 } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
@@ -42,6 +42,7 @@ interface JobDetailsData {
   recruiterId?: Recruiter;
   benefits: string[];
   vacancy: number;
+  website_Url: string;
   employement_Type?: string;
   experience: string;
   deadline: string;
@@ -188,7 +189,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       return response.json();
     },
     onSuccess: () => {
-      toast.success(`Job ${bookmarked ? "unsaved" : "saved"} successfully!`);
+      toast.success(
+        ` ${bookmarked ? "Bookmark removed" : "Bookmarked"} successfully!`
+      );
       queryClient.invalidateQueries({ queryKey: ["bookmark", jobId, userId] });
       queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
     },
@@ -410,6 +413,15 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       <MapPin className="h-4 w-4 mr-1 text-[#2042E3]" />{" "}
                       {job.location}
                     </span>
+                    {job.website_Url && (
+                      <Link
+                        href={job.website_Url}
+                        className="flex items-center text-[#707070] truncate max-w-[16rem] sm:max-w-none"
+                      >
+                        <Building2 className="h-4 w-4 mr-1 text-[#2042E3]" />
+                        Company website
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

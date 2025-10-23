@@ -22,5 +22,5 @@ export default withAuth(
 
 // List of routes to protect
 export const config = {
-  matcher: ["/elevator-pitch-resume/:path*", "/jobs/:path*"],
+  matcher: ["/elevator-video-pitch/:path*", "/jobs/:path*"],
 };

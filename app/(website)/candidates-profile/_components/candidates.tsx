@@ -14,7 +14,7 @@ import { useSession } from "next-auth/react";
 import { SocialIcon } from "@/components/company/social-icon";
 import CandidateShare from "./candidateShare";
 import CandidateSharePopover from "./candidateShare";
-import SocialLinks from "../../elevator-pitch-resume/_components/SocialLinks";
+import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
 
 // ---------- utils ----------
 const toMonthYear = (date?: string) => {
@@ -291,7 +291,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             </div>
 
             <h2 className="text-2xl md:text-3xl font-bold mt-3">
-                {resume.firstName} {resume.lastName}
+              {resume.firstName} {resume.lastName}
             </h2>
 
             <p className="text-gray-600 flex items-center">

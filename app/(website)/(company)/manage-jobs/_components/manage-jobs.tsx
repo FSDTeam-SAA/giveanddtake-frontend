@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Table,
   TableBody,
@@ -29,6 +29,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 // Types based on your API response
 interface Company {
@@ -200,6 +202,11 @@ const JobTableSkeleton = () => {
 function ManagePage({ userId }: ManagePageProps) {
   const [currentPage, setCurrentPage] = React.useState(1);
   const itemsPerPage = 10;
+  const queryClient = useQueryClient();
+
+  const sesstion = useSession();
+  const token = sesstion.data?.accessToken;
+  console.log(token);
 
   const {
     data: jobs = [],
@@ -209,6 +216,41 @@ function ManagePage({ userId }: ManagePageProps) {
     queryKey: ["jobs", userId],
     queryFn: () => fetchJobs(userId),
     enabled: !!userId, // Only run query if userId exists
+  });
+
+  const toggleArchive = async (jobId: string) => {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}/archive`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // if required
+        },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to update archive status");
+    }
+
+    const data = await res.json();
+    return data; // assume response includes updated job with arcrivedJob field
+  };
+
+  const { mutate: handleArchive, isPending: isArchiving } = useMutation({
+    mutationFn: toggleArchive,
+    onSuccess: (data) => {
+      if (data?.arcrivedJob === true) {
+        toast.success("Job archived successfully!");
+      } else if (data?.arcrivedJob === false) {
+        toast.success("Job unarchived successfully!");
+      }
+      queryClient.invalidateQueries({ queryKey: ["jobs", userId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || "Something went wrong");
+    },
   });
 
   // Pagination calculations
@@ -258,11 +300,9 @@ function ManagePage({ userId }: ManagePageProps) {
                     <TableHead>Experience</TableHead>
                     <TableHead>Deadline</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-base text-[#2B7FD0] font-bold">
-                      Applicants list
-                    </TableHead>
+                    <TableHead>Applicants list</TableHead>
                     <TableHead>Vacancy</TableHead>
-                    <TableHead>Action</TableHead>
+                    <TableHead className="text-center">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -291,20 +331,20 @@ function ManagePage({ userId }: ManagePageProps) {
                         <TableCell>{formatDate(job.deadline)}</TableCell>
                         <TableCell>{job.derivedStatus}</TableCell>
                         <TableCell>
-                        <Link
-                          href={`/candidate-list/${job._id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          View{" "}
-                          <span className="text-gray-500">
-                            ({job.applicantCount})
-                          </span>
-                        </Link>
-                      </TableCell>
+                          <Link
+                            href={`/candidate-list/${job._id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            View{" "}
+                            <span className="text-gray-500">
+                              ({job.applicantCount})
+                            </span>
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="secondary">{job.vacancy}</Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="flex items-center justify-center gap-2">
                           <Badge variant="secondary">
                             <Link
                               href={`/single-job/${job._id}`}
@@ -313,6 +353,24 @@ function ManagePage({ userId }: ManagePageProps) {
                               Job details
                             </Link>
                           </Badge>
+                          <button
+                            onClick={() => handleArchive(job._id)}
+                            className={`cursor-pointer transition px-3 rounded ${
+                              job.arcrivedJob
+                                ? "bg-red-100 text-red-600 hover:bg-red-200"
+                                : "bg-green-100 text-green-600 hover:bg-green-200"
+                            } ${
+                              isArchiving
+                                ? "opacity-50 pointer-events-none"
+                                : ""
+                            }`}
+                          >
+                            {isArchiving
+                              ? "Processing..."
+                              : job.arcrivedJob
+                              ? "Unarchive"
+                              : "Archive"}
+                          </button>
                         </TableCell>
                       </TableRow>
                     ))

@@ -15,7 +15,7 @@ export function HowItWorksCompany() {
     if (!token) {
       router.push("/login");
     } else {
-      router.push("/elevator-pitch-resume");
+      router.push("/elevator-video-pitch");
     }
   };
 
@@ -93,7 +93,7 @@ export function HowItWorksCompany() {
               </CardContent>
             </Card>
           </Link>
-          <Link href="/elevator-pitch-resume">
+          <Link href="/elevator-video-pitch">
             <Card className="flex flex-col items-center lg:p-6 text-center shadow-sm hover:shadow-md transition-shadow h-[300px]">
               {" "}
               {/* Fixed height */}
