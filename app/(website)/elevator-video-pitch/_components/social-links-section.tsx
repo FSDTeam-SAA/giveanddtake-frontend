@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/form";
 import type { UseFormReturn } from "react-hook-form";
 import { useEffect, useMemo } from "react";
+import { useSession } from "next-auth/react";
 
 interface SocialLinkRow {
   label: string;
@@ -21,29 +22,47 @@ interface SocialLinksSectionProps {
   form: UseFormReturn<any>;
 }
 
-// Added “Others” at the end
-const FIXED_PLATFORMS = [
+const BASE_PLATFORMS = [
   "LinkedIn",
-
   "Twitter",
-
   "Facebook",
   "TikTok",
   "Instagram",
   "Upwork",
   "Fiverr",
-  "Other",
 ] as const;
 
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
-  // Seed exactly 7 rows (6 fixed + 1 Others)
+  const session = useSession();
+  const role = session.data?.user?.role;
+
+  // Dynamically decide what to call the last label (for UI)
+  const dynamicOtherLabel =
+    role === "recruiter" || role === "company"
+      ? "Company Website"
+      : role === "candidate"
+      ? "Portfolio Website"
+      : "Other";
+
+  // Fixed platforms + dynamic label
+  const FIXED_PLATFORMS = useMemo(
+    () => [...BASE_PLATFORMS, dynamicOtherLabel],
+    [dynamicOtherLabel]
+  );
+
+  // Initialize form values
   const initialLinks: SocialLinkRow[] = useMemo(() => {
     const existing: SocialLinkRow[] = form.getValues("sLink") ?? [];
     return FIXED_PLATFORMS.map((label, i) => ({
       label,
       url: existing[i]?.url ?? "",
     }));
-  }, [form]);
+  }, [form, FIXED_PLATFORMS]);
+
+  const sectionTitle =
+    role === "company"
+      ? "Company Social Media Links"
+      : "Professional Social Media and Website Links";
 
   useEffect(() => {
     form.setValue("sLink", initialLinks, {
@@ -58,11 +77,11 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
         <div className="flex items-center gap-2">
           <div>
             <CardTitle className="text-md font-medium text-gray-900">
-              Social Links
+              {sectionTitle}
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Add URLs for your social and professional profiles
-            </p>
+            {/* <p className="text-sm text-muted-foreground mt-1">
+              Add URLs for your social and professional profiles and websites.
+            </p> */}
           </div>
         </div>
       </CardHeader>
@@ -80,19 +99,28 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
                   <FormControl>
                     <Input
                       placeholder={
-                        platform === "Other"
-                          ? "https://your-custom-link.com"
+                        platform === dynamicOtherLabel
+                          ? "https://your-website.com"
                           : `https://${platform.toLowerCase()}.com/your-profile`
                       }
                       {...field}
                     />
                   </FormControl>
-                  {/* Keep label in the form state for backend */}
+
+                  {/* 
+                    Store normalized label value ("Other") for backend and icon mapping.
+                    The display label (Company Website / Portfolio Website) is only for UI.
+                  */}
                   <input
                     type="hidden"
-                    value={platform}
+                    value={
+                      platform === dynamicOtherLabel && platform !== "Other"
+                        ? "Other"
+                        : platform
+                    }
                     {...form.register(`sLink.${index}.label`)}
                   />
+
                   <FormMessage />
                 </FormItem>
               )}

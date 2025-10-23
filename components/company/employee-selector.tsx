@@ -141,7 +141,7 @@ export function EmployeeSelector({
 
       {selectedUsers.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">Selected Employees:</p>
+          <p className="text-sm text-gray-600">Selected Recruiters:</p>
           <div className="flex flex-wrap gap-2">
             {selectedUsers.map((user) => (
               <Badge

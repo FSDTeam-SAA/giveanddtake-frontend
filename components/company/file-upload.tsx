@@ -9,12 +9,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 // 32 MB in bytes: 32 * 1024 * 1024
-const MAX_FILE_SIZE_BYTES = 32 * 1024 * 1024; // 👈 Constant for 32MB
+const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024; // 👈 Constant for 32MB
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
   accept?: string;
-  maxSize?: number;
   className?: string;
   children?: React.ReactNode;
   variant?: "default" | "dark";
@@ -24,7 +23,6 @@ interface FileUploadProps {
 export function FileUpload({
   onFileSelect,
   accept = "*/*",
-  maxSize = MAX_FILE_SIZE_BYTES, // 👈 Updated default value to 32MB
   className,
   children,
   variant = "default",
@@ -36,6 +34,7 @@ export function FileUpload({
     defaultUrl || null
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const maxSize = MAX_FILE_SIZE_BYTES; // 👈 Use the constant here
 
   useEffect(() => {
     if (selectedFile) {

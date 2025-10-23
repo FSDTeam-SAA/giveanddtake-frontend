@@ -1141,7 +1141,7 @@ export default function RecruiterDashboard() {
                     Deleting...
                   </span>
                 ) : (
-                  "Force Delete"
+                  "Delete"
                 )}
               </Button>
             </DialogFooter>

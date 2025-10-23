@@ -463,7 +463,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
         {/* Right / Side column */}
         <div className="lg:col-span-3 space-y-4 sm:space-y-6">
-          <Card className="sticky top-2 sm:top-4 z-10">
+          <Card className="sticky top-16 z-10">
             <div className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button
@@ -599,7 +599,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
-                  <span className="text-gray-600">Location_Type</span>
+                  <span className="text-gray-600">Location Type</span>
                   <span className="font-medium">
                     {job.location_Type
                       ? job.location_Type.charAt(0).toUpperCase() +
