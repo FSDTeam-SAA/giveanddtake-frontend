@@ -227,12 +227,7 @@ export default function JobsListing() {
             ))}
           </div>
         )}
-<<<<<<< HEAD
         {meta.totalPages > 10 && (
-=======
-
-        {meta.totalPages > 0 && (
->>>>>>> 9f3ad218685478bfd4c06ea4892e58373b78bc12
           <div className="px-6 py-4">
             <Pagination
               currentPage={meta.currentPage}
