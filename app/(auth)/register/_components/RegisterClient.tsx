@@ -361,20 +361,11 @@ export default function RegisterPage() {
     }
 
 
-    if (needsDob) {
-      if (!dob) {
-        toast.error("Please select your age (MM/YYYY).");
-        return false;
-      }
-      if (isUnder16) {
-        setShowUnderAgeDialog(true);
-        return false;
-      }
-      if (dob > today || dob < oldestAllowed) {
-        toast.error("Please select a valid age.");
-        return false;
-      }
+    if (!dob) {
+      setShowUnderAgeDialog(true);
+      return false;
     }
+
 
     if (formData.password !== confirmPassword) {
       toast.error("Passwords do not match.");
@@ -396,7 +387,12 @@ export default function RegisterPage() {
   const actuallySubmit = (data: RegisterData) => {
     const payload = {
       ...data,
-      dateOfbirth: dobISO || undefined,
+      dateOfbirth: dob
+        ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate()))
+          .toISOString()
+          .slice(0, 10)
+        : undefined,
+
     } as unknown as RegisterData;
     registerMutation.mutate(payload);
   };
@@ -484,41 +480,41 @@ export default function RegisterPage() {
             </div>
 
             {/* Email */}
-           {/* Email (Dynamic Label) */}
-<div className="space-y-2">
-  <Label htmlFor="email">
-    {selectedRole === "recruiter"
-      ? "Recruiter Email"
-      : selectedRole === "company"
-      ? "Company Email"
-      : "Personal Email"}
-  </Label>
+            {/* Email (Dynamic Label) */}
+            <div className="space-y-2">
+              <Label htmlFor="email">
+                {selectedRole === "recruiter"
+                  ? "Recruiter Email"
+                  : selectedRole === "company"
+                    ? "Company Email"
+                    : "Personal Email"}
+              </Label>
 
-  <div className="relative">
-    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-    <Input
-      id="email"
-      type="email"
-      placeholder={
-        selectedRole === "recruiter"
-          ? "Enter your recruiter email"
-          : selectedRole === "company"
-          ? "Enter your company email"
-          : "Enter your personal email"
-      }
-      value={formData.email}
-      onChange={(e) => handleInputChange("email", e.target.value)}
-      onBlur={(e) => {
-        const v = e.target.value.trim();
-        if (v && !emailRegex.test(v)) {
-          toast.error("Invalid email format.");
-        }
-      }}
-      className="pl-10"
-      required
-    />
-  </div>
-</div>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder={
+                    selectedRole === "recruiter"
+                      ? "Enter your recruiter email"
+                      : selectedRole === "company"
+                        ? "Enter your company email"
+                        : "Enter your personal email"
+                  }
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (v && !emailRegex.test(v)) {
+                      toast.error("Invalid email format.");
+                    }
+                  }}
+                  className="pl-10"
+                  required
+                />
+              </div>
+            </div>
 
 
             {/* Country (with Combobox) */}
@@ -568,52 +564,6 @@ export default function RegisterPage() {
             </div>
 
 
-
-            {/* DOB - month/year only using CustomDateInput (stores YYYY-MM-01) */}
-            <div className="space-y-2">
-              <Label className="mr-5 text-nowrap">Age verification (16+)</Label>
-
-              <div className="relative">
-
-                <CustomDateInput
-                  value={dobInput}
-                  onChange={(val) => {
-                    setDobInput(val);
-                    const full = /^\d{2}\/\d{4}$/.test(val);
-                    if (!full) {
-                      setDob(null);
-                      return;
-                    }
-                    const [mmStr, yyyyStr] = val.split("/");
-                    const mm = Number.parseInt(mmStr, 10);
-                    const yyyy = Number.parseInt(yyyyStr, 10);
-
-                    if (mm < 1 || mm > 12 || Number.isNaN(yyyy)) {
-                      setDob(null);
-                      return;
-                    }
-
-                    const normalized = new Date(yyyy, mm - 1, 1);
-                    normalized.setHours(0, 0, 0, 0);
-
-                    if (isNaN(normalized.getTime())) {
-                      setDob(null);
-                      return;
-                    }
-
-                    setDob(normalized);
-                  }}
-                  placeholder="MMYYYY"
-                  className="pl-10 h-11 w-full"
-                />
-              </div>
-
-              {dob && isUnder16 && (
-                <p className="text-sm text-destructive">
-                  You must be at least 16 years old to register.
-                </p>
-              )}
-            </div>
 
             {/* Password */}
             <div className="space-y-2">
@@ -735,6 +685,27 @@ export default function RegisterPage() {
                 </button>
               </div>
             </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="ageVerification"
+                  checked={!!dob}
+                  onCheckedChange={(checked) => {
+                    if (checked) {
+                      const d = new Date();
+                      d.setFullYear(d.getFullYear() - 16);
+                      d.setHours(0, 0, 0, 0);
+                      setDob(d); // store 16 years ago date
+                    } else {
+                      setDob(null);
+                    }
+                  }}
+                />
+                <Label htmlFor="ageVerification" className="text-sm">
+                  I confirm I am 16 years of age or older
+                </Label>
+              </div>
+            </div>
 
             {/* Terms */}
             <div className="flex items-center gap-2">
@@ -851,12 +822,6 @@ export default function RegisterPage() {
             <div>
               Country:{" "}
               <span className="font-medium">{formData.address || "—"}</span>
-            </div>
-            <div>
-              DOB:{" "}
-              <span className="font-medium">
-                {dob ? format(dob, "MM/yyyy") : "—"}
-              </span>
             </div>
           </div>
           <AlertDialogFooter>
