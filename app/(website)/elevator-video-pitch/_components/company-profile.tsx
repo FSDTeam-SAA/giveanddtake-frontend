@@ -441,8 +441,8 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
           <div className="flex flex-col items-end gap-4 w-full md:w-auto">
             <div className="text-right">
-              <p className="text-sm text-gray-900 mb-2 font-medium">
-                Try it Free - Post Your First Job in No Cost!
+              <p className="text-sm text-gray-600 mb-2 font-medium">
+                All job posts free until February 2026
               </p>
               <p className="text-xs mb-4 max-w-xs">
                 Easily post your company job openings and reach the right talent

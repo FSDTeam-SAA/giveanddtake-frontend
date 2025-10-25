@@ -322,7 +322,7 @@ export default function RecruiterAccount({
 
               <div className="space-y-3 pt-2">
                 <p className="text-sm text-muted-foreground">
-                  {"Try It Free — Post Your First Job at No Cost!"}
+                  {"All job posts free until February 2026"}
                 </p>
                 <Button
                   size="lg"

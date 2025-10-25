@@ -306,7 +306,7 @@ export default function EditableCompanyProfile({
             {!isEditing ? (
               <>
                 <p className="text-sm text-gray-600 mb-2 font-medium">
-                  Try it Free - Post Your First Job in No Cost!
+                  All job posts free until February 2026
                 </p>
                 <p className="text-xs text-gray-500 mb-4 max-w-xs">
                   Easily post your company job openings and reach the right
