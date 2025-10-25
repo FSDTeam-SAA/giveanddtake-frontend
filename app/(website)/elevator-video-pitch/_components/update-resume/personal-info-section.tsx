@@ -95,6 +95,7 @@ export const PersonalInfoSection = ({
                     type="email"
                     placeholder="john.doe@example.com"
                     {...field}
+                    disabled
                   />
                 </FormControl>
                 <FormMessage />

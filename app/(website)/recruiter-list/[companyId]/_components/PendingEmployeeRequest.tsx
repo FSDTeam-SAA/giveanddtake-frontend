@@ -122,8 +122,8 @@ export default function PendingEmployeeRequest({
       <div className="mb-4">
         <Button onClick={handleToggleRequests}>
           {showRequests
-            ? "Hide Recruiter Requests"
-            : "Show All Recruiter Requests"}
+            ? "Hide Internal Recruiter Requests"
+            : "Show All Internal Recruiter Requests"}
         </Button>
       </div>
 
