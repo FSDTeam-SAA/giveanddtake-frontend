@@ -167,7 +167,7 @@ export default function RecruiterElevator({
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Upload or view a short video introducing yourself.</CardTitle>
+              <CardTitle className="text-sm md:text-lg lg:text-xl">Upload or view a short video introducing yourself.</CardTitle>
               {isElevatorPitchUploaded && pitchData && (
                 <Button
                   variant="destructive"

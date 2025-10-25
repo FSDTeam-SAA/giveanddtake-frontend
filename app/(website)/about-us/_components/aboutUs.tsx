@@ -102,7 +102,7 @@ export default function AboutUsPage() {
               {/* Render Quill HTML safely */}
               <div
                 className="prose max-w-4xl list-item list-none"
-                dangerouslySetInnerHTML={{ __html: data.description || "" }}
+                dangerouslySetInnerHTML={{ __html: data?.data?.description || "" }}
               />
             </>
           )}

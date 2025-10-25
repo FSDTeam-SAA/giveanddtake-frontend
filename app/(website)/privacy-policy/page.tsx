@@ -37,7 +37,7 @@ const PrivacyPage = () => {
 
         <div
           className="prose max-w-none list-item list-none"
-          dangerouslySetInnerHTML={{ __html: content?.description || "" }}
+          dangerouslySetInnerHTML={{ __html: content?.data?.description || "" }}
         />
       </div>
     </div>
