@@ -13,6 +13,8 @@ const fetchContent = async (type: string) => {
   return data;
 };
 
+
+
 export function HowItWorksSection() {
   const candidateQuery = useQuery({
     queryKey: ["content", "candidate"],
@@ -38,6 +40,7 @@ export function HowItWorksSection() {
     candidateQuery.isError ||
     recruiterQuery.isError ||
     companyQuery.isError;
+
 
   if (isLoading) {
     return (
@@ -93,12 +96,12 @@ export function HowItWorksSection() {
             </CardHeader>
             <CardContent className="flex flex-col justify-between flex-1 space-y-3 w-full">
               <CardTitle className="text-xl font-semibold">
-                {candidateQuery.data?.title || "Candidates"}
+                {candidateQuery.data?.data?.title || "Candidates"}
               </CardTitle>
               <div
                 className="text-gray-600 text-sm text-left leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
-                  __html: candidateQuery.data?.description || "",
+                  __html: candidateQuery.data?.data?.description || "",
                 }}
               />
             </CardContent>
@@ -117,12 +120,12 @@ export function HowItWorksSection() {
             </CardHeader>
             <CardContent className="flex flex-col justify-between flex-1 space-y-3 w-full">
               <CardTitle className="text-xl font-semibold flex flex-col items-center">
-                {recruiterQuery.data?.title || "Recruiters"}
+                {recruiterQuery.data?.data?.title || "Recruiters"}
               </CardTitle>
               <div
                 className="text-gray-600 text-sm text-left leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
-                  __html: recruiterQuery.data?.description || "",
+                  __html: recruiterQuery.data?.data?.description || "",
                 }}
               />
             </CardContent>
@@ -141,12 +144,12 @@ export function HowItWorksSection() {
             </CardHeader>
             <CardContent className="flex flex-col justify-between flex-1 w-full">
               <CardTitle className="text-xl font-semibold">
-                {companyQuery.data?.title || "Companies"}
+                {companyQuery.data?.data?.title || "Companies"}
               </CardTitle>
               <div
                 className="text-gray-600 text-sm text-left leading-relaxed list-item list-none"
                 dangerouslySetInnerHTML={{
-                  __html: companyQuery.data?.description || "",
+                  __html: companyQuery.data?.data?.description || "",
                 }}
               />
             </CardContent>
