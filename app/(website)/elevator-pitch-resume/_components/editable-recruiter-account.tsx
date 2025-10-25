@@ -798,7 +798,7 @@ export default function EditableRecruiterAccount({
 
                   <div className="pt-2">
                     <p className="text-[14px] md:text-[20px] mb-4">
-                      {"Try It Free — Post Your First Job at No Cost!"}
+                      {"All job posts free until February 2026"}
                     </p>
                     <Link
                       href="/add-job"
