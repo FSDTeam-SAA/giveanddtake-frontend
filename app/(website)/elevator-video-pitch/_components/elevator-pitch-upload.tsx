@@ -132,7 +132,6 @@ export function ElevatorPitchUpload({
             <FileUpload
               onFileSelect={handleFileSelect}
               accept="video/*"
-              maxSize={32 * 1024 * 1024}
               variant="dark"
               className="min-h-[200px]"
             >
@@ -147,10 +146,7 @@ export function ElevatorPitchUpload({
                   <p className="text-gray-300 text-sm mb-4">
                     Drop your video here or click to browse
                   </p>
-                  <p className="text-xs text-gray-400">
-                    Maximum size 24mb and 30 seconds or 60 seconds long (if
-                    upgraded)
-                  </p>
+                
                 </div>
                 <Button
                   type="button"
