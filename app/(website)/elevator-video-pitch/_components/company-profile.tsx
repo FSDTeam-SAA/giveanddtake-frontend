@@ -522,9 +522,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
       {/* Elevator Pitch */}
       <div className="lg:pb-12 pb-5">
-        <h2 className="text-xl lg:text-4xl font-bold text-center my-10 text-gray-900">
-          Elevator Video Pitch©
-        </h2>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">

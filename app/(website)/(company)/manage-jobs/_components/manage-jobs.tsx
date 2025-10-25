@@ -21,6 +21,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -31,6 +32,16 @@ import {
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Types based on your API response
 interface Company {
@@ -205,8 +216,10 @@ function ManagePage({ userId }: ManagePageProps) {
   const queryClient = useQueryClient();
 
   const sesstion = useSession();
-  const token = sesstion.data?.accessToken;
-  console.log(token);
+  const token = sesstion.data?.accessToken as string | undefined;
+
+  // Track which job we're confirming for
+  const [confirmJobId, setConfirmJobId] = React.useState<string | null>(null);
 
   const {
     data: jobs = [],
@@ -225,7 +238,7 @@ function ManagePage({ userId }: ManagePageProps) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`, // if required
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       }
     );
@@ -246,10 +259,12 @@ function ManagePage({ userId }: ManagePageProps) {
       } else if (data?.arcrivedJob === false) {
         toast.success("Job unarchived successfully!");
       }
+      setConfirmJobId(null);
       queryClient.invalidateQueries({ queryKey: ["jobs", userId] });
     },
     onError: (error: any) => {
       toast.error(error.message || "Something went wrong");
+      setConfirmJobId(null);
     },
   });
 
@@ -274,6 +289,16 @@ function ManagePage({ userId }: ManagePageProps) {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Helper: request archive with confirmation if needed
+  const requestArchive = (job: Job) => {
+    if (job.applicantCount > 0 && !job.arcrivedJob) {
+      // Show modal only when archiving (not unarchiving) and there are applicants
+      setConfirmJobId(job._id);
+      return;
+    }
+    handleArchive(job._id);
   };
 
   return (
@@ -309,7 +334,7 @@ function ManagePage({ userId }: ManagePageProps) {
                   {paginatedJobs.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={7}
+                        colSpan={9}
                         className="text-center py-8 text-muted-foreground"
                       >
                         No job postings found.
@@ -318,9 +343,7 @@ function ManagePage({ userId }: ManagePageProps) {
                   ) : (
                     paginatedJobs.map((job) => (
                       <TableRow key={job._id}>
-                        <TableCell className="font-medium">
-                          {job.title}
-                        </TableCell>
+                        <TableCell className="font-medium">{job.title}</TableCell>
                         <TableCell>{job.name}</TableCell>
                         <TableCell>{job.location}</TableCell>
                         <TableCell>
@@ -335,10 +358,8 @@ function ManagePage({ userId }: ManagePageProps) {
                             href={`/candidate-list/${job._id}`}
                             className="text-blue-600 hover:underline"
                           >
-                            View{" "}
-                            <span className="text-gray-500">
-                              ({job.applicantCount})
-                            </span>
+                            View {" "}
+                            <span className="text-gray-500">({job.applicantCount})</span>
                           </Link>
                         </TableCell>
                         <TableCell>
@@ -353,24 +374,21 @@ function ManagePage({ userId }: ManagePageProps) {
                               Job details
                             </Link>
                           </Badge>
-                          <button
-                            onClick={() => handleArchive(job._id)}
-                            className={`cursor-pointer transition px-3 rounded ${
+                          <Button
+                            onClick={() => requestArchive(job)}
+                            className={`px-3 rounded ${
                               job.arcrivedJob
                                 ? "bg-red-100 text-red-600 hover:bg-red-200"
                                 : "bg-green-100 text-green-600 hover:bg-green-200"
-                            } ${
-                              isArchiving
-                                ? "opacity-50 pointer-events-none"
-                                : ""
-                            }`}
+                            } ${isArchiving ? "opacity-50 pointer-events-none" : ""}`}
+                            disabled={isArchiving}
                           >
                             {isArchiving
                               ? "Processing..."
                               : job.arcrivedJob
                               ? "Unarchive"
                               : "Archive"}
-                          </button>
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
@@ -383,9 +401,7 @@ function ManagePage({ userId }: ManagePageProps) {
             {totalPages > 1 && (
               <div className="mt-4 flex items-center justify-between">
                 <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to{" "}
-                  {Math.min(startIndex + itemsPerPage, jobs.length)} of{" "}
-                  {jobs.length} entries
+                  Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, jobs.length)} of {jobs.length} entries
                 </div>
                 <Pagination>
                   <PaginationContent>
@@ -396,11 +412,7 @@ function ManagePage({ userId }: ManagePageProps) {
                           e.preventDefault();
                           setCurrentPage((prev) => Math.max(prev - 1, 1));
                         }}
-                        className={
-                          currentPage === 1
-                            ? "pointer-events-none opacity-50"
-                            : ""
-                        }
+                        className={currentPage === 1 ? "pointer-events-none opacity-50" : ""}
                       />
                     </PaginationItem>
 
@@ -443,15 +455,9 @@ function ManagePage({ userId }: ManagePageProps) {
                         href="#"
                         onClick={(e) => {
                           e.preventDefault();
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages)
-                          );
+                          setCurrentPage((prev) => Math.min(prev + 1, totalPages));
                         }}
-                        className={
-                          currentPage === totalPages
-                            ? "pointer-events-none opacity-50"
-                            : ""
-                        }
+                        className={currentPage === totalPages ? "pointer-events-none opacity-50" : ""}
                       />
                     </PaginationItem>
                   </PaginationContent>
@@ -461,6 +467,28 @@ function ManagePage({ userId }: ManagePageProps) {
           </div>
         </div>
       )}
+
+      {/* Archive Confirmation Modal */}
+      <AlertDialog open={!!confirmJobId} onOpenChange={(open) => !open && setConfirmJobId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Before you archive this job</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kindly remember to update each applicant on the final status of their application,
+              using our intuitive one-click feedback tool in your job applicants panel.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isArchiving} onClick={() => setConfirmJobId(null)}>No</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isArchiving}
+              onClick={() => confirmJobId && handleArchive(confirmJobId)}
+            >
+              Yes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

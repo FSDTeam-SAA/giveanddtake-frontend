@@ -10,14 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Trash2,
-  Mail,
-  Settings,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Eye, Mail, Settings } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
@@ -39,6 +32,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import DOMPurify from "dompurify";
+import { Input } from "@/components/ui/input";
 
 // =============== Types ===============
 interface ApplicationRequirement {
@@ -86,12 +80,6 @@ interface JobApiResponse {
   success: boolean;
   message: string;
   data: Job[];
-}
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
 }
 
 interface DeleteJobResponse {
@@ -233,7 +221,7 @@ const fetchRecruiterAccount = async (
       data.data.companyId.links = JSON.parse(data.data.companyId.links[0]);
     } catch (e) {
       console.warn("Failed to parse company links", e);
-      data.data.companyId!.links = [] as unknown as string[];
+      (data.data.companyId as Company).links = [] as unknown as string[];
     }
   }
   if (
@@ -244,7 +232,7 @@ const fetchRecruiterAccount = async (
       data.data.companyId.service = JSON.parse(data.data.companyId.service[0]);
     } catch (e) {
       console.warn("Failed to parse company services", e);
-      data.data.companyId!.service = [] as unknown as string[];
+      (data.data.companyId as Company).service = [] as unknown as string[];
     }
   }
 
@@ -358,6 +346,8 @@ export default function RecruiterDashboard() {
   const token = (session as any)?.accessToken as string | undefined;
   const userId = (session as any)?.user?.id as string | undefined;
   const queryClient = useQueryClient();
+  const [companyQuery, setCompanyQuery] = useState("");
+
 
   const [deleteJobId, setDeleteJobId] = useState<string | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -369,6 +359,11 @@ export default function RecruiterDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isApplicantWarningModalOpen, setIsApplicantWarningModalOpen] =
     useState(false);
+
+  // NEW: archive confirmation state
+  const [archiveJobId, setArchiveJobId] = useState<string | null>(null);
+  const [isArchiveConfirmOpen, setIsArchiveConfirmOpen] = useState(false);
+
   const itemsPerPage = 4;
 
   // -------- Queries
@@ -456,6 +451,16 @@ export default function RecruiterDashboard() {
     }
   }, [recruiterAccount?.data?.companyId?.aboutUs, recruiterAccount?.data?.bio]);
 
+
+  const filteredCompanies = useMemo(() => {
+  const q = companyQuery.trim().toLowerCase();
+  if (!q) return companiesData?.data ?? [];
+  return (companiesData?.data ?? []).filter((c) =>
+    c.cname?.toLowerCase().includes(q)
+  );
+}, [companiesData?.data, companyQuery]);
+
+
   const formatDate = (dateString?: string): string => {
     if (!dateString) return "-";
     const d = new Date(dateString);
@@ -511,12 +516,17 @@ export default function RecruiterDashboard() {
       } else if (data?.arcrivedJob === false) {
         toast.success("Job unarchived successfully!");
       }
+      setArchiveJobId(null);
+      setIsArchiveConfirmOpen(false);
       queryClient.invalidateQueries({ queryKey: ["jobs", userId] });
     },
     onError: (error: any) => {
       toast.error(error.message || "Something went wrong");
+      setArchiveJobId(null);
+      setIsArchiveConfirmOpen(false);
     },
   });
+
   const handleConfirmDelete = () =>
     deleteJobId && deleteMutation.mutate(deleteJobId);
 
@@ -531,6 +541,16 @@ export default function RecruiterDashboard() {
     selectedCompanyId
       ? applyMutation.mutate(selectedCompanyId)
       : toast.error("Please select a company.");
+
+  // NEW: open archive confirmation if job has applicants and we are archiving (not unarchiving)
+  const requestArchive = (job: Job) => {
+    if (job.applicantCount > 0 && !job.arcrivedJob) {
+      setArchiveJobId(job._id);
+      setIsArchiveConfirmOpen(true);
+      return;
+    }
+    handleArchive(job._id);
+  };
 
   // =============== UI ===============
   return (
@@ -806,7 +826,7 @@ export default function RecruiterDashboard() {
                           <Eye className="h-5 w-5" />
                         </Link>
                         <button
-                          onClick={() => handleArchive(job._id)}
+                          onClick={() => requestArchive(job)}
                           className={`cursor-pointer transition px-3 rounded ${
                             job.arcrivedJob
                               ? "bg-red-100 text-red-600 hover:bg-red-200"
@@ -921,7 +941,7 @@ export default function RecruiterDashboard() {
                           <Eye className="h-5 w-5" />
                         </Link>
                         <button
-                          onClick={() => handleArchive(job._id)}
+                          onClick={() => requestArchive(job)}
                           className={`cursor-pointer transition px-3 rounded ${
                             job.arcrivedJob
                               ? "bg-red-100 text-red-600 hover:bg-red-200"
@@ -990,6 +1010,7 @@ export default function RecruiterDashboard() {
         </section>
 
         {/* Company Selection Modal */}
+        {/* Company Selection Modal */}
         <Dialog open={isCompanyModalOpen} onOpenChange={setIsCompanyModalOpen}>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
@@ -998,6 +1019,23 @@ export default function RecruiterDashboard() {
                 Select a company to connect with as an employee.
               </DialogDescription>
             </DialogHeader>
+
+            {/* Search */}
+            <div className="mb-3">
+              <Input
+                value={companyQuery}
+                onChange={(e) => setCompanyQuery(e.target.value)}
+                placeholder="Search companies by name…"
+                aria-label="Search companies by name"
+              />
+              {!!companiesData?.data?.length && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Showing {filteredCompanies.length} of{" "}
+                  {companiesData.data.length}
+                </p>
+              )}
+            </div>
+
             <div className="max-h-[400px] overflow-y-auto">
               {companiesLoading ? (
                 <div className="space-y-3">
@@ -1020,9 +1058,9 @@ export default function RecruiterDashboard() {
                     Retry
                   </Button>
                 </div>
-              ) : companiesData?.data?.length ? (
+              ) : filteredCompanies.length ? (
                 <div className="space-y-2">
-                  {companiesData.data.map((company) => (
+                  {filteredCompanies.map((company) => (
                     <button
                       key={company.id}
                       type="button"
@@ -1031,7 +1069,7 @@ export default function RecruiterDashboard() {
                           ? "bg-gray-100 border-gray-300"
                           : ""
                       }`}
-                      onClick={() => handleSelectCompany(company.id)}
+                      onClick={() => setSelectedCompanyId(company.id)}
                     >
                       <div className="flex items-center gap-3 md:gap-4">
                         {company.clogo ? (
@@ -1054,22 +1092,30 @@ export default function RecruiterDashboard() {
                 </div>
               ) : (
                 <div className="text-center text-gray-500">
-                  No companies available.
+                  {companyQuery
+                    ? "No companies match your search."
+                    : "No companies available."}
                 </div>
               )}
             </div>
+
             <DialogFooter>
               <Button
                 variant="outline"
                 onClick={() => {
                   setIsCompanyModalOpen(false);
                   setSelectedCompanyId(null);
+                  setCompanyQuery(""); // clear search on close
                 }}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleConfirmApply}
+                onClick={() =>
+                  selectedCompanyId
+                    ? applyMutation.mutate(selectedCompanyId)
+                    : toast.error("Please select a company.")
+                }
                 disabled={applyMutation.isPending}
               >
                 {applyMutation.isPending ? (
@@ -1095,8 +1141,7 @@ export default function RecruiterDashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation Modal */}
-        {/* Applicant warning modal */}
+        {/* Applicant warning modal (for deletion) */}
         <Dialog
           open={isApplicantWarningModalOpen}
           onOpenChange={setIsApplicantWarningModalOpen}
@@ -1122,7 +1167,9 @@ export default function RecruiterDashboard() {
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleConfirmDelete}
+                onClick={() =>
+                  deleteJobId && deleteMutation.mutate(deleteJobId)
+                }
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? (
@@ -1170,7 +1217,9 @@ export default function RecruiterDashboard() {
               </Button>
               <Button
                 variant="destructive"
-                onClick={handleConfirmDelete}
+                onClick={() =>
+                  deleteJobId && deleteMutation.mutate(deleteJobId)
+                }
                 disabled={deleteMutation.isPending}
               >
                 {deleteMutation.isPending ? (
@@ -1191,6 +1240,41 @@ export default function RecruiterDashboard() {
                 ) : (
                   "Delete"
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* NEW: Archive Confirmation Modal */}
+        <Dialog
+          open={isArchiveConfirmOpen}
+          onOpenChange={setIsArchiveConfirmOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Before you archive this job</DialogTitle>
+              <DialogDescription>
+                Kindly remember to update each applicant on the final status of
+                their application, using our intuitive one-click feedback tool
+                in your job applicants panel.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsArchiveConfirmOpen(false);
+                  setArchiveJobId(null);
+                }}
+                disabled={isArchiving}
+              >
+                No
+              </Button>
+              <Button
+                onClick={() => archiveJobId && handleArchive(archiveJobId)}
+                disabled={isArchiving}
+              >
+                {isArchiving ? "Processing..." : "Yes"}
               </Button>
             </DialogFooter>
           </DialogContent>
