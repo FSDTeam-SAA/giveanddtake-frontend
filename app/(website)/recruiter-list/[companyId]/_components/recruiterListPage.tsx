@@ -235,9 +235,9 @@ export default function RecruiterListPage({
             Back
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">Recruiter List</h1>
+        <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">Internal recruiter List</h1>
         <div className="flex gap-4">
-          <Button onClick={() => setShowAddModal(true)}>Add recruiter</Button>
+          <Button onClick={() => setShowAddModal(true)}>Add Internal recruiter</Button>
         </div>
       </div>
 

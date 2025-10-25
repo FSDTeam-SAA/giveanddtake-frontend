@@ -849,10 +849,10 @@ export default function RecruiterDashboard() {
                     Published
                   </TableHead>
                   <TableHead className="text-sm md:text-base text-[#2B7FD0] font-bold">
-                    Deadline
+                    Expiry
                   </TableHead>
                   <TableHead className="text-sm md:text-base text-[#2B7FD0] font-bold">
-                    Expiry
+                    Applicants
                   </TableHead>
                   <TableHead className="text-sm md:text-base text-[#2B7FD0] font-bold">
                     Actions

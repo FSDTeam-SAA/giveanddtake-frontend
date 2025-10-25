@@ -652,7 +652,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
       {/* Employees */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">Recruiters</h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">Internal recruiters</h2>
         {isLoadingEmployees && !employeeData ? (
           <div>Loading employees...</div>
         ) : isEmployeesError ? (
@@ -770,7 +770,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
         )}
         <div className="mt-4 flex justify-end">
           <Link href={`/recruiter-list/${company.userId}`}>
-            <Button>Manage all recruiters</Button>
+            <Button>Manage all Internal recruiters</Button>
           </Link>
         </div>
       </div>
