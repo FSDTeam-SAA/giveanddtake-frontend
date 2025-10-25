@@ -212,7 +212,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               className="w-full h-auto  object-cover"
             />
           ) : (
-            <div className="w-full h-auto bg-gray-200" />
+            <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
           )}
         </div>
         <div className="container mx-auto border-0 mb-16">

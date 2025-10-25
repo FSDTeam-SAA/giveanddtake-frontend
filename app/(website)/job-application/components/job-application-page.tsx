@@ -498,7 +498,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
                 />
                 <Label htmlFor="agree-cv" className="text-sm text-gray-700">
-                  I agree to my CV being shared with the Recruiter for the role
+                  I agree to my Elevator Video Pitch© being shared with the Recruiter for the role
                   I am applying for
                 </Label>
               </div>

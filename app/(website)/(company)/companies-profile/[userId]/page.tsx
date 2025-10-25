@@ -12,7 +12,7 @@ import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
 import CandidateSharePopover from "@/app/(website)/candidates-profile/_components/candidateShare";
-import SocialLinks from "@/app/(website)/elevator-pitch-resume/_components/SocialLinks";
+import SocialLinks from "@/app/(website)/elevator-video-pitch/_components/SocialLinks";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 

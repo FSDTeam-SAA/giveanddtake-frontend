@@ -531,7 +531,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
       await updateCompany(formData);
       toast.success("Company updated successfully!");
-      router.push("/elevator-pitch-resume");
+      router.push("/elevator-video-pitch");
     } catch (error: any) {
       console.error("Error updating company:", error);
       toast.error(error.message || "Failed to update company");

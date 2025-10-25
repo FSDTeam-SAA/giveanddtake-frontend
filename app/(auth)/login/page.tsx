@@ -73,7 +73,7 @@ export default function LoginPage() {
           console.error("Error accessing localStorage:", storageError);
         }
 
-        window.location.href = "/elevator-pitch-resume";
+        window.location.href = "/elevator-video-pitch";
       }
     } catch (error) {
       setError("Something went wrong. Please try again.");

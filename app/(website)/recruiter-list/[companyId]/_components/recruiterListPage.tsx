@@ -229,7 +229,7 @@ export default function RecruiterListPage({
   return (
     <div className="p-6 container mx-auto pb-16">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
-        <Link href="/elevator-pitch-resume">
+        <Link href="/elevator-video-pitch">
           <Button variant="ghost" size="icon" className="text-gray-500">
             <ArrowLeft className="h-6 w-6 text-gray-500" />
             Back
@@ -277,7 +277,10 @@ export default function RecruiterListPage({
               />
             </div>
             <DialogFooter className="mt-4">
-              <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              <Button
+                variant="secondary"
+                onClick={() => setShowAddModal(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -301,7 +304,8 @@ export default function RecruiterListPage({
             <DialogHeader>
               <DialogTitle>Confirm Deletion</DialogTitle>
               <DialogDescription>
-                Are you sure you want to remove this recruiter? This action cannot be undone.
+                Are you sure you want to remove this recruiter? This action
+                cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4">

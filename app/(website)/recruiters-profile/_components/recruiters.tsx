@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { VideoPlayer } from "@/components/company/video-player";
 import CandidateSharePopover from "../../candidates-profile/_components/candidateShare";
-import SocialLinks from "../../elevator-pitch-resume/_components/SocialLinks";
+import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner"; // sonner toast
 
@@ -144,14 +144,14 @@ export default function Recruiters({ userId }: MydataProps) {
       );
       return json.data;
     },
-    enabled: Boolean(userId) ,
+    enabled: Boolean(userId),
   });
 
   useEffect(() => {
-  if (status === "authenticated" && myId === userId) {
-    queryClient.invalidateQueries({ queryKey: ["recruiter", userId] });
-  }
-}, [status, myId, userId, queryClient]);
+    if (status === "authenticated" && myId === userId) {
+      queryClient.invalidateQueries({ queryKey: ["recruiter", userId] });
+    }
+  }, [status, myId, userId, queryClient]);
 
   // Safe IDs
   const recruiterId = recruiterData?.userId; // the person being followed

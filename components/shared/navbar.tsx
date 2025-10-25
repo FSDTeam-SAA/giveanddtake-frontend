@@ -225,7 +225,7 @@ export function SiteHeader() {
         };
       case "company":
         return {
-          dashboard: "/elevator-pitch-resume",
+          dashboard: "/elevator-video-pitch",
           myPlan: "/my-plans",
           settings: "/account",
         };
@@ -271,8 +271,7 @@ export function SiteHeader() {
       extra = "",
     }: { variant?: "desktop" | "mobile"; extra?: string } = {}
   ) => {
-    const base =
-      variant === "desktop" ? desktopNavLinkBase : mobileNavLinkBase;
+    const base = variant === "desktop" ? desktopNavLinkBase : mobileNavLinkBase;
     const stateClass = isActive(href)
       ? navLinkActiveClasses
       : navLinkInactiveClasses;
@@ -380,7 +379,10 @@ export function SiteHeader() {
         <div className="container flex h-14 items-center justify-between px-4 md:px-6 transition-colors duration-200">
           {/* Left Section: Logo */}
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+            <Link
+              href="/"
+              className="flex items-center gap-2 font-bold text-lg"
+            >
               <Image
                 src={"/assets/evp-logo.jpg"}
                 alt="Logo"
@@ -415,9 +417,9 @@ export function SiteHeader() {
               Jobs
             </Link>
             <Link
-              href="/elevator-pitch-resume"
+              href="/elevator-video-pitch"
               className={`transition-colors focus:outline-none ${
-                isActive("/elevator-pitch-resume")
+                isActive("/elevator-video-pitch")
                   ? "text-[#2B7FD0]"
                   : "hover:text-[#2B7FD0]"
               }`}
@@ -448,7 +450,9 @@ export function SiteHeader() {
             <Link
               href="/about-us"
               className={`transition-colors focus:outline-none ${
-                isActive("/about-us") ? "text-[#2B7FD0]" : "hover:text-[#2B7FD0]"
+                isActive("/about-us")
+                  ? "text-[#2B7FD0]"
+                  : "hover:text-[#2B7FD0]"
               }`}
             >
               About Us
@@ -518,7 +522,10 @@ export function SiteHeader() {
             {status === "authenticated" ? (
               <>
                 {/* Notifications Button with Unread Count Badge (desktop only) */}
-                <Link href="/notifications" className="hidden lg:block relative">
+                <Link
+                  href="/notifications"
+                  className="hidden lg:block relative"
+                >
                   <Button
                     size="icon"
                     className="rounded-full bg-blue-500 text-white hover:bg-primary"
@@ -594,7 +601,9 @@ export function SiteHeader() {
                   variant="ghost"
                   size="icon"
                   className={`lg:hidden h-10 w-10 rounded-full transition-all duration-300 active:scale-95 ${
-                    sheetOpen ? "bg-blue-50 text-blue-600 shadow-sm" : "hover:bg-blue-50"
+                    sheetOpen
+                      ? "bg-blue-50 text-blue-600 shadow-sm"
+                      : "hover:bg-blue-50"
                   }`}
                   aria-label="Toggle navigation menu"
                   aria-expanded={sheetOpen}
@@ -674,161 +683,161 @@ export function SiteHeader() {
                       </div>
                     )}
 
-                  {/* Mobile nav links */}
-                  <nav className="grid gap-4 text-sm font-medium">
-                    <Link
-                      href="/"
-                      onClick={() => setSheetOpen(false)}
-                      className={`transition-colors focus:outline-none ${
-                        isActive("/")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Home
-                    </Link>
-                    <Link
-                      href="/alljobs"
-                      onClick={() => setSheetOpen(false)}
-                      className={`transition-colors focus:outline-none ${
-                        isActive("/alljobs")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Jobs
-                    </Link>
-                    {(userRole === "candidate" ||
-                      userRole === "recruiter" ||
-                      userRole === "company") && (
+                    {/* Mobile nav links */}
+                    <nav className="grid gap-4 text-sm font-medium">
                       <Link
-                        href="/elevator-pitch-resume"
+                        href="/"
                         onClick={() => setSheetOpen(false)}
                         className={`transition-colors focus:outline-none ${
-                          isActive("/elevator-pitch-resume")
+                          isActive("/")
                             ? "text-[#2B7FD0]"
                             : "hover:text-[#2B7FD0]"
                         }`}
                       >
-                        My EVP Profile
+                        Home
                       </Link>
-                    )}
-                    <Link
-                      href="/blogs"
-                      onClick={() => setSheetOpen(false)}
-                      className={`transition-colors focus:outline-none ${
-                        isActive("/blogs")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      Blogs
-                    </Link>
-                    {/* Upgrade Plan (mobile) */}
-                    {status === "authenticated" &&
-                      !isValid &&
-                      getUpgradePath() && (
+                      <Link
+                        href="/alljobs"
+                        onClick={() => setSheetOpen(false)}
+                        className={`transition-colors focus:outline-none ${
+                          isActive("/alljobs")
+                            ? "text-[#2B7FD0]"
+                            : "hover:text-[#2B7FD0]"
+                        }`}
+                      >
+                        Jobs
+                      </Link>
+                      {(userRole === "candidate" ||
+                        userRole === "recruiter" ||
+                        userRole === "company") && (
                         <Link
-                          href={getUpgradePath()!}
+                          href="/elevator-video-pitch"
                           onClick={() => setSheetOpen(false)}
                           className={`transition-colors focus:outline-none ${
-                            isActive(getUpgradePath()!)
+                            isActive("/elevator-video-pitch")
                               ? "text-[#2B7FD0]"
                               : "hover:text-[#2B7FD0]"
                           }`}
                         >
-                          Upgrade Plan
+                          My EVP Profile
                         </Link>
                       )}
-                    <Link
-                      href="/about-us"
-                      onClick={() => setSheetOpen(false)}
-                      className={`transition-colors focus:outline-none ${
-                        isActive("/about-us")
-                          ? "text-[#2B7FD0]"
-                          : "hover:text-[#2B7FD0]"
-                      }`}
-                    >
-                      About Us
-                    </Link>
-                    <div className="space-y-2">
-                      <div className="font-medium text-gray-900">
-                        Help & Info
-                      </div>
-                      <div className="pl-4 space-y-2">
-                        <Link
-                          href="/faq"
-                          onClick={() => setSheetOpen(false)}
-                          className={`block transition-colors focus:outline-none ${
-                            isActive("/faq")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
-                        >
-                          FAQ
-                        </Link>
-                        <Link
-                          href="/contact-us"
-                          onClick={() => setSheetOpen(false)}
-                          className={`block transition-colors focus:outline-none ${
-                            isActive("/contact-us")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
-                        >
-                          Contact Us
-                        </Link>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="font-medium text-gray-900">More</div>
-                      <div className="pl-4 space-y-2">
-                        <Link
-                          href="/privacy-policy"
-                          onClick={() => setSheetOpen(false)}
-                          className={`block transition-colors focus:outline-none ${
-                            isActive("/privacy-policy")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
-                        >
-                          Privacy Policy
-                        </Link>
-                        <Link
-                          href="/terms-condition"
-                          onClick={() => setSheetOpen(false)}
-                          className={`block transition-colors focus:outline-none ${
-                            isActive("/terms-condition")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
-                        >
-                          Terms and Conditions
-                        </Link>
-                      </div>
-                    </div>
-                    {status === "authenticated" ? (
-                      <Button
-                        onClick={() => {
-                          setSheetOpen(false);
-                          signOut({ callbackUrl: "/" });
-                        }}
-                        variant="outline"
-                        className="w-full mt-4"
+                      <Link
+                        href="/blogs"
+                        onClick={() => setSheetOpen(false)}
+                        className={`transition-colors focus:outline-none ${
+                          isActive("/blogs")
+                            ? "text-[#2B7FD0]"
+                            : "hover:text-[#2B7FD0]"
+                        }`}
                       >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Logout
-                      </Button>
-                    ) : (
-                      <Link href="/login" onClick={() => setSheetOpen(false)}>
-                        <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
-                          Login/Sign-Up
-                        </Button>
+                        Blogs
                       </Link>
-                    )}
-                  </nav>
+                      {/* Upgrade Plan (mobile) */}
+                      {status === "authenticated" &&
+                        !isValid &&
+                        getUpgradePath() && (
+                          <Link
+                            href={getUpgradePath()!}
+                            onClick={() => setSheetOpen(false)}
+                            className={`transition-colors focus:outline-none ${
+                              isActive(getUpgradePath()!)
+                                ? "text-[#2B7FD0]"
+                                : "hover:text-[#2B7FD0]"
+                            }`}
+                          >
+                            Upgrade Plan
+                          </Link>
+                        )}
+                      <Link
+                        href="/about-us"
+                        onClick={() => setSheetOpen(false)}
+                        className={`transition-colors focus:outline-none ${
+                          isActive("/about-us")
+                            ? "text-[#2B7FD0]"
+                            : "hover:text-[#2B7FD0]"
+                        }`}
+                      >
+                        About Us
+                      </Link>
+                      <div className="space-y-2">
+                        <div className="font-medium text-gray-900">
+                          Help & Info
+                        </div>
+                        <div className="pl-4 space-y-2">
+                          <Link
+                            href="/faq"
+                            onClick={() => setSheetOpen(false)}
+                            className={`block transition-colors focus:outline-none ${
+                              isActive("/faq")
+                                ? "text-[#2B7FD0]"
+                                : "hover:text-[#2B7FD0]"
+                            }`}
+                          >
+                            FAQ
+                          </Link>
+                          <Link
+                            href="/contact-us"
+                            onClick={() => setSheetOpen(false)}
+                            className={`block transition-colors focus:outline-none ${
+                              isActive("/contact-us")
+                                ? "text-[#2B7FD0]"
+                                : "hover:text-[#2B7FD0]"
+                            }`}
+                          >
+                            Contact Us
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="font-medium text-gray-900">More</div>
+                        <div className="pl-4 space-y-2">
+                          <Link
+                            href="/privacy-policy"
+                            onClick={() => setSheetOpen(false)}
+                            className={`block transition-colors focus:outline-none ${
+                              isActive("/privacy-policy")
+                                ? "text-[#2B7FD0]"
+                                : "hover:text-[#2B7FD0]"
+                            }`}
+                          >
+                            Privacy Policy
+                          </Link>
+                          <Link
+                            href="/terms-condition"
+                            onClick={() => setSheetOpen(false)}
+                            className={`block transition-colors focus:outline-none ${
+                              isActive("/terms-condition")
+                                ? "text-[#2B7FD0]"
+                                : "hover:text-[#2B7FD0]"
+                            }`}
+                          >
+                            Terms and Conditions
+                          </Link>
+                        </div>
+                      </div>
+                      {status === "authenticated" ? (
+                        <Button
+                          onClick={() => {
+                            setSheetOpen(false);
+                            signOut({ callbackUrl: "/" });
+                          }}
+                          variant="outline"
+                          className="w-full mt-4"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Logout
+                        </Button>
+                      ) : (
+                        <Link href="/login" onClick={() => setSheetOpen(false)}>
+                          <Button className="w-full bg-blue-500 hover:bg-primary text-white mt-4">
+                            Login/Sign-Up
+                          </Button>
+                        </Link>
+                      )}
+                    </nav>
+                  </div>
                 </div>
-              </div>
               </SheetContent>
             </Sheet>
           </div>
