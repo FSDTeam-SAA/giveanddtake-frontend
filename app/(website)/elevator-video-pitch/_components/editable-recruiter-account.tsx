@@ -329,6 +329,9 @@ export default function EditableRecruiterAccount({
       form.reset(updatedRecruiter);
 
       toast.success("Profile updated successfully!");
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error("Failed to save recruiter account:", error);
       toast.error(

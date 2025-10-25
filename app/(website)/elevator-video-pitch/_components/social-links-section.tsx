@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import type { UseFormReturn } from "react-hook-form";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useSession } from "next-auth/react";
 
 interface SocialLinkRow {
@@ -52,8 +52,8 @@ const PLATFORM_PLACEHOLDER: Record<string, string> = {
 };
 
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
-  const session = useSession();
-  const role = session.data?.user?.role;
+  const { data } = useSession();
+  const role = data?.user?.role;
 
   // UI-only label for the last field
   const dynamicOtherLabel: "Company Website" | "Portfolio Website" | "Other" =
@@ -68,29 +68,22 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
     dynamicOtherLabel === "Company Website" ||
     dynamicOtherLabel === "Portfolio Website";
 
-  // Helper: normalize arbitrary incoming label text to a storage key
+  // Normalize arbitrary incoming label text to a storage key
   const normalizeIncomingLabelToKey = (raw: string): StorageKey => {
     const s = (raw || "").trim().toLowerCase();
     if (s === "company website" || s === "portfolio website" || s === "others")
       return "Others";
     if (s === "other") return "Other";
-    // match to known base platforms
     const found = (BASE_PLATFORMS as readonly string[]).find(
       (p) => p.toLowerCase() === s
     );
     return (found as BasePlatform) ?? (raw as StorageKey);
   };
 
-  // Helper: for a given UI label, what storage keys should we try (in order)?
-  // This lets us populate correctly whether the saved data used "Other" or "Others".
-  const candidateKeysForUiLabel = (
-    uiLabel: string
-  ): StorageKey[] => {
+  // For a given UI label, which storage keys should we try (in order)?
+  const candidateKeysForUiLabel = (uiLabel: string): StorageKey[] => {
     if (uiLabel === dynamicOtherLabel) {
-      // If we currently normalize to Others (Company/Portfolio UI), prefer "Others" then "Other"
-      if (normalizeToOthers) return ["Others", "Other"];
-      // If UI shows plain "Other", prefer "Other" but still accept legacy "Others"
-      return ["Other", "Others"];
+      return normalizeToOthers ? ["Others", "Other"] : ["Other", "Others"];
     }
     return [uiLabel as BasePlatform];
   };
@@ -101,26 +94,27 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
     [dynamicOtherLabel]
   );
 
-  // Build a lookup by normalized storage key from whatever is currently in the form
-  const existingLookup = useMemo(() => {
-    const existing: SocialLinkRow[] = form.getValues("sLink") ?? [];
+  // ---------- CRITICAL PART ----------
+  // On first render (and whenever role / dynamicOtherLabel changes), rebuild the sLink array
+  // by label -> fixed order, and RESET the form so RHF indices match UI indices.
+  const hasResetRef = useRef(false);
+
+  useEffect(() => {
+    // Read whatever is currently in the form (likely server defaults)
+    const current = (form.getValues("sLink") ?? []) as SocialLinkRow[];
+
+    // Build lookup by normalized label
     const byKey: Record<string, SocialLinkRow> = {};
-    for (const item of existing) {
+    for (const item of current) {
+      if (!item) continue;
       const key = normalizeIncomingLabelToKey(item.label);
-      // Only keep the first non-empty url we see for a key
       if (!byKey[key] || !!item.url) {
         byKey[key] = { label: key, url: item.url ?? "" };
       }
     }
-    return byKey;
-    // do NOT include FIXED_PLATFORMS here; we only want to read once
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form]);
 
-  // Initialize values with per-field lookup (label-based, not index-based)
-  const initialLinks: SocialLinkRow[] = useMemo(() => {
-    return FIXED_PLATFORMS.map((uiLabel) => {
-      // decide the storage key we will POST for this UI row
+    // Build merged array in fixed UI order, filling with URLs by label match
+    const merged: SocialLinkRow[] = FIXED_PLATFORMS.map((uiLabel) => {
       const storageKey: StorageKey =
         uiLabel === dynamicOtherLabel
           ? normalizeToOthers
@@ -128,37 +122,47 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
             : "Other"
           : (uiLabel as BasePlatform);
 
-      // when populating URL, try candidate keys (to tolerate legacy or different roles)
       const candidates = candidateKeysForUiLabel(uiLabel);
       const existingMatch =
-        existingLookup[candidates[0]] ||
-        existingLookup[candidates[1]] ||
-        existingLookup[candidates[2]];
+        byKey[candidates[0]] || byKey[candidates[1]] || byKey[candidates[2]];
 
       return {
         label: storageKey, // what we will submit
         url: existingMatch?.url ?? "",
       };
     });
+
+    // Only reset if needed: first time, or when length/labels don't match the UI
+    const needsReset =
+      !hasResetRef.current ||
+      !Array.isArray(current) ||
+      current.length !== merged.length ||
+      current.some((row, idx) => {
+        const expected = merged[idx];
+        return (
+          normalizeIncomingLabelToKey(row?.label ?? "") !== expected.label
+        );
+      });
+
+    if (needsReset) {
+      form.reset(
+        { ...(form.getValues() as any), sLink: merged },
+        { keepDirty: false, keepTouched: false }
+      );
+      hasResetRef.current = true;
+    }
   }, [
+    form,
     FIXED_PLATFORMS,
     dynamicOtherLabel,
     normalizeToOthers,
-    existingLookup,
   ]);
+  // -----------------------------------
 
   const sectionTitle =
     role === "company"
       ? "Company Social Media Links"
       : "Professional Social Media and Website Links";
-
-  // Seed the form one time whenever inputs change
-  useEffect(() => {
-    form.setValue("sLink", initialLinks, {
-      shouldValidate: false,
-      shouldDirty: false,
-    });
-  }, [form, initialLinks]);
 
   return (
     <Card className="mt-6">
@@ -175,7 +179,6 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {FIXED_PLATFORMS.map((uiLabel, index) => {
-            // storage key we will submit for this UI row
             const storageKey: StorageKey =
               uiLabel === dynamicOtherLabel
                 ? normalizeToOthers

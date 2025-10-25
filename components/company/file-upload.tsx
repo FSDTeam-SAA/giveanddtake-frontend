@@ -8,8 +8,8 @@ import { toast } from "sonner"; // 👈 New import for toast
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// 32 MB in bytes: 32 * 1024 * 1024
-const MAX_FILE_SIZE_BYTES = 300 * 1024 * 1024; // 👈 Constant for 32MB
+
+const MAX_FILE_SIZE_BYTES = 600 * 1024 * 1024; 
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -34,7 +34,7 @@ export function FileUpload({
     defaultUrl || null
   );
   const inputRef = useRef<HTMLInputElement>(null);
-  const maxSize = MAX_FILE_SIZE_BYTES; // 👈 Use the constant here
+  const maxSize = MAX_FILE_SIZE_BYTES; 
 
   useEffect(() => {
     if (selectedFile) {
