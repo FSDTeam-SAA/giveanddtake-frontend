@@ -21,6 +21,7 @@ const qualityLabels: Record<string | number, string> = {
 };
 
 const MAX_RETRIES = 4;
+const AUTOPLAY_MAX_ATTEMPTS = 3;
 
 export function VideoPlayer({
   pitchId,
@@ -37,6 +38,7 @@ export function VideoPlayer({
   const cleanupRef = useRef<(() => void) | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestSourceRef = useRef("");
+  const autoplayAttemptsRef = useRef(0);
 
   const resolvedSrc = useMemo(() => {
     const trimmedId = pitchId?.trim();
@@ -52,7 +54,7 @@ export function VideoPlayer({
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [levels, setLevels] = useState<Array<{ height: number }>>([]);
@@ -69,11 +71,30 @@ export function VideoPlayer({
   const tryAutoPlay = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = video.muted || true;
-    video
-      .play()
-      .then(() => setIsPlaying(true))
-      .catch(() => setIsPlaying(false));
+    video.defaultMuted = true;
+    video.muted = true;
+    video.autoplay = true;
+    setIsMuted(true);
+
+    if (!video.paused) return;
+
+    if (autoplayAttemptsRef.current >= AUTOPLAY_MAX_ATTEMPTS) {
+      return;
+    }
+
+    autoplayAttemptsRef.current += 1;
+
+    const playPromise = video.play();
+    if (playPromise?.catch) {
+      playPromise.catch((err) => {
+        console.warn("Autoplay blocked or failed:", err);
+        if (autoplayAttemptsRef.current < AUTOPLAY_MAX_ATTEMPTS) {
+          setTimeout(() => {
+            tryAutoPlay();
+          }, 500);
+        }
+      });
+    }
   };
 
   const clearRetryTimeout = () => {
@@ -124,6 +145,8 @@ export function VideoPlayer({
       setLoading(false);
       return;
     }
+
+    autoplayAttemptsRef.current = 0;
 
     const video = videoRef.current;
     if (!video) {
@@ -287,14 +310,14 @@ export function VideoPlayer({
   }, [resolvedSrc, token]);
 
   const togglePlay = () => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     try {
-      if (isPlaying) {
-        videoRef.current.pause();
+      if (video.paused) {
+        video.play().catch(() => setError("Playback failed. Please try again."));
       } else {
-        videoRef.current.play().catch(() => setError("Playback failed. Please try again."));
+        video.pause();
       }
-      setIsPlaying(!isPlaying);
     } catch (err) {
       console.error("Play/Pause Error:", err);
       setError("Unable to control playback.");
@@ -304,19 +327,24 @@ export function VideoPlayer({
   const toggleMute = () => {
     if (!videoRef.current) return;
     try {
-      videoRef.current.muted = !videoRef.current.muted;
+      const nextMuted = !videoRef.current.muted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
     } catch (err) {
       console.error("Mute Error:", err);
       setError("Unable to control volume.");
     }
   };
 
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVolumeSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!videoRef.current) return;
     try {
       const newVol = Number.parseFloat(e.target.value);
+      const shouldMute = newVol === 0;
       videoRef.current.volume = newVol;
-      videoRef.current.muted = newVol === 0;
+      videoRef.current.muted = shouldMute;
+      setVolume(newVol);
+      setIsMuted(shouldMute);
     } catch (err) {
       console.error("Volume Change Error:", err);
       setError("Unable to adjust volume.");
@@ -331,17 +359,6 @@ export function VideoPlayer({
     } catch (err) {
       console.error("Seek Error:", err);
       setError("Unable to seek video.");
-    }
-  };
-
-  const skip = (seconds: number) => {
-    if (!videoRef.current || !duration) return;
-    try {
-      const newTime = Math.max(0, Math.min(duration, videoRef.current.currentTime + seconds));
-      videoRef.current.currentTime = newTime;
-    } catch (err) {
-      console.error("Skip Error:", err);
-      setError("Unable to skip video.");
     }
   };
 
@@ -375,7 +392,7 @@ export function VideoPlayer({
   };
 
   const progressPercent = duration ? (currentTime / duration) * 100 : 0;
-  const volumePercent = volume * 100;
+  const volumePercent = isMuted ? 0 : volume * 100;
 
   return (
     <div
@@ -385,8 +402,11 @@ export function VideoPlayer({
       aria-label={title}
     >
       {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-20">
-          <div className="h-16 w-16 animate-spin rounded-full border-t-4 border-blue-500" />
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
+          <div className="relative h-10 w-10">
+            <div className="absolute inset-0 rounded-full border-2 border-white/15" />
+            <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin" />
+          </div>
         </div>
       )}
 
@@ -413,166 +433,144 @@ export function VideoPlayer({
       <video
         ref={videoRef}
         poster={poster}
-        className="aspect-video w-full object-cover"
+        className={`aspect-video w-full object-cover transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
         playsInline
+        autoPlay
+        muted={isMuted}
         preload="auto"
         crossOrigin="anonymous"
         onClick={togglePlay}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => {
+          autoplayAttemptsRef.current = 0;
+          setIsPlaying(true);
+        }}
         onPause={() => setIsPlaying(false)}
         aria-label="Video content"
       >
         Your browser does not support the video tag.
       </video>
 
-      <div className="absolute bottom-20 left-4 right-4 z-10">
-        <div className="relative h-2 rounded-full bg-gray-700">
-          <div
-            className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-linear"
-            style={{ width: `${progressPercent}%` }}
-          />
-          <input
-            type="range"
-            min={0}
-            max={duration}
-            step="any"
-            value={currentTime}
-            onChange={handleSeek}
-            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            aria-label="Video progress"
-          />
-        </div>
-        <div className="mt-2 flex justify-between text-xs text-gray-300">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
-      </div>
-
       <div
-        className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent p-4 opacity-0 transition-all duration-300 group-hover:opacity-100"
+        className="flex flex-wrap items-center gap-3 border-t border-white/10 bg-black/80 px-4 py-4 text-white text-xs sm:text-sm"
         role="toolbar"
         aria-label="Video controls"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-white">
-              {formatTime(currentTime)} / {formatTime(duration)}
-            </span>
-            <button
-              type="button"
-              onClick={() => skip(-10)}
-              className="p-2 text-white transition hover:text-blue-400"
-              aria-label="Skip backward 10 seconds"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={togglePlay}
-              className="p-3 text-white transition hover:text-blue-400"
-              aria-label={isPlaying ? "Pause video" : "Play video"}
-            >
-              {isPlaying ? (
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
-                </svg>
-              ) : (
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16l13-8z" />
-                </svg>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={() => skip(10)}
-              className="p-2 text-white transition hover:text-blue-400"
-              aria-label="Skip forward 10 seconds"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
+        <button
+          type="button"
+          onClick={togglePlay}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label={isPlaying ? "Pause video" : "Play video"}
+        >
+          {isPlaying ? (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16l13-8z" />
+            </svg>
+          )}
+        </button>
+
+        <span className="hidden font-mono text-[13px] tabular-nums sm:block sm:text-sm">
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </span>
+
+        <div className="flex min-w-[140px] flex-1 items-center">
+          <div className="relative h-1.5 w-full rounded-full bg-white/20">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-linear"
+              style={{ width: `${progressPercent}%` }}
+            />
+            <input
+              type="range"
+              min={0}
+              max={duration || 0}
+              step="any"
+              value={currentTime}
+              onChange={handleSeek}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              aria-label="Video progress"
+            />
           </div>
+        </div>
 
-          <div className="flex items-center space-x-4">
-            <button
-              type="button"
-              onClick={toggleMute}
-              className="text-white transition hover:text-blue-400"
-              aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
-            >
-              {isMuted || volume === 0 ? (
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
-                  />
-                </svg>
-              ) : (
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
-                  />
-                </svg>
-              )}
-            </button>
-            <div className="relative h-2 w-20 rounded-full bg-gray-700">
-              <div
-                className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
-                style={{ width: `${volumePercent}%` }}
-              />
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={volume}
-                onChange={handleVolumeChange}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                aria-label="Volume control"
-              />
-            </div>
-
-            {levels.length > 0 && (
-              <select
-                value={currentLevel}
-                onChange={(e) => changeQuality(Number.parseInt(e.target.value, 10))}
-                className="cursor-pointer rounded-lg bg-black/70 px-3 py-1.5 text-sm text-white transition-colors hover:bg-black/90"
-                aria-label="Select video quality"
-              >
-                <option value="-1">{qualityLabels[-1]}</option>
-                {levels.map((level, index) => (
-                  <option key={index} value={index}>
-                    {qualityLabels[level.height] || `${level.height}p`}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className="p-2 text-white transition hover:text-blue-400"
-              aria-label="Toggle fullscreen"
-            >
-              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="hidden items-center gap-2 sm:flex">
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="text-white transition hover:text-blue-400"
+            aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
+          >
+            {isMuted || volume === 0 ? (
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                  d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
                 />
               </svg>
-            </button>
+            ) : (
+              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                />
+              </svg>
+            )}
+          </button>
+          <div className="relative h-1.5 w-20 rounded-full bg-white/20 sm:w-28">
+            <div
+              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
+              style={{ width: `${volumePercent}%` }}
+            />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={volume}
+              onChange={handleVolumeSliderChange}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              aria-label="Volume control"
+            />
           </div>
         </div>
+
+        {levels.length > 0 && (
+          <select
+            value={currentLevel}
+            onChange={(e) => changeQuality(Number.parseInt(e.target.value, 10))}
+            className="min-w-[90px] shrink-0 cursor-pointer rounded-md border border-white/10 bg-black/60 px-3 py-1 text-xs text-white transition-colors hover:bg-black/80 sm:text-sm"
+            aria-label="Select video quality"
+          >
+            <option value="-1">{qualityLabels[-1]}</option>
+            {levels.map((level, index) => (
+              <option key={index} value={index}>
+                {qualityLabels[level.height] || `${level.height}p`}
+              </option>
+            ))}
+          </select>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label="Toggle fullscreen"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
