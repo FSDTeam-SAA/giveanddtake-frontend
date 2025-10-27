@@ -12,14 +12,6 @@ interface VideoPlayerProps {
   title?: string;
 }
 
-const qualityLabels: Record<string | number, string> = {
-  "-1": "Auto",
-  360: "360p",
-  480: "480p",
-  720: "720p",
-  1080: "1080p",
-};
-
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 3;
 
@@ -57,8 +49,6 @@ export function VideoPlayer({
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [levels, setLevels] = useState<Array<{ height: number }>>([]);
-  const [currentLevel, setCurrentLevel] = useState(-1);
   const [volume, setVolume] = useState(1);
 
   const formatTime = (sec: number) => {
@@ -204,19 +194,10 @@ export function VideoPlayer({
         hls.attachMedia(video);
         hls.loadSource(sanitizedSrc);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
-          const filtered = data.levels.filter((level: { height: number }) =>
-            [360, 480, 720, 1080].includes(level.height)
-          );
-          setLevels(filtered);
-          setCurrentLevel(-1);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setLoading(false);
           setRetryCount(0);
           tryAutoPlay();
-        });
-
-        hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
-          setCurrentLevel(data.level);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -266,7 +247,6 @@ export function VideoPlayer({
       video.src = sanitizedSrc;
       const onLoadedMetadata = () => {
         setLoading(false);
-        setLevels([]);
         setRetryCount(0);
         tryAutoPlay();
       };
@@ -362,17 +342,6 @@ export function VideoPlayer({
     }
   };
 
-  const changeQuality = (level: number) => {
-    if (!hlsRef.current) return;
-    try {
-      hlsRef.current.currentLevel = level;
-      setCurrentLevel(level);
-    } catch (err) {
-      console.error("Quality Change Error:", err);
-      setError("Unable to change video quality.");
-    }
-  };
-
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     try {
@@ -433,7 +402,7 @@ export function VideoPlayer({
       <video
         ref={videoRef}
         poster={poster}
-        className={`aspect-video w-full object-cover transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
+        className={`w-full h-auto max-h-[80vh] object-contain bg-black transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
         playsInline
         autoPlay
         muted={isMuted}
@@ -539,22 +508,6 @@ export function VideoPlayer({
             />
           </div>
         </div>
-
-        {levels.length > 0 && (
-          <select
-            value={currentLevel}
-            onChange={(e) => changeQuality(Number.parseInt(e.target.value, 10))}
-            className="min-w-[90px] shrink-0 cursor-pointer rounded-md border border-white/10 bg-black/60 px-3 py-1 text-xs text-white transition-colors hover:bg-black/80 sm:text-sm"
-            aria-label="Select video quality"
-          >
-            <option value="-1">{qualityLabels[-1]}</option>
-            {levels.map((level, index) => (
-              <option key={index} value={index}>
-                {qualityLabels[level.height] || `${level.height}p`}
-              </option>
-            ))}
-          </select>
-        )}
 
         <button
           type="button"
