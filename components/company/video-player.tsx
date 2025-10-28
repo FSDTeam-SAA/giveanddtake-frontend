@@ -12,14 +12,6 @@ interface VideoPlayerProps {
   title?: string;
 }
 
-const qualityLabels: Record<string | number, string> = {
-  "-1": "Auto",
-  360: "360p",
-  480: "480p",
-  720: "720p",
-  1080: "1080p",
-};
-
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 3;
 const CONTROLS_HIDE_DELAY = 3000;
@@ -59,8 +51,6 @@ export function VideoPlayer({
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [levels, setLevels] = useState<Array<{ height: number }>>([]);
-  const [currentLevel, setCurrentLevel] = useState(-1);
   const [volume, setVolume] = useState(1);
   const [showControls, setShowControls] = useState(true);
   const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -279,19 +269,10 @@ export function VideoPlayer({
         hls.attachMedia(video);
         hls.loadSource(sanitizedSrc);
 
-        hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
-          const filtered = data.levels.filter((level: { height: number }) =>
-            [360, 480, 720, 1080].includes(level.height)
-          );
-          setLevels(filtered);
-          setCurrentLevel(-1);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
           setLoading(false);
           setRetryCount(0);
           tryAutoPlay();
-        });
-
-        hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
-          setCurrentLevel(data.level);
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
@@ -341,7 +322,6 @@ export function VideoPlayer({
       video.src = sanitizedSrc;
       const onLoadedMetadata = () => {
         setLoading(false);
-        setLevels([]);
         setRetryCount(0);
         tryAutoPlay();
       };
@@ -466,17 +446,6 @@ export function VideoPlayer({
     }
   };
 
-  const changeQuality = (level: number) => {
-    if (!hlsRef.current) return;
-    try {
-      hlsRef.current.currentLevel = level;
-      setCurrentLevel(level);
-    } catch (err) {
-      console.error("Quality Change Error:", err);
-      setError("Unable to change video quality.");
-    }
-  };
-
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
     try {
@@ -541,7 +510,7 @@ export function VideoPlayer({
       <video
         ref={videoRef}
         poster={poster}
-        className={`aspect-video w-full object-cover transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
+        className={`w-full h-auto max-h-[80vh] object-contain bg-black transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
         playsInline
         autoPlay
         muted={isMuted}
@@ -696,6 +665,25 @@ export function VideoPlayer({
             </button>
           </div>
         </div>
+<<<<<<< HEAD
+=======
+
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          aria-label="Toggle fullscreen"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+            />
+          </svg>
+        </button>
+>>>>>>> 16a5e55ad901431bb4e314362035557098aee72d
       </div>
     </div>
   );
