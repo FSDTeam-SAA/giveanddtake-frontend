@@ -8,12 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+
+import {
   MapPin,
   GraduationCap,
   Briefcase,
   AwardIcon,
   SquarePen,
   Trash2,
+  MoreHorizontal,
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -314,18 +322,32 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-sm md:text-lg lg:text-xl">Upload or view a short video introducing yourself.</CardTitle>
-                    {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={openDeleteModal}
-                        disabled={deleteElevatorPitchMutation.isPending}
-                        title="Delete Elevator Pitch"
-                        className="bg-gray-200 text-red-500 hover:text-red-600 hover:bg-gray-300"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                  {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Options"
+        className="bg-gray-100 hover:bg-gray-200"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent align="end" className="">
+      <DropdownMenuItem
+        onClick={openDeleteModal}
+        disabled={deleteElevatorPitchMutation.isPending}
+        className="text-red-600 focus:text-red-700 cursor-pointer"
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
+
                   </div>
 
                 </CardHeader>

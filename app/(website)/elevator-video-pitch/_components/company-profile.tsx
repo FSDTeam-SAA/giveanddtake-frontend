@@ -21,6 +21,7 @@ import {
   Trash2,
   RefreshCw,
   Settings,
+  MoreHorizontal 
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -34,6 +35,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu"
+
 import { toast } from "sonner";
 import SocialLinks from "./SocialLinks";
 import Image from "next/image";
@@ -534,18 +542,32 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Elevator Video Pitch©</CardTitle>
-              {pitchData && (
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={openDeleteModal}
-                  disabled={deleteElevatorPitchMutation.isPending}
-                  title="Delete Elevator Pitch"
-                  className="bg-gray-200 text-red-500 hover:text-red-600 hover:bg-gray-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+            {pitchData && (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="ghost"
+        size="icon"
+        title="Options"
+        className="bg-gray-100 hover:bg-gray-200"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem
+        onClick={openDeleteModal}
+        disabled={deleteElevatorPitchMutation.isPending}
+        className="text-red-600 focus:text-red-700 cursor-pointer"
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
+
             </div>
             <p className="text-sm text-black">
               Upload or view a short video introducing your company.
