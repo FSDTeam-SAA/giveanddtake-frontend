@@ -13,7 +13,7 @@ interface VideoPlayerProps {
 }
 
 const MAX_RETRIES = 4;
-const AUTOPLAY_MAX_ATTEMPTS = 3;
+const AUTOPLAY_MAX_ATTEMPTS = 2; // keep small to avoid loops
 const CONTROLS_HIDE_DELAY = 2000;
 
 export function VideoPlayer({
@@ -33,6 +33,7 @@ export function VideoPlayer({
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestSourceRef = useRef("");
   const autoplayAttemptsRef = useRef(0);
+  const seekingRef = useRef(false); // prevent accidental mute during scrubs
 
   const resolvedSrc = useMemo(() => {
     const trimmedId = pitchId?.trim();
@@ -48,7 +49,7 @@ export function VideoPlayer({
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false); // start with sound ON
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
@@ -66,28 +67,25 @@ export function VideoPlayer({
   const tryAutoPlay = () => {
     const video = videoRef.current;
     if (!video) return;
-    video.defaultMuted = true;
-    video.muted = true;
-    video.autoplay = true;
-    setIsMuted(true);
 
+    // We want sound ON by default. Do NOT force mute here.
+    video.defaultMuted = false;
+    video.muted = false;
+    video.autoplay = true;
+
+    // If already playing, nothing to do.
     if (!video.paused) return;
 
     if (autoplayAttemptsRef.current >= AUTOPLAY_MAX_ATTEMPTS) {
       return;
     }
-
     autoplayAttemptsRef.current += 1;
 
     const playPromise = video.play();
     if (playPromise?.catch) {
-      playPromise.catch((err) => {
-        console.warn("Autoplay blocked or failed:", err);
-        if (autoplayAttemptsRef.current < AUTOPLAY_MAX_ATTEMPTS) {
-          setTimeout(() => {
-            tryAutoPlay();
-          }, 500);
-        }
+      playPromise.catch(() => {
+        // Most browsers block autoplay-with-sound. We don't force mute;
+        // the first user gesture will play WITH sound.
       });
     }
   };
@@ -122,9 +120,10 @@ export function VideoPlayer({
     }
     clearRetryTimeout();
     const next = retryCount + 1;
-    const delay = 4000; 
+    const delay = 4000;
     setRetryCount(next);
     setLoading(true);
+    // eslint-disable-next-line no-console
     console.warn(`Retrying video init (#${next}) in ${delay}ms due to: ${reason}`);
     retryTimeoutRef.current = setTimeout(() => {
       setError(null);
@@ -239,8 +238,11 @@ export function VideoPlayer({
       tryAutoPlay();
     };
     const handleVolumeChange = () => {
-      setVolume(video.volume);
-      setIsMuted(video.muted);
+      // Avoid muting side-effects during seeks on some browsers
+      if (!seekingRef.current) {
+        setVolume(video.volume);
+        setIsMuted(video.muted);
+      }
     };
     const handleVideoError = () => scheduleRetry("video-error");
 
@@ -249,6 +251,10 @@ export function VideoPlayer({
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("volumechange", handleVolumeChange);
     video.addEventListener("error", handleVideoError);
+
+    // Always start unmuted
+    video.defaultMuted = false;
+    video.muted = false;
 
     if (Hls.isSupported()) {
       const hls = new Hls({
@@ -276,6 +282,7 @@ export function VideoPlayer({
         });
 
         hls.on(Hls.Events.ERROR, (_event, data) => {
+          // eslint-disable-next-line no-console
           console.error("HLS Error:", data);
           if (!hlsRef.current) return;
 
@@ -297,6 +304,7 @@ export function VideoPlayer({
           }
         });
       } catch (err) {
+        // eslint-disable-next-line no-console
         console.error("HLS Setup Error:", err);
         scheduleRetry("setup");
       }
@@ -403,46 +411,66 @@ export function VideoPlayer({
         video.pause();
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("Play/Pause Error:", err);
       setError("Unable to control playback.");
     }
   };
 
   const toggleMute = () => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     try {
-      const nextMuted = !videoRef.current.muted;
-      videoRef.current.muted = nextMuted;
+      const nextMuted = !video.muted;
+      video.muted = nextMuted;
       setIsMuted(nextMuted);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("Mute Error:", err);
       setError("Unable to control volume.");
     }
   };
 
   const handleVolumeSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     try {
       const newVol = Number.parseFloat(e.target.value);
       const shouldMute = newVol === 0;
-      videoRef.current.volume = newVol;
-      videoRef.current.muted = shouldMute;
+      // ensure we don't flip muted during seek noise
+      seekingRef.current = false;
+      video.volume = newVol;
+      video.muted = shouldMute;
       setVolume(newVol);
       setIsMuted(shouldMute);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("Volume Change Error:", err);
       setError("Unable to adjust volume.");
     }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     try {
+      seekingRef.current = true;
+      const prevMuted = video.muted; // remember
       const newTime = Number.parseFloat(e.target.value);
-      videoRef.current.currentTime = newTime;
+      video.currentTime = newTime;
+
+      // Some mobile browsers can emit a stray volumechange; make sure we keep prior mute state
+      if (video.muted !== prevMuted) {
+        video.muted = prevMuted;
+        setIsMuted(prevMuted);
+      }
+      seekingRef.current = false;
+      setCurrentTime(newTime);
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("Seek Error:", err);
       setError("Unable to seek video.");
+      seekingRef.current = false;
     }
   };
 
@@ -459,6 +487,7 @@ export function VideoPlayer({
         });
       }
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("Fullscreen Error:", err);
       setError("Unable to toggle fullscreen.");
     }
@@ -513,7 +542,7 @@ export function VideoPlayer({
         className={`w-full h-auto max-h-[80vh] object-contain bg-black transition-opacity duration-300 ${loading ? "opacity-0" : "opacity-100"}`}
         playsInline
         autoPlay
-        muted={isMuted}
+        muted={isMuted} // state-driven, default false
         preload="auto"
         crossOrigin="anonymous"
         onClick={togglePlay}
@@ -547,6 +576,7 @@ export function VideoPlayer({
             onBlurCapture={handleControlsBlur}
             aria-hidden={!showControls}
           >
+            {/* Play / Pause */}
             <button
               type="button"
               onClick={togglePlay}
@@ -564,10 +594,12 @@ export function VideoPlayer({
               )}
             </button>
 
+            {/* Timestamp */}
             <span className="hidden font-mono text-[13px] tabular-nums sm:block sm:text-sm">
               {formatTime(currentTime)} / {formatTime(duration)}
             </span>
 
+            {/* Progress / Seek */}
             <div className="flex basis-[45%] max-w-[180px] flex-1 items-center sm:basis-auto sm:max-w-full">
               <div className="relative h-1 w-full rounded-full bg-white/25 sm:h-1.5">
                 <div
@@ -587,53 +619,53 @@ export function VideoPlayer({
               </div>
             </div>
 
-            <div className="hidden items-center gap-2 sm:flex">
-              <button
-                type="button"
-                onClick={toggleMute}
-                className="text-white transition hover:text-blue-400"
-                aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
-              >
-                {isMuted || volume === 0 ? (
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
-                    />
-                  </svg>
-                ) : (
-                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
-                    />
-                  </svg>
-                )}
-              </button>
-              <div className="relative h-1.5 w-16 rounded-full bg-white/20 sm:w-28">
-                <div
-                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
-                  style={{ width: `${volumePercent}%` }}
-                />
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={volume}
-                  onChange={handleVolumeSliderChange}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  aria-label="Volume control"
-                />
-              </div>
+            {/* Mute button: ALWAYS visible (mobile shows only this for volume control) */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              className="text-white transition hover:text-blue-400"
+              aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
+            >
+              {isMuted || volume === 0 ? (
+                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                  />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                  />
+                </svg>
+              )}
+            </button>
+
+            {/* Volume slider: only on SM+ screens */}
+            <div className="relative h-1.5 w-16 rounded-full bg-white/20 sm:w-28 hidden sm:block">
+              <div
+                className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
+                style={{ width: `${volumePercent}%` }}
+              />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={isMuted ? 0 : volume}
+                onChange={handleVolumeSliderChange}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label="Volume control"
+              />
             </div>
 
-         
-
+            {/* Fullscreen */}
             <button
               type="button"
               onClick={toggleFullscreen}
