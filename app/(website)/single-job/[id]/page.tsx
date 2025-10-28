@@ -2,22 +2,42 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Info, Check, Edit, Trash, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Edit } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import DOMPurify from "dompurify";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import CustomCalendar from "@/components/MultiStepJobForm/CustomCalendar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
+import JobDetailsPreviewEdit from "@/components/job-preview-sections/job-details-preview-edit";
+import CustomCalendar from "@/components/CustomCalendar";
+import { Switch } from "@/components/ui/switch";
+import DOMPurify from "dompurify";
+
+interface Country {
+  country: string;
+  cities: string[];
+}
+
+interface JobCategory {
+  _id: string;
+  name: string;
+  role: string[];
+  categoryIcon: string;
+}
+
+interface CurrencyApiItem {
+  _id: string;
+  code: string;
+  currencyName: string;
+  symbol?: string;
+}
 
 interface ApplicationRequirement {
   id: string;
-  label: string;
-  required: boolean;
+  requirement: string;
+  status: string;
 }
 
 interface CustomQuestion {
@@ -38,7 +58,7 @@ interface JobPostData {
   educationExperience: string[];
   benefits: string[];
   vacancy: number;
-  experience: number;
+  experience: string;
   deadline: string;
   publishDate: string;
   status: string;
@@ -46,46 +66,91 @@ interface JobPostData {
   employement_Type: string;
   compensation: string;
   arcrivedJob: boolean;
-  applicationRequirement: { requirement: string }[];
+  applicationRequirement: { requirement: string; status: string }[];
   customQuestion: { question: string }[];
+  career_Stage: string;
+  location_Type: string;
 }
 
+// keep this OUTSIDE the component
+async function updateJob(id: string, data: JobPostData, token?: string) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
-
-async function updateJob(id: string, data: JobPostData) {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
+    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/update/${id}`,
     {
       method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify(data),
     }
   );
+
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(
-      `Failed to update job: ${response.status} - ${
-        errorData.message || "Unknown error"
-      }`
-    );
+    let errorMessage = `Failed to update job: ${response.status}`;
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) errorMessage += ` - ${errorData.message}`;
+    } catch (_) {}
+    throw new Error(errorMessage);
   }
+
   return response.json();
+}
+
+async function fetchJobCategories() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/category/job-category`);
+  if (!response.ok) throw new Error("Failed to fetch categories");
+  const data = await response.json();
+  return data.data.category as JobCategory[];
+}
+
+async function fetchCountries() {
+  const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+  const data = await response.json();
+  if (data.error) throw new Error("Failed to fetch countries");
+  return data.data as Country[];
+}
+
+async function fetchCities(country: string) {
+  const response = await fetch(
+    "https://countriesnow.space/api/v0.1/countries/cities",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ country }),
+    }
+  );
+  const data = await response.json();
+  if (data.error) throw new Error("Failed to fetch cities");
+  return data.data as string[];
+}
+
+async function fetchCurrencies() {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const response = await fetch(`${baseUrl}/courency`);
+  if (!response.ok) throw new Error("Failed to fetch currencies");
+  const data = await response.json();
+  return (Array.isArray(data.data) ? data.data : []) as CurrencyApiItem[];
 }
 
 export default function JobPreview() {
   const session = useSession();
   const userId = session.data?.user?.id;
   const role = session.data?.user?.role;
-  console.log(role);
   const router = useRouter();
   const params = useParams();
-  const id = (params?.id as string) || "6896fb2b12980e468298ad0f"; // Fallback ID for demonstration
+  const token = session.data?.accessToken;
+  console.log(token);
+  const id = (params?.id as string) || "6896fb2b12980e468298ad0f";
 
   const [isEditing, setIsEditing] = useState(false);
-  const [publishNow, setPublishNow] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [publishNow, setPublishNow] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState({
     jobTitle: "",
     department: "",
@@ -95,109 +160,276 @@ export default function JobPreview() {
     experience: "",
     category: "",
     categoryId: "",
+    role: "",
+    compensationCurrency: "",
     compensation: "",
     expirationDate: "",
     jobDescription: "",
     publishDate: "",
     companyUrl: "",
+    vacancy: 1,
+    locationType: "",
+    careerStage: "",
   });
   const [applicationRequirements, setApplicationRequirements] = useState<
     ApplicationRequirement[]
   >([]);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
 
-  const { data: jobData, isLoading } = useQuery({
+  // react-query
+  const { data: jobData, isLoading: jobLoading } = useQuery({
     queryKey: ["job", id],
     queryFn: async () => {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`
       );
-      if (!response.ok) {
-        throw new Error("Failed to fetch job");
-      }
+      if (!response.ok) throw new Error("Failed to fetch job");
       const res = await response.json();
-      return res.data as {
-        _id: string;
-        userId: string;
-        companyId: string;
-        title: string;
-        description: string;
-        salaryRange: string;
-        location: string;
-        shift: string;
-        responsibilities: string[];
-        educationExperience: string[];
-        benefits: string[];
-        vacancy: number;
-        experience: number;
-        deadline: string;
-        status: string;
-        jobCategoryId: string;
-        compensation: string;
-        arcrivedJob: boolean;
-        applicationRequirement: { _id: string; requirement: string }[];
-        customQuestion: { _id: string; question: string }[];
-        jobApprove: string;
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-      };
+      return res.data;
     },
   });
 
+  const { data: jobCategories = [] } = useQuery({
+    queryKey: ["jobCategories"],
+    queryFn: fetchJobCategories,
+  });
+  const { data: countries = [] } = useQuery({
+    queryKey: ["countries"],
+    queryFn: fetchCountries,
+  });
+  const { data: cities = [] } = useQuery({
+    queryKey: ["cities", selectedCountry],
+    queryFn: () =>
+      selectedCountry ? fetchCities(selectedCountry) : Promise.resolve([]),
+    enabled: !!selectedCountry,
+  });
+  const { data: currencies = [] } = useQuery({
+    queryKey: ["currencies"],
+    queryFn: fetchCurrencies,
+  });
+
+  // --- LOOP FIX: split initialization into two effects and guard with refs ---
+  const initializedFromJobRef = useRef(false);
+
+  // 1) Initialize from jobData ONCE
   useEffect(() => {
-    if (jobData) {
-      const createdAt = jobData.createdAt
-        ? new Date(jobData.createdAt)
-        : undefined;
-      setSelectedDate(createdAt);
-      setFormData({
-        jobTitle: jobData.title || "N/A",
-        department: "N/A", // Assuming department is not in jobData, or needs to be derived
-        country: jobData.location?.split(", ")[0] || "N/A",
-        region: jobData.location?.split(", ")[1] || "N/A",
-        employmentType: jobData.shift?.toLowerCase() || "N/A",
-        experience: jobData.experience ? `${jobData.experience}` : "N/A",
-        category: "N/A", // Assuming category is not in jobData, or needs to be derived
-        categoryId: jobData.jobCategoryId || "N/A",
-        compensation: jobData.salaryRange
-          ? `${jobData.salaryRange} ${jobData.compensation}`
-          : "N/A",
-        expirationDate: jobData.deadline || "",
-        jobDescription: jobData.description || "N/A",
-        publishDate: createdAt ? createdAt.toLocaleDateString() : "N/A",
-        companyUrl: "N/A", // Assuming companyUrl is not in jobData, or needs to be derived
-      });
-      setApplicationRequirements(
-        jobData.applicationRequirement?.map((req) => ({
-          id: req._id,
-          label: req.requirement.replace(" required", ""),
-          required: true,
-        })) || []
-      );
-      setCustomQuestions(
-        jobData.customQuestion?.map((q) => ({
-          id: q._id,
-          question: q.question,
-        })) || []
-      );
+    if (!jobData || initializedFromJobRef.current) return;
+
+    const createdAt = jobData.createdAt
+      ? new Date(jobData.createdAt)
+      : undefined;
+    const [country, region] = jobData.location?.split(", ") || ["", ""];
+
+    setFormData((prev) => ({
+      ...prev,
+      jobTitle: jobData.title || "",
+      department: jobData.department || "",
+      country: country || "",
+      region: region || "",
+      employmentType: jobData.employement_Type || "",
+      experience: jobData.experience || "",
+      // category & role set later after categories are available
+      categoryId: jobData.jobCategoryId || "",
+      compensationCurrency: jobData.compensationCurrency || "",
+      compensation: jobData.salaryRange?.replace(/[^\d]/g, "") || "",
+      expirationDate: jobData.deadline || "",
+      jobDescription: jobData.description || "",
+      publishDate: createdAt ? createdAt.toLocaleDateString() : "",
+      companyUrl: jobData.website_Url || "",
+      vacancy: jobData.vacancy || 1,
+      locationType: jobData.location_Type || "",
+      careerStage: jobData.career_Stage || "",
+    }));
+
+    setApplicationRequirements(
+      jobData.applicationRequirement?.map((req: any, idx: number) => ({
+        id: req._id || `req-${idx}`,
+        requirement: req.requirement || "",
+        status: req.status || "",
+      })) || []
+    );
+
+    setCustomQuestions(
+      jobData.customQuestion?.map((q: any, idx: number) => ({
+        id: q._id || `q-${idx}`,
+        question: q.question || "",
+      })) || []
+    );
+
+    if (country) setSelectedCountry(country);
+    if (jobData.publishDate) {
+      setPublishNow(false);
+      setSelectedDate(new Date(jobData.publishDate));
     }
+
+    initializedFromJobRef.current = true;
   }, [jobData]);
 
+  // 2) After categories load, fill category name & role ONLY if values differ
+  useEffect(() => {
+    if (!jobData || !jobCategories.length) return;
+    const found = jobCategories.find((c) => c._id === jobData.jobCategoryId);
+    if (!found) return;
+
+    setFormData((prev) => {
+      const nextCategory = found.name || "";
+      const nextRole = found.role?.[0] || "";
+      if (prev.category === nextCategory && prev.role === nextRole) return prev;
+      return { ...prev, category: nextCategory, role: nextRole };
+    });
+  }, [jobData, jobCategories]);
+
   const { mutate: updateJobMutation, isPending } = useMutation({
-    mutationFn: (data: JobPostData) => updateJob(id, data),
+    mutationFn: (data: JobPostData) => updateJob(id, data, token),
     onSuccess: () => {
       toast.success("Job updated successfully!");
       setIsEditing(false);
-      router.push("/jobs-success"); // Redirect after successful update
+      router.refresh();
     },
     onError: (error: Error) => {
-      console.error("Error updating job:", error);
-      toast.error(error.message || "An error occurred while updating the job.");
+      toast.error(error.message || "Failed to update job");
     },
   });
 
-  if (isLoading) {
+  // utils inside the component file (or extract to a util)
+  function computeDeadline(publishAt: string | Date, daysStr: string): string {
+    const days = Number.parseInt(daysStr || "", 10);
+    const safeDays = Number.isFinite(days) && days > 0 ? days : 30; // default 30
+
+    const base = new Date(publishAt);
+    if (Number.isNaN(base.getTime())) {
+      // fallback to now if publishAt is invalid
+      const now = new Date();
+      now.setDate(now.getDate() + safeDays);
+      return now.toISOString();
+    }
+
+    base.setDate(base.getDate() + safeDays);
+    return base.toISOString();
+  }
+
+  const handleFieldChange = useCallback(
+    (field: string, value: string | number) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    []
+  );
+
+  const handleAddRequirement = useCallback(() => {
+    setApplicationRequirements((prev) => [
+      ...prev,
+      { id: `req-${Date.now()}`, requirement: "", status: "" },
+    ]);
+  }, []);
+
+  const handleUpdateRequirement = useCallback(
+    (id: string, field: string, value: string) => {
+      setApplicationRequirements((prev) =>
+        prev.map((req) => (req.id === id ? { ...req, [field]: value } : req))
+      );
+    },
+    []
+  );
+
+  const handleRemoveRequirement = useCallback((id: string) => {
+    setApplicationRequirements((prev) => prev.filter((req) => req.id !== id));
+  }, []);
+
+  const handleAddQuestion = useCallback(() => {
+    setCustomQuestions((prev) => [
+      ...prev,
+      { id: `q-${Date.now()}`, question: "" },
+    ]);
+  }, []);
+
+  const handleUpdateQuestion = useCallback((id: string, question: string) => {
+    setCustomQuestions((prev) =>
+      prev.map((q) => (q.id === id ? { ...q, question } : q))
+    );
+  }, []);
+
+  const handleRemoveQuestion = useCallback((id: string) => {
+    setCustomQuestions((prev) => prev.filter((q) => q.id !== id));
+  }, []);
+
+  const handlePublishToggle = useCallback((checked: boolean) => {
+    setPublishNow(checked);
+  }, []);
+
+  const handleSave = useCallback(() => {
+    if (!userId) {
+      toast.error("User not authenticated");
+      return;
+    }
+    if (!token) {
+      toast.error("Missing access token. Please sign in again.");
+      return;
+    }
+
+    const publishAtISO = publishNow
+      ? new Date().toISOString()
+      : selectedDate?.toISOString() ?? new Date().toISOString();
+
+    // 👇 turn “expiration days” into a real deadline date
+    const deadlineISO = computeDeadline(
+      publishAtISO,
+      String(formData.expirationDate || "")
+    );
+
+    const postData: JobPostData = {
+      userId,
+      companyId: jobData?.companyId || "",
+      title: formData.jobTitle,
+      description: formData.jobDescription,
+      salaryRange: formData.compensation
+        ? `${formData.compensationCurrency} ${formData.compensation}`
+        : "Negotiable",
+      location: `${formData.country}, ${formData.region}`,
+      shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
+      companyUrl: formData.companyUrl,
+      responsibilities: [],
+      educationExperience: [],
+      benefits: [],
+      vacancy: formData.vacancy,
+      experience: formData.experience,
+      deadline: deadlineISO,
+      publishDate: publishAtISO,
+      status: jobData?.status || "active",
+      jobCategoryId: formData.categoryId,
+      employement_Type: formData.employmentType,
+      compensation: formData.compensationCurrency || "Negotiable",
+      arcrivedJob: jobData?.arcrivedJob || false,
+      applicationRequirement: applicationRequirements.map((req) => ({
+        requirement: req.requirement,
+        status: req.status,
+      })),
+      customQuestion: customQuestions.map((q) => ({ question: q.question })),
+      career_Stage: formData.careerStage,
+      location_Type: formData.locationType,
+    };
+
+    updateJobMutation(postData);
+  }, [
+    userId,
+    jobData?.companyId,
+    jobData?.status,
+    jobData?.arcrivedJob,
+    formData,
+    publishNow,
+    selectedDate,
+    applicationRequirements,
+    customQuestions,
+    updateJobMutation,
+  ]);
+
+  const descriptionCharCount = formData.jobDescription.length;
+  const descriptionWordCount = formData.jobDescription
+    .replace(/<[^>]+>/g, "")
+    .trim()
+    .split(/\s+/)
+    .filter((w) => w.length > 0).length;
+
+  if (jobLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
@@ -213,605 +445,357 @@ export default function JobPreview() {
     );
   }
 
-  const companyUrl = formData.companyUrl; // Use formData.companyUrl for display
-
-  const onBackToEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleToggleRequired = (reqId: string, isRequired: boolean) => {
-    setApplicationRequirements((prev) =>
-      prev.map((req) =>
-        req.id === reqId ? { ...req, required: isRequired } : req
-      )
-    );
-  };
-
-  const handleUpdateQuestion = (qId: string, newQuestion: string) => {
-    setCustomQuestions((prev) =>
-      prev.map((q) => (q.id === qId ? { ...q, question: newQuestion } : q))
-    );
-  };
-
-  const handleAddQuestion = () => {
-    const newId = `new-${customQuestions.length + 1}`;
-    setCustomQuestions((prev) => [...prev, { id: newId, question: "" }]);
-  };
-
-  const handleRemoveQuestion = (qId: string) => {
-    setCustomQuestions((prev) => prev.filter((q) => q.id !== qId));
-  };
-
-  const handleSave = () => {
-    if (!userId) {
-      toast.error("User not authenticated. Please log in.");
-      return;
-    }
-
-    // Extract responsibilities, educationExperience, and benefits from jobDescription
-    const responsibilities = formData.jobDescription
-      .split("\n")
-      .filter((line) => line.startsWith("* "))
-      .map((line) => line.replace("* ", "").trim())
-      .filter((line) => line);
-
-    const educationExperience =
-      formData.jobDescription
-        .split("Must-Have")[1]
-        ?.split("Nice-to-Have")[0]
-        ?.split("\n")
-        .filter((line) => line.startsWith("* "))
-        .map((line) => line.replace("* ", "").trim())
-        .filter((line) => line) || [];
-
-    const benefits =
-      formData.jobDescription
-        .split("Why Join Us?")[1]
-        ?.split("How to Apply")[0]
-        ?.split("\n")
-        .filter((line) => line.startsWith("* "))
-        .map((line) => line.replace("* ", "").trim())
-        .filter((line) => line) || [];
-
-    const experienceMatch = formData.experience.match(/\d+/);
-    const experience = experienceMatch
-      ? Number.parseInt(experienceMatch[0], 10)
-      : 0;
-
-    const deadlineDate = new Date(formData.expirationDate);
-
-    const postData: JobPostData = {
-      userId,
-      companyId: jobData.companyId,
-      title: formData.jobTitle,
-      description: formData.jobDescription,
-      salaryRange: formData.compensation.split(" ")[0] || "Negotiable",
-      location: `${formData.country}, ${formData.region}`,
-      shift: formData.employmentType === "fulltime" ? "Day" : "Flexible", // Adjust based on your actual shift values
-      companyUrl: formData.companyUrl,
-      responsibilities,
-      educationExperience,
-      benefits,
-      vacancy: jobData.vacancy, // Keep existing vacancy
-      experience,
-      deadline: !isNaN(deadlineDate.getTime())
-        ? deadlineDate.toISOString()
-        : jobData.deadline,
-      publishDate: publishNow
-        ? new Date().toISOString()
-        : selectedDate?.toISOString() || jobData.createdAt, // Use selectedDate or existing createdAt
-      status: jobData.status, // Keep existing status
-      jobCategoryId: formData.categoryId,
-      employement_Type: formData.employmentType,
-      compensation: formData.compensation.split(" ")[1] || "Negotiable",
-      arcrivedJob: jobData.arcrivedJob, // Keep existing archived status
-      applicationRequirement: applicationRequirements
-        .filter((req) => req.required)
-        .map((req) => ({ requirement: `${req.label} required` })),
-      customQuestion: customQuestions
-        .filter((q) => q.question.trim() !== "")
-        .map((q) => ({ question: q.question })),
-    };
-
-    updateJobMutation(postData);
-  };
-
-  const sanitizedDescription = DOMPurify.sanitize(formData.jobDescription);
-
   return (
-    <div className="">
-      <div className="container mx-auto p-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <Link
-            href={
-              role === "company" && userId
-                ? `/manage-jobs/${jobData.companyId._id}`
-                : "/recruiter-dashboard"
-            }
-          >
-            <Button variant="ghost" size="icon" className="text-gray-500">
-              <ArrowLeft className="h-6 w-6 text-gray-500" />
-              Back
-            </Button>
-          </Link>
-          <h1 className="text-xl md:text-3xl font-bold text-gray-900 mx-auto">
-            Preview Job Posting
-          </h1>
-          {role !== "company" && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <Link
+              href={
+                role === "company"
+                  ? `/manage-jobs/${jobData.companyId}`
+                  : "/recruiter-dashboard"
+              }
+            >
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+              </Button>
+            </Link>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              {isEditing ? "Edit Job Posting" : "Job Preview"}
+            </h1>
+          </div>
+          {!isEditing && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={onBackToEdit}
-              className="hidden"
+              onClick={() => setIsEditing(true)}
             >
-              <Edit className="h-6 w-6 text-gray-500" />
+              <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
           )}
         </div>
 
-        {/* Job Details Section */}
-        <div className="mb-8">
-          <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-4">
-            Job Details
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Job Title</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.jobTitle}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      jobTitle: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.jobTitle || "N/A"}
-                </div>
+        {/* Job Title */}
+        <Card className="border-none shadow-md bg-gradient-to-r from-[#2B7FD0]/10 to-transparent">
+          <CardContent className="p-6 sm:p-8">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+              {formData.jobTitle}
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {formData.category && (
+                <span className="px-3 py-1 bg-[#2B7FD0] text-white rounded-full text-sm">
+                  {formData.category}
+                </span>
+              )}
+              {formData.role && (
+                <span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-full text-sm">
+                  {formData.role}
+                </span>
               )}
             </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Department</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.department}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      department: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.department || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Country</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.country}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      country: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.country || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Region/State</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.region}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, region: e.target.value }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.region || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                Employment Type
-              </p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.employmentType}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      employmentType: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.employmentType || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                Experience Level
-              </p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.experience}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      experience: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.experience || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Job Category</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.category}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      category: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.category || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Compensation</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.compensation}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      compensation: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.compensation || "N/A"}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                Company Website
-              </p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.companyUrl}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      companyUrl: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {companyUrl ? (
-                    <Link
-                      href={
-                        companyUrl.startsWith("http")
-                          ? companyUrl
-                          : `https://${companyUrl}`
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {companyUrl}
-                    </Link>
-                  ) : (
-                    "N/A"
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">
-                Job Posting Expiration Date
-              </p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.expirationDate}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      expirationDate: e.target.value,
-                    }))
-                  }
-                  className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"
-                />
-              ) : (
-                <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                  {formData.expirationDate || "N/A"}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Job Description Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 bg-white">
-          <Card className="lg:col-span-2 border-none shadow-sm">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+        {/* Job Details */}
+        <Card className="shadow-md border-none">
+          <CardContent className="p-6 sm:p-8">
+            <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+              Job Details
+            </h2>
+            {isEditing ? (
+              <JobDetailsPreviewEdit
+                formData={formData}
+                onFieldChange={handleFieldChange}
+                jobCategories={jobCategories}
+                countries={countries}
+                cities={cities}
+                currencies={currencies}
+                selectedCountry={selectedCountry}
+                onCountryChange={setSelectedCountry}
+                isLoadingCountries={false}
+                isLoadingCities={false}
+                isLoadingCurrencies={false}
+              />
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { label: "Job Title", value: formData.jobTitle },
+                  { label: "Department", value: formData.department },
+                  { label: "Category", value: formData.category },
+                  { label: "Role", value: formData.role },
+                  { label: "Country", value: formData.country },
+                  { label: "City", value: formData.region },
+                  { label: "Employment Type", value: formData.employmentType },
+                  { label: "Experience Level", value: formData.experience },
+                  { label: "Location Type", value: formData.locationType },
+                  { label: "Career Stage", value: formData.careerStage },
+                  { label: "Vacancies", value: formData.vacancy },
+                  {
+                    label: "Compensation",
+                    value: formData.compensation
+                      ? `${formData.compensationCurrency} ${formData.compensation}`
+                      : "N/A",
+                  },
+                  {
+                    label: "Expiration (Days)",
+                    value: formData.expirationDate,
+                  },
+                  { label: "Company Website", value: formData.companyUrl },
+                ].map((item) => (
+                  <div key={item.label} className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      {item.label}
+                    </p>
+                    <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
+                      {item.value || "N/A"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Job Description */}
+        <Card className="shadow-md border-none">
+          <CardContent className="p-6 sm:p-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900">
                 Job Description
               </h2>
+              {!isEditing && (
+                <div className="text-sm text-gray-600 mt-2 sm:mt-0 text-right">
+                  <p>Characters: {descriptionCharCount}/2000</p>
+                  <p>Words: {descriptionWordCount}/20 min</p>
+                </div>
+              )}
+            </div>
+            {isEditing ? (
+              <div className="space-y-3">
+                <TextEditor
+                  value={formData.jobDescription}
+                  onChange={(value) =>
+                    handleFieldChange("jobDescription", value)
+                  }
+                />
+                <p className="text-sm text-gray-600">
+                  Characters: {descriptionCharCount}/2000 | Words:{" "}
+                  {descriptionWordCount}/20 min
+                </p>
+              </div>
+            ) : (
+              <div
+                className="p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 prose max-w-none"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(formData.jobDescription),
+                }}
+              />
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Application Requirements, Custom Questions, Publish Schedule */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Application Requirements */}
+          <Card className="border-none shadow-md col-span-1">
+            <CardContent className="p-6 sm:p-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                Application Requirements
+              </h2>
               <div className="space-y-4">
-                {isEditing ? (
-                  <TextEditor
-                    value={formData.jobDescription}
-                    onChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        jobDescription: value,
-                      }))
-                    }
-                  />
-                ) : (
+                {applicationRequirements.length === 0 && !isEditing && (
+                  <div className="p-3 border border-dashed border-gray-300 rounded-lg text-gray-500">
+                    No requirements added.
+                  </div>
+                )}
+                {applicationRequirements.map((req) => (
                   <div
-                    className="p-4 border border-gray-300 rounded-lg text-gray-800 whitespace-pre-wrap list-item list-none"
-                    dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                  />
+                    key={req.id}
+                    className="flex flex-col sm:flex-row sm:items-end gap-3"
+                  >
+                    {isEditing ? (
+                      <>
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            Requirement
+                          </label>
+                          <input
+                            type="text"
+                            value={req.requirement}
+                            onChange={(e) =>
+                              handleUpdateRequirement(
+                                req.id,
+                                "requirement",
+                                e.target.value
+                              )
+                            }
+                            className="w-full h-11 px-3 border border-gray-300 rounded-lg"
+                            placeholder="Enter requirement"
+                          />
+                        </div>
+                        <div className="sm:w-48">
+                          <label className="text-sm font-medium text-gray-700">
+                            Status
+                          </label>
+                          <select
+                            value={req.status}
+                            onChange={(e) =>
+                              handleUpdateRequirement(
+                                req.id,
+                                "status",
+                                e.target.value
+                              )
+                            }
+                            className="w-full h-11 px-3 border border-gray-300 rounded-lg bg-white"
+                          >
+                            <option value="">Select Status</option>
+                            <option value="Required">Required</option>
+                            <option value="Optional">Optional</option>
+                          </select>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemoveRequirement(req.id)}
+                        >
+                          Remove
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50">
+                        <p className="font-medium">{req.requirement || "—"}</p>
+                        <p className="text-sm text-gray-600">
+                          {req.status === "Required" ? (
+                            <span className="text-red-600 font-semibold">
+                              Required
+                            </span>
+                          ) : req.status === "Optional" ? (
+                            <span className="text-blue-600 font-semibold">
+                              Optional
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isEditing && (
+                  <Button
+                    onClick={handleAddRequirement}
+                    className="mt-2 bg-[#2B7FD0]"
+                  >
+                    Add Requirement
+                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Right Column: Tips and Publish Schedule */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* TIP Section */}
-            <Card className="border-none shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-start space-x-2 mb-4">
-                  <Info className="h-5 w-5 text-[#9EC7DC]" />
-                  <h3 className="text-base font-semibold text-[#9EC7DC]">
-                    TIP
-                  </h3>
-                </div>
-                <p className="text-base text-gray-800 mb-4">
-                  Job boards will often reject jobs that do not have quality job
-                  descriptions. To ensure that your job description matches the
-                  requirements for job boards, consider the following
-                  guidelines:
-                </p>
-                <ul className="list-disc list-inside text-base text-gray-800 space-y-2">
-                  <li>
-                    Job descriptions should be clear, well-written, and
-                    informative
-                  </li>
-                  <li>
-                    Job descriptions with 700-2,000 characters get the most
-                    interaction
-                  </li>
-                  <li>Do not use discriminatory language</li>
-                  <li>Do not post offensive or inappropriate content</li>
-                  <li>Be honest about the job requirement details</li>
-                  <li>
-                    Help the candidate understand the expectations for this role
-                  </li>
-                </ul>
-                <p className="text-base text-gray-800 mt-4">
-                  For more tips on writing good job descriptions,{" "}
-                  <Link href="#" className="text-[#2B7FD0]">
-                    {" "}
-                    {/* Changed color to match theme */}
-                    read our help article.
-                  </Link>
-                </p>
-              </CardContent>
-            </Card>
-
-            {/* Publish Schedule Section */}
-            <Card className="border-none shadow-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-semibold text-gray-900">
-                    Publish Now
-                  </h3>
-                  {isEditing ? (
-                    <Switch
-                      className="!bg-[#2B7FD0]"
-                      checked={publishNow}
-                      onCheckedChange={(checked) => setPublishNow(checked)}
-                    />
-                  ) : (
-                    <Switch
-                      className="!bg-[#2B7FD0]"
-                      checked={publishNow}
-                      disabled
-                    />
-                  )}
-                </div>
-                {!publishNow && (
-                  <>
-                    <h3 className="text-base font-semibold mb-4">
-                      Schedule Publish
-                    </h3>
-                    <div className="border rounded-lg p-3">
-                      <CustomCalendar
-                        selectedDate={selectedDate}
-                        onDateSelect={(date) => setSelectedDate(date)}
-                      />
-                    </div>
-                    {selectedDate && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Selected date: {selectedDate.toLocaleDateString()}
-                      </p>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Application Requirements Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
-            Application Requirements
-          </h2>
-          <p className="text-xl text-gray-800 mb-6">
-            What personal info would you like to gather about each applicant?
-          </p>
-          <div className="space-y-4">
-            {applicationRequirements.map((requirement) => (
-              <div
-                key={requirement.id}
-                className="flex items-center justify-between py-2 border-b pb-10"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-[22px] h-[22px] bg-[#2B7FD0] rounded-full flex items-center justify-center">
-                    <Check className="text-white w-4 h-4" />
+          {/* Custom Questions */}
+          <Card className="border-none shadow-md col-span-1">
+            <CardContent className="p-6 sm:p-8">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+                Custom Questions
+              </h2>
+              <div className="space-y-4">
+                {customQuestions.length === 0 && !isEditing && (
+                  <div className="p-3 border border-dashed border-gray-300 rounded-lg text-gray-500">
+                    No custom questions added.
                   </div>
-                  <span className="text-xl text-gray-900 font-normal">
-                    {requirement.label}
-                  </span>
-                </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant={!requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      !requirement.required
-                        ? "bg-[#2B7FD0] text-white"
-                        : "border-[#2B7FD0] text-[#2B7FD0]"
-                    }`}
-                    onClick={() => handleToggleRequired(requirement.id, false)}
-                    disabled={!isEditing}
+                )}
+                {customQuestions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="flex flex-col sm:flex-row sm:items-end gap-3"
                   >
-                    Optional
-                  </Button>
+                    {isEditing ? (
+                      <>
+                        <div className="flex-1">
+                          <label className="text-sm font-medium text-gray-700">
+                            Question
+                          </label>
+                          <input
+                            type="text"
+                            value={q.question}
+                            onChange={(e) =>
+                              handleUpdateQuestion(q.id, e.target.value)
+                            }
+                            className="w-full h-11 px-3 border border-gray-300 rounded-lg"
+                            placeholder="Enter question"
+                          />
+                        </div>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleRemoveQuestion(q.id)}
+                        >
+                          Remove
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50">
+                        {q.question || "—"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {isEditing && (
                   <Button
-                    variant={requirement.required ? "default" : "outline"}
-                    className={`h-9 px-4 rounded-lg text-sm font-medium ${
-                      requirement.required
-                        ? "bg-[#2B7FD0] text-white"
-                        : "border-[#2B7FD0] text-[#2B7FD0]"
-                    }`}
-                    onClick={() => handleToggleRequired(requirement.id, true)}
-                    disabled={!isEditing}
+                    onClick={handleAddQuestion}
+                    className="mt-2 bg-[#2B7FD0]"
                   >
-                    Required
+                    Add Question
                   </Button>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        </div>
+            </CardContent>
+          </Card>
 
-        {/* Custom Questions Section */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Add Custom Questions
-          </h2>
-          <div className="space-y-4 mb-6">
-            {customQuestions.map((question) => (
-              <div key={question.id} className="space-y-2 flex items-end">
-                <div className="flex-1">
-                  <p className="text-xl font-medium text-[#2B7FD0]">
-                    Ask a question
-                  </p>
-                  {isEditing ? (
-                    <div className="flex items-center">
-                      <input
-                        type="text"
-                        value={question.question}
-                        onChange={(e) =>
-                          handleUpdateQuestion(question.id, e.target.value)
-                        }
-                        className="flex min-h-[80px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveQuestion(question.id)}
-                        className="ml-2"
-                      >
-                        <Trash className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex min-h-[80px] w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800 whitespace-pre-wrap">
-                      {question.question || "No question entered."}
-                    </div>
-                  )}
-                </div>
+          {/* Publish Schedule */}
+          <Card className="border-none shadow-md col-span-1">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-900">
+                  Publish Now
+                </h2>
+                <Switch
+                  checked={publishNow}
+                  onCheckedChange={handlePublishToggle}
+                  className="data-[state=checked]:bg-[#2B7FD0]"
+                />
               </div>
-            ))}
-            {isEditing && (
-              <Button
-                onClick={handleAddQuestion}
-                className="mt-4 bg-[#2B7FD0] text-white"
-              >
-                Add Question
-              </Button>
-            )}
-          </div>
+              {!publishNow && (
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h3 className="text-base font-semibold mb-4">
+                    Schedule Publish
+                  </h3>
+                  <CustomCalendar
+                    selectedDate={selectedDate || undefined}
+                    onDateSelect={setSelectedDate}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Action Buttons */}
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-4 mt-8">
+        <div className="flex flex-col sm:flex-row justify-end gap-4">
           {isEditing ? (
             <>
               <Button
                 variant="outline"
-                className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent"
+                className="border-[#2B7FD0] text-[#2B7FD0]"
                 onClick={() => setIsEditing(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="w-full sm:w-[267px] h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
+                className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/90"
                 onClick={handleSave}
                 disabled={isPending}
               >
@@ -819,25 +803,9 @@ export default function JobPreview() {
               </Button>
             </>
           ) : (
-            <>
-              {role !== "company" && (
-                <>
-                  <Button
-                    variant="outline"
-                    className="w-full sm:w-[267px] h-12 border-[#2B7FD0] text-[#2B7FD0] hover:bg-transparent hover:text-[#2B7FD0] bg-transparent hidden"
-                    onClick={onBackToEdit}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    className="w-full sm:w-[267px] h-12 bg-[#2B7FD0] hover:bg-[#2B7FD0]/90 text-white"
-                    disabled
-                  >
-                    Published
-                  </Button>
-                </>
-              )}
-            </>
+            <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/90" disabled>
+              Published
+            </Button>
           )}
         </div>
       </div>
