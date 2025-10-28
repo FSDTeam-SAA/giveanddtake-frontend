@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Hls from "hls.js";
 
 interface VideoPlayerProps {
@@ -14,6 +14,7 @@ interface VideoPlayerProps {
 
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 3;
+const CONTROLS_HIDE_DELAY = 2000;
 
 export function VideoPlayer({
   pitchId,
@@ -26,6 +27,7 @@ export function VideoPlayer({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const controlsContainerRef = useRef<HTMLDivElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
   const cleanupRef = useRef<(() => void) | null>(null);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,6 +52,9 @@ export function VideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
+  const [showControls, setShowControls] = useState(true);
+  const controlsHideTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const controlsInteractionRef = useRef(false);
 
   const formatTime = (sec: number) => {
     if (Number.isNaN(sec)) return "0:00";
@@ -117,7 +122,7 @@ export function VideoPlayer({
     }
     clearRetryTimeout();
     const next = retryCount + 1;
-    const delay = Math.min(1000 * 2 ** (next - 1), 10000);
+    const delay = 4000; 
     setRetryCount(next);
     setLoading(true);
     console.warn(`Retrying video init (#${next}) in ${delay}ms due to: ${reason}`);
@@ -127,6 +132,76 @@ export function VideoPlayer({
       initHls(latestSourceRef.current);
     }, delay);
   };
+
+  const clearControlsHideTimeout = useCallback(() => {
+    if (controlsHideTimeoutRef.current) {
+      clearTimeout(controlsHideTimeoutRef.current);
+      controlsHideTimeoutRef.current = null;
+    }
+  }, []);
+
+  const scheduleControlsHide = useCallback(() => {
+    clearControlsHideTimeout();
+    if (!isPlaying) return;
+    controlsHideTimeoutRef.current = setTimeout(() => {
+      if (!controlsInteractionRef.current) {
+        setShowControls(false);
+      }
+    }, CONTROLS_HIDE_DELAY);
+  }, [clearControlsHideTimeout, isPlaying]);
+
+  const revealControls = useCallback(() => {
+    setShowControls(true);
+    scheduleControlsHide();
+  }, [scheduleControlsHide]);
+
+  const handlePointerActivity = useCallback(
+    (event?: React.PointerEvent<HTMLDivElement>) => {
+      if (event && controlsContainerRef.current) {
+        const target = event.target as Node | null;
+        if (target && controlsContainerRef.current.contains(target)) {
+          return;
+        }
+      }
+      controlsInteractionRef.current = false;
+      revealControls();
+    },
+    [revealControls]
+  );
+
+  const handleMouseLeave = useCallback(() => {
+    controlsInteractionRef.current = false;
+    scheduleControlsHide();
+  }, [scheduleControlsHide]);
+
+  const handleControlsPointerEnter = useCallback(() => {
+    controlsInteractionRef.current = true;
+    setShowControls(true);
+    clearControlsHideTimeout();
+  }, [clearControlsHideTimeout]);
+
+  const handleControlsPointerLeave = useCallback(() => {
+    controlsInteractionRef.current = false;
+    scheduleControlsHide();
+  }, [scheduleControlsHide]);
+
+  const handleControlsFocus = useCallback(() => {
+    controlsInteractionRef.current = true;
+    setShowControls(true);
+    clearControlsHideTimeout();
+  }, [clearControlsHideTimeout]);
+
+  const handleControlsBlur = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (relatedTarget && event.currentTarget.contains(relatedTarget)) {
+        return;
+      }
+      controlsInteractionRef.current = false;
+      scheduleControlsHide();
+    },
+    [scheduleControlsHide]
+  );
 
   const initHls = (sourceUrl = resolvedSrc) => {
     const sanitizedSrc = typeof sourceUrl === "string" ? sourceUrl.trim() : "";
@@ -289,6 +364,35 @@ export function VideoPlayer({
     };
   }, [resolvedSrc, token]);
 
+  useEffect(() => {
+    if (!isPlaying) {
+      setShowControls(true);
+      clearControlsHideTimeout();
+      return;
+    }
+    scheduleControlsHide();
+    return () => {
+      clearControlsHideTimeout();
+    };
+  }, [isPlaying, scheduleControlsHide, clearControlsHideTimeout]);
+
+  useEffect(() => {
+    const handleKeyDown = () => {
+      revealControls();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [revealControls]);
+
+  useEffect(
+    () => () => {
+      clearControlsHideTimeout();
+    },
+    [clearControlsHideTimeout]
+  );
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -369,6 +473,10 @@ export function VideoPlayer({
       className={`relative w-full max-w-5xl mx-auto bg-gray-900 rounded-xl overflow-hidden shadow-2xl group ${className}`}
       role="region"
       aria-label={title}
+      onPointerMove={handlePointerActivity}
+      onPointerEnter={handlePointerActivity}
+      onPointerDown={handlePointerActivity}
+      onPointerLeave={handleMouseLeave}
     >
       {loading && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
@@ -420,110 +528,129 @@ export function VideoPlayer({
       </video>
 
       <div
-        className="flex flex-wrap items-center gap-3 border-t border-white/10 bg-black/80 px-4 py-4 text-white text-xs sm:text-sm"
-        role="toolbar"
-        aria-label="Video controls"
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 transition-all duration-300 ease-out ${
+          showControls ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
       >
-        <button
-          type="button"
-          onClick={togglePlay}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-label={isPlaying ? "Pause video" : "Play video"}
-        >
-          {isPlaying ? (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
-            </svg>
-          ) : (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16l13-8z" />
-            </svg>
-          )}
-        </button>
-
-        <span className="hidden font-mono text-[13px] tabular-nums sm:block sm:text-sm">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
-
-        <div className="flex min-w-[140px] flex-1 items-center">
-          <div className="relative h-1.5 w-full rounded-full bg-white/20">
-            <div
-              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-linear"
-              style={{ width: `${progressPercent}%` }}
-            />
-            <input
-              type="range"
-              min={0}
-              max={duration || 0}
-              step="any"
-              value={currentTime}
-              onChange={handleSeek}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              aria-label="Video progress"
-            />
-          </div>
-        </div>
-
-        <div className="hidden items-center gap-2 sm:flex">
-          <button
-            type="button"
-            onClick={toggleMute}
-            className="text-white transition hover:text-blue-400"
-            aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
+        <div className="bg-gradient-to-t from-black/85 via-black/60 to-transparent px-3 pb-4 pt-8 sm:px-4 sm:pt-10">
+          <div
+            className={`flex flex-nowrap items-center gap-2 overflow-x-auto text-white text-xs sm:gap-3 sm:text-sm ${
+              showControls ? "pointer-events-auto" : "pointer-events-none"
+            }`}
+            ref={controlsContainerRef}
+            role="toolbar"
+            aria-label="Video controls"
+            onPointerEnter={handleControlsPointerEnter}
+            onPointerLeave={handleControlsPointerLeave}
+            onPointerDown={handleControlsPointerEnter}
+            onFocusCapture={handleControlsFocus}
+            onBlurCapture={handleControlsBlur}
+            aria-hidden={!showControls}
           >
-            {isMuted || volume === 0 ? (
-              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label={isPlaying ? "Pause video" : "Play video"}
+            >
+              {isPlaying ? (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16l13-8z" />
+                </svg>
+              )}
+            </button>
+
+            <span className="hidden font-mono text-[13px] tabular-nums sm:block sm:text-sm">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </span>
+
+            <div className="flex basis-[45%] max-w-[180px] flex-1 items-center sm:basis-auto sm:max-w-full">
+              <div className="relative h-1 w-full rounded-full bg-white/25 sm:h-1.5">
+                <div
+                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-linear"
+                  style={{ width: `${progressPercent}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 0}
+                  step="any"
+                  value={currentTime}
+                  onChange={handleSeek}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label="Video progress"
+                />
+              </div>
+            </div>
+
+            <div className="hidden items-center gap-2 sm:flex">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="text-white transition hover:text-blue-400"
+                aria-label={isMuted || volume === 0 ? "Unmute video" : "Mute video"}
+              >
+                {isMuted || volume === 0 ? (
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                    />
+                  </svg>
+                ) : (
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                    />
+                  </svg>
+                )}
+              </button>
+              <div className="relative h-1.5 w-16 rounded-full bg-white/20 sm:w-28">
+                <div
+                  className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
+                  style={{ width: `${volumePercent}%` }}
+                />
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={volume}
+                  onChange={handleVolumeSliderChange}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label="Volume control"
+                />
+              </div>
+            </div>
+
+         
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-label="Toggle fullscreen"
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586l4.586-4.586a2 2 0 012.828 0M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
+                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
                 />
               </svg>
-            ) : (
-              <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H3a1 1 0 01-1-1V10a1 1 0 011-1h2.586L8 6.586A2 2 0 019.414 6H11"
-                />
-              </svg>
-            )}
-          </button>
-          <div className="relative h-1.5 w-20 rounded-full bg-white/20 sm:w-28">
-            <div
-              className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-200"
-              style={{ width: `${volumePercent}%` }}
-            />
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={volume}
-              onChange={handleVolumeSliderChange}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              aria-label="Volume control"
-            />
+            </button>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-label="Toggle fullscreen"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-            />
-          </svg>
-        </button>
       </div>
     </div>
   );

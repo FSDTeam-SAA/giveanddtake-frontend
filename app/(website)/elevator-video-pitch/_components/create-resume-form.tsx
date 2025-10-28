@@ -369,7 +369,9 @@ export default function CreateResumeForm() {
     onSuccess: (data) => {
       setIsElevatorPitchUploaded(true);
       setUploadedVideoUrl(data.videoUrl);
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
     },
     onError: (error) => {
       console.error("Upload error:", error);
@@ -627,8 +629,8 @@ export default function CreateResumeForm() {
               {isElevatorPitchUploaded && (
                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                   <p className="text-sm text-green-600 font-medium">
-                    ✓ Elevator pitch uploaded successfully! You can now submit
-                    your resume.
+                    ✓ Elevator pitch upload finished! We’re processing your
+                    video—feel free to submit your resume while it finalizes.
                   </p>
                 </div>
               )}

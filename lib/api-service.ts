@@ -123,22 +123,43 @@ export async function createCompany(formData: FormData) {
 export async function uploadElevatorPitch({
   videoFile,
   userId,
+  onUploadProgress,
 }: {
   videoFile: File;
   userId: string;
+  onUploadProgress?: (progress: number) => void;
 }) {
-  const formData = new FormData();
-  formData.append("videoFile", videoFile);
-
-  const response = await apiClient.post(
-    `/elevator-pitch/video?userId=${userId}`,
-    formData,
+  const { data: requestData } = await apiClient.post(
+    `/elevator-pitch/video/upload-url?userId=${userId}`,
     {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      fileName: videoFile.name,
+      fileType: videoFile.type || "video/mp4",
+      fileSize: videoFile.size,
     }
   );
+
+  const { uploadUrl, key, fileName } = requestData.data;
+
+  await axios.put(uploadUrl, videoFile, {
+    headers: {
+      "Content-Type": videoFile.type || "application/octet-stream",
+    },
+    onUploadProgress: (event) => {
+      if (!onUploadProgress || !event.total) return;
+      const percent = Math.round((event.loaded / event.total) * 100);
+      onUploadProgress(percent);
+    },
+  });
+
+  const response = await apiClient.post(
+    `/elevator-pitch/video/complete?userId=${userId}`,
+    {
+      fileKey: key,
+      fileName: fileName ?? videoFile.name,
+      fileSize: videoFile.size,
+    }
+  );
+
   return response.data;
 }
 

@@ -24,6 +24,7 @@ import {
 } from "@/lib/api-service";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import SocialLinks from "./SocialLinks";
+import { VideoProcessingCard } from "@/components/VideoProcessingCard";
 
 interface ResumeResponse {
   success: boolean;
@@ -115,6 +116,10 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const userId = session?.user?.id;
   const token = session?.accessToken;
 
+  const processingInfo = resume?.elevatorPitch?.[0]?.processing;
+  const isProcessing = processingInfo?.state === "processing";
+
+
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
     useState<boolean>(!!resume.elevatorPitch[0]);
@@ -137,10 +142,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
-      window.location.reload();
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
@@ -239,8 +245,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   <h2 className="text-xl font-bold text-gray-800">
                     {resume.resume.title
                       ? `${resume.resume.title
-                          .charAt(0)
-                          .toUpperCase()}${resume.resume.title.slice(1)} `
+                        .charAt(0)
+                        .toUpperCase()}${resume.resume.title.slice(1)} `
                       : ""}
                     {`${resume.resume.firstName
                       .charAt(0)
@@ -283,7 +289,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         {resume.resume.zipCode && `, ${resume.resume.zipCode}`}
                       </p>
                     </div>
-                 
+
                     <div>
                       <p className="font-semibold text-base">Email</p>
                       <p className="text-gray-600">{resume.resume.email}</p>
@@ -321,10 +327,16 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       </Button>
                     )}
                   </div>
-                
+
                 </CardHeader>
                 <CardContent>
-                  {isElevatorPitchUploaded && resume.elevatorPitch[0] ? (
+                  {isProcessing ? (
+                    <VideoProcessingCard
+                      startedAt={processingInfo?.startedAt}
+                      onRetry={() => window.location.reload()}
+                      className="w-full"
+                    />
+                  ) : isElevatorPitchUploaded && resume.elevatorPitch[0] ? (
                     <VideoPlayer
                       pitchId={resume.elevatorPitch[0]._id}
                       className="w-full mx-auto"
@@ -340,8 +352,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                         onClick={handleElevatorPitchUpload}
                         disabled={
-                          uploadElevatorPitchMutation.isPending ||
-                          !elevatorPitchFile
+                          uploadElevatorPitchMutation.isPending || !elevatorPitchFile
                         }
                       >
                         {uploadElevatorPitchMutation.isPending ? (
@@ -372,11 +383,13 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                           "Upload Elevator Pitch"
                         )}
                       </Button>
+
                       {isElevatorPitchUploaded && (
                         <p className="mt-2 text-sm text-green-600">
-                          Elevator pitch uploaded successfully!
+                          Elevator pitch upload finished! Processing continues in the background.
                         </p>
                       )}
+
                       {!isElevatorPitchUploaded && !elevatorPitchFile && (
                         <p className="mt-2 text-sm text-gray-600">
                           No pitch available
@@ -385,6 +398,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </>
                   )}
                 </CardContent>
+
               </Card>
             </div>
 

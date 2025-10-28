@@ -589,7 +589,9 @@ export default function CreateRecruiterAccountForm() {
     onSuccess: (data) => {
       setIsElevatorPitchUploaded(true);
       setUploadedVideoUrl(data.videoUrl);
-      toast.success("Elevator pitch uploaded successfully");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
     },
     onError: (error: any) => {
       toast.error(
@@ -857,9 +859,10 @@ export default function CreateRecruiterAccountForm() {
               )}
               {isElevatorPitchUploaded && (
                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-600 font-medium">
-                    ✓ Elevator pitch uploaded successfully! You can now submit.
-                  </p>
+                <p className="text-sm text-green-600 font-medium">
+                  ✓ Elevator pitch upload finished! We’re processing your video
+                  in the background—go ahead and submit.
+                </p>
                 </div>
               )}
             </CardContent>
