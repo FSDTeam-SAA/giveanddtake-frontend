@@ -81,7 +81,9 @@ export default function CreateCompanyPage() {
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");

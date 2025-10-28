@@ -528,7 +528,9 @@ export default function CreateCompanyPage() {
     onSuccess: (data) => {
       setIsElevatorPitchUploaded(true);
       setUploadedVideoUrl(data.videoUrl);
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
     },
     onError: (error: any) => {
       console.log(error.response?.data?.message || "Failed to upload video");

@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { VideoProcessingCard } from "@/components/VideoProcessingCard";
 
 interface ApiResponse {
   success: boolean;
@@ -41,6 +42,7 @@ export default function RecruiterElevator({
 }: {
   recruiter: { bio: string };
 }) {
+  console.log("Recruiter data:", recruiter);
   const [loading, setLoading] = useState(true);
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,9 @@ export default function RecruiterElevator({
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const token = session?.accessToken;
+
+  const processingInfo = recruiter?.elevatorPitch?.processing;
+  const isProcessing = processingInfo?.state === "processing";
 
   useEffect(() => {
     const fetchPitchData = async () => {
@@ -95,14 +100,19 @@ export default function RecruiterElevator({
     };
 
     fetchPitchData();
-  }, [userId, token]);
+  }, [userId, token, isProcessing]);
 
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
@@ -183,11 +193,14 @@ export default function RecruiterElevator({
             </div>
           </CardHeader>
           <CardContent>
-            {pitchData ? (
-              <VideoPlayer
-                pitchId={pitchData._id}
-                className="w-full mx-auto md:h-[500px]"
+            {isProcessing ? (
+              <VideoProcessingCard
+                startedAt={processingInfo?.startedAt}
+                onRetry={() => window.location.reload()}
+                className="w-full"
               />
+            ) : pitchData ? (
+              <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
             ) : loading ? (
               <div>Loading pitch...</div>
             ) : (
@@ -232,17 +245,24 @@ export default function RecruiterElevator({
                     "Upload Elevator Pitch"
                   )}
                 </Button>
+
                 {isElevatorPitchUploaded && (
                   <p className="mt-2 text-sm text-green-600">
-                    Elevator pitch uploaded successfully!
+                    Elevator pitch upload finished! Processing continues in the
+                    background.
                   </p>
                 )}
+
                 {!isElevatorPitchUploaded && !elevatorPitchFile && (
-                  <p className="mt-2 text-sm text-gray-600">No pitch available.</p>
+                  <p className="mt-2 text-sm text-gray-600">
+                    No pitch available.
+                  </p>
                 )}
               </>
             )}
           </CardContent>
+
+
         </Card>
       </div>
       <div className="lg:space-y-8 space-y-4 py-8">
@@ -252,7 +272,7 @@ export default function RecruiterElevator({
           dangerouslySetInnerHTML={{
             __html: DOMPurify.sanitize(
               recruiter?.bio ||
-                "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."
+              "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."
             ),
           }}
         />

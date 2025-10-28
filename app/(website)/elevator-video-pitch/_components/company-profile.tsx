@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SocialIcon } from "@/components/company/social-icon";
 import { VideoPlayer } from "@/components/company/video-player";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload"; // Assumed component
 import {
@@ -45,6 +44,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
+import { VideoProcessingCard } from "@/components/VideoProcessingCard";
 
 interface PitchData {
   _id: string;
@@ -149,6 +149,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const company = companyData?.companies?.[0];
   const companyId = company?._id;
 
+  const processing = company?.elevatorPitch?.processing; // has state, startedAt
+  const isProcessing = processing?.state === "processing";
+
   const {
     data: jobs = [],
     isLoading: isLoadingJobs,
@@ -247,10 +250,15 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success("Elevator pitch uploaded successfully!");
+      toast.success(
+        "Upload completed! We’re processing your video—check back shortly."
+      );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
       queryClient.invalidateQueries({ queryKey: ["company", userId] });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: any) => {
       toast.error(error.response?.data?.message || "Failed to upload video");
@@ -367,7 +375,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     };
 
     fetchPitchData();
-  }, [session]);
+  }, [session, isProcessing]);
 
   if (isLoadingCompany) {
     return (
@@ -544,7 +552,13 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             </p>
           </CardHeader>
           <CardContent>
-            {pitchData ? (
+            {isProcessing ? (
+              <VideoProcessingCard
+                startedAt={processing?.startedAt}
+                onRetry={() => refetch()} // uses your existing react-query refetch
+                className="w-full"
+              />
+            ) : pitchData ? (
               <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
             ) : loading ? (
               <div>Loading pitch...</div>
@@ -560,9 +574,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   type="button"
                   className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleElevatorPitchUpload}
-                  disabled={
-                    uploadElevatorPitchMutation.isPending || !elevatorPitchFile
-                  }
+                  disabled={uploadElevatorPitchMutation.isPending || !elevatorPitchFile}
                 >
                   {uploadElevatorPitchMutation.isPending ? (
                     <div className="flex items-center gap-2">
@@ -592,19 +604,20 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                     "Upload Elevator Pitch"
                   )}
                 </Button>
+
                 {isElevatorPitchUploaded && (
                   <p className="mt-2 text-sm text-green-600">
-                    Elevator pitch uploaded successfully!
+                    Elevator pitch upload finished! Processing continues in the background.
                   </p>
                 )}
+
                 {!isElevatorPitchUploaded && !elevatorPitchFile && (
-                  <p className="mt-2 text-sm text-gray-900">
-                    No pitch available.
-                  </p>
+                  <p className="mt-2 text-sm text-gray-900">No pitch available.</p>
                 )}
               </>
             )}
           </CardContent>
+
         </Card>
       </div>
 
@@ -735,11 +748,10 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       key={page}
                       variant="outline"
                       size="sm"
-                      className={`h-8 w-8 p-0 ${
-                        currentPage === page
-                          ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
-                          : "bg-transparent"
-                      }`}
+                      className={`h-8 w-8 p-0 ${currentPage === page
+                        ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
+                        : "bg-transparent"
+                        }`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}

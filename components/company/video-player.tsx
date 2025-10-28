@@ -14,7 +14,7 @@ interface VideoPlayerProps {
 
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 3;
-const CONTROLS_HIDE_DELAY = 3000;
+const CONTROLS_HIDE_DELAY = 2000;
 
 export function VideoPlayer({
   pitchId,
@@ -122,7 +122,7 @@ export function VideoPlayer({
     }
     clearRetryTimeout();
     const next = retryCount + 1;
-    const delay = Math.min(1000 * 2 ** (next - 1), 10000);
+    const delay = 4000; 
     setRetryCount(next);
     setLoading(true);
     console.warn(`Retrying video init (#${next}) in ${delay}ms due to: ${reason}`);
@@ -632,21 +632,7 @@ export function VideoPlayer({
               </div>
             </div>
 
-            {levels.length > 0 && (
-              <select
-                value={currentLevel}
-                onChange={(e) => changeQuality(Number.parseInt(e.target.value, 10))}
-                className="min-w-[78px] shrink-0 cursor-pointer rounded-md border border-white/10 bg-black/60 px-2.5 py-1 text-xs text-white transition-colors hover:bg-black/80 sm:min-w-[90px] sm:px-3 sm:text-sm"
-                aria-label="Select video quality"
-              >
-                <option value="-1">{qualityLabels[-1]}</option>
-                {levels.map((level, index) => (
-                  <option key={index} value={index}>
-                    {qualityLabels[level.height] || `${level.height}p`}
-                  </option>
-                ))}
-              </select>
-            )}
+         
 
             <button
               type="button"
@@ -665,25 +651,6 @@ export function VideoPlayer({
             </button>
           </div>
         </div>
-<<<<<<< HEAD
-=======
-
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-label="Toggle fullscreen"
-        >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-            />
-          </svg>
-        </button>
->>>>>>> 16a5e55ad901431bb4e314362035557098aee72d
       </div>
     </div>
   );
