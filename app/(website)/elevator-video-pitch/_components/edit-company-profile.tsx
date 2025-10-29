@@ -59,6 +59,19 @@ const FIXED_PLATFORMS = [
   "Instagram",
 ] as const;
 
+// near the top
+const PLATFORMS_IN_STORAGE = [
+  "LinkedIn",
+  "Twitter",
+  "Facebook",
+  "TikTok",
+  "Instagram",
+  "Upwork",
+  "Fiverr",
+  "Others",
+] as const;
+
+
 // Form schema with sLink
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -162,10 +175,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       cemail: "",
       aboutUs: "",
       industry: "",
-      sLink: FIXED_PLATFORMS.map((label) => ({
-        label,
-        url: "",
-      })),
+      sLink: PLATFORMS_IN_STORAGE.map((label) => ({ label, url: "" })),
     },
   });
 
@@ -261,83 +271,79 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     }
   }, [companyData]);
 
-  useEffect(() => {
-    if (companyData?.data?.companies?.[0]) {
-      const company = companyData.data.companies[0];
+useEffect(() => {
+  if (companyData?.data?.companies?.[0]) {
+    const company = companyData.data.companies[0];
 
-      if (company.country) {
-        setSelectedCountry(company.country);
-      }
+    // build lookup for quick access
+    const byLabel: Record<string, string> = {};
+    (company.sLink ?? []).forEach((s: { label: string; url: string }) => {
+      if (!s?.label) return;
+      const key = s.label.trim() === "Other" ? "Others" : s.label.trim(); // normalize
+      byLabel[key] = s.url ?? "";
+    });
 
-      // Process social links
-      const processedSocialLinks = FIXED_PLATFORMS.map((label) => {
-        const matchingLink = company.sLink?.find(
-          (link: { label: string; url: string; _id: string }) =>
-            link.label === label
-        );
-        return {
-          _id: matchingLink?._id,
-          label,
-          url: matchingLink?.url || "",
-          type: matchingLink?._id ? "update" : "create",
-        };
-      });
+    // normalize sLink into our expected fixed order
+    const normalizedSLink = PLATFORMS_IN_STORAGE.map((label) => ({
+      label,
+      url: byLabel[label] ?? "",
+    }));
 
-      console.log("Processed social links:", processedSocialLinks);
-      console.log("AboutUs content:", company.aboutUs);
+    // reset form with normalized values
+    form.reset({
+      cname: company.cname || "",
+      country: company.country || "",
+      city: company.city || "",
+      zipcode: company.zipcode || "",
+      cemail: company.cemail || "",
+      aboutUs: company.aboutUs || "",
+      industry: company.industry || "",
+      sLink: normalizedSLink,
+    });
 
-      form.reset({
-        cname: company.cname || "",
-        country: company.country || "",
-        city: company.city || "",
-        zipcode: company.zipcode || "",
-        cemail: company.cemail || "",
-        aboutUs: company.aboutUs || "",
-        industry: company.industry || "",
-        sLink: processedSocialLinks,
-      });
-
-      if (company.service && company.service.length > 0) {
-        setServices(company.service);
-      } else {
-        setServices([""]);
-      }
-
-      if (company.employeesId) {
-        setSelectedEmployees(company.employeesId);
-      }
-    }
-
-    if (companyData?.data?.honors && companyData.data.honors.length > 0) {
-      const loadedHonors = companyData.data.honors.map(
-        (honor: any, index: number) => ({
-          id: `existing-${index}`,
-          _id: honor._id,
-          title: honor.title || "",
-          issuer: honor.issuer || "",
-          programeDate: honor.programeDate
-            ? new Date(honor.programeDate).toISOString().split("T")[0]
-            : "",
-          description: honor.description || "",
-          isNew: false,
-        })
-      );
-      setHonors(loadedHonors);
-      setOriginalHonors([...loadedHonors]);
+    // other data loading logic (keep your existing code)
+    if (company.service && company.service.length > 0) {
+      setServices(company.service);
     } else {
-      setHonors([
-        {
-          id: "1",
-          title: "",
-          issuer: "",
-          programeDate: "",
-          description: "",
-          isNew: true,
-        },
-      ]);
-      setOriginalHonors([]);
+      setServices([""]);
     }
-  }, [companyData, form]);
+
+    if (company.employeesId) {
+      setSelectedEmployees(company.employeesId);
+    }
+  }
+
+  if (companyData?.data?.honors && companyData.data.honors.length > 0) {
+    const loadedHonors = companyData.data.honors.map(
+      (honor: any, index: number) => ({
+        id: `existing-${index}`,
+        _id: honor._id,
+        title: honor.title || "",
+        issuer: honor.issuer || "",
+        programeDate: honor.programeDate
+          ? new Date(honor.programeDate).toISOString().split("T")[0]
+          : "",
+        description: honor.description || "",
+        isNew: false,
+      })
+    );
+    setHonors(loadedHonors);
+    setOriginalHonors([...loadedHonors]);
+  } else {
+    setHonors([
+      {
+        id: "1",
+        title: "",
+        issuer: "",
+        programeDate: "",
+        description: "",
+        isNew: true,
+      },
+    ]);
+    setOriginalHonors([]);
+  }
+}, [companyData, form]);
+
 
   const addService = () => {
     setServices([...services, ""]);
@@ -447,98 +453,90 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      setIsUpdating(true);
+ const onSubmit = async (data: FormData) => {
+  try {
+    setIsUpdating(true);
 
-      const filteredServices = services
-        .map((service) => service.trim())
-        .filter((service) => service !== "");
+    // clean up services
+    const filteredServices = services.map((s) => s.trim()).filter(Boolean);
 
-      const processedHonors = honors
-        .filter((honor) => !honor.isDeleted)
-        .filter(
-          (honor) =>
-            honor.title.trim() !== "" || honor.description.trim() !== ""
-        )
-        .map((honor) => {
-          const baseHonor = {
-            title: honor.title.trim(),
-            issuer: honor.issuer.trim(),
-            programeDate: honor.programeDate,
-            description: honor.description.trim(),
-          };
+    // only keep social links with non-empty URL
+    const cleanSLink = (data.sLink ?? [])
+      .map(({ label, url }) => ({
+        label: label === "Other" ? "Others" : label,
+        url: (url ?? "").trim(),
+      }))
+      .filter((x) => x.url !== ""); // remove empty ones ✅
 
-          if (honor.isNew) {
-            return {
-              ...baseHonor,
-              type: "create",
-            };
-          } else {
-            const original = originalHonors.find(
-              (orig) => orig._id === honor._id
-            );
-            const isModified =
-              !original ||
-              original.title !== honor.title ||
-              original.issuer !== honor.issuer ||
-              original.programeDate !== honor.programeDate ||
-              original.description !== honor.description;
-
-            return {
-              ...baseHonor,
-              _id: honor._id,
-              type: isModified ? "update" : "update",
-            };
-          }
-        });
-
-      const deletedHonors = originalHonors
-        .filter((original) => {
-          const stillExists = honors.find(
-            (h) => h._id === original._id && !h.isDeleted
-          );
-          return !stillExists;
-        })
-        .map((honor) => ({
-          _id: honor._id,
-          type: "delete",
-        }));
-
-      const allHonors = [...processedHonors, ...deletedHonors];
-
-      const originalSLinks = companyData?.data?.companies[0]?.sLink || [];
-      const processedSocialLinks = data.sLink.map((link) => {
-        const originalLink = originalSLinks.find(
-          (orig: { _id: string; label: string; url: string }) =>
-            orig._id === link._id || orig.label === link.label
-        );
-        return {
-          _id: link._id,
-          type: link._id ? (link.url ? "update" : "delete") : "create",
-          label: link.label,
-          url: link.url || "",
+    // process honors as before
+    const processedHonors = honors
+      .filter((honor) => !honor.isDeleted)
+      .filter(
+        (honor) =>
+          honor.title.trim() !== "" || honor.description.trim() !== ""
+      )
+      .map((honor) => {
+        const baseHonor = {
+          title: honor.title.trim(),
+          issuer: honor.issuer.trim(),
+          programeDate: honor.programeDate,
+          description: honor.description.trim(),
         };
+
+        if (honor.isNew) {
+          return { ...baseHonor, type: "create" };
+        } else {
+          const original = originalHonors.find(
+            (orig) => orig._id === honor._id
+          );
+          const isModified =
+            !original ||
+            original.title !== honor.title ||
+            original.issuer !== honor.issuer ||
+            original.programeDate !== honor.programeDate ||
+            original.description !== honor.description;
+
+          return {
+            ...baseHonor,
+            _id: honor._id,
+            type: isModified ? "update" : "update",
+          };
+        }
       });
 
-      const formData = {
-        ...data,
-        sLink: processedSocialLinks,
-        service: filteredServices,
-        employeesId: selectedEmployees,
-        honors: allHonors,
-      };
+    const deletedHonors = originalHonors
+      .filter((original) => {
+        const stillExists = honors.find(
+          (h) => h._id === original._id && !h.isDeleted
+        );
+        return !stillExists;
+      })
+      .map((honor) => ({
+        _id: honor._id,
+        type: "delete",
+      }));
 
-      await updateCompany(formData);
-      toast.success("Company updated successfully!");
-      router.push("/elevator-video-pitch");
-    } catch (error: any) {
-      console.error("Error updating company:", error);
-      toast.error(error.message || "Failed to update company");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+    const allHonors = [...processedHonors, ...deletedHonors];
+
+    // prepare final data to send
+    const formData = {
+      ...data,
+      sLink: cleanSLink, // ✅ only filled links
+      service: filteredServices,
+      employeesId: selectedEmployees,
+      honors: allHonors,
+    };
+
+    await updateCompany(formData);
+    toast.success("Company updated successfully!");
+    router.push("/elevator-video-pitch");
+  } catch (error: any) {
+    console.error("Error updating company:", error);
+    toast.error(error.message || "Failed to update company");
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   if (isLoading) {
     return (
