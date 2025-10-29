@@ -4,13 +4,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, MapPin, DollarSign, Building2 } from "lucide-react";
+import { ArrowLeft, MapPin, Building2 } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
+
+
+import { getMyResume } from "@/lib/api-service"; // <-- adjust path
 
 interface Recruiter {
   _id: string;
@@ -93,20 +96,22 @@ interface JobDetailsProps {
 
 export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   const { data: session, status: sessionStatus } = useSession();
-  const userId = session?.user?.id;
+  const userId = (session?.user as any)?.id as string | undefined;
   const token = (session as any)?.accessToken as string | undefined;
   const queryClient = useQueryClient();
 
-  const role = session?.user.role as string | undefined;
+  const role = (session?.user as any)?.role as string | undefined;
   const isUnauthed = sessionStatus === "unauthenticated";
   const isCandidate = role === "candidate";
   const isRecruiterOrCompany = role === "recruiter" || role === "company";
   const canSeeApply = isUnauthed || isCandidate;
 
   const TOAST_DURATION_MS = 2200;
-  const REDIRECT_DELAY_MS = 1800;
+  const EVP_REDIRECT_DELAY_MS = 2000; // per requirement: 2 seconds
+  const SIGNIN_REDIRECT_DELAY_MS = 1800;
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
+  // ===== Fetch job details =====
   const {
     data: jobData,
     isLoading,
@@ -128,6 +133,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     enabled: Boolean(jobId && jobId !== "undefined"),
   });
 
+  // ===== Fetch user's bookmarks (if logged in) =====
   const { data: bookmarkData, isLoading: isBookmarkLoading } =
     useQuery<BookmarkResponse>({
       queryKey: ["bookmark", jobId, userId],
@@ -159,6 +165,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const bookmarked = bookmarkData?.data?.bookmarks?.[0]?.bookmarked ?? false;
 
+  // ===== Toggle bookmark =====
   const toggleBookmarkMutation = useMutation({
     mutationFn: async ({
       jobId,
@@ -213,6 +220,64 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
       userId,
       bookmarked: bookmarked ?? false,
     });
+  };
+
+  // ===== EVP / Resume check (only for candidates) =====
+  const {
+    data: myresume,
+    isLoading: resumeLoading,
+    isFetching: resumeFetching,
+  } = useQuery({
+    queryKey: ["my-resume", userId],
+    queryFn: getMyResume,
+    select: (d) => d?.data, // expecting { data: { resume?: string | null } }
+    enabled: isCandidate && !!userId,
+    staleTime: 60_000,
+  });
+
+  const applicationLink = jobData?.data?._id
+    ? `/job-application?id=${jobData.data._id}`
+    : "#";
+
+  const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (isRedirecting) return;
+    setIsRedirecting(true);
+
+    toast("Please log in as a candidate to apply.", {
+      description: "You’ll now be redirected to sign in.",
+      duration: TOAST_DURATION_MS,
+    });
+
+    setTimeout(() => {
+      void signIn(undefined, { callbackUrl: applicationLink });
+    }, SIGNIN_REDIRECT_DELAY_MS);
+  };
+
+  const handleCandidateApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    if (resumeLoading || resumeFetching || isRedirecting) return;
+
+    const hasResume = !!myresume?.resume;
+
+    if (hasResume) {
+      // Candidate has resume -> go to application
+      if (applicationLink !== "#") {
+        window.location.href = applicationLink;
+      }
+      return;
+    }
+
+    // Candidate missing resume -> EVP flow
+    setIsRedirecting(true);
+    toast("Please create your EVP profile", {
+      description: "Redirecting you to set up your Elevator Video Pitch.",
+      duration: TOAST_DURATION_MS,
+    });
+
+    setTimeout(() => {
+      window.location.href = "/elevator-video-pitch";
+    }, EVP_REDIRECT_DELAY_MS);
   };
 
   const formatDate = (dateString: string) =>
@@ -304,46 +369,24 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   }
 
   const job = jobData.data;
-  const applicationLink = `/job-application?id=${job._id}`;
 
   // Determine postedBy data
   let postedByName = "Unknown";
   let postedByLogo = "/default-logo.png";
   let postedById = "#";
-  let postedByType = "company";
-  let postedByData = null;
+  let postedByType: "company" | "recruiter" = "company";
 
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
     postedByLogo = job.recruiterId.photo || "/default-logo.png";
     postedById = job.recruiterId.userId || "#";
     postedByType = "recruiter";
-    postedByData = { recruiterId: job.recruiterId };
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
     postedByLogo = job.companyId.clogo || "/default-logo.png";
     postedById = job.companyId.userId || "#";
     postedByType = "company";
-    postedByData = { companyId: job.companyId };
   }
-
-  // Log the appropriate data
-  console.log(postedByData);
-
-  const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    if (isRedirecting) return;
-    setIsRedirecting(true);
-
-    toast("Please log in as a candidate to apply.", {
-      description: "You’ll now be redirected to sign in.",
-      duration: TOAST_DURATION_MS,
-    });
-
-    setTimeout(() => {
-      void signIn(undefined, { callbackUrl: applicationLink });
-    }, REDIRECT_DELAY_MS);
-  };
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -428,13 +471,15 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
               <div className="flex flex-col items-start sm:items-end gap-2">
                 <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
+                  {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
                   {(() => {
-                    const salary = job.salaryRange; // e.g. "₦ 100000" or "ر.ع. 500000"
+                    const salary = job.salaryRange ?? ""; // "₦ 100000"
                     const parts = salary.split(" ");
-                    const currency = parts[0]; // "₦" or "ر.ع."
-                    const amount = Number(parts[1]); // 100000
-
-                    return `${currency} ${amount.toLocaleString()}`;
+                    const currency = parts[0] ?? "";
+                    const amount = Number(parts[1] ?? "");
+                    return isNaN(amount)
+                      ? salary
+                      : `${currency} ${amount.toLocaleString()}`;
                   })()}
                 </div>
                 <div className="inline-flex items-center bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
@@ -496,13 +541,17 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       {isRedirecting ? "Redirecting..." : "Apply Now"}
                     </Button>
                   ) : (
+                    // Authenticated candidate: EVP/Resume gate
                     <Button
-                      asChild
                       className="w-full bg-primary hover:bg-blue-700"
+                      onClick={handleCandidateApply}
+                      disabled={isRedirecting || resumeLoading || resumeFetching}
                     >
-                      <Link href={`/job-application?id=${job._id}`}>
-                        Apply Now
-                      </Link>
+                      {resumeLoading || resumeFetching
+                        ? "Checking…"
+                        : isRedirecting
+                        ? "Redirecting..."
+                        : "Apply Now"}
                     </Button>
                   )
                 ) : null}
@@ -582,10 +631,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <span className="text-gray-600">Positions</span>
                   <span className="font-medium">{job.vacancy}</span>
                 </div>
-                {/* <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
-                  <span className="text-gray-600">Compensation</span>
-                  <span className="font-medium">{job.compensation}</span>
-                </div> */}
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Published</span>
                   <span className="font-medium">

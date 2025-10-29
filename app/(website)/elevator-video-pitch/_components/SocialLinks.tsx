@@ -1,5 +1,6 @@
 "use client";
 
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
   FaLinkedin,
@@ -8,12 +9,12 @@ import {
   FaInstagram,
   FaTiktok,
   FaUpwork,
-  FaGlobe, // 🌐 for "Others"
+  FaGlobe,
 } from "react-icons/fa6";
-import { SiFiverr } from "react-icons/si"; // ✅ Official Fiverr icon
+import { SiFiverr } from "react-icons/si";
 
-// Supported platforms + icons
 const socialIcons = {
+  Others: { icon: <FaGlobe /> },
   LinkedIn: { icon: <FaLinkedin /> },
   Twitter: { icon: <FaTwitter /> },
   Upwork: { icon: <FaUpwork /> },
@@ -21,25 +22,22 @@ const socialIcons = {
   TikTok: { icon: <FaTiktok /> },
   Instagram: { icon: <FaInstagram /> },
   Fiverr: { icon: <SiFiverr /> },
-  Others: { icon: <FaGlobe /> }, // 🌐 Fallback for unknowns
 } as const;
 
 type SocialLabel = keyof typeof socialIcons;
 
-// Type guard to narrow arbitrary strings to supported labels
 function isSocialLabel(label: string): label is SocialLabel {
   return label in socialIcons;
 }
 
 interface SocialLinksProps {
   sLink?: {
-    label: string; // loose input from upstream
+    label: string;
     url?: string;
     _id?: string;
   }[];
 }
 
-// Add https:// if missing, and quick validity check
 function normalizeUrl(url?: string): string | null {
   if (!url) return null;
   const trimmed = url.trim();
@@ -47,7 +45,6 @@ function normalizeUrl(url?: string): string | null {
   const withProto =
     /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
   try {
-    // Will throw if invalid
     new URL(withProto);
     return withProto;
   } catch {
@@ -56,7 +53,9 @@ function normalizeUrl(url?: string): string | null {
 }
 
 export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
-  // Build a map only for supported labels; everything else goes into “Others”
+  const { data: session } = useSession();
+  const role = session?.user?.role;
+
   const linkMap = new Map<SocialLabel, string>();
 
   for (const item of sLink) {
@@ -66,7 +65,6 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
     if (isSocialLabel(item.label)) {
       linkMap.set(item.label, url);
     } else if (!linkMap.has("Others")) {
-      // Anything unknown → treat as "Others" (keep the first)
       linkMap.set("Others", url);
     }
   }
@@ -74,7 +72,6 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
   const baseClasses =
     "w-8 h-8 md:w-10 md:h-10 flex items-center justify-center border-[.52px] border-[#9EC7DC] rounded-md text-xl md:text-2xl transition-all duration-300 ease-in-out text-[#1877F2] hover:text-blue-600 hover:border-blue-600 hover:shadow-lg hover:scale-105";
 
-  // Only render icons that have URLs
   const entriesWithUrls = Object.entries(socialIcons).filter(([label]) =>
     linkMap.has(label as SocialLabel)
   );
@@ -87,6 +84,14 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
         const typedLabel = label as SocialLabel;
         const url = linkMap.get(typedLabel)!;
 
+        // Dynamically determine tooltip for "Others"
+        const title =
+          typedLabel === "Others"
+            ? role === "company" || role === "recruiter"
+              ? "Company Website"
+              : "Portfolio Website"
+            : typedLabel;
+
         return (
           <Link
             key={typedLabel}
@@ -94,7 +99,7 @@ export default function SocialLinks({ sLink = [] }: SocialLinksProps) {
             target="_blank"
             rel="noopener noreferrer"
             className={baseClasses}
-            title={typedLabel}
+            title={title}
           >
             {icon}
           </Link>

@@ -7,9 +7,13 @@ import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, MouseEvent, KeyboardEvent } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+
+
+import { getMyResume } from "@/lib/api-service"; // <-- adjust path as needed
 
 interface Recruiter {
   _id: string;
@@ -51,7 +55,9 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const router = useRouter();
 
-  const role = session?.user.role as string | undefined;
+  const role = (session?.user as any)?.role as string | undefined;
+  const userId = (session?.user as any)?.id as string | undefined;
+
   const isUnauthed = status === "unauthenticated";
   const isCandidate = role === "candidate";
   const isRecruiterOrCompany = role === "recruiter" || role === "company";
@@ -59,22 +65,32 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
 
   const applicationLink = `/job-application?id=${job._id}`;
 
-  // Card activation: clicks or keyboard (Enter / Space) navigate to job details
-  const activateCard = (e?: React.MouseEvent | React.KeyboardEvent) => {
+  // ===== Resume query (only if role is candidate) =====
+  const { data: myresume, isLoading: resumeLoading } = useQuery({
+    queryKey: ["my-resume", userId],
+    queryFn: getMyResume,
+    select: (data) => data?.data,
+    enabled: isCandidate && !!userId,
+    staleTime: 60_000,
+  });
+
+  // ===== Card activation: clicks or keyboard (Enter / Space) navigate to job details =====
+  const activateCard = (e?: MouseEvent | KeyboardEvent) => {
     // Keyboard handler should only activate on Enter or Space
-    if (e && "key" in (e as any)) {
-      const key = (e as any).key;
+    if (e && "key" in e) {
+      const key = (e as KeyboardEvent).key;
       if (key !== "Enter" && key !== " ") return;
-      (e as React.KeyboardEvent).preventDefault();
-      (e as React.KeyboardEvent).stopPropagation();
+      (e as KeyboardEvent).preventDefault();
+      (e as KeyboardEvent).stopPropagation();
     }
     router.push(`/alljobs/${job._id}`);
   };
 
   const TOAST_DURATION_MS = 2200;
-  const REDIRECT_DELAY_MS = 1800;
+  const REDIRECT_DELAY_MS = 2000; // per requirement: redirect after 2 sec
 
-  const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
+  // ===== Apply handlers =====
+  const handleUnauthedApply = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (isRedirecting) return;
 
@@ -87,12 +103,30 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
 
     setTimeout(() => {
       void signIn(undefined, { callbackUrl: applicationLink });
-    }, REDIRECT_DELAY_MS);
+    }, 1800);
   };
 
-  const handleProgrammaticApply = (e: React.MouseEvent) => {
+  const handleCandidateApply = (e: MouseEvent) => {
     e.stopPropagation();
-    router.push(applicationLink);
+    if (resumeLoading || isRedirecting) return;
+
+    const hasResume = !!myresume?.resume;
+
+    if (hasResume) {
+      router.push(applicationLink);
+      return;
+    }
+
+    // No resume: show toast and redirect to EVP after 2s
+    setIsRedirecting(true);
+    toast("Please create your EVP profile", {
+      description: "Redirecting you to set up your Elevator Video Pitch.",
+      duration: TOAST_DURATION_MS,
+    });
+
+    setTimeout(() => {
+      router.push("/elevator-video-pitch");
+    }, REDIRECT_DELAY_MS);
   };
 
   const getInitials = (name: string) =>
@@ -113,11 +147,11 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     });
   };
 
-  // postedBy data
+  // ===== postedBy data =====
   let postedByName = "Unknown";
   let postedByLogo = "/default-logo.png";
   let postedById = "#";
-  let postedByType = "company";
+  let postedByType: "company" | "recruiter" = "company";
 
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
@@ -136,9 +170,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
       {postedByLogo !== "/default-logo.png" ? (
         <Image
           src={postedByLogo}
-          alt={
-            postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"
-          }
+          alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
           width={56}
           height={56}
           className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover"
@@ -152,14 +184,13 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     </div>
   );
 
-  const navigateToProfile = (e: React.MouseEvent | React.KeyboardEvent) => {
-    if ("stopPropagation" in e) {
-      // MouseEvent or KeyboardEvent
-      // @ts-ignore
-      e.stopPropagation?.();
-    }
-    if ("key" in (e as any)) {
-      const key = (e as any).key;
+  const navigateToProfile = (e: MouseEvent | KeyboardEvent) => {
+    // Stop bubbling from card activation
+    // @ts-ignore - TS narrows imperfectly across union
+    e.stopPropagation?.();
+
+    if ("key" in e) {
+      const key = (e as KeyboardEvent).key;
       if (key !== "Enter" && key !== " ") return;
     }
 
@@ -174,33 +205,42 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
 
+    // Unauthenticated users → sign in flow
     if (isUnauthed) {
       return (
         <Button
           type="button"
           variant="outline"
           onClick={handleUnauthedApply}
+          disabled={isRedirecting}
           className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
         >
-          Apply
+          {isRedirecting ? "Redirecting…" : "Apply"}
         </Button>
       );
     }
 
+    // Candidate (authenticated)
     return (
       <button
         type="button"
-        onClick={handleProgrammaticApply}
+        onClick={handleCandidateApply}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.stopPropagation();
-            handleProgrammaticApply(e as any);
+            handleCandidateApply(e as unknown as MouseEvent);
           }
         }}
-        className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent"
+        disabled={resumeLoading || isRedirecting}
+        className={clsx(
+          "w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent",
+          (resumeLoading || isRedirecting) && "opacity-60 cursor-not-allowed"
+        )}
       >
         <span className="sr-only">Apply to {job.title}</span>
-        <span aria-hidden>Apply</span>
+        <span aria-hidden>
+          {resumeLoading ? "Checking…" : isRedirecting ? "Redirecting…" : "Apply"}
+        </span>
       </button>
     );
   };
@@ -211,7 +251,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     </span>
   );
 
-  // SUGGESTED VARIANT
+  // ===== SUGGESTED VARIANT =====
   if (variant === "suggested") {
     return (
       <Card
@@ -299,7 +339,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     );
   }
 
-  // LIST VARIANT
+  // ===== LIST VARIANT =====
   return (
     <Card
       role="link"
@@ -343,7 +383,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w/full sm:w-auto">
                   <ApplyButton />
                 </div>
               </div>
