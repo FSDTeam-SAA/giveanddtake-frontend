@@ -37,6 +37,8 @@ import {
   getMyResume,
   getRecruiterAccount,
 } from "@/lib/api-service";
+import { useSocket } from "@/hooks/use-socket";
+import { set } from "nprogress";
 
 interface Notification {
   id: string;
@@ -61,11 +63,45 @@ export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [msg, setMsg] = useState(0);
+  const [notificationCount, setNotificationCount] = useState({});
   const safeHeaderHeight = headerHeight || 64;
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
   const userId = session?.user?.id;
   const isValid = session?.user?.isValid === true ? true : false;
+
+  const socket = useSocket();
+
+  useEffect(() => {
+    if (!socket || !userId) return;
+
+    // Join notification room
+    socket.emit("joinNotification", userId);
+
+    // Define event handlers
+    const handleNotification = (data: any) => {
+      console.log("🔔 Notification data:", data);
+      setNotificationCount(data);
+    };
+
+    const handleMsgCount = (data: any) => {
+      console.log("💬 Message count:", data);
+      setMsg(data);
+    };
+
+    // Attach listeners
+    socket.on("notification", handleNotification);
+    socket.on("msg_count", handleMsgCount);
+
+    // Cleanup on unmount or dependency change
+    return () => {
+      socket.off("notification", handleNotification);
+      socket.off("msg_count", handleMsgCount);
+    };
+  }, [socket, userId]);
+
+  console.log(notificationCount, msg);
 
   const getUpgradePath = () => {
     switch (userRole) {
@@ -522,34 +558,67 @@ export function SiteHeader() {
             {status === "authenticated" ? (
               <>
                 {/* Notifications Button with Unread Count Badge (desktop only) */}
+                {/* 🔔 Notifications */}
                 <Link
                   href="/notifications"
                   className="hidden lg:block relative"
                 >
                   <Button
                     size="icon"
-                    className="rounded-full bg-blue-500 text-white hover:bg-primary"
+                    className="rounded-full bg-blue-500 text-white hover:bg-primary transition-all duration-200"
+                    aria-label="Notifications"
                   >
                     <Bell className="h-5 w-5" />
-                    <span className="sr-only">Notifications</span>
                   </Button>
-                  {unreadCount > 0 && !isLoading && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-xs font-semibold">
-                      {unreadCount}
-                    </span>
-                  )}
-                  {isLoading && (
-                    <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-gray-300 animate-pulse"></span>
-                  )}
+
+                  {/* Real-time unread notifications badge */}
+                  {(notificationCount as number) > 0 ? (
+                    <motion.span
+                      key="notification-badge"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
+                      className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-semibold"
+                    >
+                      {notificationCount as number}
+                    </motion.span>
+                  ) : isLoading ? (
+                    <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-gray-300 animate-pulse" />
+                  ) : null}
                 </Link>
-                <Link href="/messages" className="hidden lg:block">
+
+                {/* 💬 Messages */}
+                <Link href="/messages" className="hidden lg:block relative">
                   <Button
                     size="icon"
-                    className="rounded-full bg-blue-500 text-white hover:bg-primary"
+                    className="rounded-full bg-blue-500 text-white hover:bg-primary transition-all duration-200"
+                    aria-label="Messages"
                   >
                     <MessageCircle className="h-5 w-5" />
-                    <span className="sr-only">Messages</span>
                   </Button>
+
+                  {/* Real-time unread messages badge */}
+                  {msg > 0 && (
+                    <motion.span
+                      key="message-badge"
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      exit={{ scale: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                      }}
+                      className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-semibold"
+                    >
+                      {msg}
+                    </motion.span>
+                  )}
                 </Link>
 
                 {/* DESKTOP Avatar */}
