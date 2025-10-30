@@ -12,7 +12,6 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
-
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path as needed
 
 interface Recruiter {
@@ -66,17 +65,17 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   const applicationLink = `/job-application?id=${job._id}`;
 
   // ===== Resume query (only if role is candidate) =====
+  // NOTE: We need elevatorPitch presence (array length > 0) to allow applying.
   const { data: myresume, isLoading: resumeLoading } = useQuery({
     queryKey: ["my-resume", userId],
     queryFn: getMyResume,
-    select: (data) => data?.data,
+    select: (res) => res?.data, // expects { resume, experiences, education, awardsAndHonors, elevatorPitch }
     enabled: isCandidate && !!userId,
     staleTime: 60_000,
   });
 
   // ===== Card activation: clicks or keyboard (Enter / Space) navigate to job details =====
   const activateCard = (e?: MouseEvent | KeyboardEvent) => {
-    // Keyboard handler should only activate on Enter or Space
     if (e && "key" in e) {
       const key = (e as KeyboardEvent).key;
       if (key !== "Enter" && key !== " ") return;
@@ -87,7 +86,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   };
 
   const TOAST_DURATION_MS = 2200;
-  const REDIRECT_DELAY_MS = 2000; // per requirement: redirect after 2 sec
+  const REDIRECT_DELAY_MS = 2000; // redirect after 2 sec
 
   // ===== Apply handlers =====
   const handleUnauthedApply = (e: MouseEvent<HTMLButtonElement>) => {
@@ -110,23 +109,28 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     e.stopPropagation();
     if (resumeLoading || isRedirecting) return;
 
-    const hasResume = !!myresume?.resume;
+    // ——— EVP GATING LOGIC ———
+    const hasEVP =
+      Array.isArray(myresume?.elevatorPitch) &&
+      myresume!.elevatorPitch.length > 0;
 
-    if (hasResume) {
-      router.push(applicationLink);
+    if (!hasEVP) {
+      // Block apply → tell user and redirect to EVP page
+      setIsRedirecting(true);
+      toast("Elevator Pitch Required", {
+        description:
+          "You need to have an Elevator Pitch video to apply for jobs. Redirecting you to set it up.",
+        duration: TOAST_DURATION_MS,
+      });
+
+      setTimeout(() => {
+        router.push("/elevator-video-pitch");
+      }, REDIRECT_DELAY_MS);
       return;
     }
 
-    // No resume: show toast and redirect to EVP after 2s
-    setIsRedirecting(true);
-    toast("Please create your EVP profile", {
-      description: "Redirecting you to set up your Elevator Video Pitch.",
-      duration: TOAST_DURATION_MS,
-    });
-
-    setTimeout(() => {
-      router.push("/elevator-video-pitch");
-    }, REDIRECT_DELAY_MS);
+    // Has EVP → proceed to application
+    router.push(applicationLink);
   };
 
   const getInitials = (name: string) =>

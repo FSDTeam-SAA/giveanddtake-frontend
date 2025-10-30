@@ -23,10 +23,23 @@ interface SubscriptionPlan {
   __v: number
 }
 
-interface ApiResponse {
+interface PlansApiResponse {
   success: boolean
   message: string
   data: SubscriptionPlan[]
+}
+
+interface UserApiResponse {
+  success: boolean
+  message: string
+  data: {
+    isValid?: boolean
+    plan?: {
+      _id: string
+      title?: string
+      valid?: "monthly" | "yearly" | string
+    } | null
+  }
 }
 
 interface Feature {
@@ -55,18 +68,16 @@ const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLo
 const fetchCandidatePlans = async (): Promise<SubscriptionPlan[]> => {
   const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/subscription/plans`)
   if (!response.ok) throw new Error("Network response was not ok")
-  const data: ApiResponse = await response.json()
+  const data: PlansApiResponse = await response.json()
   return data.data.filter((plan: SubscriptionPlan) => plan.for === "candidate")
 }
 
 const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
   const map = new Map<string, { monthly?: SubscriptionPlan; yearly?: SubscriptionPlan }>()
-
   for (const p of plans) {
     const key = normalizeTitle(p.title)
     const bucket = map.get(key) ?? {}
     const v = (p.valid || "").toLowerCase()
-
     if (v === "monthly") bucket.monthly = p
     else if (v === "yearly") bucket.yearly = p
     else {
@@ -82,7 +93,6 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
     const base = g.monthly ?? g.yearly!
     const monthlyAmount = g.monthly?.price
     const annualAmount = g.yearly?.price
-
     out.push({
       name: title,
       monthlyAmount,
@@ -96,7 +106,6 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
       annualPlanId: g.yearly?._id,
     })
   }
-
   return out
 }
 
@@ -124,12 +133,11 @@ export default function PricingList() {
   const [selectedPlanIdForPayment, setSelectedPlanIdForPayment] = useState<string>("")
   const [showPlanOptions, setShowPlanOptions] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState<LocalPlan | null>(null)
-
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
-  const [currentPlanMeta, setCurrentPlanMeta] = useState<{ titleNorm: string | null; valid: "monthly" | "yearly" | null }>({
-    titleNorm: null,
-    valid: null,
-  })
+  const [userIsValid, setUserIsValid] = useState<boolean | null>(null)
+  const [currentPlanMeta, setCurrentPlanMeta] = useState<{ titleNorm: string | null; valid: "monthly" | "yearly" | null }>(
+    { titleNorm: null, valid: null }
+  )
 
   const isSameTitle = (planName: string) =>
     currentPlanMeta.titleNorm && normalizeTitle(planName) === currentPlanMeta.titleNorm
@@ -145,8 +153,9 @@ export default function PricingList() {
 
   const pricingPlans = useMemo(() => {
     const apiPricingPlans = apiPlans ? groupCandidatePlans(apiPlans) : []
-    return [freePlan, ...apiPricingPlans]
-  }, [apiPlans])
+    const includeFree = userIsValid === false
+    return includeFree ? [freePlan, ...apiPricingPlans] : apiPricingPlans
+  }, [apiPlans, userIsValid])
 
   /* ------------------ Fetch current user & plan ------------------- */
 
@@ -155,29 +164,30 @@ export default function PricingList() {
       if (status !== "authenticated") return
       const token = (session as any)?.accessToken
       if (!token) return
-
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/single`, {
           headers: { Authorization: `Bearer ${token}` },
         })
-
         if (!response.ok) throw new Error(`GET /user/single failed with ${response.status}`)
-
-        const result = await response.json()
-        const apiPlan = result?.data?.plan
-        const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null
-        const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "")
-        const valid = vRaw === "monthly" ? "monthly" : vRaw === "yearly" ? "yearly" : null
-
-        setCurrentPlanId(apiPlan?._id ?? null)
-        setCurrentPlanMeta({ titleNorm, valid })
+        const result: UserApiResponse = await response.json()
+        const apiPlan = result?.data?.plan ?? null
+        const isValid = Boolean(result?.data?.isValid)
+        setUserIsValid(isValid)
+        if (apiPlan) {
+          const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null
+          const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "")
+          const valid = vRaw === "monthly" ? "monthly" : vRaw === "yearly" ? "yearly" : null
+          setCurrentPlanId(apiPlan?._id ?? null)
+          setCurrentPlanMeta({ titleNorm, valid })
+        } else {
+          setCurrentPlanId(null)
+          setCurrentPlanMeta({ titleNorm: null, valid: null })
+        }
       } catch (err) {
         console.error("Error fetching user data:", err)
-        setCurrentPlanId(null)
-        setCurrentPlanMeta({ titleNorm: null, valid: null })
+        setUserIsValid(null)
       }
     }
-
     fetchUserData()
   }, [session, status])
 
@@ -253,7 +263,7 @@ export default function PricingList() {
 
       {currentPlanMeta.titleNorm && (
         <div className="mx-auto mb-8 w-full max-w-7xl rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-          You're currently on our <strong>{currentPlanMeta.titleNorm}</strong> 
+          You're currently on our <strong>{currentPlanMeta.titleNorm}</strong>
           {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
         </div>
       )}
@@ -262,7 +272,8 @@ export default function PricingList() {
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pricingPlans.map((plan, index) => {
             const cardIsCurrentByTitle = isSameTitle(plan.name)
-            const isCurrent = currentPlanId === plan.planId || cardIsCurrentByTitle
+            const isFreeAndCurrent = plan.name === freePlan.name && userIsValid === false
+            const isCurrent = isFreeAndCurrent || cardIsCurrentByTitle || currentPlanId === plan.planId
 
             return (
               <Card key={index} className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden">
@@ -314,7 +325,49 @@ export default function PricingList() {
         </div>
       </div>
 
-      <PaymentMethodModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} price={selectedPrice || "0.00"} planId={selectedPlanIdForPayment} />
+      {/* ✅ Payment Method Modal */}
+      <PaymentMethodModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        price={selectedPrice || "0.00"}
+        planId={selectedPlanIdForPayment}
+      />
+
+      {/* ✅ Monthly/Yearly Choice Modal */}
+      {showPlanOptions && selectedPlan && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-[90%] max-w-md">
+            <h2 className="text-lg font-semibold mb-4 text-center text-gray-800">
+              Choose your subscription type
+            </h2>
+            <div className="flex flex-col gap-3">
+              {selectedPlan.monthlyAmount != null && (
+                <Button
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
+                  onClick={() => handlePaymentOptionSelect(true)}
+                >
+                  Monthly — ${selectedPlan.monthlyAmount.toFixed(2)}
+                </Button>
+              )}
+              {selectedPlan.annualAmount != null && (
+                <Button
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
+                  onClick={() => handlePaymentOptionSelect(false)}
+                >
+                  Yearly — ${selectedPlan.annualAmount.toFixed(2)}
+                </Button>
+              )}
+            </div>
+            <Button
+              variant="ghost"
+              className="mt-4 w-full text-gray-500 hover:text-gray-700"
+              onClick={() => setShowPlanOptions(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
