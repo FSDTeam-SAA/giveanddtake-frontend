@@ -207,13 +207,15 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       queryKey: ["industries"],
       queryFn: async () => {
         const response = await fetch(
-          "https://api.evpitch.com/api/v1/category/job-category"
+          `${process.env.NEXT_PUBLIC_BASE_URL}/category/job-category`
         );
         const data = await response.json();
         if (!data.success) throw new Error("Failed to fetch industries");
         return data.data.category;
       },
     });
+
+    console.log("", industriesData)
 
   const industryOptions = useMemo(
     () =>
