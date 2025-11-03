@@ -45,67 +45,72 @@ export default function RecruiterTable({
   isDeletePending,
 }: RecruiterTableProps) {
   return (
-    <div className="bg-white rounded-lg border">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50">
-            <TableHead className="font-medium text-gray-700">
-              Recruiter Name
-            </TableHead>
-            <TableHead className="font-medium text-gray-700">Role</TableHead>
+    <div className="">
+      {recruiters.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="font-medium text-gray-700">
+                Recruiter Name
+              </TableHead>
+              <TableHead className="font-medium text-gray-700">Role</TableHead>
 
-            <TableHead className="font-medium text-gray-700">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {recruiters.map((recruiter) => (
-            <TableRow key={recruiter._id} className="hover:bg-gray-50">
-              <TableCell>
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={recruiter?.photo?.url}
-                      alt={recruiter.name}
-                    />
-                    <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                      {recruiter.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium text-blue-500">
-                    <Link href={`/recruiters-profile/${recruiter._id}`}>
-                      {recruiter.name}
-                    </Link>
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge
-                  variant="secondary"
-                  className="bg-blue-100 text-blue-800 hover:bg-opacity-80"
-                >
-                  {recruiter.role}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                  onClick={() => handleDelete(recruiter._id)}
-                  disabled={isDeletePending}
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              </TableCell>
+              <TableHead className="font-medium text-gray-700">
+                Action
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {recruiters.map((recruiter) => (
+              <TableRow key={recruiter._id} className="hover:bg-gray-50">
+                <TableCell>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={recruiter?.photo?.url}
+                        alt={recruiter.name}
+                      />
+                      <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                        {recruiter.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium text-blue-500">
+                      <Link href={`/recruiters-profile/${recruiter._id}`}>
+                        {recruiter.name}
+                      </Link>
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-100 text-blue-800 hover:bg-opacity-80"
+                  >
+                    {recruiter.role}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
+                    onClick={() => handleDelete(recruiter._id)}
+                    disabled={isDeletePending}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
-      <div className="flex items-center justify-center gap-2 p-4 border-t">
+      {recruiters.length === 5 && (
+        <div className="flex items-center justify-center gap-2 p-4 border-t">
         <Button
           variant="outline"
           size="sm"
@@ -140,6 +145,9 @@ export default function RecruiterTable({
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
+      )}
+
+      
       {isFetching && (
         <div className="text-center text-gray-500 pb-4">Updating list...</div>
       )}

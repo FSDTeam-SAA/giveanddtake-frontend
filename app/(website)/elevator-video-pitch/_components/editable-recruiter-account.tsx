@@ -403,7 +403,7 @@ export default function EditableRecruiterAccount({
         />
       ) : (
         /* Show static banner when not editing */
-        recruiter.banner && (
+        recruiter?.banner !== undefined &&(
           <div className="w-full h-auto ">
             {recruiter.banner ? (
               <Image
@@ -518,7 +518,7 @@ export default function EditableRecruiterAccount({
                         name="sureName"
                         render={({ field }) => (
                           <FormItem>
-                            <Label htmlFor="sureName">Last Name</Label>
+                            <Label htmlFor="sureName">Sure Name</Label>
                             <FormControl>
                               <Input id="sureName" {...field} />
                             </FormControl>
@@ -777,17 +777,6 @@ export default function EditableRecruiterAccount({
                       </p>
                     )}
                   </div>
-
-                  <div
-                    className="text-gray-600 text-sm line-clamp-2 prose prose-sm max-w-none text-start list-item list-none"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(
-                        companyId?.aboutUs ||
-                          bio ||
-                          "We connect top talent with great companies. Our mission is to make hiring simple, fast, and effective for everyone."
-                      ),
-                    }}
-                  />
 
                   {followersText && (
                     <p className="text-sm text-muted-foreground">
