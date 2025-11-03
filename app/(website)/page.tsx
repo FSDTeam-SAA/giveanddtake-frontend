@@ -1,3 +1,4 @@
+import ChatbotWidget from "@/components/chatbot-widget";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorksSection } from "@/components/how-it-works-section";
 import { Suspense } from "react";
@@ -14,6 +15,7 @@ export default function Home() {
         {/* <RecentJobsSection /> */}
         {/* <PricingSection /> */}
         {/* <CandidateRecruiterCompanyList /> */}
+         <ChatbotWidget />
       </Suspense>
     </div>
   );
