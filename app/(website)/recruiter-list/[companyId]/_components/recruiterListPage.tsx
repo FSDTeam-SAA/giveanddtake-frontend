@@ -120,6 +120,8 @@ export default function RecruiterListPage({
     retry: 2,
   });
 
+  console.log("DDDDDDDDDDDDD", data);
+
   const handleInvalidate = () => {
     queryClient.invalidateQueries({
       queryKey: ["employees", companyId, currentPage],
@@ -228,18 +230,39 @@ export default function RecruiterListPage({
 
   return (
     <div className="p-6 container mx-auto pb-16">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between py-4 border-b mb-6">
         <Link href="/elevator-video-pitch">
           <Button variant="ghost" size="icon" className="text-gray-500">
             <ArrowLeft className="h-6 w-6 text-gray-500" />
             Back
           </Button>
         </Link>
-        <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">Internal recruiter List</h1>
+        {recruiters.length > 0 && (
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">
+              Internal recruiter List
+            </h1>
+          </div>
+        )}
+
         <div className="flex gap-4">
-          <Button onClick={() => setShowAddModal(true)}>Add Internal recruiter</Button>
+          <Button onClick={() => setShowAddModal(true)}>
+            Add Internal recruiter
+          </Button>
         </div>
       </div>
+
+      {/* Recruiters Table */}
+      <RecruiterTable
+        recruiters={recruiters}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        isFetching={isFetching}
+        handleDelete={handleDelete}
+        handlePreviousPage={handlePreviousPage}
+        handleNextPage={handleNextPage}
+        isDeletePending={deleteMutation.isPending}
+      />
 
       {/* Requests Section */}
       <PendingEmployeeRequest
@@ -248,20 +271,6 @@ export default function RecruiterListPage({
         setShowRequests={setShowRequests}
         handleInvalidate={handleInvalidate}
       />
-
-      {/* Recruiters Table */}
-      {!showRequests && (
-        <RecruiterTable
-          recruiters={recruiters}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          isFetching={isFetching}
-          handleDelete={handleDelete}
-          handlePreviousPage={handlePreviousPage}
-          handleNextPage={handleNextPage}
-          isDeletePending={deleteMutation.isPending}
-        />
-      )}
 
       {/* Add Recruiter Modal */}
       {showAddModal && (

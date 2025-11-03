@@ -454,7 +454,9 @@ export default function JobPreview() {
             <Link
               href={
                 role === "company"
-                  ? `/manage-jobs/${jobData.companyId}`
+                  ? `/manage-jobs/${
+                      jobData.companyId?._id || jobData.companyId
+                    }`
                   : "/recruiter-dashboard"
               }
             >
@@ -462,6 +464,7 @@ export default function JobPreview() {
                 <ArrowLeft className="h-5 w-5 sm:h-6 sm:w-6" />
               </Button>
             </Link>
+
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               {isEditing ? "Edit Job Posting" : "Job Preview"}
             </h1>

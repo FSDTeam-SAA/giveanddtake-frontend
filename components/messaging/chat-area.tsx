@@ -25,6 +25,7 @@ import {
   Legend,
   Title,
 } from "chart.js/auto";
+import { useSession } from "next-auth/react";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -72,6 +73,8 @@ export function ChatArea({
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<ChartJS | null>(null);
 
+  const session = useSession();
+  const token = session?.data?.accessToken;
   const { data: rooms = [] } = useQuery<MessageRoom[]>({
     queryKey: ["message-rooms", userId, userRole],
     queryFn: async () => {
@@ -273,8 +276,11 @@ export function ChatArea({
 
   const sendMessageMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch("/api/message", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/message`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: formData,
       });
       return response.json();

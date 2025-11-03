@@ -1,8 +1,12 @@
+"use client";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorksSection } from "@/components/how-it-works-section";
-import { Suspense } from "react";
+import { useSocket } from "@/hooks/use-socket";
+import { useSession } from "next-auth/react";
+import { Suspense, useEffect } from "react";
 
 export default function Home() {
+
   return (
     <div>
       <Suspense fallback={<LoadingFallback />}>

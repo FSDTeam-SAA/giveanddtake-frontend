@@ -21,7 +21,7 @@ import {
   Trash2,
   RefreshCw,
   Settings,
-  MoreHorizontal 
+  MoreHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -40,7 +40,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 import { toast } from "sonner";
 import SocialLinks from "./SocialLinks";
@@ -542,32 +542,31 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Elevator Video Pitch©</CardTitle>
-            {pitchData && (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button
-        variant="ghost"
-        size="icon"
-        title="Options"
-        className="bg-gray-100 hover:bg-gray-200"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
+              {pitchData && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="Options"
+                      className="bg-gray-100 hover:bg-gray-200"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
 
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem
-        onClick={openDeleteModal}
-        disabled={deleteElevatorPitchMutation.isPending}
-        className="text-red-600 focus:text-red-700 cursor-pointer"
-      >
-        <Trash2 className="mr-2 h-4 w-4" />
-        Delete
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-)}
-
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={openDeleteModal}
+                      disabled={deleteElevatorPitchMutation.isPending}
+                      className="text-red-600 focus:text-red-700 cursor-pointer"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
             <p className="text-sm text-black">
               Upload or view a short video introducing your company.
@@ -596,7 +595,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   type="button"
                   className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                   onClick={handleElevatorPitchUpload}
-                  disabled={uploadElevatorPitchMutation.isPending || !elevatorPitchFile}
+                  disabled={
+                    uploadElevatorPitchMutation.isPending || !elevatorPitchFile
+                  }
                 >
                   {uploadElevatorPitchMutation.isPending ? (
                     <div className="flex items-center gap-2">
@@ -629,17 +630,19 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
                 {isElevatorPitchUploaded && (
                   <p className="mt-2 text-sm text-green-600">
-                    Elevator pitch upload finished! Processing continues in the background.
+                    Elevator pitch upload finished! Processing continues in the
+                    background.
                   </p>
                 )}
 
                 {!isElevatorPitchUploaded && !elevatorPitchFile && (
-                  <p className="mt-2 text-sm text-gray-900">No pitch available.</p>
+                  <p className="mt-2 text-sm text-gray-900">
+                    No pitch available.
+                  </p>
                 )}
               </>
             )}
           </CardContent>
-
         </Card>
       </div>
 
@@ -684,7 +687,9 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
       {/* Employees */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">Internal recruiters</h2>
+        <h2 className="text-xl font-semibold mb-6 text-gray-900">
+          Internal recruiters
+        </h2>
         {isLoadingEmployees && !employeeData ? (
           <div>Loading employees...</div>
         ) : isEmployeesError ? (
@@ -770,10 +775,11 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       key={page}
                       variant="outline"
                       size="sm"
-                      className={`h-8 w-8 p-0 ${currentPage === page
-                        ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
-                        : "bg-transparent"
-                        }`}
+                      className={`h-8 w-8 p-0 ${
+                        currentPage === page
+                          ? "bg-primary text-white border-blue-600 hover:bg-blue-700"
+                          : "bg-transparent"
+                      }`}
                       onClick={() => setCurrentPage(page)}
                     >
                       {page}
