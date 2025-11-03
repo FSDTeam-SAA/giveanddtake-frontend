@@ -1,4 +1,4 @@
-"use client";
+import ChatbotWidget from "@/components/chatbot-widget";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorksSection } from "@/components/how-it-works-section";
 import { useSocket } from "@/hooks/use-socket";
@@ -18,6 +18,7 @@ export default function Home() {
         {/* <RecentJobsSection /> */}
         {/* <PricingSection /> */}
         {/* <CandidateRecruiterCompanyList /> */}
+         <ChatbotWidget />
       </Suspense>
     </div>
   );
