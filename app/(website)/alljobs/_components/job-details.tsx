@@ -12,7 +12,6 @@ import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
 
-
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path
 
 interface Recruiter {
@@ -222,7 +221,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     });
   };
 
-  // ===== EVP / Resume check (only for candidates) =====
+  // ===== EVP check (only for candidates) =====
   const {
     data: myresume,
     isLoading: resumeLoading,
@@ -230,10 +229,16 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   } = useQuery({
     queryKey: ["my-resume", userId],
     queryFn: getMyResume,
-    select: (d) => d?.data, // expecting { data: { resume?: string | null } }
+    select: (d) => d?.data, // expecting shape: { resume, experiences, education, awardsAndHonors, elevatorPitch }
     enabled: isCandidate && !!userId,
     staleTime: 60_000,
   });
+
+  // Gate on presence of at least one elevator pitch item.
+  // If you want stricter gating, also check for active status and playable URL.
+  const hasEVP =
+    Array.isArray(myresume?.elevatorPitch) &&
+    myresume!.elevatorPitch.length > 0;
 
   const applicationLink = jobData?.data?._id
     ? `/job-application?id=${jobData.data._id}`
@@ -258,26 +263,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     e.stopPropagation();
     if (resumeLoading || resumeFetching || isRedirecting) return;
 
-    const hasResume = !!myresume?.resume;
+    // —— EVP is REQUIRED to apply ——
+    if (!hasEVP) {
+      setIsRedirecting(true);
+      toast("Elevator Pitch Required", {
+        description:
+          "You need to have an Elevator Pitch video to be able to apply for jobs. Redirecting you now.",
+        duration: TOAST_DURATION_MS,
+      });
 
-    if (hasResume) {
-      // Candidate has resume -> go to application
-      if (applicationLink !== "#") {
-        window.location.href = applicationLink;
-      }
+      setTimeout(() => {
+        window.location.href = "/elevator-video-pitch";
+      }, EVP_REDIRECT_DELAY_MS);
       return;
     }
 
-    // Candidate missing resume -> EVP flow
-    setIsRedirecting(true);
-    toast("Please create your EVP profile", {
-      description: "Redirecting you to set up your Elevator Video Pitch.",
-      duration: TOAST_DURATION_MS,
-    });
-
-    setTimeout(() => {
-      window.location.href = "/elevator-video-pitch";
-    }, EVP_REDIRECT_DELAY_MS);
+    // EVP present -> proceed to application
+    if (applicationLink !== "#") {
+      window.location.href = applicationLink;
+    }
   };
 
   const formatDate = (dateString: string) =>
@@ -541,7 +545,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       {isRedirecting ? "Redirecting..." : "Apply Now"}
                     </Button>
                   ) : (
-                    // Authenticated candidate: EVP/Resume gate
+                    // Authenticated candidate: EVP gate
                     <Button
                       className="w-full bg-primary hover:bg-blue-700"
                       onClick={handleCandidateApply}
