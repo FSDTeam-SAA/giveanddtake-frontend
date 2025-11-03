@@ -1,71 +1,83 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion"
-import { useQuery } from "@tanstack/react-query"
+} from "@/components/ui/accordion";
+import { useQuery } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
 
-// Type definition for each FAQ item
 export interface FaqItem {
-  _id: string
-  question: string
-  answer: string
-  category?: string
-  order?: number
+  _id: string;
+  question: string;
+  answer: string;
+  category?: string;
+  order?: number;
 }
 
-// Fetch function
 const fetchFaqs = async (): Promise<FaqItem[]> => {
-  const res = await fetch("http://localhost:5001/api/v1/faqs")
-  if (!res.ok) throw new Error("Failed to fetch FAQs")
-  const json = await res.json()
-  return json.data
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/faqs`, {
+    // avoid caching if needed:
+    // cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to fetch FAQs");
+  const json = await res.json();
+  return json.data as FaqItem[];
+};
+
+function FaqSkeletonList({ count = 4 }: { count?: number }) {
+  return (
+    <div className="container py-8 lg:py-12 space-y-2">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-lg overflow-hidden shadow-[0px_11.22px_33.67px_0px_#0000000D] bg-[#F3F6FF] px-6 py-4 space-y-3"
+        >
+          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-4 w-[90%]" />
+          <Skeleton className="h-4 w-2/3" />
+        </div>
+      ))}
+    </div>
+  );
 }
 
-// Component
 export function FaqSection() {
   const {
     data: faqs,
     isLoading,
     isError,
     error,
-  } = useQuery({
+  } = useQuery<FaqItem[]>({
     queryKey: ["faqs"],
     queryFn: fetchFaqs,
-  })
+  });
 
-  if (isLoading) {
-    return <div className="container py-10 text-center">Loading FAQs…</div>
-  }
+  if (isLoading) return <FaqSkeletonList />;
 
-  if (isError) {
+  if (isError)
     return (
       <div className="container py-10 text-center text-red-600">
         Error loading FAQs: {(error as Error).message}
       </div>
-    )
-  }
+    );
 
-  if (!faqs || faqs.length === 0) {
+  if (!faqs || faqs.length === 0)
     return (
       <div className="container py-10 text-center text-gray-500">
         No FAQs available.
       </div>
-    )
-  }
+    );
+
+  const sorted = [...faqs].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
   return (
     <div className="container py-8 lg:py-12">
-      <Accordion
-        type="single"
-        collapsible
-        className="w-full space-y-2"
-      >
-        {faqs.map((item) => (
+      <Accordion type="single" collapsible className="w-full space-y-2">
+        {sorted.map((item) => (
           <AccordionItem
             key={item._id}
             value={item._id}
@@ -81,5 +93,5 @@ export function FaqSection() {
         ))}
       </Accordion>
     </div>
-  )
+  );
 }

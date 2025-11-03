@@ -122,7 +122,7 @@ export default function PendingEmployeeRequest({
       <div className="mt-6">
         {requests.length > 0 && (
           <div>
-            <h2 className="text-2xl font-semibold mb-4 p-4">
+            <h2 className="text-2xl text-center font-semibold mb-4 p-4">
               Recruiter Requests
             </h2>
             <Table>
