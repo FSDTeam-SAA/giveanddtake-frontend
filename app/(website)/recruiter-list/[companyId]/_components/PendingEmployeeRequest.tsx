@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"; // Import toast
-import { Link } from "lucide-react";
+import Link from "next/link";
 
 interface UserData {
   _id: string;
@@ -119,69 +119,69 @@ export default function PendingEmployeeRequest({
 
   return (
     <div>
-      <div className="mb-4">
-        <Button onClick={handleToggleRequests}>
-          {showRequests
-            ? "Hide Internal Recruiter Requests"
-            : "Show All Internal Recruiter Requests"}
-        </Button>
-      </div>
-
-      {showRequests && (
-        <div className="mt-6 bg-white rounded-lg border">
-          <h2 className="text-xl font-semibold mb-4 p-4">Recruiter Requests</h2>
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-gray-50">
-                <TableHead className="font-medium text-gray-700">
-                  User
-                </TableHead>
-                <TableHead className="font-medium text-gray-700">
-                  Status
-                </TableHead>
-                <TableHead className="font-medium text-gray-700">
-                  Created At
-                </TableHead>
-                <TableHead className="font-medium text-gray-700">
-                  Actions
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {requests.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-gray-500">
-                    No requests available.
-                  </TableCell>
+      <div className="mt-6">
+        {requests.length > 0 && (
+          <div>
+            <h2 className="text-2xl font-semibold mb-4 p-4">
+              Recruiter Requests
+            </h2>
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="font-medium text-gray-700">
+                    User
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Status
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Created At
+                  </TableHead>
+                  <TableHead className="font-medium text-gray-700">
+                    Actions
+                  </TableHead>
                 </TableRow>
-              ) : (
-                requests.map((req) => (
-                  <TableRow key={req._id} className="hover:bg-gray-50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={req.userId.avatar?.url || "/placeholder.svg"}
-                            alt={req.userId.name}
-                          />
-                          <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                            {req.userId.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium text-gray-900">
-                          <Link href={`/recruiters-profile/${req.userId._id}`}>
-                            {req.userId.name}
-                          </Link>
-                        </span>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {requests.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-gray-500"
+                    >
+                      No requests available.
                     </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`
+                  </TableRow>
+                ) : (
+                  requests.map((req) => (
+                    <TableRow key={req._id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={req.userId.avatar?.url || "/placeholder.svg"}
+                              alt={req.userId.name}
+                            />
+                            <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                              {req.userId.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .join("")}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium text-gray-900">
+                            <Link
+                              href={`/recruiters-profile/${req.userId._id}`}
+                            >
+                              {req.userId.name}
+                            </Link>
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={`
                           ${
                             req.status.toLowerCase() === "pending"
                               ? "bg-yellow-100 text-yellow-800"
@@ -198,59 +198,60 @@ export default function PendingEmployeeRequest({
                               : ""
                           }
                         `}
-                      >
-                        {req.status.charAt(0).toUpperCase() +
-                          req.status.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {req.status.toLowerCase() === "pending" && (
-                          <>
-                            <Button
-                              size="sm"
-                              variant="default"
-                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
-                              onClick={() =>
-                                handleStatusUpdate(
-                                  req._id,
-                                  req.userId._id,
-                                  "accepted"
-                                )
-                              }
-                              disabled={updateStatusMutation.isPending}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
-                              onClick={() =>
-                                handleStatusUpdate(
-                                  req._id,
-                                  req.userId._id,
-                                  "rejected"
-                                )
-                              }
-                              disabled={updateStatusMutation.isPending}
-                            >
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                        >
+                          {req.status.charAt(0).toUpperCase() +
+                            req.status.slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(req.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {req.status.toLowerCase() === "pending" && (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm"
+                                onClick={() =>
+                                  handleStatusUpdate(
+                                    req._id,
+                                    req.userId._id,
+                                    "accepted"
+                                  )
+                                }
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-sm"
+                                onClick={() =>
+                                  handleStatusUpdate(
+                                    req._id,
+                                    req.userId._id,
+                                    "rejected"
+                                  )
+                                }
+                                disabled={updateStatusMutation.isPending}
+                              >
+                                Reject
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
