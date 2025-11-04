@@ -1,9 +1,6 @@
-import ChatbotWidget from "@/components/chatbot-widget";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorksSection } from "@/components/how-it-works-section";
-import { useSocket } from "@/hooks/use-socket";
-import { useSession } from "next-auth/react";
-import { Suspense, useEffect } from "react";
+import { Suspense } from "react";
 
 export default function Home() {
 
@@ -18,7 +15,7 @@ export default function Home() {
         {/* <RecentJobsSection /> */}
         {/* <PricingSection /> */}
         {/* <CandidateRecruiterCompanyList /> */}
-         <ChatbotWidget />
+         
       </Suspense>
     </div>
   );

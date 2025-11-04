@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 import { SiteHeader } from "@/components/shared/navbar";
 import { Footer } from "@/components/shared/footer";
+import ChatbotWidget from "@/components/chatbot-widget";
 
 export const metadata: Metadata = {
   title: "Elevator Video Pitch©",
@@ -18,6 +19,7 @@ export default function RootLayout({
       <SiteHeader /> 
       {children}
       <Footer />
+      <ChatbotWidget />
     </div>
   );
 }
