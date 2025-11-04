@@ -37,7 +37,6 @@ const fetchBlogs = async (): Promise<ApiResponse> => {
   }
 
   const json = await response.json();
-  console.log("API Response:", json); // For debugging
   return json;
 };
 
