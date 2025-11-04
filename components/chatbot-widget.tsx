@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useMemo, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, MessageCircle, X } from "lucide-react"
@@ -28,17 +27,14 @@ const buildChatEndpoint = () => {
     normaliseBaseUrl(process.env.NEXT_PUBLIC_API_BASE_URL) ||
     normaliseBaseUrl(process.env.NEXT_PUBLIC_BASE_URL)
 
-  if (!base) {
-    return "/api/v1/chatbot/chat"
-  }
-
+  if (!base) return "/api/v1/chatbot/chat"
   const hasApiSegment = /\/api\/v\d+/i.test(base)
   return hasApiSegment ? `${base}/chatbot/chat` : `${base}/api/v1/chatbot/chat`
 }
 
 // Mobile detection (tailwind sm breakpoint ~640px)
 const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState<boolean>(false)
+  const [isMobile, setIsMobile] = useState(false)
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639.98px)")
     const update = () => setIsMobile(mq.matches)
@@ -47,40 +43,6 @@ const useIsMobile = () => {
     return () => mq.removeEventListener?.("change", update)
   }, [])
   return isMobile
-}
-
-// Keep a CSS var --vvh = 1% of *visual* viewport height for keyboard-aware sizing
-const useVisualViewportHeightVar = (enabled: boolean) => {
-  useEffect(() => {
-    if (!enabled) return
-    const setVvh = () => {
-      const vh =
-        typeof window !== "undefined" && (window as any).visualViewport
-          ? (window as any).visualViewport.height * 0.01
-          : window.innerHeight * 0.01
-      document.documentElement.style.setProperty("--vvh", `${vh}px`)
-    }
-    setVvh()
-    const vv = (window as any).visualViewport
-    window.addEventListener("resize", setVvh)
-    vv?.addEventListener("resize", setVvh)
-    return () => {
-      window.removeEventListener("resize", setVvh)
-      vv?.removeEventListener("resize", setVvh)
-    }
-  }, [enabled])
-}
-
-// Prevent background scroll when open on mobile
-const useLockBodyScroll = (lock: boolean) => {
-  useEffect(() => {
-    if (!lock) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = "hidden"
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [lock])
 }
 
 // ---------- Component ----------
@@ -97,69 +59,20 @@ export default function ChatbotWidget() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const chatContainerRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
 
   const chatEndpoint = useMemo(buildChatEndpoint, [])
   const isMobile = useIsMobile()
 
-  // Use keyboard/viewport-aware height var only when widget is open on mobile
-  useVisualViewportHeightVar(isOpen && isMobile)
-  useLockBodyScroll(isOpen && isMobile)
-
   // Auto scroll to bottom on new messages / open
   useEffect(() => {
     if (!isOpen) return
     const container = chatContainerRef.current
     if (container) {
-      container.scrollTo({
-        top: container.scrollHeight,
-        behavior: "smooth",
-      })
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" })
     }
   }, [messages, isOpen])
-
-  // Ensure input stays visible when focusing on mobile (esp. iOS)
-  useEffect(() => {
-    if (!isOpen || !isMobile) return
-    const handleFocus = () => {
-      // Small delay lets the keyboard animate in
-      setTimeout(() => {
-        inputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-      }, 100)
-    }
-    const el = inputRef.current
-    el?.addEventListener("focus", handleFocus)
-    return () => el?.removeEventListener("focus", handleFocus)
-  }, [isOpen, isMobile])
-
-  // Also adjust bottom padding when the visual viewport shrinks
-  const [bottomPad, setBottomPad] = useState(0)
-  useEffect(() => {
-    if (!(isOpen && isMobile)) {
-      setBottomPad(0)
-      return
-    }
-    const vv = (window as any).visualViewport
-    const onResize = () => {
-      if (!vv) return
-      // Safe bottom padding so input is never overlapped by keyboard or home indicator
-      const insetBottom = Number(getComputedStyle(document.documentElement).getPropertyValue("--sat") || 0)
-      // keyboard overlap approx: window.innerHeight - vv.height can be negative on some browsers; clamp
-      const overlap = Math.max(0, window.innerHeight - vv.height)
-      setBottomPad(overlap + insetBottom)
-    }
-    // Create a CSS var for safe-area-bottom (sat = safe area tail)
-    document.documentElement.style.setProperty("--sat", "env(safe-area-inset-bottom)")
-    onResize()
-    vv?.addEventListener("resize", onResize)
-    window.addEventListener("resize", onResize)
-    return () => {
-      vv?.removeEventListener("resize", onResize)
-      window.removeEventListener("resize", onResize)
-    }
-  }, [isOpen, isMobile])
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -180,21 +93,14 @@ export default function ChatbotWidget() {
     try {
       const response = await fetch(chatEndpoint, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question: userMessage.text,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userMessage.text }),
       })
 
       const payload = await response.json().catch(() => null)
-
       if (!response.ok) {
         const apiMessage =
-          typeof payload?.message === "string"
-            ? payload.message
-            : `API error: ${response.status}`
+          typeof payload?.message === "string" ? payload.message : `API error: ${response.status}`
         throw new Error(apiMessage)
       }
 
@@ -209,13 +115,11 @@ export default function ChatbotWidget() {
         sender: "bot",
         timestamp: new Date(),
       }
-
       setMessages((prev) => [...prev, botMessage])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to send message"
       console.error("[chatbot] API Error:", errorMessage)
       setError(errorMessage)
-
       setMessages((prev) => [
         ...prev,
         {
@@ -227,7 +131,6 @@ export default function ChatbotWidget() {
       ])
     } finally {
       setIsLoading(false)
-      // keep the input in view after sending
       if (isMobile) {
         setTimeout(() => inputRef.current?.scrollIntoView({ block: "nearest" }), 50)
       }
@@ -258,9 +161,7 @@ export default function ChatbotWidget() {
       strong: ({ children }: { children: React.ReactNode }) => (
         <strong className="font-semibold">{children}</strong>
       ),
-      em: ({ children }: { children: React.ReactNode }) => (
-        <em className="italic">{children}</em>
-      ),
+      em: ({ children }: { children: React.ReactNode }) => <em className="italic">{children}</em>,
       ul: ({ children }: { children: React.ReactNode }) => (
         <ul className="mb-2 ml-4 list-disc space-y-1 last:mb-0">{children}</ul>
       ),
@@ -284,21 +185,11 @@ export default function ChatbotWidget() {
     []
   )
 
-  // Styles that adapt between desktop (bottom-right bubble) and mobile (centered modal)
-  const mobileContainerStyle: React.CSSProperties = isMobile
-    ? {
-        // height uses visual viewport when keyboard open (via --vvh)
-        // fallback to 100dvh where supported; else 100vh
-        height:
-          "min(calc(var(--vvh, 1vh) * 90), 36rem)", // cap so it doesn't feel too tall
-        width: "min(92vw, 28rem)",
-        insetInline: "initial",
-        right: "initial",
-        left: "50%",
-        transform: "translateX(-50%)",
-        bottom: `calc(env(safe-area-inset-bottom) + 16px)`,
-      }
-    : {}
+  // Simple size caps
+  const PANEL_STYLE: React.CSSProperties = {
+    width: "min(24rem, 92vw)",
+    height: "min(32rem, 85vh)",
+  }
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
@@ -319,6 +210,19 @@ export default function ChatbotWidget() {
         )}
       </AnimatePresence>
 
+      {/* Backdrop: click anywhere outside to close */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsOpen(false)}
+            className="fixed inset-0 z-40 bg-black/20"
+          />
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -326,10 +230,9 @@ export default function ChatbotWidget() {
             initial="hidden"
             animate="visible"
             exit="exit"
-            // Desktop: bottom-right 32rem tall panel.
-            // Mobile: centered modal (width/height set via style above).
-            className="absolute bottom-0 right-0 flex h-[32rem] w-96 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:bottom-0 sm:right-0"
-            style={mobileContainerStyle}
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking inside
+            className="absolute bottom-0 right-0 z-50 flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.16)]"
+            style={PANEL_STYLE}
           >
             <div
               className="flex items-center justify-between px-5 py-4 text-white"
@@ -355,20 +258,9 @@ export default function ChatbotWidget() {
               </motion.button>
             </div>
 
-            {error && (
-              <div className="bg-red-50 px-5 py-2 text-xs text-red-500">
-                {error}
-              </div>
-            )}
+            {error && <div className="bg-red-50 px-5 py-2 text-xs text-red-500">{error}</div>}
 
-            <div
-              ref={chatContainerRef}
-              className="flex-1 space-y-4 overflow-y-auto px-5 py-4"
-              // Add padding at the bottom dynamically when the keyboard is up
-              style={{
-                paddingBottom: `calc(${bottomPad}px + 0.25rem)`,
-              }}
-            >
+            <div ref={chatContainerRef} className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
               {messages.map((message) => (
                 <motion.div
                   key={message.id}
@@ -389,22 +281,9 @@ export default function ChatbotWidget() {
                         : { backgroundColor: "#F1F5F9" }
                     }
                   >
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={markdownComponents}
-                    >
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                       {message.text}
                     </ReactMarkdown>
-                    <span
-                      className={`mt-2 block text-[11px] uppercase tracking-wide ${
-                        message.sender === "user" ? "text-white/70" : "text-slate-500"
-                      }`}
-                    >
-                      {message.timestamp.toLocaleTimeString("en-US", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
                   </div>
                 </motion.div>
               ))}
@@ -419,7 +298,6 @@ export default function ChatbotWidget() {
                   <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-[#F1F5F9] px-4 py-3 text-slate-700 shadow-sm">
                     {[0, 1, 2].map((delay) => (
                       <motion.span
-                        // eslint-disable-next-line react/no-array-index-key
                         key={delay}
                         animate={{ y: [0, -6, 0] }}
                         transition={{
@@ -435,16 +313,9 @@ export default function ChatbotWidget() {
                   </div>
                 </motion.div>
               )}
-              <div ref={messagesEndRef} />
             </div>
 
-            <div
-              className="border-t border-slate-200 bg-slate-50/90 px-5 py-4"
-              // Keep footer above home indicator and keyboard
-              style={{
-                paddingBottom: `calc(env(safe-area-inset-bottom) + 8px)`,
-              }}
-            >
+            <div className="border-t border-slate-200 bg-slate-50/90 px-5 py-4">
               <form onSubmit={handleSendMessage} className="flex items-center gap-2">
                 <input
                   ref={inputRef}
