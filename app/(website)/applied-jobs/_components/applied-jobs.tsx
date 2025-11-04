@@ -24,7 +24,7 @@ export default function AppliedJobs() {
     enabled: !!userId,
   });
 
-  console.log("My applied jobs are: ", appliedJobs?.data?.applications);
+
 
   if (isPending) {
     return (

@@ -30,13 +30,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -47,20 +40,19 @@ import {
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
 import {
-  Calendar as CalendarIcon,
   Eye,
   EyeOff,
   User,
   Mail,
   Lock,
+  Building2,
 } from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { toast } from "sonner";
 
-// ⬇️ custom MM/YYYY input
+// ⬇️ custom MM/YYYY input (still unused here, but left as-is if you plan to use later)
 import CustomDateInput from "@/components/custom-date-input";
 
 /* =========================
@@ -96,12 +88,14 @@ function RoleSelector({ setRole }: { setRole: (role: ValidRole) => void }) {
 /* =========================
    Validation Helpers
 ========================= */
-const nameRegex = /^[A-Za-z' -]*$/; // letters, spaces, apostrophes, hyphens
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/; // practical RFC 5322–ish
+const nameRegex = /^[A-Za-z' -]*$/; // for people: letters, spaces, apostrophes, hyphens
+const companyNameRegex = /^[A-Za-z0-9&.,' -]*$/; // for companies: allow digits and & , . ' -
 
-// normalize to one optional leading + and digits only after
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-
+/* =========================
+   Component
+========================= */
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -117,9 +111,8 @@ export default function RegisterPage() {
   });
 
   const [dob, setDob] = useState<Date | null>(null);
-  const [dobInput, setDobInput] = useState<string>("");
-  const [firstName, setFirstName] = useState<string>("");
-  const [surname, setSurname] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>(""); // Person first name OR Company name
+  const [surname, setSurname] = useState<string>(""); // Person surname OR Company suffix (optional)
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -145,7 +138,7 @@ export default function RegisterPage() {
   const [showUnderAgeDialog, setShowUnderAgeDialog] = useState(false);
 
   /* =========================
-     React Query Mutation (unchanged)
+     React Query Mutation
   ========================= */
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
@@ -181,7 +174,6 @@ export default function RegisterPage() {
         const data = await response.json();
         if (!data.error) {
           setCountries(data.data as Country[]);
-          // Initialize selection if empty
           if (!selectedCountry && data.data.length > 0) {
             const initial = data.data[0] as Country;
             setSelectedCountry(initial.name);
@@ -217,71 +209,25 @@ export default function RegisterPage() {
   };
 
   /* =========================
-     Controlled Handlers with Validation
+     Controlled Handlers
   ========================= */
-
   const handleInputChange = (field: keyof RegisterData, value: string) => {
     if (field === "email") {
       value = value.trim().toLowerCase();
     }
-
     if (field === "password") {
       validatePassword(value);
     }
-
-
-
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
-    const selectedCountryData = countries.find((c) => c.name === value);
-    const dialCode = selectedCountryData ? selectedCountryData.dial_code : "";
-    setFormData((prev) => {
-      return {
-        ...prev,
-        address: value
-      };
-    });
+    setFormData((prev) => ({
+      ...prev,
+      address: value,
+    }));
   };
-
-  // Prevent illegal chars at input level for names and phone.
-  const blockNonNameChars: React.FormEventHandler<HTMLInputElement> = (e) => {
-    const target = e.target as HTMLInputElement;
-    if (!nameRegex.test(target.value)) {
-      target.value = target.value.replace(/[^A-Za-z' -]/g, "");
-    }
-  };
-
-  const preventInvalidPhoneKey: React.KeyboardEventHandler<HTMLInputElement> = (
-    e
-  ) => {
-    const allowedControl = [
-      "Backspace",
-      "Delete",
-      "ArrowLeft",
-      "ArrowRight",
-      "Home",
-      "End",
-      "Tab",
-    ];
-    if (allowedControl.includes(e.key)) return;
-
-    if (/^\d$/.test(e.key)) return; // allow digits
-
-    const input = e.currentTarget;
-    if (
-      e.key === "+" &&
-      input.selectionStart === 0 &&
-      !input.value.includes("+")
-    )
-      return; // allow a single leading '+'
-
-    e.preventDefault();
-  };
-
-
 
   /* =========================
      DOB / Age helpers (unchanged logic)
@@ -308,8 +254,8 @@ export default function RegisterPage() {
     () =>
       dob
         ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), 1))
-          .toISOString()
-          .slice(0, 10)
+            .toISOString()
+            .slice(0, 10)
         : "",
     [dob]
   );
@@ -326,7 +272,7 @@ export default function RegisterPage() {
   }, [dob, isUnder16]);
 
   /* =========================
-     CTA Text (unchanged)
+     CTA Text
   ========================= */
   const primaryCtaText = useMemo(() => {
     if (registerMutation.isPending) return "Creating account...";
@@ -338,16 +284,29 @@ export default function RegisterPage() {
   const needsDob = true;
 
   /* =========================
-     Submit Validations
+     Submit Validations (role-aware)
   ========================= */
   const validateBeforeSubmit = () => {
-    if (!firstName.trim() || !nameRegex.test(firstName)) {
-      toast.error("Please enter a valid first name.");
-      return false;
-    }
-    if (!surname.trim() || !nameRegex.test(surname)) {
-      toast.error("Please enter a valid surname.");
-      return false;
+    if (selectedRole === "company") {
+      if (!firstName.trim() || !companyNameRegex.test(firstName)) {
+        toast.error("Please enter a valid company name.");
+        return false;
+      }
+      if (surname && !companyNameRegex.test(surname)) {
+        toast.error(
+          "Please use only letters, numbers, spaces, &, ., apostrophes or hyphens in the company suffix."
+        );
+        return false;
+      }
+    } else {
+      if (!firstName.trim() || !nameRegex.test(firstName)) {
+        toast.error("Please enter a valid first name.");
+        return false;
+      }
+      if (!surname.trim() || !nameRegex.test(surname)) {
+        toast.error("Please enter a valid surname.");
+        return false;
+      }
     }
 
     if (!emailRegex.test(formData.email)) {
@@ -360,12 +319,10 @@ export default function RegisterPage() {
       return false;
     }
 
-
     if (!dob) {
       setShowUnderAgeDialog(true);
       return false;
     }
-
 
     if (formData.password !== confirmPassword) {
       toast.error("Passwords do not match.");
@@ -389,10 +346,9 @@ export default function RegisterPage() {
       ...data,
       dateOfbirth: dob
         ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate()))
-          .toISOString()
-          .slice(0, 10)
+            .toISOString()
+            .slice(0, 10)
         : undefined,
-
     } as unknown as RegisterData;
     registerMutation.mutate(payload);
   };
@@ -400,9 +356,16 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateBeforeSubmit()) return;
+
+    // Build the "name" based on role:
+    const computedName =
+      selectedRole === "company"
+        ? `${firstName} ${surname}`.trim() // Company Name + optional suffix
+        : `${firstName} ${surname}`.trim(); // Person full name
+
     const fullFormData: RegisterData = {
       ...formData,
-      name: `${firstName} ${surname}`.trim(),
+      name: computedName,
     };
     setPendingFormData(fullFormData);
     setShowRoleConfirm(true);
@@ -421,6 +384,8 @@ export default function RegisterPage() {
   /* =========================
      Render
   ========================= */
+  const isCompany = selectedRole === "company";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <Suspense fallback={<div>Loading role...</div>}>
@@ -439,55 +404,82 @@ export default function RegisterPage() {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* First name */}
+            {/* First name OR Company name */}
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">
+                {isCompany ? "Company Name" : "First Name"}
+              </Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {isCompany ? (
+                  <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                )}
                 <Input
                   id="firstName"
-                  placeholder="Enter First Name"
+                  placeholder={isCompany ? "Enter Company Name" : "Enter First Name"}
                   value={firstName}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^A-Za-z' -]/g, "");
+                    const raw = e.target.value;
+                    const val = isCompany
+                      ? raw.replace(/[^A-Za-z0-9&.,' -]/g, "")
+                      : raw.replace(/[^A-Za-z' -]/g, "");
                     setFirstName(val);
                   }}
-                  onInput={blockNonNameChars}
                   className="pl-10"
                   required
                 />
               </div>
+              {isCompany && (
+                <p className="text-xs text-muted-foreground">
+                  We’ll use this as your account name.
+                </p>
+              )}
             </div>
 
-            {/* Surname */}
+            {/* Surname OR Company suffix (optional) */}
             <div className="space-y-2">
-              <Label htmlFor="surname">Surname</Label>
+              <Label htmlFor="surname">
+                {isCompany ? "Company Suffix (optional)" : "Surname"}
+              </Label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                {isCompany ? (
+                  <Building2 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                )}
                 <Input
                   id="surname"
-                  placeholder="Enter Surname"
+                  placeholder={
+                    isCompany ? "e.g., Ltd, Inc, GmbH (optional)" : "Enter Surname"
+                  }
                   value={surname}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[^A-Za-z' -]/g, "");
+                    const raw = e.target.value;
+                    const val = isCompany
+                      ? raw.replace(/[^A-Za-z0-9&.,' -]/g, "")
+                      : raw.replace(/[^A-Za-z' -]/g, "");
                     setSurname(val);
                   }}
-                  onInput={blockNonNameChars}
                   className="pl-10"
-                  required
+                  required={!isCompany}
                 />
               </div>
+              {isCompany && (
+                <p className="text-xs text-muted-foreground">
+                  Add a legal suffix if applicable (optional).
+                </p>
+              )}
             </div>
 
             {/* Email */}
-            {/* Email (Dynamic Label) */}
             <div className="space-y-2">
               <Label htmlFor="email">
                 {selectedRole === "recruiter"
                   ? "Recruiter Email"
                   : selectedRole === "company"
-                    ? "Company Email"
-                    : "Personal Email"}
+                  ? "Company Email"
+                  : "Personal Email"}
               </Label>
 
               <div className="relative">
@@ -499,8 +491,8 @@ export default function RegisterPage() {
                     selectedRole === "recruiter"
                       ? "Enter your recruiter email"
                       : selectedRole === "company"
-                        ? "Enter your company email"
-                        : "Enter your personal email"
+                      ? "Enter your company email"
+                      : "Enter your personal email"
                   }
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
@@ -515,7 +507,6 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
-
 
             {/* Country (with Combobox) */}
             <div className="space-y-2">
@@ -562,8 +553,6 @@ export default function RegisterPage() {
                 </PopoverContent>
               </Popover>
             </div>
-
-
 
             {/* Password */}
             <div className="space-y-2">
@@ -685,6 +674,8 @@ export default function RegisterPage() {
                 </button>
               </div>
             </div>
+
+            {/* Age verification */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -695,7 +686,7 @@ export default function RegisterPage() {
                       const d = new Date();
                       d.setFullYear(d.getFullYear() - 16);
                       d.setHours(0, 0, 0, 0);
-                      setDob(d); // store 16 years ago date
+                      setDob(d);
                     } else {
                       setDob(null);
                     }
@@ -747,8 +738,8 @@ export default function RegisterPage() {
                     value === "recruiter"
                       ? "Sign up as a Recruiter"
                       : value === "company"
-                        ? "Sign up as a Company"
-                        : "Sign up as a Candidate";
+                      ? "Sign up as a Company"
+                      : "Sign up as a Candidate";
 
                   return (
                     <button
@@ -805,19 +796,22 @@ export default function RegisterPage() {
               <span className="font-semibold">
                 {selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)}
               </span>{" "}
-              account .
+              account.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="rounded-md bg-muted p-3 text-sm space-y-1">
             <div>
-              Name:{" "}
+              {isCompany ? "Company" : "Name"}:{" "}
               <span className="font-medium">
-                {`${firstName} ${surname}`.trim() || "—"}
+                {(
+                  (isCompany
+                    ? `${firstName} ${surname}`
+                    : `${firstName} ${surname}`) || ""
+                ).trim() || "—"}
               </span>
             </div>
             <div>
-              Email:{" "}
-              <span className="font-medium">{formData.email || "—"}</span>
+              Email: <span className="font-medium">{formData.email || "—"}</span>
             </div>
             <div>
               Country:{" "}
@@ -845,6 +839,7 @@ export default function RegisterPage() {
                     const payload: RegisterData = {
                       ...pendingFormData,
                       role: selectedRole,
+                      // name already computed in pendingFormData
                     };
                     if (isUnder16) {
                       setShowRoleConfirm(false);

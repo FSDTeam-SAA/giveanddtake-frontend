@@ -304,7 +304,6 @@ export default function CompanyProfilePage() {
     return <JobDetails jobId={selectedJobId} />;
   }
 
-  console.log(followInfo?.count, "followInfo");
   const followersCount = followInfo?.count ?? 0;
   const followBusy = toggleFollowMutation.isPending;
   const disabled =

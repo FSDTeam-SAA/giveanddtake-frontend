@@ -18,7 +18,6 @@ export default function ArchivedJobList() {
         select: (data) => data?.data
     });
 
-    console.log("My archived jobs are: ", archivedJobs)
 
     if (isPending) {
         return (

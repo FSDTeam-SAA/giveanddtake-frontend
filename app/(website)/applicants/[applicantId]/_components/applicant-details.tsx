@@ -62,13 +62,11 @@ export default function ApplicantDetails({
     );
   }
 
-  console.log("Applicantsssssssssss resume here: ", applicantResume);
 
   const applicationDate = applicantResume?.applications?.find(
     (application: any) => application?.userId?._id === applicantId
   ).createdAt;
 
-  console.log("Application date here: ", applicationDate);
 
   const handleCreateChatRoom = async () => {
     setIsLoadingRoomCreation(true);

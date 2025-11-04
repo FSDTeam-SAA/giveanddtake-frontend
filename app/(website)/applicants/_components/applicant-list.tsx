@@ -104,7 +104,6 @@ export default function ApplicantsList() {
         setCurrentPage(prev => Math.min(prev + 1, totalPages));
     };
 
-    console.log("Applicants: ", applicants)
 
     return (
         <div className='py-8 lg:py-20 px-4 sm:px-6 lg:px-8'>
