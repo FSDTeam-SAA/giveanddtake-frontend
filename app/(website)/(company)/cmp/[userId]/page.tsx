@@ -5,13 +5,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VideoPlayer } from "@/components/company/video-player";
-import { fetchCompanyDetails } from "@/lib/api-service";
+import { fetchCompanyDetails, fetchCompanyDetailsSlug } from "@/lib/api-service";
 import { MapPin, Users, Calendar, Building2 } from "lucide-react";
 import Image from "next/image";
 import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
 import JobDetails from "@/app/(website)/alljobs/_components/job-details";
-import CandidateSharePopover from "@/app/(website)/candidates-profile/_components/candidateShare";
+import CandidateSharePopover from "@/app/(website)/cp/_components/candidateShare";
 import SocialLinks from "@/app/(website)/elevator-video-pitch/_components/SocialLinks";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -102,7 +102,7 @@ export default function CompanyProfilePage() {
 
   const { data: companyData, isLoading: isLoadingCompany } = useQuery({
     queryKey: ["company", userId],
-    queryFn: () => fetchCompanyDetails(userId),
+    queryFn: () => fetchCompanyDetailsSlug(userId),
     enabled: !!userId,
   });
 
@@ -327,7 +327,7 @@ export default function CompanyProfilePage() {
             className=" w-full h-auto  object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto  bg-gray-200" />
+          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px]  bg-gray-200" />
         )}
       </div>
 

@@ -46,6 +46,7 @@ interface SearchUser {
   role: "candidate" | "recruiter" | "company";
   phoneNum: string;
   address: string;
+  slug: string;
   avatar: {
     url: string;
   };
@@ -145,6 +146,8 @@ function SearchResultsInner() {
     }
   };
 
+
+
   const applyFilters = () => {
     let filtered = [...results];
 
@@ -162,13 +165,15 @@ function SearchResultsInner() {
   const handleResultClick = (user: SearchUser) => {
     const profileUrl =
       user.role === "company"
-        ? `/companies-profile/${user._id}`
+        ? `/cmp/${user.slug}`
         : user.role === "recruiter"
-        ? `/recruiters-profile/${user._id}`
-        : `/candidates-profile/${user._id}`;
+        ? `/rp/${user.slug}`
+        : `/cp/${user.slug}`;
 
     router.push(profileUrl);
   };
+
+
 
   const handleNewSearch: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();

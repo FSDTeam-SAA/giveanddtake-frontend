@@ -114,6 +114,11 @@ interface Company {
   __v: number;
 }
 
+interface slug {
+  _id: string;
+  slug: string;
+}
+
 interface RecruiterAccount {
   _id: string;
   userId: string;
@@ -126,6 +131,7 @@ interface RecruiterAccount {
   country: string;
   city: string;
   zipCode: string;
+  slug: slug;
   location: string;
   emailAddress: string;
   phoneNumber: string;
@@ -552,6 +558,7 @@ export default function RecruiterDashboard() {
     handleArchive(job._id);
   };
 
+
   // =============== UI ===============
   return (
     <div className="min-h-screen py-6 md:py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
@@ -580,12 +587,12 @@ export default function RecruiterDashboard() {
                 </Button>
               )}
               <Link
-                href={`/recruiters-profile/${encodeURIComponent(
-                  recruiterAccount?.data?.userId ?? ""
+                href={`/rp/${encodeURIComponent(
+                  recruiterAccount?.data?.slug?.slug ?? ""
                 )}`}
               >
                 <Button
-                  disabled={!recruiterAccount?.data?.userId}
+                  disabled={!recruiterAccount?.data?.slug?.slug}
                   className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-4 md:px-6 py-2 md:py-3 text-sm md:text-base shadow-md"
                 >
                   Public view
@@ -624,13 +631,13 @@ export default function RecruiterDashboard() {
                       </Button>
                     )}
                     <Link
-                      href={`/recruiters-profile/${encodeURIComponent(
-                        recruiterAccount?.data?.userId ?? ""
+                      href={`/rp/${encodeURIComponent(
+                        recruiterAccount?.data?.slug?.slug ?? ""
                       )}`}
                       onClick={() => setIsDrawerOpen(false)}
                     >
                       <Button
-                        disabled={!recruiterAccount?.data?.userId}
+                        disabled={!recruiterAccount?.data?.slug?.slug}
                         className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-3 text-base"
                       >
                         Public view

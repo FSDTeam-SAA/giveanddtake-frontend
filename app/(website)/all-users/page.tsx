@@ -197,10 +197,10 @@ function AllUsersContent() {
     const id = user._id;
     const profileUrl =
       role === "company"
-        ? `/companies-profile/${id}`
+        ? `/cmp/${id}`
         : role === "recruiter"
-        ? `/recruiters-profile/${id}`
-        : `/candidates-profile/${id}`;
+        ? `/rp/${id}`
+        : `/cp/${id}`;
     router.push(profileUrl);
   };
 

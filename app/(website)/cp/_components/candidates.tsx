@@ -255,6 +255,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
+      
       <div className="w-full h-auto">
         {resume.banner ? (
           <Image
@@ -265,7 +266,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             className="w-full h-auto object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto bg-gray-200" />
+          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
         )}
       </div>
 
