@@ -200,8 +200,8 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
 
     const profilePath =
       postedByType === "recruiter"
-        ? `/recruiters-profile/${postedById}`
-        : `/companies-profile/${postedById}`;
+        ? `/rp/${postedById}`
+        : `/cmp/${postedById}`;
 
     router.push(profilePath);
   };

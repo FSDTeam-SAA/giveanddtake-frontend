@@ -7,7 +7,7 @@ import { Globe, Linkedin, Twitter, LinkIcon, MapPin } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { VideoPlayer } from "@/components/company/video-player";
-import CandidateSharePopover from "../../candidates-profile/_components/candidateShare";
+import CandidateSharePopover from "../../cp/_components/candidateShare";
 import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner"; // sonner toast
@@ -140,7 +140,7 @@ export default function Recruiters({ userId }: MydataProps) {
     queryKey: ["recruiter", userId],
     queryFn: async () => {
       const json = await fetchJSON<ApiObjectResponse<RecruiterData>>(
-        `${BASE_URL}/recruiter/recruiter-account/${userId}`
+        `${BASE_URL}/recruiter/recruiter-account/slug/${userId}`
       );
       return json.data;
     },
@@ -353,7 +353,7 @@ export default function Recruiters({ userId }: MydataProps) {
             className="w-full h-auto object-cover lg:object-cover object-center"
           />
         ) : (
-          <div className="w-full h-auto bg-gray-200" />
+          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px]  bg-gray-200" />
         )}
       </div>
 

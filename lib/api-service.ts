@@ -102,6 +102,10 @@ export async function fetchCompanyDetails(userId: string) {
   const response = await apiClient.get(`/company/user/${userId}`);
   return response.data.data;
 }
+export async function fetchCompanyDetailsSlug(userId: string) {
+  const response = await apiClient.get(`/company/companies/slug/${userId}`);
+  return response.data.data;
+}
 
 // Fetch company jobs
 export async function fetchCompanyJobs() {

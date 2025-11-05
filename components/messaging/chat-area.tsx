@@ -341,7 +341,7 @@ export function ChatArea({
           </Button>
         )}
         <Link
-          href={`/candidates-profile/${candidateId}`}
+          href={`/cp/${candidateId}`}
           className="flex items-center"
         >
           <Avatar className="w-10 h-10">

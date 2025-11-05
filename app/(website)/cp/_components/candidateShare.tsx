@@ -34,7 +34,7 @@ export default function CandidateSharePopover({
   const wrapperRef = React.useRef<HTMLDivElement | null>(null);
   const triggerRef = React.useRef<HTMLButtonElement | null>(null);
   const buildUrl = (userId: string) =>
-    `${process.env.NEXT_PUBLIC_BASE_SHEAR_URL }/${role}/${userId}`;
+    `${process.env.NEXT_PUBLIC_BASE_SHARE_URL }/${role}/${userId}`;
 
   const url = buildUrl(userId);
 

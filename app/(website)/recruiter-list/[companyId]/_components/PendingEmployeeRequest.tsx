@@ -171,7 +171,7 @@ export default function PendingEmployeeRequest({
                           </Avatar>
                           <span className="font-medium text-gray-900">
                             <Link
-                              href={`/recruiters-profile/${req.userId._id}`}
+                              href={`/rp/${req.userId._id}`}
                             >
                               {req.userId.name}
                             </Link>

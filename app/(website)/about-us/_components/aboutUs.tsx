@@ -79,7 +79,7 @@ export default function AboutUsPage() {
   });
 
   return (
-    <div className="relative bg-white py-20 overflow-hidden">
+    <div className="relative bg-white pb-20 overflow-hidden">
       <div className="container relative">
         <RightBackgroundBubbles />
 
@@ -95,7 +95,7 @@ export default function AboutUsPage() {
 
           {data && (
             <>
-              <h1 className="text-3xl md:text-4xl font-semibold text-[#131313] mb-6">
+              <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mt-6 mb-12 text-center">
                 {data.title || "About Us"}
               </h1>
 

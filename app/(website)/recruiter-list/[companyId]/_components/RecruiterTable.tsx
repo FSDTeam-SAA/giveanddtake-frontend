@@ -78,7 +78,7 @@ export default function RecruiterTable({
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium text-blue-500">
-                      <Link href={`/recruiters-profile/${recruiter._id}`}>
+                      <Link href={`/rp/${recruiter._id}`}>
                         {recruiter.name}
                       </Link>
                     </span>

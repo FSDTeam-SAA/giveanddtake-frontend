@@ -13,6 +13,7 @@ interface SearchUser {
   role?: Role | string;
   phoneNum?: string;
   address?: string;
+  slug?: string;
   avatar?: {
     url?: string;
   };
@@ -156,15 +157,18 @@ export function GlobalSearch() {
     }
   };
 
+  
+
   const handleResultClick = (user: SearchUser) => {
     const role = (user.role as Role) || "candidate";
-    const id = user._id ?? "";
+    const id = user.slug ?? "";
+    console.log(id)
     const profileUrl =
       role === "company"
-        ? `/companies-profile/${id}`
+        ? `/cmp/${id}`
         : role === "recruiter"
-        ? `/recruiters-profile/${id}`
-        : `/candidates-profile/${id}`;
+        ? `/rp/${id}`
+        : `/cp/${id}`;
 
     router.push(profileUrl);
     setQuery("");
@@ -196,6 +200,7 @@ export function GlobalSearch() {
   const availableCount = results.filter(
     (r) => r.role === "candidate" && r.immediatelyAvailable === true
   ).length;
+
 
   return (
     <div ref={searchRef} className="relative w-full max-w-md">
