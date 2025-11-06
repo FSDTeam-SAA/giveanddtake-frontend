@@ -325,7 +325,7 @@ export default function JobApplicantsPage() {
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link
-                        href={`/applicant-details/${application.userId._id}?resumeId=${application.resumeId?._id || ""
+                        href={`/applicant-details/${application.userId.slug}?resumeId=${application.resumeId?._id || ""
                           }&applicationId=${application._id}`}
                         className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >

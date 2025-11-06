@@ -18,6 +18,7 @@ interface Recruiter {
   _id: string;
   userId: string;
   firstName: string;
+  slug?: string;
   sureName: string;
   photo?: string;
   emailAddress?: string;
@@ -26,6 +27,7 @@ interface Recruiter {
 interface CompanyData {
   _id: string;
   userId: string;
+  slug?: string;
   clogo?: string;
   cname?: string;
 }
@@ -383,12 +385,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
     postedByLogo = job.recruiterId.photo || "/default-logo.png";
-    postedById = job.recruiterId.userId || "#";
+    postedById = job.recruiterId.slug || "#";
     postedByType = "recruiter";
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
     postedByLogo = job.companyId.clogo || "/default-logo.png";
-    postedById = job.companyId.userId || "#";
+    postedById = job.companyId.slug || "#";
     postedByType = "company";
   }
 
@@ -417,13 +419,13 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 <Link
                   href={`/${
                     postedByType === "recruiter"
-                      ? "recruiters-profile"
-                      : "companies-profile"
+                      ? "rp"
+                      : "cmp"
                   }/${postedById}`}
                   aria-label={
                     postedByType === "recruiter"
-                      ? "Recruiter profile"
-                      : "Company profile"
+                      ? "rp"
+                      : "cmp"
                   }
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
@@ -449,8 +451,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     <Link
                       href={`/${
                         postedByType === "recruiter"
-                          ? "recruiters-profile"
-                          : "companies-profile"
+                          ? "rp"
+                          : "cmp"
                       }/${postedById}`}
                       className="font-medium truncate max-w-[16rem] sm:max-w-none"
                     >
