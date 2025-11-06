@@ -22,6 +22,7 @@ interface EmployeeData {
   _id: string;
   name: string;
   email: string;
+  slug: string;
   phoneNum: string;
   role: string;
   skills: string[];

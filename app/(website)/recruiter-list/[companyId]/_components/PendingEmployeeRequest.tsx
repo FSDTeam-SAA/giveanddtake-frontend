@@ -22,6 +22,7 @@ interface UserData {
   name: string;
   email: string;
   phoneNum: string;
+  slug: string;
   role: string;
   avatar?: { url: string };
 }
@@ -159,11 +160,11 @@ export default function PendingEmployeeRequest({
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage
-                              src={req.userId.avatar?.url || "/placeholder.svg"}
-                              alt={req.userId.name}
+                              src={req.userId?.avatar?.url || "/placeholder.svg"}
+                              alt={req.userId?.name}
                             />
                             <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
-                              {req.userId.name
+                              {req.userId?.name
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")}
@@ -171,9 +172,9 @@ export default function PendingEmployeeRequest({
                           </Avatar>
                           <span className="font-medium text-gray-900">
                             <Link
-                              href={`/rp/${req.userId._id}`}
+                              href={`/rp/${req.userId?.slug}`}
                             >
-                              {req.userId.name}
+                              {req.userId?.name}
                             </Link>
                           </span>
                         </div>

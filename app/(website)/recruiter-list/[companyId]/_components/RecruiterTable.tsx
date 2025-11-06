@@ -18,6 +18,7 @@ interface EmployeeData {
   _id: string;
   name: string;
   email: string;
+  slug: string;
   role: string;
   photo?: { url: string };
   skills: string[];
@@ -78,7 +79,7 @@ export default function RecruiterTable({
                       </AvatarFallback>
                     </Avatar>
                     <span className="font-medium text-blue-500">
-                      <Link href={`/rp/${recruiter._id}`}>
+                      <Link href={`/rp/${recruiter.slug}`}>
                         {recruiter.name}
                       </Link>
                     </span>

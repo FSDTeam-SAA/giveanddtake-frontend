@@ -18,12 +18,14 @@ interface Recruiter {
   _id: string;
   firstName: string;
   sureName: string;
+  slug?: string;
   photo?: string;
   userId: string;
 }
 interface CompanyId {
   _id?: string;
   cname?: string;
+  slug?: string;
   clogo?: string;
   userId?: string;
 }
@@ -160,12 +162,12 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
     postedByLogo = job.recruiterId.photo || "/default-logo.png";
-    postedById = job.recruiterId.userId || "#";
+    postedById = job.recruiterId.slug || "#";
     postedByType = "recruiter";
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
     postedByLogo = job.companyId.clogo || "/default-logo.png";
-    postedById = job.companyId.userId || "#";
+    postedById = job.companyId.slug || "#";
     postedByType = "company";
   }
 
