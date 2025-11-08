@@ -62,6 +62,7 @@ type LocalPlan = {
 /* --------------------------- Utilities --------------------------- */
 
 const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLowerCase()
+const isFreeTitle = (name: string) => normalizeTitle(name) === "free of charge"
 
 /* --------------------------- Data Fetch -------------------------- */
 
@@ -109,21 +110,6 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
   return out
 }
 
-/* -------------------------- Static Free Plan --------------------- */
-
-const freePlan: LocalPlan = {
-  name: "Free of Charge",
-  monthlyPriceLabel: "$0.00 per month",
-  monthlyAmount: 0,
-  planId: "free-plan-static",
-  features: [
-    { text: "Record or upload a 30-second Elevator Video Pitch" },
-    { text: "Apply for jobs where criteria is met" },
-    { text: "Receive recruiter update(s)" },
-  ],
-  buttonText: "Get Started",
-}
-
 /* -------------------------- Component ---------------------------- */
 
 export default function PricingList() {
@@ -135,12 +121,13 @@ export default function PricingList() {
   const [selectedPlan, setSelectedPlan] = useState<LocalPlan | null>(null)
   const [currentPlanId, setCurrentPlanId] = useState<string | null>(null)
   const [userIsValid, setUserIsValid] = useState<boolean | null>(null)
-  const [currentPlanMeta, setCurrentPlanMeta] = useState<{ titleNorm: string | null; valid: "monthly" | "yearly" | null }>(
-    { titleNorm: null, valid: null }
-  )
+  const [currentPlanMeta, setCurrentPlanMeta] = useState<{
+    titleNorm: string | null
+    valid: "monthly" | "yearly" | null
+  }>({ titleNorm: null, valid: null })
 
   const isSameTitle = (planName: string) =>
-    currentPlanMeta.titleNorm && normalizeTitle(planName) === currentPlanMeta.titleNorm
+    !!currentPlanMeta.titleNorm && normalizeTitle(planName) === currentPlanMeta.titleNorm
 
   const {
     data: apiPlans,
@@ -151,11 +138,11 @@ export default function PricingList() {
     queryFn: fetchCandidatePlans,
   })
 
+  // Always show all plans including "Free of Charge"
   const pricingPlans = useMemo(() => {
     const apiPricingPlans = apiPlans ? groupCandidatePlans(apiPlans) : []
-    const includeFree = userIsValid === false
-    return includeFree ? [freePlan, ...apiPricingPlans] : apiPricingPlans
-  }, [apiPlans, userIsValid])
+    return apiPricingPlans
+  }, [apiPlans])
 
   /* ------------------ Fetch current user & plan ------------------- */
 
@@ -198,17 +185,11 @@ export default function PricingList() {
     const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null
     const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null
 
+    // Hard stop for current plan
     if (sameTitle && (onlyMonthly || onlyYearly)) return
     if (currentPlanId === plan.planId) return
 
     setSelectedPlan(plan)
-
-    if (plan.planId === freePlan.planId) {
-      setSelectedPrice("0.00")
-      setSelectedPlanIdForPayment(plan.planId)
-      console.log("Selected Free Plan - No payment required")
-      return
-    }
 
     if (onlyMonthly) {
       setSelectedPrice(plan.monthlyAmount!.toFixed(2))
@@ -272,8 +253,15 @@ export default function PricingList() {
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pricingPlans.map((plan, index) => {
             const cardIsCurrentByTitle = isSameTitle(plan.name)
-            const isFreeAndCurrent = plan.name === freePlan.name && userIsValid === false
-            const isCurrent = isFreeAndCurrent || cardIsCurrentByTitle || currentPlanId === plan.planId
+            const isFree = isFreeTitle(plan.name)
+
+            // If user has no plan, mark "Free of Charge" as current by default
+            const freeIsDefaultCurrent = !currentPlanMeta.titleNorm && isFree
+
+            const isCurrent =
+              cardIsCurrentByTitle ||
+              currentPlanId === plan.planId ||
+              freeIsDefaultCurrent
 
             return (
               <Card key={index} className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden">
@@ -287,12 +275,19 @@ export default function PricingList() {
                     )}
                   </CardTitle>
 
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2 text-[18px] flex-wrap">
-                      {plan.monthlyPriceLabel && <p className="font-bold text-[#282828]">{plan.monthlyPriceLabel}</p>}
-                      {plan.annualPriceLabel && <p className="font-bold text-[#282828]">{plan.annualPriceLabel}</p>}
+                  {/* Hide price labels if this is the "Free of Charge" plan */}
+                  {!isFree && (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2 text-[18px] flex-wrap">
+                        {plan.monthlyPriceLabel && (
+                          <p className="font-bold text-[#282828]">{plan.monthlyPriceLabel}</p>
+                        )}
+                        {plan.annualPriceLabel && (
+                          <p className="font-bold text-[#282828]">{plan.annualPriceLabel}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </CardHeader>
 
                 <CardContent className="p-6 pt-4 flex-grow">
@@ -337,9 +332,7 @@ export default function PricingList() {
       {showPlanOptions && selectedPlan && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-[90%] max-w-md">
-            <h2 className="text-lg font-semibold mb-4 text-center text-gray-800">
-              Choose your subscription type
-            </h2>
+            <h2 className="text-lg font-semibold mb-4 text-center text-gray-800">Choose your subscription type</h2>
             <div className="flex flex-col gap-3">
               {selectedPlan.monthlyAmount != null && (
                 <Button
