@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
+import { MapPin, Users, Sparkles } from "lucide-react";
 import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
@@ -11,6 +11,7 @@ import { useState, MouseEvent, KeyboardEvent } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path as needed
 
@@ -44,20 +45,74 @@ interface Job {
   experience: number;
   compensation: string;
   createdAt: string;
+  applicantCount?: number;
+  counter?: number;
+}
+
+interface JobFitInsight {
+  score: number;
+  verdictCode: string;
+  verdictMessage: string;
+  aiSummary?: string;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  jobSkills?: string[];
+  profileSkills?: string[];
 }
 interface JobCardProps {
   job: Job;
   variant: "suggested" | "list";
   className?: string;
+  applicantCount?: number;
 }
 
-export default function JobCard({ job, variant, className }: JobCardProps) {
+const FIT_THEMES: Record<
+  string,
+  { bg: string; text: string; chip: string; accent: string }
+> = {
+  STRONG_MATCH: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-800",
+    chip: "bg-white/70 text-emerald-700",
+    accent: "text-emerald-500",
+  },
+  PARTIAL_MATCH: {
+    bg: "bg-cyan-50",
+    text: "text-cyan-800",
+    chip: "bg-white/70 text-cyan-700",
+    accent: "text-cyan-500",
+  },
+  MISSING_SOME: {
+    bg: "bg-amber-50",
+    text: "text-amber-800",
+    chip: "bg-white/70 text-amber-700",
+    accent: "text-amber-500",
+  },
+  MISSING_MOST: {
+    bg: "bg-rose-50",
+    text: "text-rose-800",
+    chip: "bg-white/70 text-rose-700",
+    accent: "text-rose-500",
+  },
+};
+
+export default function JobCard({
+  job,
+  variant,
+  className,
+  applicantCount,
+}: JobCardProps) {
   const { data: session, status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [fitExpanded, setFitExpanded] = useState(false);
+  const [jobFit, setJobFit] = useState<JobFitInsight | null>(null);
+  const [jobFitLoading, setJobFitLoading] = useState(false);
+  const [jobFitError, setJobFitError] = useState<string | null>(null);
   const router = useRouter();
 
   const role = (session?.user as any)?.role as string | undefined;
   const userId = (session?.user as any)?.id as string | undefined;
+  const token = session?.accessToken as string | undefined;
 
   const isUnauthed = status === "unauthenticated";
   const isCandidate = role === "candidate";
@@ -65,6 +120,23 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   const canSeeApply = isUnauthed || isCandidate;
 
   const applicationLink = `/job-application?id=${job._id}`;
+
+  const derivedApplicantCount =
+    typeof applicantCount === "number"
+      ? applicantCount
+      : job.applicantCount ?? (job as any)?.counter;
+
+  const applicantLabel =
+    typeof derivedApplicantCount === "number"
+      ? `${derivedApplicantCount} ${
+          derivedApplicantCount === 1 ? "applicant" : "applicants"
+        }`
+      : null;
+
+  const fitTheme =
+    FIT_THEMES[jobFit?.verdictCode ?? ""] ??
+    FIT_THEMES.PARTIAL_MATCH ??
+    FIT_THEMES.STRONG_MATCH;
 
   // ===== Resume query (only if role is candidate) =====
   // NOTE: We need elevatorPitch presence (array length > 0) to allow applying.
@@ -208,6 +280,217 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
     router.push(profilePath);
   };
 
+  const handleFetchJobFit = async () => {
+    if (jobFit || jobFitLoading) return;
+    if (!isCandidate) {
+      setJobFitError("Profile fit is available for candidates only.");
+      setFitExpanded(true);
+      return;
+    }
+    if (!token) {
+      setJobFitError("Sign in to check your profile fit for this role.");
+      setFitExpanded(true);
+      return;
+    }
+    try {
+      setJobFitLoading(true);
+      setJobFitError(null);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${job._id}/ai-fit`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Unable to fetch fit insight");
+      }
+      const payload = await response.json();
+      if (payload?.data) {
+        setJobFit(payload.data as JobFitInsight);
+      } else {
+        setJobFitError("No insight available for this position right now.");
+      }
+    } catch (error: any) {
+      console.warn("[job-fit] fetch failed", error);
+      setJobFitError(
+        error?.message ?? "Something went wrong while checking profile fit."
+      );
+    } finally {
+      setJobFitLoading(false);
+    }
+  };
+
+  const handleFitBadgeClick = () => {
+    if (!jobFit && !jobFitLoading) {
+      void handleFetchJobFit();
+    }
+    setFitExpanded((prev) => !prev);
+  };
+
+  const renderFitBadge = () => {
+    if (!isCandidate) return null;
+    if (jobFitLoading) {
+      return (
+        <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1 text-sm text-slate-500 animate-pulse">
+          <Sparkles className="h-4 w-4 text-slate-400" />
+          Calculating your profile fit...
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleFitBadgeClick();
+        }}
+        className={`flex items-center gap-2 rounded-lg px-3 py-1 text-sm font-medium transition ${
+          jobFit ? `${fitTheme.bg} ${fitTheme.text}` : "bg-slate-100 text-slate-700"
+        } hover:opacity-90`}
+      >
+        <Sparkles className={`h-4 w-4 ${fitTheme.accent}`} />
+        <div className="flex flex-col">
+          <span className="text-[11px] uppercase tracking-wide text-gray-500">
+            Profile fit
+          </span>
+          <span className="text-sm font-semibold">
+            {jobFit
+              ? jobFit.verdictMessage
+              : jobFitError
+              ? "Fit unavailable"
+              : "Check your fit"}
+          </span>
+        </div>
+        {jobFit && (
+          <span
+            className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${fitTheme.chip}`}
+          >
+            {Math.round(jobFit.score)}%
+          </span>
+        )}
+        {!jobFit && !jobFitLoading && (
+          <span className="ml-auto text-xs text-primary underline">
+            View details
+          </span>
+        )}
+      </button>
+    );
+  };
+
+  const renderApplicantBadge = () => {
+    if (typeof derivedApplicantCount !== "number") return null;
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1 text-sm text-slate-700">
+        <Users className="h-4 w-4 text-slate-500" />
+        <span className="font-medium">{applicantLabel}</span>
+      </div>
+    );
+  };
+
+  const renderSkillPills = (title: string, items: string[], emptyText: string) => (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-gray-700">{title}</p>
+      {items.length ? (
+        <div className="flex flex-wrap gap-2">
+          {items.slice(0, 12).map((skill) => (
+            <span
+              key={`${title}-${skill}`}
+              className="text-xs rounded-full bg-slate-100 px-3 py-1 text-slate-700"
+            >
+              {skill}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">{emptyText}</p>
+      )}
+    </div>
+  );
+
+  const renderFitDetailsPanel = () => {
+    if (!isCandidate) return null;
+    return (
+      <AnimatePresence initial={false}>
+        {fitExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden rounded-xl border border-slate-200 bg-white/70 p-4 shadow-inner"
+          >
+            {jobFitLoading && (
+              <p className="text-sm text-muted-foreground">Checking fit...</p>
+            )}
+            {jobFitError && (
+              <p className="text-sm text-rose-600">{jobFitError}</p>
+            )}
+            {jobFit && !jobFitLoading && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground">
+                      Verdict
+                    </p>
+                    <p className="text-base font-semibold text-gray-900">
+                      {jobFit.verdictMessage}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase text-muted-foreground">
+                      Score
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {Math.round(jobFit.score)}%
+                    </p>
+                  </div>
+                </div>
+                {jobFit.aiSummary && (
+                  <div className="rounded-lg bg-primary/5 px-3 py-2 text-sm text-gray-700">
+                    <strong className="block text-primary mb-1">
+                      AI insight
+                    </strong>
+                    <p>{jobFit.aiSummary}</p>
+                  </div>
+                )}
+                {renderSkillPills(
+                  "Matched skills",
+                  jobFit.matchedSkills ?? [],
+                  "No overlapping skills detected yet."
+                )}
+                {renderSkillPills(
+                  "Suggested skills to add",
+                  jobFit.missingSkills ?? [],
+                  "Great news! You already cover all highlighted requirements."
+                )}
+                <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Ready to continue? You can apply right from here too.
+                  </p>
+                  <div className="flex gap-2 self-start sm:self-auto">
+                    <Button
+                      variant="outline"
+                      className="text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleFitBadgeClick();
+                      }}
+                    >
+                      Hide details
+                    </Button>
+                    <ApplyButton />
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    );
+  };
+
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
 
@@ -260,6 +543,7 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
   // ===== SUGGESTED VARIANT =====
   if (variant === "suggested") {
     return (
+      <>
       <Card
         role="link"
         aria-label={`${job.title} — ${postedByName}`}
@@ -319,6 +603,12 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
               }}
             />
 
+            <div className="flex flex-wrap gap-2 sm:gap-3">
+              {renderFitBadge()}
+              {renderApplicantBadge()}
+            </div>
+            {renderFitDetailsPanel()}
+
             <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
               <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
                 <span
@@ -342,11 +632,13 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
           </div>
         </CardContent>
       </Card>
-    );
-  }
+    </>
+  );
+}
 
   // ===== LIST VARIANT =====
   return (
+    <>
     <Card
       role="link"
       aria-label={`${job.title} — ${postedByName}`}
@@ -403,6 +695,12 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
                 />
               </div>
 
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {renderFitBadge()}
+                {renderApplicantBadge()}
+              </div>
+              {renderFitDetailsPanel()}
+
               <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
@@ -432,7 +730,8 @@ export default function JobCard({ job, variant, className }: JobCardProps) {
             </div>
           </div>
         </div>
-      </CardContent>
+        </CardContent>
     </Card>
+    </>
   );
 }

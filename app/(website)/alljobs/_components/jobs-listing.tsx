@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +27,8 @@ interface Job {
   applicationRequirement: Array<{ requirement: string; _id: string }>;
   customQuestion: Array<{ question: string; _id: string }>;
   createdAt: string;
+  applicantCount?: number;
+  counter?: number;
 }
 
 interface JobsResponse {
@@ -62,6 +64,17 @@ const JobCardSkeleton = () => (
   </div>
 );
 
+interface JobFitSummary {
+  score: number;
+  verdictCode: string;
+  verdictMessage: string;
+  aiSummary?: string;
+  matchedSkills?: string[];
+  missingSkills?: string[];
+  jobSkills?: string[];
+  profileSkills?: string[];
+}
+
 export default function JobsListing() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -77,6 +90,8 @@ export default function JobsListing() {
 
   const { data: session, status } = useSession();
   const token = session?.accessToken;
+  const role = (session?.user as any)?.role as string | undefined;
+  const isCandidate = role === "candidate";
 
   // Fetch all jobs
   const {
@@ -111,14 +126,6 @@ export default function JobsListing() {
     enabled: !!token,
   });
 
-  if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        Loading session...
-      </div>
-    );
-  }
-
   const jobs = jobsData?.data.jobs || [];
   const meta = jobsData?.data.meta || {
     currentPage: 1,
@@ -130,6 +137,21 @@ export default function JobsListing() {
     recommendedData?.data?.exactMatches && recommendedData.data.exactMatches.length > 0
       ? recommendedData.data.exactMatches
       : recommendedData?.data?.partialMatches || [];
+
+  const recommendedJobs = useMemo(() => {
+    if (!Array.isArray(recommended)) return [];
+    return recommended
+      .map((item: any) => (item?.job ? item.job : item))
+      .filter((job: Job | undefined): job is Job => Boolean(job && job._id));
+  }, [recommended]);
+
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading session...
+      </div>
+    );
+  }
 
   // Handle filter click
   const handleFilter = () => {
@@ -172,7 +194,7 @@ export default function JobsListing() {
         </div>
       </div>
 
-      {!querySearchTerm && recommended.length > 0 && (
+      {!querySearchTerm && recommendedJobs.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested jobs for you</h2>
           {isRecommendedLoading || !token ? (
@@ -191,8 +213,13 @@ export default function JobsListing() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {recommended.map((item) => (
-                <JobCard key={item._id} job={item.job} variant="list" />
+              {recommendedJobs.map((job) => (
+                <JobCard
+                  key={job._id}
+                  job={job}
+                  variant="list"
+                  applicantCount={job.applicantCount ?? job.counter}
+                />
               ))}
             </div>
           )}
@@ -223,7 +250,12 @@ export default function JobsListing() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {jobs.map((job) => (
-              <JobCard key={job._id} job={job} variant="list" />
+              <JobCard
+                key={job._id}
+                job={job}
+                variant="list"
+                applicantCount={job.applicantCount ?? job.counter}
+              />
             ))}
           </div>
         )}
