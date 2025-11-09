@@ -709,6 +709,7 @@ export default function RegisterPage() {
                 I agree to the{" "}
                 <Link
                   href="/terms-condition"
+                  target="_blank"
                   className="text-primary underline-offset-4 hover:underline"
                 >
                   Terms &amp; Conditions
