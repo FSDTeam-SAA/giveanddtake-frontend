@@ -418,15 +418,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               <div className="flex items-center gap-4 sm:gap-6">
                 <Link
                   href={`/${
-                    postedByType === "recruiter"
-                      ? "rp"
-                      : "cmp"
+                    postedByType === "recruiter" ? "rp" : "cmp"
                   }/${postedById}`}
-                  aria-label={
-                    postedByType === "recruiter"
-                      ? "rp"
-                      : "cmp"
-                  }
+                  aria-label={postedByType === "recruiter" ? "rp" : "cmp"}
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
                     <Image
@@ -450,9 +444,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm sm:text-base">
                     <Link
                       href={`/${
-                        postedByType === "recruiter"
-                          ? "rp"
-                          : "cmp"
+                        postedByType === "recruiter" ? "rp" : "cmp"
                       }/${postedById}`}
                       className="font-medium truncate max-w-[16rem] sm:max-w-none"
                     >
@@ -476,18 +468,21 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </div>
 
               <div className="flex flex-col items-start sm:items-end gap-2">
-                <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
-                  {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
-                  {(() => {
-                    const salary = job.salaryRange ?? ""; // "₦ 100000"
-                    const parts = salary.split(" ");
-                    const currency = parts[0] ?? "";
-                    const amount = Number(parts[1] ?? "");
-                    return isNaN(amount)
-                      ? salary
-                      : `${currency} ${amount.toLocaleString()}`;
-                  })()}
-                </div>
+                {Number(job.salaryRange) > 0 && (
+                  <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
+                    {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
+                    {(() => {
+                      const salary = job.salaryRange ?? ""; // "₦ 100000"
+                      const parts = salary.split(" ");
+                      const currency = parts[0] ?? "";
+                      const amount = Number(parts[1] ?? "");
+                      return isNaN(amount)
+                        ? salary
+                        : `${currency} ${amount.toLocaleString()}`;
+                    })()}
+                  </div>
+                )}
+
                 <div className="inline-flex items-center bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
                   {job.employement_Type || "Not specified"}
                 </div>
@@ -551,7 +546,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     <Button
                       className="w-full bg-primary hover:bg-blue-700"
                       onClick={handleCandidateApply}
-                      disabled={isRedirecting || resumeLoading || resumeFetching}
+                      disabled={
+                        isRedirecting || resumeLoading || resumeFetching
+                      }
                     >
                       {resumeLoading || resumeFetching
                         ? "Checking…"
