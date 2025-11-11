@@ -101,7 +101,7 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
       monthlyPriceLabel: monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
       annualPriceLabel: annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
       features: base.features.map((text) => ({ text })),
-      buttonText: `Subscribe to ${title.split(" ")[0]}`,
+      buttonText: `Subscribe to ${title.split(" ")[0].charAt(0).toUpperCase() + title.split(" ")[0].slice(1)}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
@@ -267,7 +267,7 @@ export default function PricingList() {
               <Card key={index} className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden">
                 <CardHeader className="p-6 pb-0">
                   <CardTitle className="text-base font-medium text-[#2B7FD0]">
-                    {plan.name}
+                    {plan.name.charAt(0).toUpperCase() + plan.name.slice(1)}
                     {isCurrent && (
                       <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
                         Current

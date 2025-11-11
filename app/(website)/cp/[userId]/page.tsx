@@ -8,8 +8,6 @@ interface PageProps {
 export default async function Page({ params }: PageProps) {
   const { userId } = await params;
 
-  console.log("ddddddddddddddd", userId)
-
   return (
     <div className="">
       <Candidates userId={userId} />
