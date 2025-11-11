@@ -4,6 +4,7 @@ import { Search, User, Building2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { on } from "events";
 
 type Role = "candidate" | "recruiter" | "company";
 
@@ -28,10 +29,14 @@ interface SearchResult {
   data?: (SearchUser | null)[];
 }
 
+interface GlobalSearchProps {
+  onResultSelect?: () => void;
+}
+
 const safeLower = (v: unknown) =>
   typeof v === "string" ? v.toLowerCase() : "";
 
-export function GlobalSearch() {
+export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchUser[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -110,24 +115,23 @@ export function GlobalSearch() {
           .filter(Boolean)
           .map((u) => u as SearchUser)
           .filter((user) => {
-  if (!user) return false;
+            if (!user) return false;
 
-  // Exclude admin and super-admin roles
-  const role = safeLower(user.role);
-  if (role === "admin" || role === "super-admin") return false;
+            // Exclude admin and super-admin roles
+            const role = safeLower(user.role);
+            if (role === "admin" || role === "super-admin") return false;
 
-  const name = safeLower(user.name);
-  const address = safeLower(user.address);
-  const position = safeLower(user.position);
+            const name = safeLower(user.name);
+            const address = safeLower(user.address);
+            const position = safeLower(user.position);
 
-  return (
-    name.includes(q) ||
-    role.includes(q) ||
-    address.includes(q) ||
-    position.includes(q)
-  );
-});
-
+            return (
+              name.includes(q) ||
+              role.includes(q) ||
+              address.includes(q) ||
+              position.includes(q)
+            );
+          });
 
         // sort: immediately available candidates first, then others
         filteredResults.sort(
@@ -157,18 +161,18 @@ export function GlobalSearch() {
     }
   };
 
-  
-
   const handleResultClick = (user: SearchUser) => {
     const role = (user.role as Role) || "candidate";
     const id = user.slug ?? "";
-    console.log(id)
     const profileUrl =
       role === "company"
         ? `/cmp/${id}`
         : role === "recruiter"
         ? `/rp/${id}`
         : `/cp/${id}`;
+
+    // 👇 Call parent-provided callback (to close mobile sheet)
+    onResultSelect && onResultSelect();
 
     router.push(profileUrl);
     setQuery("");
@@ -200,7 +204,6 @@ export function GlobalSearch() {
   const availableCount = results.filter(
     (r) => r.role === "candidate" && r.immediatelyAvailable === true
   ).length;
-
 
   return (
     <div ref={searchRef} className="relative w-full max-w-md">

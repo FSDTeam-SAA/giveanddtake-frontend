@@ -538,39 +538,47 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
 
       {/* Elevator Pitch */}
       <div className="lg:pb-12 pb-5">
+        <div>
+          <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
+            Elevator Video Pitch©
+          </h2>
+        </div>
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle>Elevator Video Pitch©</CardTitle>
-              {pitchData && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="Options"
-                      className="bg-gray-100 hover:bg-gray-200"
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
+              <div>
+                <p className="text-sm md:text-lg lg:text-xl">
+                  Upload or view a short video introducing your company.
+                </p>
+              </div>
+              <div>
+                {pitchData && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Options"
+                        className="bg-gray-100 hover:bg-gray-200"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={openDeleteModal}
-                      disabled={deleteElevatorPitchMutation.isPending}
-                      className="text-red-600 focus:text-red-700 cursor-pointer"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={openDeleteModal}
+                        disabled={deleteElevatorPitchMutation.isPending}
+                        className="text-red-600 focus:text-red-700 cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-black">
-              Upload or view a short video introducing your company.
-            </p>
           </CardHeader>
           <CardContent>
             {isProcessing ? (

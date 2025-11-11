@@ -248,7 +248,9 @@ export default function JobCard({
       {postedByLogo !== "/default-logo.png" ? (
         <Image
           src={postedByLogo}
-          alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
+          alt={
+            postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"
+          }
           width={56}
           height={56}
           className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover"
@@ -273,9 +275,7 @@ export default function JobCard({
     }
 
     const profilePath =
-      postedByType === "recruiter"
-        ? `/rp/${postedById}`
-        : `/cmp/${postedById}`;
+      postedByType === "recruiter" ? `/rp/${postedById}` : `/cmp/${postedById}`;
 
     router.push(profilePath);
   };
@@ -346,8 +346,10 @@ export default function JobCard({
           e.stopPropagation();
           handleFitBadgeClick();
         }}
-        className={`flex items-center gap-2 rounded-lg px-3 py-1 text-sm font-medium transition ${
-          jobFit ? `${fitTheme.bg} ${fitTheme.text}` : "bg-slate-100 text-slate-700"
+        className={`flex items-center w-full gap-2 rounded-lg px-3 py-1 text-sm font-medium transition ${
+          jobFit
+            ? `${fitTheme.bg} ${fitTheme.text}`
+            : "bg-slate-100 text-slate-700"
         } hover:opacity-90`}
       >
         <Sparkles className={`h-4 w-4 ${fitTheme.accent}`} />
@@ -389,7 +391,11 @@ export default function JobCard({
     );
   };
 
-  const renderSkillPills = (title: string, items: string[], emptyText: string) => (
+  const renderSkillPills = (
+    title: string,
+    items: string[],
+    emptyText: string
+  ) => (
     <div className="space-y-2">
       <p className="text-sm font-semibold text-gray-700">{title}</p>
       {items.length ? (
@@ -428,51 +434,62 @@ export default function JobCard({
               <p className="text-sm text-rose-600">{jobFitError}</p>
             )}
             {jobFit && !jobFitLoading && (
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-4">
-                  <div>
-                    <p className="text-xs uppercase text-muted-foreground">
-                      Verdict
-                    </p>
-                    <p className="text-base font-semibold text-gray-900">
-                      {jobFit.verdictMessage}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase text-muted-foreground">
+              <div className="space-y-5">
+                {/* Score Section */}
+                <div className="flex flex-wrap items-center justify-center gap-4 bg-primary/5 rounded-lg py-3 px-4 shadow-sm">
+                  <motion.div
+                    className="text-center"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <p className="text-xs uppercase text-muted-foreground tracking-wide">
                       Score
                     </p>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <motion.p
+                      className="text-3xl font-bold text-gray-900"
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    >
                       {Math.round(jobFit.score)}%
-                    </p>
-                  </div>
+                    </motion.p>
+                  </motion.div>
                 </div>
+
+                {/* AI Insight */}
                 {jobFit.aiSummary && (
-                  <div className="rounded-lg bg-primary/5 px-3 py-2 text-sm text-gray-700">
-                    <strong className="block text-primary mb-1">
-                      AI insight
+                  <div className="rounded-lg bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-gray-700 shadow-sm">
+                    <strong className="block text-blue-600 mb-1">
+                      AI Insight
                     </strong>
-                    <p>{jobFit.aiSummary}</p>
+                    <p className="leading-relaxed">{jobFit.aiSummary}</p>
                   </div>
                 )}
+
+                {/* Skill Sections */}
                 {renderSkillPills(
                   "Matched skills",
                   jobFit.matchedSkills ?? [],
                   "No overlapping skills detected yet."
                 )}
+
                 {renderSkillPills(
                   "Suggested skills to add",
                   jobFit.missingSkills ?? [],
                   "Great news! You already cover all highlighted requirements."
                 )}
-                <div className="pt-2 border-t border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+
+                {/* Action Footer */}
+                <div className="pt-3 border-t border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-muted-foreground">
                     Ready to continue? You can apply right from here too.
                   </p>
+
                   <div className="flex gap-2 self-start sm:self-auto">
                     <Button
                       variant="outline"
-                      className="text-sm"
+                      className="text-sm hover:bg-slate-50"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleFitBadgeClick();
@@ -528,7 +545,11 @@ export default function JobCard({
       >
         <span className="sr-only">Apply to {job.title}</span>
         <span aria-hidden>
-          {resumeLoading ? "Checking…" : isRedirecting ? "Redirecting…" : "Apply"}
+          {resumeLoading
+            ? "Checking…"
+            : isRedirecting
+            ? "Redirecting…"
+            : "Apply"}
         </span>
       </button>
     );
@@ -544,6 +565,103 @@ export default function JobCard({
   if (variant === "suggested") {
     return (
       <>
+        <Card
+          role="link"
+          aria-label={`${job.title} — ${postedByName}`}
+          tabIndex={0}
+          className={clsx(
+            "hover:shadow-md transition-shadow cursor-pointer",
+            "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
+            className
+          )}
+          onClick={(e) => activateCard(e)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              e.stopPropagation();
+              activateCard(e);
+            }
+          }}
+        >
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:gap-4">
+              <div className="flex items-start gap-3 sm:gap-4">
+                <CompanyAvatar />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
+                      {job.title}
+                    </h3>
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      <EmploymentBadge />
+                    </div>
+                  </div>
+                  <div className="mt-0.5">
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      onClick={(e) => navigateToProfile(e)}
+                      onKeyDown={(e) => navigateToProfile(e)}
+                      className="text-primary text-sm hover:underline cursor-pointer"
+                    >
+                      {postedByName}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
+                <ApplyButton />
+                <div className="sm:hidden">
+                  <EmploymentBadge />
+                </div>
+              </div>
+
+              <div
+                className="text-gray-700 text-sm sm:text-[15px] leading-relaxed prose prose-sm max-w-none text-start list-none line-clamp-2 md:line-clamp-3 lg:line-clamp-3"
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(job.description),
+                }}
+              />
+
+              <div className="speace-y-2 mt-2 sm:mt-3">
+                <div className="">
+                  <div className="">{renderFitBadge()}</div>
+                </div>
+                <div className="mt-4">{renderFitDetailsPanel()}</div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
+                <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                  <span
+                    role="link"
+                    tabIndex={0}
+                    onClick={(e) => navigateToProfile(e)}
+                    onKeyDown={(e) => navigateToProfile(e)}
+                    className="text-[#707070] cursor-pointer"
+                  >
+                    {postedByName}
+                  </span>
+                </div>
+                <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                  <span className="truncate">{job.salaryRange}</span>
+                </div>
+                <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                  <MapPin className="h-4 w-4 mr-1" aria-hidden />
+                  <span className="truncate">{job.location}</span>
+                </div>
+                <div>{renderApplicantBadge()}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </>
+    );
+  }
+
+  // ===== LIST VARIANT =====
+  return (
+    <>
       <Card
         role="link"
         aria-label={`${job.title} — ${postedByName}`}
@@ -564,174 +682,82 @@ export default function JobCard({
       >
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="flex items-start gap-3 sm:gap-4">
+            <div className="lg:flex items-start gap-3 sm:gap-4">
               <CompanyAvatar />
-              <div className="min-w-0 flex-1">
+
+              <div className="min-w-0 flex-1 mt-4 lg:mt-0">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
-                    {job.title}
-                  </h3>
-                  <div className="hidden sm:flex items-center gap-2 shrink-0">
-                    <EmploymentBadge />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
+                      {job.title}
+                    </h3>
+                    <div>
+                      <span
+                        role="link"
+                        tabIndex={0}
+                        onClick={(e) => navigateToProfile(e)}
+                        onKeyDown={(e) => navigateToProfile(e)}
+                        className="text-primary text-sm hover:underline cursor-pointer"
+                      >
+                        {postedByName}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w/full sm:w-auto">
+                    <ApplyButton />
                   </div>
                 </div>
-                <div className="mt-0.5">
-                  <span
-                    role="link"
-                    tabIndex={0}
-                    onClick={(e) => navigateToProfile(e)}
-                    onKeyDown={(e) => navigateToProfile(e)}
-                    className="text-primary text-sm hover:underline cursor-pointer"
-                  >
-                    {postedByName}
-                  </span>
+
+                <div className="mt-2 sm:mt-3">
+                  <div
+                    className="text-gray-700 text-sm sm:text-[15px] leading-relaxed prose prose-sm max-w-none text-start list-none line-clamp-2 md:line-clamp-3 lg:line-clamp-3"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(job.description),
+                    }}
+                  />
                 </div>
-              </div>
-            </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-              <ApplyButton />
-              <div className="sm:hidden">
-                <EmploymentBadge />
-              </div>
-            </div>
+                <div className="speace-y-2 mt-2 sm:mt-3">
+                  <div className="">
+                    <div className="">{renderFitBadge()}</div>
+                  </div>
+                  <div className="mt-4">{renderFitDetailsPanel()}</div>
+                </div>
 
-            <div
-              className="prose prose-sm max-w-none text-gray-700 line-clamp-3 sm:line-clamp-2 list-item list-none"
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(job.description),
-              }}
-            />
+                <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
+                  <div className="flex flex-wrap gap-2 sm:gap-3">
+                    <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                      <MapPin className="h-4 w-4 mr-1" aria-hidden />
+                      <span className="truncate">{job.location}</span>
+                    </div>
+                    <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
+                      {job.employement_Type || "Not Specified"}
+                    </div>
 
-            <div className="flex flex-wrap gap-2 sm:gap-3">
-              {renderFitBadge()}
-              {renderApplicantBadge()}
-            </div>
-            {renderFitDetailsPanel()}
+                    {job.location_Type && (
+                      <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                        <span className="truncate">
+                          {job.location_Type
+                            ? job.location_Type.charAt(0).toUpperCase() +
+                              job.location_Type.slice(1)
+                            : ""}
+                        </span>
+                      </div>
+                    )}
 
-            <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
-              <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                <span
-                  role="link"
-                  tabIndex={0}
-                  onClick={(e) => navigateToProfile(e)}
-                  onKeyDown={(e) => navigateToProfile(e)}
-                  className="text-[#707070] cursor-pointer"
-                >
-                  {postedByName}
-                </span>
-              </div>
-              <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                <span className="truncate">{job.salaryRange}</span>
-              </div>
-              <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                <MapPin className="h-4 w-4 mr-1" aria-hidden />
-                <span className="truncate">{job.location}</span>
+                    <div>{renderApplicantBadge()}</div>
+                  </div>
+
+                  <div className="text-[#059c05] font-semibold">
+                    {formatDate(job.createdAt)}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-    </>
-  );
-}
-
-  // ===== LIST VARIANT =====
-  return (
-    <>
-    <Card
-      role="link"
-      aria-label={`${job.title} — ${postedByName}`}
-      tabIndex={0}
-      className={clsx(
-        "hover:shadow-md transition-shadow cursor-pointer",
-        "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
-        className
-      )}
-      onClick={(e) => activateCard(e)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          e.stopPropagation();
-          activateCard(e);
-        }
-      }}
-    >
-      <CardContent className="p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <CompanyAvatar />
-
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
-                    {job.title}
-                  </h3>
-                  <div>
-                    <span
-                      role="link"
-                      tabIndex={0}
-                      onClick={(e) => navigateToProfile(e)}
-                      onKeyDown={(e) => navigateToProfile(e)}
-                      className="text-primary text-sm hover:underline cursor-pointer"
-                    >
-                      {postedByName}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w/full sm:w-auto">
-                  <ApplyButton />
-                </div>
-              </div>
-
-              <div className="mt-2 sm:mt-3">
-                <div
-                  className="text-gray-700 text-sm sm:text-[15px] leading-relaxed line-clamp-3 sm:line-clamp-2 prose prose-sm max-w-none text-start list-item list-none"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(job.description),
-                  }}
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2 sm:gap-3">
-                {renderFitBadge()}
-                {renderApplicantBadge()}
-              </div>
-              {renderFitDetailsPanel()}
-
-              <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
-                <div className="flex flex-wrap gap-2 sm:gap-3">
-                  <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                    <MapPin className="h-4 w-4 mr-1" aria-hidden />
-                    <span className="truncate">{job.location}</span>
-                  </div>
-                  <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
-                    {job.employement_Type || "Not Specified"}
-                  </div>
-
-                  {job.location_Type && (
-                    <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                      <span className="truncate">
-                        {job.location_Type
-                          ? job.location_Type.charAt(0).toUpperCase() +
-                            job.location_Type.slice(1)
-                          : ""}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="text-[#059c05] font-semibold">
-                  {formatDate(job.createdAt)}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        </CardContent>
-    </Card>
     </>
   );
 }

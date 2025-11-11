@@ -708,7 +708,7 @@ export function SiteHeader() {
 
                   {/* Mobile-only search */}
                   <div className="mb-6 md:hidden px-4">
-                    <GlobalSearch />
+                    <GlobalSearch onResultSelect={() => setSheetOpen(false)} />
                   </div>
 
                   {/* Scrollable content area */}

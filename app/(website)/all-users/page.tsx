@@ -22,6 +22,7 @@ interface SearchUser {
   phoneNum: string | null;
   address: string | null;
   position?: string | null;
+  slug: string;
   avatar?: {
     url?: string | null;
   } | null;
@@ -194,7 +195,7 @@ function AllUsersContent() {
   const handleUserClick = (user?: SearchUser) => {
     if (!user) return;
     const role = user.role ?? "candidate";
-    const id = user._id;
+    const id = user.slug;
     const profileUrl =
       role === "company"
         ? `/cmp/${id}`

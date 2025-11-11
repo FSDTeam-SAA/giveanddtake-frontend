@@ -682,7 +682,7 @@ export default function RecruiterDashboard() {
             </div>
           ) : recruiterAccountError ? (
             <div className="text-center text-red-500">
-              Error: {recruiterAccountError.message}
+              Please complete your profile to access the dashboard.
               <Button
                 variant="outline"
                 onClick={() =>

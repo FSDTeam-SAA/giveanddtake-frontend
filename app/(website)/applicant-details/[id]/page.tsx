@@ -562,7 +562,7 @@ export default function ApplicantDetailsPage() {
 
         {elevatorPitch && elevatorPitch.length > 0 && (
           <div className="rounded-lg py-6 bg-gray-50">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">
+            <h2 className="text-xl md:text-center font-semibold mb-4 text-gray-900">
               Elevator Video Pitch©
             </h2>
             <VideoPlayer

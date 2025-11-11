@@ -207,8 +207,8 @@ export default function Recruiters({ userId }: MydataProps) {
   // ---- Mutation (toggle follow) with optimistic update + toasts ----
   const toggleFollowMutation = useMutation({
     mutationFn: async () => {
-      if (!myId || !recruiterId || companyId) {
-        throw new Error("Missing IDs for follow action");
+      if (!myId) {
+        throw new Error("Please login to follow this recruiter.");
       }
       const nextIsFollowing = !isFollowing; // true => /follow, false => /unfollow
       const url = `${BASE_URL}/following/${
@@ -332,6 +332,8 @@ export default function Recruiters({ userId }: MydataProps) {
 
   const followersCount = followInfo?.count ?? 0;
   const followBusy = toggleFollowMutation.isPending;
+
+  console.log(followBusy)
   const disabled =
     !canFollow ||
     followBusy ||
@@ -434,7 +436,7 @@ export default function Recruiters({ userId }: MydataProps) {
               {userId ? (
                 <CandidateSharePopover
                   userId={userId}
-                  role="recruiters-profile"
+                  role="rp"
                   title={`${recruiterData.firstName} ${
                     recruiterData.lastName
                   } — ${recruiterData.title ?? "Candidate"}`}

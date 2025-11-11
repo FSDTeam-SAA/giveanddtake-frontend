@@ -166,7 +166,7 @@ export default function CompanyProfilePage() {
   const toggleFollowMutation = useMutation({
     mutationFn: async () => {
       if (!myId || !targetRecruiterId || !targetCompanyId) {
-        throw new Error("Missing IDs for follow action");
+        throw new Error("Please login to follow this company.");
       }
       const nextIsFollowing = !isFollowing; // true => /follow, false => /unfollow
       const url = `${BASE_URL}/following/${
@@ -306,13 +306,6 @@ export default function CompanyProfilePage() {
 
   const followersCount = followInfo?.count ?? 0;
   const followBusy = toggleFollowMutation.isPending;
-  const disabled =
-    !myId ||
-    !targetRecruiterId ||
-    !targetCompanyId ||
-    followBusy ||
-    followInfoLoading ||
-    !canFollow;
 
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
@@ -380,7 +373,6 @@ export default function CompanyProfilePage() {
                   <div className="flex items-center gap-3">
                     <Button
                       onClick={() => toggleFollowMutation.mutate()}
-                      disabled={disabled}
                       className={`${
                         isFollowing
                           ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
