@@ -62,7 +62,12 @@ type LocalPlan = {
 /* --------------------------- Utilities --------------------------- */
 
 const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLowerCase()
-const isFreeTitle = (name: string) => normalizeTitle(name) === "free of charge"
+// legacy helper (kept if needed elsewhere); logic now uses price==0 rather than title
+const isFreeTitle = (name: string) => normalizeTitle(name) === "basic plan"
+
+// Detect a free plan by price, not by title
+const isZeroPriced = (p: LocalPlan) =>
+  (p.monthlyAmount ?? p.annualAmount ?? Number.POSITIVE_INFINITY) === 0
 
 /* --------------------------- Data Fetch -------------------------- */
 
@@ -100,7 +105,7 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
       annualAmount,
       monthlyPriceLabel: monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
       annualPriceLabel: annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
-      features: base.features.map((text) => ({ text })),
+      features: (base.features || []).map((text) => ({ text })),
       buttonText: `Subscribe to ${title.split(" ")[0].charAt(0).toUpperCase() + title.split(" ")[0].slice(1)}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
@@ -181,6 +186,9 @@ export default function PricingList() {
   /* -------------------- Plan selection --------------------- */
 
   const handlePlanSelect = (plan: LocalPlan) => {
+    // If the user hasn't paid (isValid === false), the zero-priced plan is "Current" -> block selection.
+    if (userIsValid === false && isZeroPriced(plan)) return
+
     const sameTitle = isSameTitle(plan.name)
     const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null
     const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null
@@ -216,6 +224,15 @@ export default function PricingList() {
     setShowPlanOptions(false)
   }
 
+  /* -------------------- Derived for banner ------------------------ */
+
+  // find the $0 plan from the grouped list
+  const freePlan = useMemo(
+    () => pricingPlans.find((p) => isZeroPriced(p)) ?? null,
+    [pricingPlans]
+  )
+  const showFreeBanner = userIsValid === false && !!freePlan
+
   /* ----------------------------- UI ------------------------------ */
 
   if (isLoading)
@@ -242,29 +259,34 @@ export default function PricingList() {
         <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
       </div>
 
-      {currentPlanMeta.titleNorm && (
-        <div className="mx-auto mb-8 w-full max-w-7xl rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-          You're currently on our <strong>{currentPlanMeta.titleNorm}</strong>
-          {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
-        </div>
-      )}
+      {/* Banner logic */}
+   
 
       <div className="flex items-center justify-center">
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pricingPlans.map((plan, index) => {
             const cardIsCurrentByTitle = isSameTitle(plan.name)
-            const isFree = isFreeTitle(plan.name)
+            // For display-only places, you can still use title if helpful
+            const isFreeByTitle = isFreeTitle(plan.name)
+            const zeroPriced = isZeroPriced(plan)
 
-            // If user has no plan, mark "Free of Charge" as current by default
-            const freeIsDefaultCurrent = !currentPlanMeta.titleNorm && isFree
+            // If user has no plan info, mark the $0 plan as default current
+            const freeIsDefaultCurrent = !currentPlanMeta.titleNorm && zeroPriced
+
+            // If user isn't valid (hasn't paid), force $0 plan as current
+            const forcedFreeCurrent = userIsValid === false && zeroPriced
 
             const isCurrent =
+              forcedFreeCurrent ||
               cardIsCurrentByTitle ||
               currentPlanId === plan.planId ||
               freeIsDefaultCurrent
 
             return (
-              <Card key={index} className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden">
+              <Card
+                key={index}
+                className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden"
+              >
                 <CardHeader className="p-6 pb-0">
                   <CardTitle className="text-base font-medium text-[#2B7FD0]">
                     {plan.name.charAt(0).toUpperCase() + plan.name.slice(1)}
@@ -275,8 +297,8 @@ export default function PricingList() {
                     )}
                   </CardTitle>
 
-                  {/* Hide price labels if this is the "Free of Charge" plan */}
-                  {!isFree && (
+                  {/* Hide price labels for the $0 plan */}
+                  {!zeroPriced && (
                     <div className="mt-2">
                       <div className="flex items-center gap-2 text-[18px] flex-wrap">
                         {plan.monthlyPriceLabel && (
@@ -332,7 +354,9 @@ export default function PricingList() {
       {showPlanOptions && selectedPlan && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 w-[90%] max-w-md">
-            <h2 className="text-lg font-semibold mb-4 text-center text-gray-800">Choose your subscription type</h2>
+            <h2 className="text-lg font-semibold mb-4 text-center text-gray-800">
+              Choose your subscription type
+            </h2>
             <div className="flex flex-col gap-3">
               {selectedPlan.monthlyAmount != null && (
                 <Button

@@ -59,7 +59,8 @@ type LocalPlan = {
 
 /* --------------------------- Utilities --------------------------- */
 
-const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim();
+const normalizeTitle = (t: string) =>
+  (t || "").replace(/\s+/g, " ").trim().toLowerCase();
 
 /* --------------------------- Data Fetch -------------------------- */
 
@@ -112,8 +113,8 @@ const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
         annualAmount != null
           ? `$${annualAmount.toFixed(2)} per annum`
           : undefined,
-      features: base.features.map((text) => ({ text })),
-      buttonText: `Subscribe to ${title.toLowerCase().split(" ")[0]}`,
+      features: (base.features ?? []).map((text) => ({ text })),
+      buttonText: `Subscribe to ${title.split(" ")[0]}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
@@ -143,7 +144,7 @@ export default function PricingPage() {
   }>({ titleNorm: null, valid: null });
 
   const isSameTitle = (planName: string) =>
-    currentPlanMeta.titleNorm &&
+    !!currentPlanMeta.titleNorm &&
     normalizeTitle(planName) === currentPlanMeta.titleNorm;
 
   const {
@@ -224,7 +225,6 @@ export default function PricingPage() {
 
         const result = await response.json();
 
-        // ✅ NEW: wire up meta + id used by your modal disable logic
         const apiPlan = result?.data?.plan;
         const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null;
 
@@ -311,7 +311,10 @@ export default function PricingPage() {
                   <Button
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(true)}
-                    disabled={!!isSameTitle(selectedPlan.name) && currentPlanMeta.valid === "monthly"}
+                    disabled={
+                      !!isSameTitle(selectedPlan.name) &&
+                      currentPlanMeta.valid === "monthly"
+                    }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Monthly: {selectedPlan.monthlyPriceLabel}</span>
@@ -329,7 +332,10 @@ export default function PricingPage() {
                   <Button
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(false)}
-                    disabled={!!isSameTitle(selectedPlan.name) && currentPlanMeta.valid === "yearly"}
+                    disabled={
+                      !!isSameTitle(selectedPlan.name) &&
+                      currentPlanMeta.valid === "yearly"
+                    }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Annual: {selectedPlan.annualPriceLabel}</span>
@@ -356,7 +362,7 @@ export default function PricingPage() {
         )}
 
         {/* Pricing Cards */}
-        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 py-4">
+        <div className="grid w-full grid-cols-1 gap-6 py-4 sm:grid-cols-2 lg:grid-cols-3">
           {pricingPlans.map((plan, index) => {
             const cardIsCurrentByTitle = isSameTitle(plan.name);
             const isCurrent =
@@ -366,11 +372,11 @@ export default function PricingPage() {
               <Card
                 key={index}
                 className={cn(
-                  "flex flex-col justify-between overflow-hidden border-none rounded-lg shadow-sm"
+                  "flex flex-col justify-between overflow-hidden rounded-lg border-none shadow-sm"
                 )}
               >
                 <CardHeader className="space-y-2 p-6 pb-0">
-                  <CardTitle className="font-medium text-base text-[#2B7FD0]">
+                  <CardTitle className="text-base font-medium text-[#2B7FD0]">
                     {plan.name.toUpperCase()}
                     {isCurrent && (
                       <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
@@ -381,7 +387,7 @@ export default function PricingPage() {
 
                   {/* Price row with responsive delimiter and clean spacing */}
                   <div className="mt-2">
-                    <div className="flex items-center gap-2 text-[18px] flex-wrap">
+                    <div className="flex flex-wrap items-center gap-2 text-[18px]">
                       {plan.monthlyPriceLabel && (
                         <p className="font-bold text-[#282828]">
                           {plan.monthlyPriceLabel}
@@ -409,7 +415,7 @@ export default function PricingPage() {
                 </CardHeader>
 
                 <CardContent className="flex-grow space-y-4 p-6 pt-4">
-                  <h3 className="font-medium text-base text-[#8593A3]">
+                  <h3 className="text-base font-medium text-[#8593A3]">
                     What you will get
                   </h3>
                   <ul className="space-y-2 text-[#343434]">
@@ -418,7 +424,7 @@ export default function PricingPage() {
                         <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
                           <Check className="h-5 w-5 flex-shrink-0 text-white" />
                         </div>
-                        <span className="text-base text-[#343434] font-medium">
+                        <span className="text-base font-medium text-[#343434]">
                           {feature.text}
                         </span>
                       </li>
@@ -431,7 +437,7 @@ export default function PricingPage() {
                     className="h-[58px] w-full rounded-[80px] text-lg font-semibold border-2 border-[#2B7FD0] bg-transparent text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     variant="outline"
                     onClick={() => handlePlanSelect(plan)}
-                    disabled={!!isCurrent}
+                    disabled={isCurrent}
                   >
                     {isCurrent ? "Current Plan" : plan.buttonText}
                   </Button>

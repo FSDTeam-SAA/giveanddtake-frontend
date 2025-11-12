@@ -262,7 +262,7 @@ function AllUsersContent() {
                   placeholder="Search users..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full sm:w-64"
+                  className="pl-10 w-full sm:w-64 text-[16px] leading-5"
                   aria-label="Search users"
                 />
               </div>

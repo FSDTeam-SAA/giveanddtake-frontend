@@ -212,20 +212,28 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
           aria-hidden
           className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
         />
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Search people, companies..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            // open dropdown as soon as user types something (helps show "Searching..." / "No results")
-            if (e.target.value.trim().length > 0) setIsOpen(true);
-          }}
-          onFocus={() => query.trim().length > 0 && setIsOpen(true)}
-          aria-label="Global search"
-          className="w-full pl-10 pr-9 py-2 border border-gray-200 rounded-full bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent transition-all duration-200 text-sm"
-        />
+      <input
+  ref={inputRef}
+  type="text"
+  placeholder="Search people, companies..."
+  value={query}
+  onChange={(e) => {
+    setQuery(e.target.value);
+    if (e.target.value.trim().length > 0) setIsOpen(true);
+  }}
+  onFocus={() => query.trim().length > 0 && setIsOpen(true)}
+  aria-label="Global search"
+  className="
+    w-full pl-10 pr-9 py-2 
+    border border-gray-200 rounded-full bg-gray-50
+    focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent
+    transition-all duration-200
+    text-[16px]          /* Always 16px to prevent Safari zoom */
+    leading-5
+  "
+/>
+
+
         {isLoading && (
           <div
             className="absolute right-3 top-1/2 -translate-y-1/2"
