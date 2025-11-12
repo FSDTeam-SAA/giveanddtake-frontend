@@ -509,7 +509,7 @@ export function SiteHeader() {
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
                   <Link href="/faq" className="w-full px-2 py-1.5 block">
-                    FAQ
+                    FAQs
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -843,7 +843,7 @@ export function SiteHeader() {
                                 : "hover:text-[#2B7FD0]"
                             }`}
                           >
-                            FAQ
+                            FAQs
                           </Link>
                           <Link
                             href="/contact-us"

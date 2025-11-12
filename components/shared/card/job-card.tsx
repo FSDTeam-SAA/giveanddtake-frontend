@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Users, Sparkles } from "lucide-react";
-import DOMPurify from "dompurify";
 import Image from "next/image";
 import { useSession, signIn } from "next-auth/react";
 import { toast } from "sonner";
@@ -12,8 +11,8 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-
-import { getMyResume } from "@/lib/api-service"; // <-- adjust path as needed
+import { getMyResume } from "@/lib/api-service";
+import { DescriptionClamp } from "@/components/DescriptionClamp";
 
 interface Recruiter {
   _id: string;
@@ -48,7 +47,6 @@ interface Job {
   applicantCount?: number;
   counter?: number;
 }
-
 interface JobFitInsight {
   score: number;
   verdictCode: string;
@@ -120,6 +118,7 @@ export default function JobCard({
   const canSeeApply = isUnauthed || isCandidate;
 
   const applicationLink = `/job-application?id=${job._id}`;
+  const detailsLink = `/alljobs/${job._id}`;
 
   const derivedApplicantCount =
     typeof applicantCount === "number"
@@ -138,42 +137,27 @@ export default function JobCard({
     FIT_THEMES.PARTIAL_MATCH ??
     FIT_THEMES.STRONG_MATCH;
 
-  // ===== Resume query (only if role is candidate) =====
-  // NOTE: We need elevatorPitch presence (array length > 0) to allow applying.
+  // ===== Resume (only for candidates) =====
   const { data: myresume, isLoading: resumeLoading } = useQuery({
     queryKey: ["my-resume", userId],
     queryFn: getMyResume,
-    select: (res) => res?.data, // expects { resume, experiences, education, awardsAndHonors, elevatorPitch }
+    select: (res) => res?.data,
     enabled: isCandidate && !!userId,
     staleTime: 60_000,
   });
 
-  // ===== Card activation: clicks or keyboard (Enter / Space) navigate to job details =====
-  const activateCard = (e?: MouseEvent | KeyboardEvent) => {
-    if (e && "key" in e) {
-      const key = (e as KeyboardEvent).key;
-      if (key !== "Enter" && key !== " ") return;
-      (e as KeyboardEvent).preventDefault();
-      (e as KeyboardEvent).stopPropagation();
-    }
-    router.push(`/alljobs/${job._id}`);
-  };
-
   const TOAST_DURATION_MS = 2200;
-  const REDIRECT_DELAY_MS = 2000; // redirect after 2 sec
+  const REDIRECT_DELAY_MS = 2000;
 
-  // ===== Apply handlers =====
+  // ===== Apply =====
   const handleUnauthedApply = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     if (isRedirecting) return;
-
     setIsRedirecting(true);
-
     toast("Please log in as a candidate to apply", {
       description: "You’ll now be redirected to sign in.",
       duration: TOAST_DURATION_MS,
     });
-
     setTimeout(() => {
       void signIn(undefined, { callbackUrl: applicationLink });
     }, 1800);
@@ -183,27 +167,23 @@ export default function JobCard({
     e.stopPropagation();
     if (resumeLoading || isRedirecting) return;
 
-    // ——— EVP GATING LOGIC ———
     const hasEVP =
       Array.isArray(myresume?.elevatorPitch) &&
       myresume!.elevatorPitch.length > 0;
 
     if (!hasEVP) {
-      // Block apply → tell user and redirect to EVP page
       setIsRedirecting(true);
       toast("Elevator Pitch Required", {
         description:
           "You need to have an Elevator Pitch video to apply for jobs. Redirecting you to set it up.",
         duration: TOAST_DURATION_MS,
       });
-
       setTimeout(() => {
         router.push("/elevator-video-pitch");
       }, REDIRECT_DELAY_MS);
       return;
     }
 
-    // Has EVP → proceed to application
     router.push(applicationLink);
   };
 
@@ -225,8 +205,8 @@ export default function JobCard({
     });
   };
 
-  // ===== postedBy data =====
-  let postedByName = "Unknown";
+  // ===== postedBy =====
+  let postedByName = "company";
   let postedByLogo = "/default-logo.png";
   let postedById = "#";
   let postedByType: "company" | "recruiter" = "company";
@@ -244,13 +224,19 @@ export default function JobCard({
   }
 
   const CompanyAvatar = () => (
-    <div className="relative shrink-0">
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        router.push(detailsLink);
+      }}
+      className="relative shrink-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/60"
+      aria-label="Open job details"
+    >
       {postedByLogo !== "/default-logo.png" ? (
         <Image
           src={postedByLogo}
-          alt={
-            postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"
-          }
+          alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
           width={56}
           height={56}
           className="h-10 w-10 md:h-12 md:w-12 rounded-lg object-cover"
@@ -261,98 +247,82 @@ export default function JobCard({
           {getInitials(postedByName)}
         </div>
       )}
-    </div>
+    </button>
   );
 
-  const navigateToProfile = (e: MouseEvent | KeyboardEvent) => {
-    // Stop bubbling from card activation
-    // @ts-ignore - TS narrows imperfectly across union
+  const navigateToPosterProfile = (e: MouseEvent | KeyboardEvent) => {
+    // @ts-ignore
     e.stopPropagation?.();
-
     if ("key" in e) {
       const key = (e as KeyboardEvent).key;
       if (key !== "Enter" && key !== " ") return;
     }
-
     const profilePath =
       postedByType === "recruiter" ? `/rp/${postedById}` : `/cmp/${postedById}`;
-
     router.push(profilePath);
   };
 
-  const handleFetchJobFit = async () => {
-    if (jobFit || jobFitLoading) return;
+  // ===== Job fit =====
+  const analyzeAndOpen = () => {
     if (!isCandidate) {
       setJobFitError("Profile fit is available for candidates only.");
       setFitExpanded(true);
       return;
     }
-    if (!token) {
-      setJobFitError("Sign in to check your profile fit for this role.");
-      setFitExpanded(true);
-      return;
-    }
-    try {
-      setJobFitLoading(true);
-      setJobFitError(null);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${job._id}/ai-fit`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Unable to fetch fit insight");
-      }
-      const payload = await response.json();
-      if (payload?.data) {
-        setJobFit(payload.data as JobFitInsight);
-      } else {
-        setJobFitError("No insight available for this position right now.");
-      }
-    } catch (error: any) {
-      console.warn("[job-fit] fetch failed", error);
-      setJobFitError(
-        error?.message ?? "Something went wrong while checking profile fit."
-      );
-    } finally {
-      setJobFitLoading(false);
-    }
-  };
-
-  const handleFitBadgeClick = () => {
     if (!jobFit && !jobFitLoading) {
-      void handleFetchJobFit();
+      void (async () => {
+        try {
+          if (!token) {
+            setJobFitError("Sign in to check your profile fit for this role.");
+            setFitExpanded(true);
+            return;
+          }
+          setJobFitLoading(true);
+          setJobFitError(null);
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${job._id}/ai-fit`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (!res.ok) throw new Error("Unable to fetch fit insight");
+          const payload = await res.json();
+          if (payload?.data) setJobFit(payload.data as JobFitInsight);
+          else setJobFitError("No insight available for this position right now.");
+        } catch (err: any) {
+          setJobFitError(err?.message ?? "Something went wrong while checking profile fit.");
+        } finally {
+          setJobFitLoading(false);
+        }
+      })();
     }
-    setFitExpanded((prev) => !prev);
+    setFitExpanded(true);
   };
 
   const renderFitBadge = () => {
     if (!isCandidate) return null;
-    if (jobFitLoading) {
-      return (
-        <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1 text-sm text-slate-500 animate-pulse">
-          <Sparkles className="h-4 w-4 text-slate-400" />
-          Calculating your profile fit...
-        </div>
-      );
-    }
+    const theme = fitTheme;
+
+    // Entire bar is clickable/keyboard-activatable
     return (
       <button
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          handleFitBadgeClick();
+          analyzeAndOpen();
         }}
-        className={`flex items-center w-full gap-2 rounded-lg px-3 py-1 text-sm font-medium transition ${
-          jobFit
-            ? `${fitTheme.bg} ${fitTheme.text}`
-            : "bg-slate-100 text-slate-700"
-        } hover:opacity-90`}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            analyzeAndOpen();
+          }
+        }}
+        aria-expanded={fitExpanded}
+        className={clsx(
+          "w-full text-left rounded-lg px-3 py-2 text-sm font-medium transition flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-primary/30",
+          jobFit ? `${theme.bg} ${theme.text}` : "bg-slate-100 text-slate-700"
+        )}
       >
-        <Sparkles className={`h-4 w-4 ${fitTheme.accent}`} />
+        <Sparkles className={clsx("h-4 w-4", theme.accent)} />
         <div className="flex flex-col">
           <span className="text-[11px] uppercase tracking-wide text-gray-500">
             Profile fit
@@ -360,21 +330,34 @@ export default function JobCard({
           <span className="text-sm font-semibold">
             {jobFit
               ? jobFit.verdictMessage
+              : jobFitLoading
+              ? "Checking…"
               : jobFitError
               ? "Fit unavailable"
               : "Check your fit"}
           </span>
         </div>
+
         {jobFit && (
           <span
-            className={`ml-auto rounded-full px-2 py-0.5 text-xs font-semibold ${fitTheme.chip}`}
+            className={clsx(
+              "ml-auto rounded-full px-2 py-0.5 text-xs font-semibold",
+              theme.chip
+            )}
           >
             {Math.round(jobFit.score)}%
           </span>
         )}
-        {!jobFit && !jobFitLoading && (
-          <span className="ml-auto text-xs text-primary underline">
-            View details
+
+        {/* Visual Analyze chip (clicking anywhere still works) */}
+        {!jobFit && (
+          <span
+            className={clsx(
+              "ml-auto text-xs sm:text-sm rounded-md border px-2 py-1",
+              jobFitLoading ? "opacity-60" : "border-slate-300 text-slate-700"
+            )}
+          >
+            {jobFitLoading ? "Analyzing…" : "Analyze"}
           </span>
         )}
       </button>
@@ -384,7 +367,7 @@ export default function JobCard({
   const renderApplicantBadge = () => {
     if (typeof derivedApplicantCount !== "number") return null;
     return (
-      <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1 text-sm text-slate-700">
+      <div className="flex items-center gap-2 rounded-lg bg-[#E9ECFC] px-2.5 py-1.5 text-sm text-slate-700">
         <Users className="h-4 w-4 text-slate-500" />
         <span className="font-medium">{applicantLabel}</span>
       </div>
@@ -400,7 +383,7 @@ export default function JobCard({
       <p className="text-sm font-semibold text-gray-700">{title}</p>
       {items.length ? (
         <div className="flex flex-wrap gap-2">
-          {items.slice(0, 12).map((skill) => (
+          {items.slice(0, 14).map((skill) => (
             <span
               key={`${title}-${skill}`}
               className="text-xs rounded-full bg-slate-100 px-3 py-1 text-slate-700"
@@ -435,7 +418,7 @@ export default function JobCard({
             )}
             {jobFit && !jobFitLoading && (
               <div className="space-y-5">
-                {/* Score Section */}
+                {/* Score */}
                 <div className="flex flex-wrap items-center justify-center gap-4 bg-primary/5 rounded-lg py-3 px-4 shadow-sm">
                   <motion.div
                     className="text-center"
@@ -467,32 +450,30 @@ export default function JobCard({
                   </div>
                 )}
 
-                {/* Skill Sections */}
+                {/* Skills */}
                 {renderSkillPills(
                   "Matched skills",
                   jobFit.matchedSkills ?? [],
                   "No overlapping skills detected yet."
                 )}
-
                 {renderSkillPills(
                   "Suggested skills to add",
                   jobFit.missingSkills ?? [],
                   "Great news! You already cover all highlighted requirements."
                 )}
 
-                {/* Action Footer */}
+                {/* Footer */}
                 <div className="pt-3 border-t border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-muted-foreground">
                     Ready to continue? You can apply right from here too.
                   </p>
-
                   <div className="flex gap-2 self-start sm:self-auto">
                     <Button
                       variant="outline"
                       className="text-sm hover:bg-slate-50"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleFitBadgeClick();
+                        setFitExpanded(false);
                       }}
                     >
                       Hide details
@@ -510,8 +491,6 @@ export default function JobCard({
 
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
-
-    // Unauthenticated users → sign in flow
     if (isUnauthed) {
       return (
         <Button
@@ -519,14 +498,12 @@ export default function JobCard({
           variant="outline"
           onClick={handleUnauthedApply}
           disabled={isRedirecting}
-          className="w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
+          className="text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg"
         >
           {isRedirecting ? "Redirecting…" : "Apply"}
         </Button>
       );
     }
-
-    // Candidate (authenticated)
     return (
       <button
         type="button"
@@ -539,7 +516,7 @@ export default function JobCard({
         }}
         disabled={resumeLoading || isRedirecting}
         className={clsx(
-          "w-full sm:w-auto text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent",
+          "text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent",
           (resumeLoading || isRedirecting) && "opacity-60 cursor-not-allowed"
         )}
       >
@@ -556,208 +533,120 @@ export default function JobCard({
   };
 
   const EmploymentBadge = () => (
-    <span className="inline-flex items-center justify-center rounded-lg border border-transparent bg-primary/90 px-3 py-1 text-xs sm:text-sm text-white shadow-sm ring-1 ring-primary/30">
-      {job.employement_Type || "Not Specified"}
-    </span>
+  <span className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg text-sm text-gray-700 capitalize">
+    {job.employement_Type || "Not Specified"}
+  </span>
+);
+
+
+  // ===== header with Apply on the right; on mobile, View details goes under Apply =====
+  const HeaderRow = () => (
+    <div className="flex items-start gap-3 sm:gap-4">
+      <CompanyAvatar />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => router.push(detailsLink)}
+            className="text-left"
+          >
+            <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 hover:underline">
+              {job.title}
+            </h3>
+            <span
+              role="link"
+              tabIndex={0}
+              onClick={(e) => navigateToPosterProfile(e)}
+              onKeyDown={(e) => navigateToPosterProfile(e)}
+              className="text-primary text-sm hover:underline cursor-pointer"
+            >
+              {postedByName}
+            </span>
+          </button>
+
+          {/* Right controls: stack on mobile (Apply top, View details below), inline on sm+ */}
+          <div className="flex flex-col sm:flex-row-reverse sm:items-center gap-2 shrink-0">
+
+            <ApplyButton />
+            <button
+              type="button"
+              onClick={() => router.push(detailsLink)}
+              className="text-primary text-sm font-medium underline underline-offset-2 hover:opacity-90 text-right sm:text-left"
+            >
+              View details
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
-  // ===== SUGGESTED VARIANT =====
+  const Body = () => (
+    <>
+      {/* Description */}
+      <DescriptionClamp html={job.description} maxLines={4} className="mt-2" />
+
+      {/* Profile fit bar + details */}
+      <div className="space-y-2 mt-3">
+        {renderFitBadge()}
+        <div className="mt-2">{renderFitDetailsPanel()}</div>
+      </div>
+
+      {/* Chips row */}
+      <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700 mt-3">
+        <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+          <MapPin className="h-4 w-4 mr-1" aria-hidden />
+          <span className="truncate">{job.location}</span>
+        </div>
+        <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+          <span className="truncate">{job.salaryRange}</span>
+        </div>
+        <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
+          {job.location_Type || "Onsite"}
+        </div>
+        <EmploymentBadge />
+        <div>{renderApplicantBadge()}</div>
+      </div>
+
+      <div className="text-[#059c05] font-semibold mt-3">
+        {formatDate(job.createdAt)}
+      </div>
+    </>
+  );
+
   if (variant === "suggested") {
     return (
-      <>
-        <Card
-          role="link"
-          aria-label={`${job.title} — ${postedByName}`}
-          tabIndex={0}
-          className={clsx(
-            "hover:shadow-md transition-shadow cursor-pointer",
-            "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
-            className
-          )}
-          onClick={(e) => activateCard(e)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              e.stopPropagation();
-              activateCard(e);
-            }
-          }}
-        >
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex flex-col gap-3 sm:gap-4">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <CompanyAvatar />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
-                      {job.title}
-                    </h3>
-                    <div className="hidden sm:flex items-center gap-2 shrink-0">
-                      <EmploymentBadge />
-                    </div>
-                  </div>
-                  <div className="mt-0.5">
-                    <span
-                      role="link"
-                      tabIndex={0}
-                      onClick={(e) => navigateToProfile(e)}
-                      onKeyDown={(e) => navigateToProfile(e)}
-                      className="text-primary text-sm hover:underline cursor-pointer"
-                    >
-                      {postedByName}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end">
-                <ApplyButton />
-                <div className="sm:hidden">
-                  <EmploymentBadge />
-                </div>
-              </div>
-
-              <div
-                className="text-gray-700 text-sm sm:text-[15px] leading-relaxed prose prose-sm max-w-none text-start list-none line-clamp-2 md:line-clamp-3 lg:line-clamp-3"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(job.description),
-                }}
-              />
-
-              <div className="speace-y-2 mt-2 sm:mt-3">
-                <div className="">
-                  <div className="">{renderFitBadge()}</div>
-                </div>
-                <div className="mt-4">{renderFitDetailsPanel()}</div>
-              </div>
-
-              <div className="flex flex-wrap gap-2 sm:gap-3 text-sm text-gray-700">
-                <div className="bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                  <span
-                    role="link"
-                    tabIndex={0}
-                    onClick={(e) => navigateToProfile(e)}
-                    onKeyDown={(e) => navigateToProfile(e)}
-                    className="text-[#707070] cursor-pointer"
-                  >
-                    {postedByName}
-                  </span>
-                </div>
-                <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                  <span className="truncate">{job.salaryRange}</span>
-                </div>
-                <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                  <MapPin className="h-4 w-4 mr-1" aria-hidden />
-                  <span className="truncate">{job.location}</span>
-                </div>
-                <div>{renderApplicantBadge()}</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </>
-    );
-  }
-
-  // ===== LIST VARIANT =====
-  return (
-    <>
       <Card
-        role="link"
-        aria-label={`${job.title} — ${postedByName}`}
-        tabIndex={0}
         className={clsx(
-          "hover:shadow-md transition-shadow cursor-pointer",
+          "hover:shadow-md transition-shadow",
           "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
           className
         )}
-        onClick={(e) => activateCard(e)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            e.stopPropagation();
-            activateCard(e);
-          }
-        }}
       >
         <CardContent className="p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:gap-4">
-            <div className="lg:flex items-start gap-3 sm:gap-4">
-              <CompanyAvatar />
-
-              <div className="min-w-0 flex-1 mt-4 lg:mt-0">
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 truncate">
-                      {job.title}
-                    </h3>
-                    <div>
-                      <span
-                        role="link"
-                        tabIndex={0}
-                        onClick={(e) => navigateToProfile(e)}
-                        onKeyDown={(e) => navigateToProfile(e)}
-                        className="text-primary text-sm hover:underline cursor-pointer"
-                      >
-                        {postedByName}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-end w/full sm:w-auto">
-                    <ApplyButton />
-                  </div>
-                </div>
-
-                <div className="mt-2 sm:mt-3">
-                  <div
-                    className="text-gray-700 text-sm sm:text-[15px] leading-relaxed prose prose-sm max-w-none text-start list-none line-clamp-2 md:line-clamp-3 lg:line-clamp-3"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(job.description),
-                    }}
-                  />
-                </div>
-
-                <div className="speace-y-2 mt-2 sm:mt-3">
-                  <div className="">
-                    <div className="">{renderFitBadge()}</div>
-                  </div>
-                  <div className="mt-4">{renderFitDetailsPanel()}</div>
-                </div>
-
-                <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-2 sm:gap-4 text-sm text-gray-700">
-                  <div className="flex flex-wrap gap-2 sm:gap-3">
-                    <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                      <MapPin className="h-4 w-4 mr-1" aria-hidden />
-                      <span className="truncate">{job.location}</span>
-                    </div>
-                    <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
-                      {job.employement_Type || "Not Specified"}
-                    </div>
-
-                    {job.location_Type && (
-                      <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-                        <span className="truncate">
-                          {job.location_Type
-                            ? job.location_Type.charAt(0).toUpperCase() +
-                              job.location_Type.slice(1)
-                            : ""}
-                        </span>
-                      </div>
-                    )}
-
-                    <div>{renderApplicantBadge()}</div>
-                  </div>
-
-                  <div className="text-[#059c05] font-semibold">
-                    {formatDate(job.createdAt)}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <HeaderRow />
+            <Body />
           </div>
         </CardContent>
       </Card>
-    </>
+    );
+  }
+
+  return (
+    <Card
+      className={clsx(
+        "hover:shadow-md transition-shadow",
+        "[&_*:focus-visible]:outline-none [&_*:focus-visible]:ring-2 [&_*:focus-visible]:ring-primary/60",
+        className
+      )}
+    >
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <HeaderRow />
+          <Body />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
