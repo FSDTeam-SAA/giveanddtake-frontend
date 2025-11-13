@@ -42,6 +42,7 @@ interface ApiResponse {
 /** Local unified plan (merged monthly/yearly variants under one card) */
 type LocalPlan = {
   name: string;
+  titleKey: string;
   description?: string; // PAYG label
   // Display labels
   monthlyPriceLabel?: string;
@@ -63,6 +64,19 @@ type LocalPlan = {
 const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLowerCase();
 const toValid = (v?: string | null) =>
   (v || "").trim().toLowerCase() as "monthly" | "yearly" | "payasyougo" | string;
+
+const toDisplayName = (title: string) => {
+  const trimmed = (title || "").trim();
+  if (!trimmed) return "Plan";
+  const meaningful = trimmed.replace(/[^a-z]/gi, "");
+  const hasUpper = /[A-Z]/.test(meaningful);
+  if (hasUpper) return trimmed;
+  return trimmed
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 /* --------------------------- Data Fetch -------------------------- */
 
@@ -100,8 +114,11 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
   const out: LocalPlan[] = [];
   for (const [title, g] of map.entries()) {
     if (g.payg) {
+      const paygName = toDisplayName(g.payg.title ?? title);
+      const paygKey = normalizeTitle(paygName);
       out.push({
-        name: title,
+        name: paygName,
+        titleKey: paygKey,
         description: `$${g.payg.price.toFixed(2)} per Job Advert (30 Days Post)`,
         features: (g.payg.features ?? []).map((text) => ({ text })),
         buttonText: "Purchase",
@@ -115,9 +132,13 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
     const base = g.monthly ?? g.yearly!;
     const monthlyAmount = g.monthly?.price;
     const annualAmount = g.yearly?.price;
+    const baseTitle = g.monthly?.title ?? g.yearly?.title ?? title;
+    const displayName = toDisplayName(baseTitle);
+    const titleKey = normalizeTitle(displayName);
 
     out.push({
-      name: title,
+      name: displayName,
+      titleKey,
       monthlyAmount,
       annualAmount,
       monthlyPriceLabel:
@@ -125,7 +146,7 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
       annualPriceLabel:
         annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
       features: (base.features ?? []).map((text) => ({ text })),
-      buttonText: `Subscribe to ${title.split(" ")[0]}`,
+      buttonText: `Subscribe to ${displayName}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
@@ -160,9 +181,8 @@ export default function PricingPlans() {
     valid: "monthly" | "yearly" | "payasyougo" | null;
   }>({ titleNorm: null, valid: null });
 
-  const isSameTitle = (planName: string) =>
-    !!currentPlanMeta.titleNorm &&
-    normalizeTitle(planName) === currentPlanMeta.titleNorm;
+  const isSameTitle = (titleKey: string) =>
+    !!currentPlanMeta.titleNorm && titleKey === currentPlanMeta.titleNorm;
 
   const {
     data: apiPlans,
@@ -185,7 +205,7 @@ export default function PricingPlans() {
 
   const handlePlanSelect = (plan: LocalPlan) => {
     // If user already has this title and there is only one variant, do nothing
-    const sameTitle = isSameTitle(plan.name);
+    const sameTitle = isSameTitle(plan.titleKey || normalizeTitle(plan.name));
     const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null;
     const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null;
 
@@ -252,10 +272,10 @@ export default function PricingPlans() {
         const result = await response.json();
 
         // Banner (non-blocking)
-        setPlanBanner(result?.data?.plan ?? null);
-
-        // Meta + id for "current plan" logic
         const apiPlan = result?.data?.plan;
+        const bannerTitle = apiPlan?.title ? toDisplayName(apiPlan.title) : undefined;
+        setPlanBanner(apiPlan ? { title: bannerTitle, valid: apiPlan.valid } : null);
+
         const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null;
 
         // normalize valid → monthly | yearly | payasyougo | null
@@ -344,13 +364,13 @@ export default function PricingPlans() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(true)}
                     disabled={
-                      !!isSameTitle(selectedPlan.name) &&
+                      !!isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
                       currentPlanMeta.valid === "monthly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Monthly: {selectedPlan.monthlyPriceLabel}</span>
-                      {isSameTitle(selectedPlan.name) &&
+                      {isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
                         currentPlanMeta.valid === "monthly" && (
                           <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
                             Current
@@ -365,13 +385,13 @@ export default function PricingPlans() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(false)}
                     disabled={
-                      !!isSameTitle(selectedPlan.name) &&
+                      !!isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
                       currentPlanMeta.valid === "yearly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Annual: {selectedPlan.annualPriceLabel}</span>
-                      {isSameTitle(selectedPlan.name) &&
+                      {isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
                         currentPlanMeta.valid === "yearly" && (
                           <span className="ml-2 rounded-full bg:white/20 px-2 py-[2px] text-xs">
                             Current
@@ -396,7 +416,7 @@ export default function PricingPlans() {
         {/* Pricing Cards */}
         <div className="grid w-full max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {pricingPlans.map((plan, index) => {
-            const cardIsCurrentByTitle = isSameTitle(plan.name);
+            const cardIsCurrentByTitle = isSameTitle(plan.titleKey || normalizeTitle(plan.name));
             const isCurrent =
               currentPlanId === plan.planId || cardIsCurrentByTitle;
 

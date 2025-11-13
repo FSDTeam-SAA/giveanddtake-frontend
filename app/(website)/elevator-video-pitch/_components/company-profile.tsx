@@ -539,7 +539,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* Elevator Pitch */}
       <div className="lg:pb-12 pb-5">
         <div>
-          <h2 className="text-xl lg:text-4xl font-bold text-center my-10">
+          <h2 className="text-2xl lg:text-3xl font-semibold text-gray-900 text-left mb-6">
             Elevator Video Pitch©
           </h2>
         </div>

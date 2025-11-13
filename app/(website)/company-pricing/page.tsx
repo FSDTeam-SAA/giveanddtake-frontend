@@ -43,6 +43,7 @@ interface ApiResponse {
 /** Local unified plan (merged monthly/yearly variants under one card) */
 type LocalPlan = {
   name: string;
+  titleKey: string;
   // Display labels
   monthlyPriceLabel?: string;
   annualPriceLabel?: string;
@@ -61,6 +62,19 @@ type LocalPlan = {
 
 const normalizeTitle = (t: string) =>
   (t || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+const toDisplayName = (title: string) => {
+  const trimmed = (title || "").trim();
+  if (!trimmed) return "Plan";
+  const meaningful = trimmed.replace(/[^a-z]/gi, "");
+  const hasUpper = /[A-Z]/.test(meaningful);
+  if (hasUpper) return trimmed;
+  return trimmed
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 /* --------------------------- Data Fetch -------------------------- */
 
@@ -100,9 +114,13 @@ const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
     const base = g.monthly ?? g.yearly!;
     const monthlyAmount = g.monthly?.price;
     const annualAmount = g.yearly?.price;
+    const baseTitle = g.monthly?.title ?? g.yearly?.title ?? title;
+    const displayName = toDisplayName(baseTitle);
+    const titleKey = normalizeTitle(displayName);
 
     out.push({
-      name: title,
+      name: displayName,
+      titleKey,
       monthlyAmount,
       annualAmount,
       monthlyPriceLabel:
@@ -114,7 +132,7 @@ const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
           ? `$${annualAmount.toFixed(2)} per annum`
           : undefined,
       features: (base.features ?? []).map((text) => ({ text })),
-      buttonText: `Subscribe to ${title.split(" ")[0]}`,
+      buttonText: `Subscribe to ${displayName}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
@@ -143,9 +161,8 @@ export default function PricingPage() {
     valid: "monthly" | "yearly" | null;
   }>({ titleNorm: null, valid: null });
 
-  const isSameTitle = (planName: string) =>
-    !!currentPlanMeta.titleNorm &&
-    normalizeTitle(planName) === currentPlanMeta.titleNorm;
+  const isSameTitle = (titleKey: string) =>
+    !!currentPlanMeta.titleNorm && titleKey === currentPlanMeta.titleNorm;
 
   const {
     data: apiPlans,
@@ -158,6 +175,9 @@ export default function PricingPage() {
 
   // session for auth to /user/single
   const { data: session, status } = useSession();
+  const currentPlanLabel = currentPlanMeta.titleNorm
+    ? toDisplayName(currentPlanMeta.titleNorm)
+    : null;
 
   const pricingPlans = useMemo(
     () => (apiPlans ? groupCompanyPlans(apiPlans) : []),
@@ -168,7 +188,7 @@ export default function PricingPage() {
 
   const handlePlanSelect = (plan: LocalPlan) => {
     // If user already has this title and there is only one variant, do nothing
-    const sameTitle = isSameTitle(plan.name);
+    const sameTitle = isSameTitle(plan.titleKey);
     const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null;
     const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null;
     if (sameTitle && (onlyMonthly || onlyYearly)) return;
@@ -292,9 +312,9 @@ export default function PricingPage() {
         </div>
 
         {/* Current Plan Banner */}
-        {currentPlanMeta.titleNorm && (
+        {currentPlanLabel && (
           <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-            You're currently on our <strong>{currentPlanMeta.titleNorm}</strong> plan
+            You&apos;re currently on our <strong>{currentPlanLabel}</strong> plan
             {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
           </div>
         )}
@@ -312,13 +332,13 @@ export default function PricingPage() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(true)}
                     disabled={
-                      !!isSameTitle(selectedPlan.name) &&
+                      !!isSameTitle(selectedPlan.titleKey) &&
                       currentPlanMeta.valid === "monthly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Monthly: {selectedPlan.monthlyPriceLabel}</span>
-                      {isSameTitle(selectedPlan.name) &&
+                      {isSameTitle(selectedPlan.titleKey) &&
                         currentPlanMeta.valid === "monthly" && (
                           <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
                             Current
@@ -333,13 +353,13 @@ export default function PricingPage() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(false)}
                     disabled={
-                      !!isSameTitle(selectedPlan.name) &&
+                      !!isSameTitle(selectedPlan.titleKey) &&
                       currentPlanMeta.valid === "yearly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Annual: {selectedPlan.annualPriceLabel}</span>
-                      {isSameTitle(selectedPlan.name) &&
+                      {isSameTitle(selectedPlan.titleKey) &&
                         currentPlanMeta.valid === "yearly" && (
                           <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
                             Current
@@ -364,7 +384,7 @@ export default function PricingPage() {
         {/* Pricing Cards */}
         <div className="grid w-full grid-cols-1 gap-6 py-4 sm:grid-cols-2 lg:grid-cols-3">
           {pricingPlans.map((plan, index) => {
-            const cardIsCurrentByTitle = isSameTitle(plan.name);
+            const cardIsCurrentByTitle = isSameTitle(plan.titleKey);
             const isCurrent =
               currentPlanId === plan.planId || cardIsCurrentByTitle;
 
@@ -377,7 +397,7 @@ export default function PricingPage() {
               >
                 <CardHeader className="space-y-2 p-6 pb-0">
                   <CardTitle className="text-base font-medium text-[#2B7FD0]">
-                    {plan.name.toUpperCase()}
+                    {plan.name}
                     {isCurrent && (
                       <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
                         Current
