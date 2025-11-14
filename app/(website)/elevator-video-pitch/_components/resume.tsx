@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 import {
   MapPin,
@@ -126,7 +126,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
 
   const processingInfo = resume?.elevatorPitch?.[0]?.processing;
   const isProcessing = processingInfo?.state === "processing";
-
 
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
@@ -253,8 +252,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   <h2 className="text-xl font-bold text-gray-800">
                     {resume.resume.title
                       ? `${resume.resume.title
-                        .charAt(0)
-                        .toUpperCase()}${resume.resume.title.slice(1)} `
+                          .charAt(0)
+                          .toUpperCase()}${resume.resume.title.slice(1)} `
                       : ""}
                     {`${resume.resume.firstName
                       .charAt(0)
@@ -314,42 +313,42 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
             </div>
 
             {/* Elevator Pitch */}
-            <div className="lg:pb-12 pb-5">
+            <div className="lg:pb-12 pb-5 pt-6">
               <h2 className="text-2xl lg:text-3xl font-semibold text-gray-900 text-left mb-6">
                 Elevator Video Pitch©
               </h2>
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-sm md:text-lg lg:text-xl">Upload or view a short video introducing yourself.</CardTitle>
-                  {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button
-        variant="ghost"
-        size="icon"
-        title="Options"
-        className="bg-gray-100 hover:bg-gray-200"
-      >
-        <MoreHorizontal className="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
+                    <CardTitle className="text-sm md:text-lg lg:text-xl">
+                      Upload or view a short video introducing yourself.
+                    </CardTitle>
+                    {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Options"
+                            className="bg-gray-100 hover:bg-gray-200"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
 
-    <DropdownMenuContent align="end" className="">
-      <DropdownMenuItem
-        onClick={openDeleteModal}
-        disabled={deleteElevatorPitchMutation.isPending}
-        className="text-red-600 focus:text-red-700 cursor-pointer"
-      >
-        <Trash2 className="mr-2 h-4 w-4" />
-        Delete
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-)}
-
+                        <DropdownMenuContent align="end" className="">
+                          <DropdownMenuItem
+                            onClick={openDeleteModal}
+                            disabled={deleteElevatorPitchMutation.isPending}
+                            className="text-red-600 focus:text-red-700 cursor-pointer"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
-
                 </CardHeader>
                 <CardContent>
                   {isProcessing ? (
@@ -374,7 +373,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
                         onClick={handleElevatorPitchUpload}
                         disabled={
-                          uploadElevatorPitchMutation.isPending || !elevatorPitchFile
+                          uploadElevatorPitchMutation.isPending ||
+                          !elevatorPitchFile
                         }
                       >
                         {uploadElevatorPitchMutation.isPending ? (
@@ -408,7 +408,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
 
                       {isElevatorPitchUploaded && (
                         <p className="mt-2 text-sm text-green-600">
-                          Elevator pitch upload finished! Processing continues in the background.
+                          Elevator pitch upload finished! Processing continues
+                          in the background.
                         </p>
                       )}
 
@@ -420,7 +421,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </>
                   )}
                 </CardContent>
-
               </Card>
             </div>
 
