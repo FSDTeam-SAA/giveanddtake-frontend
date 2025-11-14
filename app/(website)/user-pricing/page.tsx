@@ -48,6 +48,7 @@ interface Feature {
 
 type LocalPlan = {
   name: string
+  titleKey: string
   monthlyPriceLabel?: string
   annualPriceLabel?: string
   monthlyAmount?: number
@@ -64,6 +65,19 @@ type LocalPlan = {
 const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLowerCase()
 // legacy helper (kept if needed elsewhere); logic now uses price==0 rather than title
 const isFreeTitle = (name: string) => normalizeTitle(name) === "basic plan"
+
+const toDisplayName = (title: string) => {
+  const trimmed = (title || "").trim()
+  if (!trimmed) return "Plan"
+  const meaningful = trimmed.replace(/[^a-z]/gi, "")
+  const hasUpper = /[A-Z]/.test(meaningful)
+  if (hasUpper) return trimmed
+  return trimmed
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
 
 // Detect a free plan by price, not by title
 const isZeroPriced = (p: LocalPlan) =>
@@ -99,14 +113,18 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
     const base = g.monthly ?? g.yearly!
     const monthlyAmount = g.monthly?.price
     const annualAmount = g.yearly?.price
+    const baseTitle = g.monthly?.title ?? g.yearly?.title ?? title
+    const displayName = toDisplayName(baseTitle)
+    const titleKey = normalizeTitle(displayName)
     out.push({
-      name: title,
+      name: displayName,
+      titleKey,
       monthlyAmount,
       annualAmount,
       monthlyPriceLabel: monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
       annualPriceLabel: annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
       features: (base.features || []).map((text) => ({ text })),
-      buttonText: `Subscribe to ${title.split(" ")[0].charAt(0).toUpperCase() + title.split(" ")[0].slice(1)}`,
+      buttonText: `Subscribe to ${displayName}`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
@@ -131,8 +149,8 @@ export default function PricingList() {
     valid: "monthly" | "yearly" | null
   }>({ titleNorm: null, valid: null })
 
-  const isSameTitle = (planName: string) =>
-    !!currentPlanMeta.titleNorm && normalizeTitle(planName) === currentPlanMeta.titleNorm
+  const isSameTitle = (planKey: string) =>
+    !!currentPlanMeta.titleNorm && planKey === currentPlanMeta.titleNorm
 
   const {
     data: apiPlans,
@@ -189,7 +207,7 @@ export default function PricingList() {
     // If the user hasn't paid (isValid === false), the zero-priced plan is "Current" -> block selection.
     if (userIsValid === false && isZeroPriced(plan)) return
 
-    const sameTitle = isSameTitle(plan.name)
+    const sameTitle = isSameTitle(plan.titleKey)
     const onlyMonthly = plan.monthlyAmount != null && plan.annualAmount == null
     const onlyYearly = plan.annualAmount != null && plan.monthlyAmount == null
 
@@ -252,6 +270,10 @@ export default function PricingList() {
       </div>
     )
 
+  const currentPlanLabel = currentPlanMeta.titleNorm
+    ? toDisplayName(currentPlanMeta.titleNorm)
+    : null
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
@@ -260,12 +282,17 @@ export default function PricingList() {
       </div>
 
       {/* Banner logic */}
-   
+      {currentPlanLabel && (
+        <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 text-center">
+          You&apos;re currently on our <strong>{currentPlanLabel}</strong>{" "}
+          {currentPlanMeta.valid ? `(${currentPlanMeta.valid})` : ""} plan.
+        </div>
+      )}
 
       <div className="flex items-center justify-center">
         <div className="grid w-full max-w-7xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {pricingPlans.map((plan, index) => {
-            const cardIsCurrentByTitle = isSameTitle(plan.name)
+            const cardIsCurrentByTitle = isSameTitle(plan.titleKey)
             // For display-only places, you can still use title if helpful
             const isFreeByTitle = isFreeTitle(plan.name)
             const zeroPriced = isZeroPriced(plan)
@@ -289,7 +316,7 @@ export default function PricingList() {
               >
                 <CardHeader className="p-6 pb-0">
                   <CardTitle className="text-base font-medium text-[#2B7FD0]">
-                    {plan.name.charAt(0).toUpperCase() + plan.name.slice(1)}
+                    {plan.name}
                     {isCurrent && (
                       <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
                         Current

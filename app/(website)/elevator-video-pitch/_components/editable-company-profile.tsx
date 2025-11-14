@@ -428,7 +428,7 @@ export default function EditableCompanyProfile({
 
       {/* Elevator Pitch */}
       <div>
-        <h2 className="text-xl font-semibold mb-6 text-gray-900">
+        <h2 className="text-2xl lg:text-3xl font-semibold text-gray-900 text-left mb-6">
           Elevator Video Pitch©
         </h2>
         <div className="bg-gray-100 rounded-lg p-6">
