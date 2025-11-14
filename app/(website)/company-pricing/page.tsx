@@ -132,7 +132,7 @@ const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
           ? `$${annualAmount.toFixed(2)} per annum`
           : undefined,
       features: (base.features ?? []).map((text) => ({ text })),
-      buttonText: `Subscribe to ${displayName}`,
+      buttonText: `Subscribe`,
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
