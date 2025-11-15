@@ -15,6 +15,7 @@ interface Blog {
   image: string;
   userId: string;
   createdAt: string;
+  authorName: string;
   updatedAt: string;
   __v: number;
 }
@@ -129,7 +130,7 @@ export default function BlogListingPage() {
                   <CardContent className="py-4 !px-0 space-y-2">
                     <div className="text-xs text-[#595959] flex gap-[20px]">
                       {formattedDate}
-                      <span className="text-[#595959]">{"Alex Robert"}</span>
+                      <span className="text-black font-bold">{blog.authorName}</span>
                     </div>
                     <h3 className="text-sm font-semibold text-[#272727]">
                       {blog.title}

@@ -21,6 +21,7 @@ interface SubscriptionPlan {
   createdAt: string
   updatedAt: string
   __v: number
+  titleColor?: string // 👈 from API (optional)
 }
 
 interface PlansApiResponse {
@@ -58,6 +59,7 @@ type LocalPlan = {
   annualPlanId?: string
   features: Feature[]
   buttonText: string
+  titleColor?: string // 👈 propagated into UI
 }
 
 /* --------------------------- Utilities --------------------------- */
@@ -94,17 +96,21 @@ const fetchCandidatePlans = async (): Promise<SubscriptionPlan[]> => {
 
 const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
   const map = new Map<string, { monthly?: SubscriptionPlan; yearly?: SubscriptionPlan }>()
+
   for (const p of plans) {
     const key = normalizeTitle(p.title)
     const bucket = map.get(key) ?? {}
     const v = (p.valid || "").toLowerCase()
+
     if (v === "monthly") bucket.monthly = p
     else if (v === "yearly") bucket.yearly = p
     else {
       if (/per\s*month/i.test(p.description)) bucket.monthly = p
-      else if (/per\s*ann?um/i.test(p.description) || /per\s*year/i.test(p.description)) bucket.yearly = p
+      else if (/per\s*ann?um/i.test(p.description) || /per\s*year/i.test(p.description))
+        bucket.yearly = p
       else bucket.monthly = p
     }
+
     map.set(key, bucket)
   }
 
@@ -116,20 +122,25 @@ const groupCandidatePlans = (plans: SubscriptionPlan[]): LocalPlan[] => {
     const baseTitle = g.monthly?.title ?? g.yearly?.title ?? title
     const displayName = toDisplayName(baseTitle)
     const titleKey = normalizeTitle(displayName)
+
     out.push({
       name: displayName,
       titleKey,
       monthlyAmount,
       annualAmount,
-      monthlyPriceLabel: monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
-      annualPriceLabel: annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
+      monthlyPriceLabel:
+        monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
+      annualPriceLabel:
+        annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
       features: (base.features || []).map((text) => ({ text })),
-      buttonText: `Subscribe`,
+      buttonText: "Subscribe",
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
+      titleColor: base.titleColor, // 👈 carry API color through
     })
   }
+
   return out
 }
 
@@ -183,6 +194,7 @@ export default function PricingList() {
         const apiPlan = result?.data?.plan ?? null
         const isValid = Boolean(result?.data?.isValid)
         setUserIsValid(isValid)
+
         if (apiPlan) {
           const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null
           const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "")
@@ -309,16 +321,27 @@ export default function PricingList() {
               currentPlanId === plan.planId ||
               freeIsDefaultCurrent
 
+            const titleColor = plan.titleColor ?? "#2B7FD0"
+
             return (
               <Card
                 key={index}
                 className="flex flex-col justify-between shadow-lg border-none rounded-xl overflow-hidden"
               >
                 <CardHeader className="p-6 pb-0">
-                  <CardTitle className="text-base font-medium text-[#2B7FD0]">
+                  <CardTitle
+                    className="text-base font-medium"
+                    style={{ color: titleColor }} // 👈 use titleColor
+                  >
                     {plan.name}
                     {isCurrent && (
-                      <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
+                      <span
+                        className="ml-2 rounded-full px-2 py-1 text-xs font-normal"
+                        style={{
+                          backgroundColor: `${titleColor}33`, // hex + 20% alpha
+                          color: titleColor,
+                        }}
+                      >
                         Current
                       </span>
                     )}
@@ -347,7 +370,9 @@ export default function PricingList() {
                         <div className="flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#2B7FD0]">
                           <Check className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-base text-[#343434] font-medium">{feature.text}</span>
+                        <span className="text-base text-[#343434] font-medium">
+                          {feature.text}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -387,7 +412,7 @@ export default function PricingList() {
             <div className="flex flex-col gap-3">
               {selectedPlan.monthlyAmount != null && (
                 <Button
-                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white"
                   onClick={() => handlePaymentOptionSelect(true)}
                 >
                   Monthly — ${selectedPlan.monthlyAmount.toFixed(2)}
@@ -395,7 +420,7 @@ export default function PricingList() {
               )}
               {selectedPlan.annualAmount != null && (
                 <Button
-                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white"
                   onClick={() => handlePaymentOptionSelect(false)}
                 >
                   Yearly — ${selectedPlan.annualAmount.toFixed(2)}

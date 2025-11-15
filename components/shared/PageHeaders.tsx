@@ -19,7 +19,7 @@ const PageHeaders = ({
 
   return (
     <div className={`${alignmentClass} mb-8 md:mb-12 lg:mb-16`}>
-      <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mb-2 md:mb-3 lg:mb-4">
+      <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mb-2 md:mb-3 lg:mb-4 " style={{ color: "rgb(43, 127, 208)" }}>
         {title}
       </h1>
       <p

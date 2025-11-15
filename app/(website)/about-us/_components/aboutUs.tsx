@@ -95,7 +95,7 @@ export default function AboutUsPage() {
 
           {data && (
             <>
-              <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mt-6 mb-12 text-center">
+              <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mt-6 mb-12 text-center" style={{ color: "rgb(43, 127, 208)" }}>
                 {data.title || "About Us"}
               </h1>
 

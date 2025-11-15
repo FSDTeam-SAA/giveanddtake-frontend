@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Clock, Search, Lock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock } from "lucide-react";
 import PageHeaders from "@/components/shared/PageHeaders";
 import { toast } from "sonner";
 
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 interface ContactFormData {
   firstName: string;
   lastName: string;
-  address: string;
+  address: string; // used as email
   phoneNumber: string;
   subject: string;
   message: string;
@@ -47,6 +47,37 @@ const postContactData = async (
   return response.json();
 };
 
+// basic email pattern (not perfect, but solid enough for UI validation)
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validateForm = (data: ContactFormData): string[] => {
+  const errors: string[] = [];
+
+  if (!data.firstName.trim() || data.firstName.trim().length < 2) {
+    errors.push("First name must be at least 2 characters.");
+  }
+
+  if (!data.lastName.trim() || data.lastName.trim().length < 2) {
+    errors.push("Last name must be at least 2 characters.");
+  }
+
+  if (!data.address.trim()) {
+    errors.push("Email is required.");
+  } else if (!emailRegex.test(data.address.trim())) {
+    errors.push("Please enter a valid email address.");
+  }
+
+  if (!data.subject.trim() || data.subject.trim().length < 3) {
+    errors.push("Subject must be at least 3 characters.");
+  }
+
+  if (!data.message.trim() || data.message.trim().length < 10) {
+    errors.push("Message must be at least 10 characters.");
+  }
+
+  return errors;
+};
+
 export default function ContactForm() {
   const [formData, setFormData] = useState<ContactFormData>({
     firstName: "",
@@ -68,7 +99,6 @@ export default function ContactForm() {
         subject: "",
         message: "",
       });
-      // Add success toast
       toast.success("Message sent successfully!", {
         description: "We'll get back to you soon.",
         duration: 5000,
@@ -84,6 +114,22 @@ export default function ContactForm() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const errors = validateForm(formData);
+    if (errors.length > 0) {
+      toast.error("Please fix the following issues:", {
+        description: (
+          <ul className="list-disc list-inside space-y-1">
+            {errors.map((err, idx) => (
+              <li key={idx}>{err}</li>
+            ))}
+          </ul>
+        ) as any,
+        duration: 6000,
+      });
+      return;
+    }
+
     mutation.mutate(formData);
   };
 
@@ -144,34 +190,17 @@ export default function ContactForm() {
                 className="text-[#2A2A2A] text-[16px] font-medium"
                 htmlFor="address"
               >
-                Address
+                Email
               </Label>
               <div className="relative">
                 <Input
                   id="address"
-                  placeholder="Enter Your Address"
+                  type="email"
+                  placeholder="Enter Your email"
                   value={formData.address}
                   onChange={handleInputChange}
                   required
                 />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label
-                className="text-[#2A2A2A] text-[16px] font-medium"
-                htmlFor="phoneNumber"
-              >
-                Phone Number
-              </Label>
-              <div className="relative">
-                <Input
-                  id="phoneNumber"
-                  placeholder="Optional"
-                  className="pr-10"
-                  value={formData.phoneNumber}
-                  onChange={handleInputChange}
-                />
-                <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               </div>
             </div>
             <div className="space-y-2">

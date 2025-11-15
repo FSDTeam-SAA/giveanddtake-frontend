@@ -31,6 +31,7 @@ interface Plan {
   createdAt: string;
   updatedAt: string;
   __v: number;
+  titleColor?: string; // 👈 comes from backend
 }
 
 interface ApiResponse {
@@ -57,6 +58,7 @@ type LocalPlan = {
   features: Feature[];
   buttonText: string;
   isPayAsYouGo?: boolean;
+  titleColor?: string; // 👈 used in UI
 };
 
 /* --------------------------- Utilities --------------------------- */
@@ -113,6 +115,7 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
 
   const out: LocalPlan[] = [];
   for (const [title, g] of map.entries()) {
+    // Pay As You Go branch
     if (g.payg) {
       const paygName = toDisplayName(g.payg.title ?? title);
       const paygKey = normalizeTitle(paygName);
@@ -124,6 +127,7 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
         buttonText: "Purchase",
         planId: g.payg._id,
         isPayAsYouGo: true,
+        titleColor: g.payg.titleColor, // 👈 store color
       });
       continue;
     }
@@ -150,6 +154,7 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
       planId: base._id,
       monthlyPlanId: g.monthly?._id,
       annualPlanId: g.yearly?._id,
+      titleColor: base.titleColor, // 👈 store color
     });
   }
 
@@ -420,16 +425,27 @@ export default function PricingPlans() {
             const isCurrent =
               currentPlanId === plan.planId || cardIsCurrentByTitle;
 
+            const titleColor = plan.titleColor ?? "#2B7FD0"; // 👈 main color for title
+
             return (
               <Card
                 key={index}
                 className="flex flex-col justify-between overflow-hidden rounded-xl border-none shadow-lg"
               >
                 <CardHeader className="p-6 pb-0">
-                  <CardTitle className="text-base font-medium text-[#2B7FD0]">
+                  <CardTitle
+                    className="text-base font-medium"
+                    style={{ color: titleColor }}
+                  >
                     {plan.name}
                     {isCurrent && (
-                      <span className="ml-2 rounded-full bg-[#2B7FD0]/20 px-2 py-1 text-xs font-normal text-[#2B7FD0]">
+                      <span
+                        className="ml-2 rounded-full px-2 py-1 text-xs font-normal"
+                        style={{
+                          backgroundColor: `${titleColor}33`, // transparent background
+                          color: titleColor,
+                        }}
+                      >
                         Current
                       </span>
                     )}
