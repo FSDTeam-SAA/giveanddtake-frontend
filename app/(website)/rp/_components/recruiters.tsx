@@ -462,8 +462,8 @@ export default function Recruiters({ userId }: MydataProps) {
 
         {/* Elevator Pitch */}
         {recruiterData?.elevatorPitch && (
-          <div className="lg:py-12 pb-5">
-            <h2 className="text-xl lg:text-4xl font-bold text-center mb-4 md:mb-24">
+          <div className="lg:py-12 pb-5 mt-6">
+            <h2 className="text-xl lg:text-4xl font-bold mb-4 md:mb-24">
               Elevator Video Pitch©
             </h2>
             <div className="rounded-lg">

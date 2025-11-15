@@ -32,7 +32,7 @@ const PrivacyPage = () => {
     <div className="w-full px-4 py-8 md:px-6 md:py-12 lg:py-16">
       <div className="container space-y-8">
         <Suspense fallback={null}>
-          <PageHeaders title={content?.title || "Privacy Policy"} />
+          <PageHeaders title={content?.title || "Privacy Policy"}/>
         </Suspense>
 
         <div
