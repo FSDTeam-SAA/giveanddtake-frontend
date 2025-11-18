@@ -412,7 +412,7 @@ export default function PricingList() {
             <div className="flex flex-col gap-3">
               {selectedPlan.monthlyAmount != null && (
                 <Button
-                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white"
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
                   onClick={() => handlePaymentOptionSelect(true)}
                 >
                   Monthly — ${selectedPlan.monthlyAmount.toFixed(2)}
@@ -420,7 +420,7 @@ export default function PricingList() {
               )}
               {selectedPlan.annualAmount != null && (
                 <Button
-                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white"
+                  className="w-full h-[50px] text-base font-semibold border border-[#2B7FD0] text-[#2B7FD0] hover:bg-[#2B7FD0] text-white"
                   onClick={() => handlePaymentOptionSelect(false)}
                 >
                   Yearly — ${selectedPlan.annualAmount.toFixed(2)}

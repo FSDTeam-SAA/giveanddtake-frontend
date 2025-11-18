@@ -406,7 +406,7 @@ export default function CompanyProfilePage() {
                 {userId ? (
                   <CandidateSharePopover
                     userId={userId}
-                    role="companies-profile"
+                    role="cmp"
                     title={`${company.firstName} ${company.lastName} — ${
                       company.title ?? "Candidate"
                     }`}
