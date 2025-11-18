@@ -326,7 +326,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               {userId ? (
                 <CandidateSharePopover
                   userId={userId}
-                  role="candidates-profile"
+                  role="cp"
                   title={`${resume.firstName} ${resume.lastName} — ${
                     resume.title ?? "Candidate"
                   }`}

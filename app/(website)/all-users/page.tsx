@@ -444,7 +444,7 @@ function AllUsersContent() {
                   setSelectedRole("all");
                   setOnlyImmediate(false);
                 }}
-                className="text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] hover:text-white"
+                className="text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] text-white"
               >
                 Clear Filters
               </Button>
