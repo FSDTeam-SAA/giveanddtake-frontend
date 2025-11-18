@@ -1,4 +1,4 @@
-// app/checkout/paypal/paypal.client.tsx
+// app/checkout/paypal/_components/paypal.client.tsx
 "use client";
 
 import { useEffect, useRef } from "react";
@@ -44,47 +44,60 @@ export default function PayPalCheckoutClient() {
   const planId = searchParams.get("planId") || "";
 
   useEffect(() => {
-    // Wait for SDK + container + a valid orderId; render once
     if (!orderId || !paypalRef.current || isRendered.current) return;
-    if (!window.paypal) return; // SDK not ready yet
-    isRendered.current = true;
 
-    window.paypal
-      ?.Buttons({
-        style: {
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "paypal",
-        },
-        createOrder: () => orderId,
-        onApprove: async () => {
-          try {
-            const requestData: CaptureOrderRequest = {
-              orderId,
-              userId,
-              planId,
-            };
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestData),
+    // Poll until the PayPal SDK is available (avoids race condition in prod)
+    const interval = setInterval(() => {
+      if (!window.paypal || !paypalRef.current || isRendered.current) return;
+
+      isRendered.current = true;
+
+      window.paypal
+        ?.Buttons({
+          style: {
+            layout: "vertical",
+            color: "gold",
+            shape: "rect",
+            label: "paypal",
+          },
+          // We already have the order created on the server; just return its ID
+          createOrder: () => orderId,
+          onApprove: async () => {
+            try {
+              const requestData: CaptureOrderRequest = {
+                orderId,
+                userId,
+                planId,
+              };
+
+              const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(requestData),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to capture PayPal order");
               }
-            );
-            if (!response.ok) throw new Error("Failed to capture PayPal order");
-            // const data = await response.json();
-            router.push("/success");
-          } catch (err) {
-            console.error("PayPal Capture Error:", err);
-          }
-        },
-        onError: (err: unknown) => {
-          console.error("PayPal Checkout Error:", err);
-        },
-      })
-      .render(paypalRef.current);
+
+              router.push("/success");
+            } catch (err) {
+              console.error("PayPal Capture Error:", err);
+            }
+          },
+          onError: (err: unknown) => {
+            console.error("PayPal Checkout Error:", err);
+          },
+        })
+        .render(paypalRef.current);
+
+      clearInterval(interval);
+    }, 300);
+
+    return () => clearInterval(interval);
   }, [orderId, userId, planId, router]);
 
   return (
@@ -114,7 +127,7 @@ export default function PayPalCheckoutClient() {
 
           <div className="border-t border-gray-300 pt-4 mb-6">
             <h3 className="text-lg font-semibold mb-2">
-              Safe & secure payment
+              Safe &amp; secure payment
             </h3>
             <p className="text-sm text-gray-600 leading-relaxed">
               Your payment information is processed securely. We do not store
