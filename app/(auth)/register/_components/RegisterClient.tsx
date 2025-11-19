@@ -137,6 +137,9 @@ export default function RegisterPage() {
   );
   const [showUnderAgeDialog, setShowUnderAgeDialog] = useState(false);
 
+  // 👉 control country popover
+  const [openCountryPopover, setOpenCountryPopover] = useState(false);
+
   /* =========================
      React Query Mutation
   ========================= */
@@ -174,14 +177,7 @@ export default function RegisterPage() {
         const data = await response.json();
         if (!data.error) {
           setCountries(data.data as Country[]);
-          if (!selectedCountry && data.data.length > 0) {
-            const initial = data.data[0] as Country;
-            setSelectedCountry(initial.name);
-            setFormData((prev) => ({
-              ...prev,
-              address: initial.name,
-            }));
-          }
+          // ❌ no default country selection here
         }
       } catch (error) {
         console.error("Error fetching countries:", error);
@@ -511,7 +507,10 @@ export default function RegisterPage() {
             {/* Country (with Combobox) */}
             <div className="space-y-2">
               <Label htmlFor="address">Country</Label>
-              <Popover>
+              <Popover
+                open={openCountryPopover}
+                onOpenChange={setOpenCountryPopover}
+              >
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -534,7 +533,10 @@ export default function RegisterPage() {
                         {countries.map((country) => (
                           <CommandItem
                             key={country.code}
-                            onSelect={() => handleCountryChange(country.name)}
+                            onSelect={() => {
+                              handleCountryChange(country.name);
+                              setOpenCountryPopover(false); // close popover on select
+                            }}
                           >
                             <Check
                               className={cn(
