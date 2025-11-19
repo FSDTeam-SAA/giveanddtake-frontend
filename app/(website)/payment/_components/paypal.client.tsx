@@ -32,7 +32,13 @@ interface CaptureOrderRequest {
   planId: string;
 }
 
-export default function PayPalCheckoutClient() {
+interface PayPalCheckoutClientProps {
+  sdkReady: boolean;
+}
+
+export default function PayPalCheckoutClient({
+  sdkReady,
+}: PayPalCheckoutClientProps) {
   const paypalRef = useRef<HTMLDivElement | null>(null);
   const isRendered = useRef(false);
   const router = useRouter();
@@ -44,61 +50,62 @@ export default function PayPalCheckoutClient() {
   const planId = searchParams.get("planId") || "";
 
   useEffect(() => {
+    // Only try when:
+    // - SDK is ready
+    // - We have an orderId
+    // - The container div exists
+    // - We haven't already rendered the buttons
+    if (!sdkReady) return;
     if (!orderId || !paypalRef.current || isRendered.current) return;
+    if (!window.paypal) {
+      console.error("PayPal SDK not found on window even though sdkReady is true");
+      return;
+    }
 
-    // Poll until the PayPal SDK is available (avoids race condition in prod)
-    const interval = setInterval(() => {
-      if (!window.paypal || !paypalRef.current || isRendered.current) return;
+    isRendered.current = true;
 
-      isRendered.current = true;
+    window.paypal
+      ?.Buttons({
+        style: {
+          layout: "vertical",
+          color: "gold",
+          shape: "rect",
+          label: "paypal",
+        },
+        // The order is already created on the server
+        createOrder: () => orderId,
+        onApprove: async () => {
+          try {
+            const requestData: CaptureOrderRequest = {
+              orderId,
+              userId,
+              planId,
+            };
 
-      window.paypal
-        ?.Buttons({
-          style: {
-            layout: "vertical",
-            color: "gold",
-            shape: "rect",
-            label: "paypal",
-          },
-          // We already have the order created on the server; just return its ID
-          createOrder: () => orderId,
-          onApprove: async () => {
-            try {
-              const requestData: CaptureOrderRequest = {
-                orderId,
-                userId,
-                planId,
-              };
-
-              const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(requestData),
-                }
-              );
-
-              if (!response.ok) {
-                throw new Error("Failed to capture PayPal order");
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(requestData),
               }
+            );
 
-              router.push("/success");
-            } catch (err) {
-              console.error("PayPal Capture Error:", err);
+            if (!response.ok) {
+              throw new Error("Failed to capture PayPal order");
             }
-          },
-          onError: (err: unknown) => {
-            console.error("PayPal Checkout Error:", err);
-          },
-        })
-        .render(paypalRef.current);
 
-      clearInterval(interval);
-    }, 300);
-
-    return () => clearInterval(interval);
-  }, [orderId, userId, planId, router]);
+            router.push("/success");
+          } catch (err) {
+            console.error("PayPal Capture Error:", err);
+          }
+        },
+        onError: (err: unknown) => {
+          console.error("PayPal Checkout Error:", err);
+        },
+      })
+      .render(paypalRef.current);
+  }, [sdkReady, orderId, userId, planId, router]);
 
   return (
     <div className="container mx-auto p-4">
@@ -162,7 +169,13 @@ export default function PayPalCheckoutClient() {
           ref={paypalRef}
           className="w-full md:w-1/2"
           style={{ minHeight: 300 }}
-        />
+        >
+          {!sdkReady && (
+            <p className="text-sm text-gray-500">
+              Loading secure PayPal checkout…
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
