@@ -1,4 +1,3 @@
-// app/checkout/paypal/_components/paypal.client.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -16,8 +15,9 @@ declare global {
           shape: string;
           label: string;
         };
-        createOrder: () => string;
-        onApprove: () => Promise<void>;
+        // createOrder now creates a *new* order via your backend
+        createOrder: () => string | Promise<string>;
+        onApprove: (data: { orderID: string }) => Promise<void>;
         onError: (err: unknown) => void;
       }) => {
         render: (element: HTMLDivElement | null) => void;
@@ -39,13 +39,12 @@ export default function PayPalCheckoutClient() {
   const searchParams = useSearchParams();
   const [sdkLoading, setSdkLoading] = useState(true);
 
-  const orderId = searchParams.get("orderId") || "";
   const userId = searchParams.get("userId") || "";
   const amount = searchParams.get("amount") || "0.00";
   const planId = searchParams.get("planId") || "";
 
   useEffect(() => {
-    if (!orderId || !paypalRef.current || isRendered.current) return;
+    if (!paypalRef.current || isRendered.current) return;
 
     const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
     if (!clientId) {
@@ -70,11 +69,36 @@ export default function PayPalCheckoutClient() {
             shape: "rect",
             label: "paypal",
           },
-          createOrder: () => orderId,
-          onApprove: async () => {
+
+          // ✅ Create a *fresh* order on the server every time
+          createOrder: async () => {
+            try {
+              const res = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ amount, planId, userId }),
+                }
+              );
+
+              if (!res.ok) {
+                throw new Error("Failed to create PayPal order");
+              }
+
+              const data = await res.json();
+              return data.orderId || data.data?.orderId;
+            } catch (err) {
+              console.error("PayPal createOrder error:", err);
+              throw err;
+            }
+          },
+
+          // ✅ Use the orderID that PayPal returns
+          onApprove: async (data) => {
             try {
               const requestData: CaptureOrderRequest = {
-                orderId,
+                orderId: data.orderID,
                 userId,
                 planId,
               };
@@ -97,6 +121,7 @@ export default function PayPalCheckoutClient() {
               console.error("PayPal Capture Error:", err);
             }
           },
+
           onError: (err: unknown) => {
             console.error("PayPal Checkout Error:", err);
           },
@@ -104,11 +129,13 @@ export default function PayPalCheckoutClient() {
         .render(paypalRef.current);
     };
 
+    // If SDK already loaded, just render
     if (window.paypal) {
       renderButtons();
       return;
     }
 
+    // Check if script tag already exists
     let script = document.querySelector<HTMLScriptElement>(
       `script[src="${scriptUrl}"]`
     );
@@ -119,6 +146,7 @@ export default function PayPalCheckoutClient() {
       return () => script?.removeEventListener("load", handleLoad);
     }
 
+    // Create script tag
     script = document.createElement("script");
     script.src = scriptUrl;
     script.async = true;
@@ -128,7 +156,7 @@ export default function PayPalCheckoutClient() {
       setSdkLoading(false);
     };
     document.body.appendChild(script);
-  }, [orderId, userId, planId, router]);
+  }, [amount, planId, userId, router]);
 
   return (
     <div className="container mx-auto p-4">
