@@ -16,7 +16,7 @@ declare global {
           shape: string;
           label: string;
         };
-        createOrder: () => string; // we already have the orderId
+        createOrder: () => string;
         onApprove: () => Promise<void>;
         onError: (err: unknown) => void;
       }) => {
@@ -37,7 +37,6 @@ export default function PayPalCheckoutClient() {
   const isRendered = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [sdkLoading, setSdkLoading] = useState(true);
 
   const orderId = searchParams.get("orderId") || "";
@@ -71,7 +70,6 @@ export default function PayPalCheckoutClient() {
             shape: "rect",
             label: "paypal",
           },
-          // We already have the order created on the server; just return its ID
           createOrder: () => orderId,
           onApprove: async () => {
             try {
@@ -106,28 +104,21 @@ export default function PayPalCheckoutClient() {
         .render(paypalRef.current);
     };
 
-    // If SDK already loaded, just render
     if (window.paypal) {
       renderButtons();
       return;
     }
 
-    // Check if script tag already exists
     let script = document.querySelector<HTMLScriptElement>(
       `script[src="${scriptUrl}"]`
     );
 
     if (script) {
-      // Script exists but may not be loaded yet
       const handleLoad = () => renderButtons();
       script.addEventListener("load", handleLoad);
-
-      return () => {
-        script?.removeEventListener("load", handleLoad);
-      };
+      return () => script?.removeEventListener("load", handleLoad);
     }
 
-    // Create script tag
     script = document.createElement("script");
     script.src = scriptUrl;
     script.async = true;
@@ -137,10 +128,6 @@ export default function PayPalCheckoutClient() {
       setSdkLoading(false);
     };
     document.body.appendChild(script);
-
-    return () => {
-      // No need to remove script (can be reused), but we can clear loading state safely
-    };
   }, [orderId, userId, planId, router]);
 
   return (
@@ -150,24 +137,9 @@ export default function PayPalCheckoutClient() {
         description="Complete your secure payment using our trusted payment methods."
       />
 
-      {/* PayPal buttons at the top */}
-      <div className="mb-8">
-        <div
-          ref={paypalRef}
-          style={{ minHeight: 150 }}
-          className="w-full flex items-center justify-center"
-        >
-          {sdkLoading && (
-            <p className="text-sm text-gray-500">
-              Loading secure PayPal checkout…
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Summary section below */}
       <div className="flex flex-col md:flex-row justify-between gap-8">
-        <div className="w-full md:w-1/2">
+        {/* Summary column: left on desktop, bottom on mobile */}
+        <div className="w-full md:w-1/2 order-2 md:order-1">
           <h2 className="text-2xl font-bold mb-4">Summary</h2>
 
           <div className="mb-6">
@@ -212,6 +184,22 @@ export default function PayPalCheckoutClient() {
               width={80}
               height={40}
             />
+          </div>
+        </div>
+
+        {/* PayPal column: right on desktop, top on mobile */}
+        <div className="w-full md:w-1/2 order-1 md:order-2">
+          <h2 className="text-2xl font-bold mb-4">Pay with PayPal</h2>
+          <div
+            ref={paypalRef}
+            style={{ minHeight: 150 }}
+            className="w-full flex items-center justify-center"
+          >
+            {sdkLoading && (
+              <p className="text-sm text-gray-500">
+                Loading secure PayPal checkout…
+              </p>
+            )}
           </div>
         </div>
       </div>
