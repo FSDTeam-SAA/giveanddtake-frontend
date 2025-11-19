@@ -1,7 +1,7 @@
 // app/checkout/paypal/_components/paypal.client.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageHeaders from "@/components/shared/PageHeaders";
 import Image from "next/image";
@@ -32,17 +32,13 @@ interface CaptureOrderRequest {
   planId: string;
 }
 
-interface PayPalCheckoutClientProps {
-  sdkReady: boolean;
-}
-
-export default function PayPalCheckoutClient({
-  sdkReady,
-}: PayPalCheckoutClientProps) {
+export default function PayPalCheckoutClient() {
   const paypalRef = useRef<HTMLDivElement | null>(null);
   const isRendered = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const [sdkLoading, setSdkLoading] = useState(true);
 
   const orderId = searchParams.get("orderId") || "";
   const userId = searchParams.get("userId") || "";
@@ -50,62 +46,102 @@ export default function PayPalCheckoutClient({
   const planId = searchParams.get("planId") || "";
 
   useEffect(() => {
-    // Only try when:
-    // - SDK is ready
-    // - We have an orderId
-    // - The container div exists
-    // - We haven't already rendered the buttons
-    if (!sdkReady) return;
     if (!orderId || !paypalRef.current || isRendered.current) return;
-    if (!window.paypal) {
-      console.error("PayPal SDK not found on window even though sdkReady is true");
+
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    if (!clientId) {
+      console.error("Missing NEXT_PUBLIC_PAYPAL_CLIENT_ID");
+      setSdkLoading(false);
       return;
     }
 
-    isRendered.current = true;
+    const scriptUrl = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
 
-    window.paypal
-      ?.Buttons({
-        style: {
-          layout: "vertical",
-          color: "gold",
-          shape: "rect",
-          label: "paypal",
-        },
-        // The order is already created on the server
-        createOrder: () => orderId,
-        onApprove: async () => {
-          try {
-            const requestData: CaptureOrderRequest = {
-              orderId,
-              userId,
-              planId,
-            };
+    const renderButtons = () => {
+      if (!window.paypal || !paypalRef.current || isRendered.current) return;
 
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(requestData),
+      isRendered.current = true;
+      setSdkLoading(false);
+
+      window.paypal
+        ?.Buttons({
+          style: {
+            layout: "vertical",
+            color: "gold",
+            shape: "rect",
+            label: "paypal",
+          },
+          // We already have the order created on the server; just return its ID
+          createOrder: () => orderId,
+          onApprove: async () => {
+            try {
+              const requestData: CaptureOrderRequest = {
+                orderId,
+                userId,
+                planId,
+              };
+
+              const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(requestData),
+                }
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to capture PayPal order");
               }
-            );
 
-            if (!response.ok) {
-              throw new Error("Failed to capture PayPal order");
+              router.push("/success");
+            } catch (err) {
+              console.error("PayPal Capture Error:", err);
             }
+          },
+          onError: (err: unknown) => {
+            console.error("PayPal Checkout Error:", err);
+          },
+        })
+        .render(paypalRef.current);
+    };
 
-            router.push("/success");
-          } catch (err) {
-            console.error("PayPal Capture Error:", err);
-          }
-        },
-        onError: (err: unknown) => {
-          console.error("PayPal Checkout Error:", err);
-        },
-      })
-      .render(paypalRef.current);
-  }, [sdkReady, orderId, userId, planId, router]);
+    // If SDK already loaded, just render
+    if (window.paypal) {
+      renderButtons();
+      return;
+    }
+
+    // Check if script tag already exists
+    let script = document.querySelector<HTMLScriptElement>(
+      `script[src="${scriptUrl}"]`
+    );
+
+    if (script) {
+      // Script exists but may not be loaded yet
+      const handleLoad = () => renderButtons();
+      script.addEventListener("load", handleLoad);
+
+      return () => {
+        script?.removeEventListener("load", handleLoad);
+      };
+    }
+
+    // Create script tag
+    script = document.createElement("script");
+    script.src = scriptUrl;
+    script.async = true;
+    script.onload = () => renderButtons();
+    script.onerror = (e) => {
+      console.error("Failed to load PayPal SDK", e);
+      setSdkLoading(false);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      // No need to remove script (can be reused), but we can clear loading state safely
+    };
+  }, [orderId, userId, planId, router]);
 
   return (
     <div className="container mx-auto p-4">
@@ -114,8 +150,23 @@ export default function PayPalCheckoutClient({
         description="Complete your secure payment using our trusted payment methods."
       />
 
+      {/* PayPal buttons at the top */}
+      <div className="mb-8">
+        <div
+          ref={paypalRef}
+          style={{ minHeight: 150 }}
+          className="w-full flex items-center justify-center"
+        >
+          {sdkLoading && (
+            <p className="text-sm text-gray-500">
+              Loading secure PayPal checkout…
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Summary section below */}
       <div className="flex flex-col md:flex-row justify-between gap-8">
-        {/* Left column: summary */}
         <div className="w-full md:w-1/2">
           <h2 className="text-2xl font-bold mb-4">Summary</h2>
 
@@ -162,19 +213,6 @@ export default function PayPalCheckoutClient({
               height={40}
             />
           </div>
-        </div>
-
-        {/* Right column: PayPal renders here */}
-        <div
-          ref={paypalRef}
-          className="w-full md:w-1/2"
-          style={{ minHeight: 300 }}
-        >
-          {!sdkReady && (
-            <p className="text-sm text-gray-500">
-              Loading secure PayPal checkout…
-            </p>
-          )}
         </div>
       </div>
     </div>
