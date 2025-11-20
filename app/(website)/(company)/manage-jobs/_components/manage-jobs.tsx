@@ -119,6 +119,21 @@ interface ApiResponse {
   data: Job[];
 }
 
+type PostingUsage = {
+  usage?: {
+    monthlyLimit?: number;
+    monthlyUsed?: number;
+    monthlyRemaining?: number;
+    annualLimit?: number;
+    annualUsed?: number;
+    annualRemaining?: number;
+  };
+  plan?: {
+    title?: string;
+    valid?: string;
+  };
+};
+
 interface ManagePageProps {
   userId: string;
 }
@@ -135,6 +150,21 @@ const fetchJobs = async (userId: string): Promise<Job[]> => {
 
   const data: ApiResponse = await response.json();
   return data.data;
+};
+
+const fetchPostingUsage = async (token?: string): Promise<PostingUsage | null> => {
+  const headers: HeadersInit = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/posting/usage`,
+    {
+      headers,
+    }
+  );
+  if (!response.ok) return null;
+  const json = await response.json();
+  return json?.data ?? null;
 };
 
 // Skeleton loader component
@@ -217,6 +247,11 @@ function ManagePage({ userId }: ManagePageProps) {
 
   const sesstion = useSession();
   const token = sesstion.data?.accessToken as string | undefined;
+  const { data: postingUsage } = useQuery({
+    queryKey: ["postingUsage", token],
+    queryFn: () => fetchPostingUsage(token),
+    enabled: !!token,
+  });
 
   // Track which job we're confirming for
   const [confirmJobId, setConfirmJobId] = React.useState<string | null>(null);
@@ -272,6 +307,13 @@ function ManagePage({ userId }: ManagePageProps) {
   const totalPages = Math.ceil(jobs.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedJobs = jobs.slice(startIndex, startIndex + itemsPerPage);
+  const monthlyLimit = postingUsage?.usage?.monthlyLimit;
+  const monthlyUsed = postingUsage?.usage?.monthlyUsed ?? jobs.length;
+  const monthlyRemaining = postingUsage?.usage?.monthlyRemaining;
+  const annualLimit = postingUsage?.usage?.annualLimit;
+  const annualUsed = postingUsage?.usage?.annualUsed ?? jobs.length;
+  const annualRemaining = postingUsage?.usage?.annualRemaining;
+  const planLabel = postingUsage?.plan?.title || postingUsage?.plan?.valid;
 
   if (error) {
     return (
@@ -309,6 +351,61 @@ function ManagePage({ userId }: ManagePageProps) {
           View and manage all your job postings
         </p>
       </div>
+
+      {postingUsage && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">
+                Plan
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xl font-semibold">{planLabel || "Current plan"}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">
+                Posted (month)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold">
+                {monthlyUsed} / {monthlyLimit ?? "auto"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Remaining: {monthlyRemaining ?? "auto"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">
+                Posted (year)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold">
+                {annualUsed} / {annualLimit ?? "auto"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Remaining: {annualRemaining ?? "auto"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">
+                Total Jobs
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-semibold">{jobs.length}</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {isLoading ? (
         <JobTableSkeleton />

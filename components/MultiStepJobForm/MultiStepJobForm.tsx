@@ -354,14 +354,17 @@ export default function MultiStepJobForm() {
         return selectedDate?.toISOString() || new Date().toISOString();
       };
 
+      const expirationDateDays = data.expirationDate || "30";
+
       const getExpirationDate = (publishDate: string) => {
-        const days = Number.parseInt(data.expirationDate) || 30;
+        const days = Number.parseInt(expirationDateDays) || 30;
         const expDate = new Date(publishDate);
         expDate.setDate(expDate.getDate() + days);
         return expDate.toISOString();
       };
 
       const publishDate = getPublishDate();
+      const expiryDateISO = getExpirationDate(publishDate);
 
       const selectedCategory = jobCategories.data.category.find(
         (cat) => cat._id === data.categoryId
@@ -379,7 +382,9 @@ export default function MultiStepJobForm() {
         benefits: [],
         vacancy: data.vacancy,
         experience: data.experience || "Not Specified",
-        deadline: getExpirationDate(publishDate), // ← uses publish date
+        deadline: expiryDateISO,
+        expiryDate: expiryDateISO,
+        expirationDate: expirationDateDays,
         status: "active" as const,
         jobCategoryId: data.categoryId,
         name: selectedCategory?.name || "",
