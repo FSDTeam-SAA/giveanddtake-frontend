@@ -1,7 +1,6 @@
-// app/checkout/paypal/_components/paypal.client.tsx
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageHeaders from "@/components/shared/PageHeaders";
 import Image from "next/image";
@@ -16,8 +15,9 @@ declare global {
           shape: string;
           label: string;
         };
-        createOrder: () => string; // we already have the orderId
-        onApprove: () => Promise<void>;
+        // createOrder now creates a *new* order via your backend
+        createOrder: () => string | Promise<string>;
+        onApprove: (data: { orderID: string }) => Promise<void>;
         onError: (err: unknown) => void;
       }) => {
         render: (element: HTMLDivElement | null) => void;
@@ -37,20 +37,29 @@ export default function PayPalCheckoutClient() {
   const isRendered = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [sdkLoading, setSdkLoading] = useState(true);
 
-  const orderId = searchParams.get("orderId") || "";
   const userId = searchParams.get("userId") || "";
   const amount = searchParams.get("amount") || "0.00";
   const planId = searchParams.get("planId") || "";
 
   useEffect(() => {
-    if (!orderId || !paypalRef.current || isRendered.current) return;
+    if (!paypalRef.current || isRendered.current) return;
 
-    // Poll until the PayPal SDK is available (avoids race condition in prod)
-    const interval = setInterval(() => {
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    if (!clientId) {
+      console.error("Missing NEXT_PUBLIC_PAYPAL_CLIENT_ID");
+      setSdkLoading(false);
+      return;
+    }
+
+    const scriptUrl = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+
+    const renderButtons = () => {
       if (!window.paypal || !paypalRef.current || isRendered.current) return;
 
       isRendered.current = true;
+      setSdkLoading(false);
 
       window.paypal
         ?.Buttons({
@@ -60,12 +69,36 @@ export default function PayPalCheckoutClient() {
             shape: "rect",
             label: "paypal",
           },
-          // We already have the order created on the server; just return its ID
-          createOrder: () => orderId,
-          onApprove: async () => {
+
+          // ✅ Create a *fresh* order on the server every time
+          createOrder: async () => {
+            try {
+              const res = await fetch(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ amount, planId, userId }),
+                }
+              );
+
+              if (!res.ok) {
+                throw new Error("Failed to create PayPal order");
+              }
+
+              const data = await res.json();
+              return data.orderId || data.data?.orderId;
+            } catch (err) {
+              console.error("PayPal createOrder error:", err);
+              throw err;
+            }
+          },
+
+          // ✅ Use the orderID that PayPal returns
+          onApprove: async (data) => {
             try {
               const requestData: CaptureOrderRequest = {
-                orderId,
+                orderId: data.orderID,
                 userId,
                 planId,
               };
@@ -88,17 +121,42 @@ export default function PayPalCheckoutClient() {
               console.error("PayPal Capture Error:", err);
             }
           },
+
           onError: (err: unknown) => {
             console.error("PayPal Checkout Error:", err);
           },
         })
         .render(paypalRef.current);
+    };
 
-      clearInterval(interval);
-    }, 300);
+    // If SDK already loaded, just render
+    if (window.paypal) {
+      renderButtons();
+      return;
+    }
 
-    return () => clearInterval(interval);
-  }, [orderId, userId, planId, router]);
+    // Check if script tag already exists
+    let script = document.querySelector<HTMLScriptElement>(
+      `script[src="${scriptUrl}"]`
+    );
+
+    if (script) {
+      const handleLoad = () => renderButtons();
+      script.addEventListener("load", handleLoad);
+      return () => script?.removeEventListener("load", handleLoad);
+    }
+
+    // Create script tag
+    script = document.createElement("script");
+    script.src = scriptUrl;
+    script.async = true;
+    script.onload = () => renderButtons();
+    script.onerror = (e) => {
+      console.error("Failed to load PayPal SDK", e);
+      setSdkLoading(false);
+    };
+    document.body.appendChild(script);
+  }, [amount, planId, userId, router]);
 
   return (
     <div className="container mx-auto p-4">
@@ -108,8 +166,8 @@ export default function PayPalCheckoutClient() {
       />
 
       <div className="flex flex-col md:flex-row justify-between gap-8">
-        {/* Left column: summary */}
-        <div className="w-full md:w-1/2">
+        {/* Summary column: left on desktop, bottom on mobile */}
+        <div className="w-full md:w-1/2 order-2 md:order-1">
           <h2 className="text-2xl font-bold mb-4">Summary</h2>
 
           <div className="mb-6">
@@ -157,12 +215,21 @@ export default function PayPalCheckoutClient() {
           </div>
         </div>
 
-        {/* Right column: PayPal renders here */}
-        <div
-          ref={paypalRef}
-          className="w-full md:w-1/2"
-          style={{ minHeight: 300 }}
-        />
+        {/* PayPal column: right on desktop, top on mobile */}
+        <div className="w-full md:w-1/2 order-1 md:order-2">
+          <h2 className="text-2xl font-bold mb-4">Pay with PayPal</h2>
+          <div
+            ref={paypalRef}
+            style={{ minHeight: 150 }}
+            className="w-full flex items-center justify-center"
+          >
+            {sdkLoading && (
+              <p className="text-sm text-gray-500">
+                Loading secure PayPal checkout…
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
