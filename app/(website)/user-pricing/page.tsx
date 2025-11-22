@@ -289,8 +289,8 @@ export default function PricingList() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Price List</h1>
-        <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
+        <h1 className="text-4xl font-bold text-gray-800 mb-2">Candidate Price List</h1>
+        <p className="text-md text-gray-600">Please view our refunds policy in our Terms and Conditions, or ask our Chatbot about this</p>
       </div>
 
       {/* Banner logic */}
