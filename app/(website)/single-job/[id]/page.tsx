@@ -61,6 +61,8 @@ interface JobPostData {
   experience: string;
   deadline: string;
   publishDate: string;
+  expiryDate?: string;
+  expirationDate?: string;
   status: string;
   jobCategoryId: string;
   employement_Type: string;
@@ -232,7 +234,7 @@ export default function JobPreview() {
       categoryId: jobData.jobCategoryId || "",
       compensationCurrency: jobData.compensationCurrency || "",
       compensation: jobData.salaryRange?.replace(/[^\d]/g, "") || "",
-      expirationDate: jobData.deadline || "",
+      expirationDate: deriveExpirationDays(jobData) || "",
       jobDescription: jobData.description || "",
       publishDate: createdAt ? createdAt.toLocaleDateString() : "",
       companyUrl: jobData.website_Url || "",
@@ -258,8 +260,18 @@ export default function JobPreview() {
 
     if (country) setSelectedCountry(country);
     if (jobData.publishDate) {
-      setPublishNow(false);
-      setSelectedDate(new Date(jobData.publishDate));
+      const publishDt = new Date(jobData.publishDate);
+      const now = new Date();
+      if (publishDt > now) {
+        setPublishNow(false);
+        setSelectedDate(publishDt);
+      } else {
+        setPublishNow(true);
+        setSelectedDate(new Date(jobData.updatedAt || jobData.publishDate));
+      }
+    } else {
+      setPublishNow(true);
+      setSelectedDate(new Date(jobData.updatedAt || Date.now()));
     }
 
     initializedFromJobRef.current = true;
@@ -292,6 +304,20 @@ export default function JobPreview() {
   });
 
   // utils inside the component file (or extract to a util)
+  const deriveExpirationDays = (job: any) => {
+    const expirySource = job?.expiryDate || job?.deadline;
+    const publishBase = job?.publishDate || job?.createdAt;
+    if (!expirySource || !publishBase) return "";
+    const expiry = new Date(expirySource);
+    const base = new Date(publishBase);
+    if (Number.isNaN(expiry.getTime()) || Number.isNaN(base.getTime())) {
+      return "";
+    }
+    const diffMs = expiry.getTime() - base.getTime();
+    const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+    return diffDays.toString();
+  };
+
   function computeDeadline(publishAt: string | Date, daysStr: string): string {
     const days = Number.parseInt(daysStr || "", 10);
     const safeDays = Number.isFinite(days) && days > 0 ? days : 30; // default 30
@@ -352,9 +378,17 @@ export default function JobPreview() {
     setCustomQuestions((prev) => prev.filter((q) => q.id !== id));
   }, []);
 
-  const handlePublishToggle = useCallback((checked: boolean) => {
-    setPublishNow(checked);
-  }, []);
+  const handlePublishToggle = useCallback(
+    (checked: boolean) => {
+      setPublishNow(checked);
+      if (checked) {
+        const fallback =
+          jobData?.updatedAt || jobData?.publishDate || new Date().toISOString();
+        setSelectedDate(new Date(fallback));
+      }
+    },
+    [jobData]
+  );
 
   const handleSave = useCallback(() => {
     if (!userId) {
@@ -367,7 +401,7 @@ export default function JobPreview() {
     }
 
     const publishAtISO = publishNow
-      ? new Date().toISOString()
+      ? new Date(jobData?.updatedAt || Date.now()).toISOString()
       : selectedDate?.toISOString() ?? new Date().toISOString();
 
     // 👇 turn “expiration days” into a real deadline date
@@ -393,6 +427,8 @@ export default function JobPreview() {
       vacancy: formData.vacancy,
       experience: formData.experience,
       deadline: deadlineISO,
+      expiryDate: deadlineISO,
+      expirationDate: String(formData.expirationDate || ""),
       publishDate: publishAtISO,
       status: jobData?.status || "active",
       jobCategoryId: formData.categoryId,
@@ -414,6 +450,8 @@ export default function JobPreview() {
     jobData?.companyId,
     jobData?.status,
     jobData?.arcrivedJob,
+    jobData?.updatedAt,
+    jobData?.publishDate,
     formData,
     publishNow,
     selectedDate,

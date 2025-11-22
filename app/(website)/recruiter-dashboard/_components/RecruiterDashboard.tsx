@@ -189,6 +189,21 @@ interface CompaniesApiResponse {
   data: CompanyListItem[];
 }
 
+type PostingUsage = {
+  usage?: {
+    monthlyLimit?: number;
+    monthlyUsed?: number;
+    monthlyRemaining?: number;
+    annualLimit?: number;
+    annualUsed?: number;
+    annualRemaining?: number;
+  };
+  plan?: {
+    title?: string;
+    valid?: string;
+  };
+};
+
 // =============== Fetchers ===============
 const apiBase = () => {
   if (!process.env.NEXT_PUBLIC_BASE_URL) {
@@ -282,6 +297,20 @@ const fetchPitchData = async (
   if (!data.success)
     throw new Error(data.message || "Failed to fetch pitch data");
   return data;
+};
+
+const fetchPostingUsage = async (token?: string): Promise<PostingUsage | null> => {
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(`${apiBase()}/jobs/posting/usage`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data?.data ?? null;
 };
 
 const deleteJob = async (
@@ -381,6 +410,13 @@ export default function RecruiterDashboard() {
     queryKey: ["jobs", userId, token],
     queryFn: () => fetchJobs(token),
     enabled: !!token, // prevents unauthenticated flashes
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: postingUsage } = useQuery<PostingUsage | null>({
+    queryKey: ["postingUsage", token],
+    queryFn: () => fetchPostingUsage(token),
+    enabled: !!token,
     refetchOnWindowFocus: false,
   });
 
@@ -486,6 +522,13 @@ export default function RecruiterDashboard() {
     () => jobs.slice(startIndexTable, endIndexTable),
     [jobs, startIndexTable, endIndexTable]
   );
+  const monthlyLimit = postingUsage?.usage?.monthlyLimit;
+  const monthlyUsed = postingUsage?.usage?.monthlyUsed ?? jobs.length;
+  const monthlyRemaining = postingUsage?.usage?.monthlyRemaining;
+  const annualLimit = postingUsage?.usage?.annualLimit;
+  const annualUsed = postingUsage?.usage?.annualUsed ?? jobs.length;
+  const annualRemaining = postingUsage?.usage?.annualRemaining;
+  const planLabel = postingUsage?.plan?.title || postingUsage?.plan?.valid;
 
   // -------- Handlers
   const handlePageChangeTable = (page: number) => setCurrentPageTable(page);
@@ -566,6 +609,39 @@ export default function RecruiterDashboard() {
         <h1 className="text-2xl md:text-4xl text-[#131313] font-bold text-center mb-8 md:mb-12">
           Recruiter Dashboard
         </h1>
+
+        {postingUsage && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <p className="text-sm text-blue-700 font-medium">Plan</p>
+              <p className="text-lg font-semibold text-blue-900">
+                {planLabel || "Current plan"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-sm text-gray-600 font-medium">Posted (month)</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {monthlyUsed} / {monthlyLimit ?? "auto"}
+              </p>
+              <p className="text-xs text-gray-500">
+                Remaining: {monthlyRemaining ?? "auto"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-sm text-gray-600 font-medium">Posted (year)</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {annualUsed} / {annualLimit ?? "auto"}
+              </p>
+              <p className="text-xs text-gray-500">
+                Remaining: {annualRemaining ?? "auto"}
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-sm text-gray-600 font-medium">Total Jobs</p>
+              <p className="text-2xl font-semibold text-gray-900">{jobs.length}</p>
+            </div>
+          </div>
+        )}
 
         {/* Recruiter / Company Info */}
         <section className="mb-8 md:mb-12 bg-white p-4 md:p-6 rounded-lg shadow-sm">

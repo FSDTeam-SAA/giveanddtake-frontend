@@ -89,6 +89,37 @@ async function verifyPassword(email: string, password: string) {
   return json; // expects shape with { success: boolean, ... }
 }
 
+type PostingUsage = {
+  paywallEnabled?: boolean;
+  allowed?: boolean;
+  usage?: {
+    monthlyLimit?: number;
+    monthlyUsed?: number;
+    monthlyRemaining?: number;
+    annualLimit?: number;
+    annualUsed?: number;
+    annualRemaining?: number;
+  };
+  plan?: {
+    title?: string;
+    valid?: string;
+    for?: string;
+  };
+};
+
+async function fetchPostingUsage(token: string): Promise<PostingUsage | null> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/posting/usage`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) throw new Error("Failed to fetch posting usage");
+  const json = await response.json();
+  return json?.data ?? null;
+}
+
 /* ----------------------------- Utilities ------------------------------ */
 
 function splitName(full?: string): { firstName: string; surname: string } {
@@ -124,6 +155,7 @@ export function PersonalInformation() {
 
   const { data: session } = useSession();
   const token = session?.accessToken || "";
+  const role = session?.user?.role || "";
 
   const email = session?.user?.email || "";
 
@@ -135,6 +167,12 @@ export function PersonalInformation() {
     queryKey: ["userData", token],
     queryFn: () => fetchUserData(token),
     enabled: !!token,
+  });
+
+  const { data: postingUsage } = useQuery({
+    queryKey: ["postingUsage", token],
+    queryFn: () => fetchPostingUsage(token),
+    enabled: !!token && (role === "company" || role === "recruiter"),
   });
 
   // Controlled form state (split name into first/surname)
@@ -334,6 +372,14 @@ export function PersonalInformation() {
 
   if (error) return <div>Error: {(error as Error).message}</div>;
 
+  const monthlyLimit = postingUsage?.usage?.monthlyLimit;
+  const monthlyUsed = postingUsage?.usage?.monthlyUsed;
+  const monthlyRemaining = postingUsage?.usage?.monthlyRemaining;
+  const annualLimit = postingUsage?.usage?.annualLimit;
+  const annualUsed = postingUsage?.usage?.annualUsed;
+  const annualRemaining = postingUsage?.usage?.annualRemaining;
+  const planLabel = postingUsage?.plan?.title || postingUsage?.plan?.valid;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-8">
@@ -348,6 +394,35 @@ export function PersonalInformation() {
           {isEditing ? "Cancel" : "Edit"}
         </Button>
       </div>
+
+      {postingUsage && (role === "company" || role === "recruiter") && (
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
+            <p className="text-sm text-blue-700 font-medium">Plan</p>
+            <p className="text-lg font-semibold text-blue-900">
+              {planLabel || "Current plan"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <p className="text-sm text-gray-600 font-medium">Jobs this month</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {monthlyUsed ?? "—"} / {monthlyLimit ?? "auto"}
+            </p>
+            <p className="text-xs text-gray-500">
+              Remaining: {monthlyRemaining ?? "auto"}
+            </p>
+          </div>
+          <div className="rounded-lg border border-gray-200 bg-white p-4">
+            <p className="text-sm text-gray-600 font-medium">Jobs this year</p>
+            <p className="text-lg font-semibold text-gray-900">
+              {annualUsed ?? "—"} / {annualLimit ?? "auto"}
+            </p>
+            <p className="text-xs text-gray-500">
+              Remaining: {annualRemaining ?? "auto"}
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
