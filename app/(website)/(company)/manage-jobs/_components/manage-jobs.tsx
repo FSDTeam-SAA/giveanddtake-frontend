@@ -25,7 +25,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -245,13 +244,15 @@ function ManagePage({ userId }: ManagePageProps) {
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
-  const sesstion = useSession();
-  const token = sesstion.data?.accessToken as string | undefined;
-  const { data: postingUsage } = useQuery({
-    queryKey: ["postingUsage", token],
-    queryFn: () => fetchPostingUsage(token),
-    enabled: !!token,
-  });
+ const { data: session, status } = useSession();
+const token = session?.accessToken as string | undefined;
+
+const { data: postingUsage } = useQuery({
+  queryKey: ["postingUsage", token],
+  queryFn: () => fetchPostingUsage(token),
+  enabled: status === "authenticated" && !!token,
+});
+
 
   // Track which job we're confirming for
   const [confirmJobId, setConfirmJobId] = React.useState<string | null>(null);

@@ -395,7 +395,7 @@ export function PersonalInformation() {
         </Button>
       </div>
 
-      {postingUsage && (role === "company" || role === "recruiter") && (
+      {/* {postingUsage && (role === "company" || role === "recruiter") && (
         <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
             <p className="text-sm text-blue-700 font-medium">Plan</p>
@@ -422,7 +422,7 @@ export function PersonalInformation() {
             </p>
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
