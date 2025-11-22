@@ -19,6 +19,7 @@ interface BlogApiResponse {
   message: string;
   data: {
     _id: string;
+    slug?: string;
     title: string;
     description: string;
     image: string;
@@ -29,18 +30,21 @@ interface BlogApiResponse {
   };
 }
 
-const fetchBlog = async (id: string): Promise<BlogApiResponse> => {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/blogs/${id}`);
+const fetchBlog = async (identifier: string): Promise<BlogApiResponse> => {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/blogs/${identifier}`
+  );
   if (!res.ok) {
     throw new Error("Failed to fetch blog post");
   }
   return res.json();
 };
 
-export function BlogDetailsClient({ id }: { id: string }) {
+export function BlogDetailsClient({ slugOrId }: { slugOrId: string }) {
   const { data, isLoading, isError, error } = useQuery<BlogApiResponse, Error>({
-    queryKey: ["blog", id],
-    queryFn: () => fetchBlog(id),
+    queryKey: ["blog", slugOrId],
+    queryFn: () => fetchBlog(slugOrId),
+    enabled: Boolean(slugOrId),
   });
 
   if (isLoading) {

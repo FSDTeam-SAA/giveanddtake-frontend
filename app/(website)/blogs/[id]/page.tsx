@@ -9,7 +9,7 @@ export default function Page({ params }: { params: { id: string } }) {
 
   return (
     <div>
-      <BlogDetailsClient id={params.id} />
+      <BlogDetailsClient slugOrId={params.id} />
     </div>
   );
 }

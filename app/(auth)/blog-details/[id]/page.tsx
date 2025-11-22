@@ -5,5 +5,5 @@ export default async function BlogDetailsPage({
 }: {
   params: { id: string };
 }) {
-  return <BlogDetailsClient id={params.id} />;
+  return <BlogDetailsClient slugOrId={params.id} />;
 }

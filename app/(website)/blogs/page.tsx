@@ -10,6 +10,7 @@ import PageHeaders from "@/components/shared/PageHeaders";
 
 interface Blog {
   _id: string;
+  slug?: string;
   title: string;
   description: string;
   image: string;
@@ -109,6 +110,7 @@ export default function BlogListingPage() {
           </div>
         ) : (
           data.data.blogs.map((blog) => {
+            const blogSlug = blog.slug || blog._id;
             const formattedDate = new Intl.DateTimeFormat("en-US", {
               year: "numeric",
               month: "short",
@@ -116,7 +118,7 @@ export default function BlogListingPage() {
             }).format(new Date(blog.createdAt));
 
             return (
-              <Link href={`/blogs/${blog._id}`} key={blog._id}>
+              <Link href={`/blogs/${blogSlug}`} key={blog._id}>
                 <Card className="w-full shadow-none border-none overflow-hidden transition-all">
                   <div className="w-full h-[277px]">
                     <Image
@@ -153,7 +155,7 @@ export default function BlogListingPage() {
                   </CardContent>
                   <CardFooter className="py-4 pt-0 px-0">
                     <Link
-                      href={`/blogs/${blog._id}`}
+                      href={`/blogs/${blogSlug}`}
                       className="inline-flex items-center text-sm font-medium text-[#9EC7DC]"
                     >
                       Read More
