@@ -102,7 +102,11 @@ const groupCompanyPlans = (plans: Plan[]): LocalPlan[] => {
     else {
       // Fallback: infer from description
       if (/per\s*month/i.test(p.description)) bucket.monthly = p;
-      else if (/per\s*ann?um/i.test(p.description) || /per\s*year/i.test(p.description)) bucket.yearly = p;
+      else if (
+        /per\s*ann?um/i.test(p.description) ||
+        /per\s*year/i.test(p.description)
+      )
+        bucket.yearly = p;
       else bucket.monthly = p; // Default to monthly
     }
     map.set(key, bucket);
@@ -239,7 +243,8 @@ export default function PricingPage() {
         );
 
         if (!response.ok) {
-          if (response.status === 401) console.error("Unauthorized: invalid/expired token");
+          if (response.status === 401)
+            console.error("Unauthorized: invalid/expired token");
           throw new Error(`GET /user/single failed with ${response.status}`);
         }
 
@@ -251,8 +256,7 @@ export default function PricingPage() {
         // normalize valid → monthly | yearly | null
         const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "");
         const valid =
-          vRaw === "monthly" ? "monthly" :
-          vRaw === "yearly"  ? "yearly"  : null;
+          vRaw === "monthly" ? "monthly" : vRaw === "yearly" ? "yearly" : null;
 
         setCurrentPlanId(apiPlan?._id ?? null);
         setCurrentPlanMeta({ titleNorm, valid });
@@ -308,13 +312,17 @@ export default function PricingPage() {
           <h1 className="mb-2 text-4xl font-bold text-gray-800">
             Company Price List
           </h1>
-          <p className="text-xl text-gray-600">For Elevator Video Pitch©</p>
+          <p className="text-md text-gray-600">
+            Please view our refunds policy in our Terms and Conditions, or ask
+            our Chatbot about this
+          </p>
         </div>
 
         {/* Current Plan Banner */}
         {currentPlanLabel && (
           <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
-            You&apos;re currently on our <strong>{currentPlanLabel}</strong> plan
+            You&apos;re currently on our <strong>{currentPlanLabel}</strong>{" "}
+            plan
             {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
           </div>
         )}
