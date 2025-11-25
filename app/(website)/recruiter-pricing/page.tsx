@@ -63,9 +63,14 @@ type LocalPlan = {
 
 /* --------------------------- Utilities --------------------------- */
 
-const normalizeTitle = (t: string) => (t || "").replace(/\s+/g, " ").trim().toLowerCase();
+const normalizeTitle = (t: string) =>
+  (t || "").replace(/\s+/g, " ").trim().toLowerCase();
 const toValid = (v?: string | null) =>
-  (v || "").trim().toLowerCase() as "monthly" | "yearly" | "payasyougo" | string;
+  (v || "").trim().toLowerCase() as
+    | "monthly"
+    | "yearly"
+    | "payasyougo"
+    | string;
 
 const toDisplayName = (title: string) => {
   const trimmed = (title || "").trim();
@@ -107,7 +112,8 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
     else {
       // Fallback: infer from description
       if (/per\s*month/i.test(p.description)) bucket.monthly = p;
-      else if (/per\s*ann?um|per\s*year/i.test(p.description)) bucket.yearly = p;
+      else if (/per\s*ann?um|per\s*year/i.test(p.description))
+        bucket.yearly = p;
       else bucket.payg = p;
     }
     map.set(key, bucket);
@@ -122,7 +128,9 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
       out.push({
         name: paygName,
         titleKey: paygKey,
-        description: `$${g.payg.price.toFixed(2)} per Job Advert (30 Days Post)`,
+        description: `$${g.payg.price.toFixed(
+          2
+        )} per Job Advert (30 Days Post)`,
         features: (g.payg.features ?? []).map((text) => ({ text })),
         buttonText: "Purchase",
         planId: g.payg._id,
@@ -146,9 +154,13 @@ const groupRecruiterPlans = (plans: Plan[]): LocalPlan[] => {
       monthlyAmount,
       annualAmount,
       monthlyPriceLabel:
-        monthlyAmount != null ? `$${monthlyAmount.toFixed(2)} per month` : undefined,
+        monthlyAmount != null
+          ? `$${monthlyAmount.toFixed(2)} per month`
+          : undefined,
       annualPriceLabel:
-        annualAmount != null ? `$${annualAmount.toFixed(2)} per annum` : undefined,
+        annualAmount != null
+          ? `$${annualAmount.toFixed(2)} per annum`
+          : undefined,
       features: (base.features ?? []).map((text) => ({ text })),
       buttonText: `Subscribe`,
       planId: base._id,
@@ -172,7 +184,10 @@ export default function PricingPlans() {
   const [selectedPlan, setSelectedPlan] = useState<LocalPlan | null>(null);
 
   // Banner plan (just for display)
-  const [planBanner, setPlanBanner] = useState<{ title?: string; valid?: string } | null>({
+  const [planBanner, setPlanBanner] = useState<{
+    title?: string;
+    valid?: string;
+  } | null>({
     title: "Free Plan",
     valid: "monthly",
   });
@@ -270,7 +285,8 @@ export default function PricingPlans() {
         );
 
         if (!response.ok) {
-          if (response.status === 401) console.error("Unauthorized: invalid/expired token");
+          if (response.status === 401)
+            console.error("Unauthorized: invalid/expired token");
           throw new Error(`GET /user/single failed with ${response.status}`);
         }
 
@@ -278,17 +294,25 @@ export default function PricingPlans() {
 
         // Banner (non-blocking)
         const apiPlan = result?.data?.plan;
-        const bannerTitle = apiPlan?.title ? toDisplayName(apiPlan.title) : undefined;
-        setPlanBanner(apiPlan ? { title: bannerTitle, valid: apiPlan.valid } : null);
+        const bannerTitle = apiPlan?.title
+          ? toDisplayName(apiPlan.title)
+          : undefined;
+        setPlanBanner(
+          apiPlan ? { title: bannerTitle, valid: apiPlan.valid } : null
+        );
 
         const titleNorm = apiPlan?.title ? normalizeTitle(apiPlan.title) : null;
 
         // normalize valid → monthly | yearly | payasyougo | null
         const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "");
         const valid =
-          vRaw === "monthly" ? "monthly" :
-          vRaw === "yearly"  ? "yearly"  :
-          vRaw === "payasyougo" ? "payasyougo" : null;
+          vRaw === "monthly"
+            ? "monthly"
+            : vRaw === "yearly"
+            ? "yearly"
+            : vRaw === "payasyougo"
+            ? "payasyougo"
+            : null;
 
         setCurrentPlanId(apiPlan?._id ?? null);
         setCurrentPlanMeta({ titleNorm, valid });
@@ -345,7 +369,10 @@ export default function PricingPlans() {
         <h1 className="mb-2 text-4xl font-bold text-gray-800">
           Recruiter Price List
         </h1>
-        <p className="text-md text-gray-600">Please view our refunds policy in our Terms and Conditions, or ask our Chatbot about this</p>
+        <p className="text-md text-gray-600">
+          Please view our refunds policy in our Terms and Conditions, or ask our
+          Chatbot about refunds.
+        </p>
       </div>
 
       {planBanner && (
@@ -369,13 +396,18 @@ export default function PricingPlans() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(true)}
                     disabled={
-                      !!isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
-                      currentPlanMeta.valid === "monthly"
+                      !!isSameTitle(
+                        selectedPlan.titleKey ||
+                          normalizeTitle(selectedPlan.name)
+                      ) && currentPlanMeta.valid === "monthly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Monthly: {selectedPlan.monthlyPriceLabel}</span>
-                      {isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
+                      {isSameTitle(
+                        selectedPlan.titleKey ||
+                          normalizeTitle(selectedPlan.name)
+                      ) &&
                         currentPlanMeta.valid === "monthly" && (
                           <span className="ml-2 rounded-full bg-white/20 px-2 py-[2px] text-xs">
                             Current
@@ -390,13 +422,18 @@ export default function PricingPlans() {
                     className="w-full bg-[#2B7FD0] text-white hover:bg-[#2B7FD0]/90 disabled:opacity-60 disabled:cursor-not-allowed"
                     onClick={() => handlePaymentOptionSelect(false)}
                     disabled={
-                      !!isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
-                      currentPlanMeta.valid === "yearly"
+                      !!isSameTitle(
+                        selectedPlan.titleKey ||
+                          normalizeTitle(selectedPlan.name)
+                      ) && currentPlanMeta.valid === "yearly"
                     }
                   >
                     <div className="flex w-full items-center justify-between">
                       <span>Annual: {selectedPlan.annualPriceLabel}</span>
-                      {isSameTitle(selectedPlan.titleKey || normalizeTitle(selectedPlan.name)) &&
+                      {isSameTitle(
+                        selectedPlan.titleKey ||
+                          normalizeTitle(selectedPlan.name)
+                      ) &&
                         currentPlanMeta.valid === "yearly" && (
                           <span className="ml-2 rounded-full bg:white/20 px-2 py-[2px] text-xs">
                             Current
@@ -421,7 +458,9 @@ export default function PricingPlans() {
         {/* Pricing Cards */}
         <div className="grid w-full max-w-7xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {pricingPlans.map((plan, index) => {
-            const cardIsCurrentByTitle = isSameTitle(plan.titleKey || normalizeTitle(plan.name));
+            const cardIsCurrentByTitle = isSameTitle(
+              plan.titleKey || normalizeTitle(plan.name)
+            );
             const isCurrent =
               currentPlanId === plan.planId || cardIsCurrentByTitle;
 
@@ -454,7 +493,9 @@ export default function PricingPlans() {
                   {/* Price row with responsive delimiter and clean spacing */}
                   <div className="mt-2">
                     {plan.description ? (
-                      <p className="font-bold text-[#282828]">{plan.description}</p>
+                      <p className="font-bold text-[#282828]">
+                        {plan.description}
+                      </p>
                     ) : (
                       <div className="flex flex-wrap items-center gap-2 text-[18px]">
                         {plan.monthlyPriceLabel && (

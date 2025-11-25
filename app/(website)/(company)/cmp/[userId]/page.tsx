@@ -5,8 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { VideoPlayer } from "@/components/company/video-player";
-import { fetchCompanyDetails, fetchCompanyDetailsSlug } from "@/lib/api-service";
-import { MapPin, Users, Calendar, Building2 } from "lucide-react";
+import { fetchCompanyDetailsSlug } from "@/lib/api-service";
+import { MapPin, Users, Calendar, Building2, XCircle } from "lucide-react";
 import Image from "next/image";
 import JobCard from "@/components/shared/card/job-card";
 import { useMemo, useState } from "react";
@@ -69,6 +69,27 @@ interface SingleUserResponse {
   data?: { following?: Array<SingleUserFollowingItem | null> };
 }
 
+// -------- deactivated UI --------
+const DeactivatedCompanyProfile: React.FC = () => (
+  <div className="min-h-[60vh] flex items-center justify-center px-4">
+    <Card className="max-w-md w-full text-center shadow-md border border-dashed border-gray-200">
+      <CardContent className="py-10 flex flex-col items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+          <XCircle className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-semibold">Profile is not available</h1>
+        <p className="text-gray-500 text-sm max-w-sm">
+          This company profile has been deactivated. Please go back to the home
+          page to continue browsing.
+        </p>
+        <Button asChild className="mt-2">
+          <a href="/">Go to Home</a>
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 export default function CompanyProfilePage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const { data: session } = useSession();
@@ -114,9 +135,6 @@ export default function CompanyProfilePage() {
     });
 
   // ---- derive IDs for follow API ----
-  // Assumption based on backend used in Recruiters.tsx:
-  //   recruiterId = the profile owner's userId
-  //   companyId    = the company object's _id (or its userId if your API expects that)
   const company = companyData?.companies?.[0];
   const targetRecruiterId = company?.userId as string | undefined; // owner user id (entity to follow)
   const targetCompanyId = company?._id as string | undefined; // company object id
@@ -267,6 +285,11 @@ export default function CompanyProfilePage() {
     );
   }
 
+  // 🔒 If company is deactivated, show the special UI and stop here
+  if (companyData?.deactivate) {
+    return <DeactivatedCompanyProfile />;
+  }
+
   if (!companyData?.companies?.[0]) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -306,6 +329,14 @@ export default function CompanyProfilePage() {
 
   const followersCount = followInfo?.count ?? 0;
   const followBusy = toggleFollowMutation.isPending;
+
+  const disabled =
+    !canFollow ||
+    followBusy ||
+    followInfoLoading ||
+    !targetRecruiterId ||
+    !targetCompanyId ||
+    !myId;
 
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
@@ -353,10 +384,6 @@ export default function CompanyProfilePage() {
                       {company.city}, {company.country}
                     </span>
                   </div>
-                  {/* <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>{company.employeesId?.length || 0} recruiters</span>
-                  </div> */}
                 </div>
 
                 <div className="flex items-center gap-1 text-sm text-gray-600">
@@ -380,6 +407,7 @@ export default function CompanyProfilePage() {
                       } transition-colors`}
                       aria-label={isFollowing ? "Unfollow" : "Follow"}
                       title={!myId ? "Sign in to follow" : undefined}
+                      disabled={disabled}
                     >
                       {followBusy
                         ? "Please wait…"
@@ -509,9 +537,8 @@ export default function CompanyProfilePage() {
           )}
         </div>
 
-        {/* About Us */}
+        {/* Awards and Honors */}
         <div className="space-y-12 pb-24 pt-8  mx-auto">
-          {/* Awards and Honors */}
           {honors.length > 0 && (
             <div>
               <h2 className="text-xl font-semibold mb-4 text-gray-900">

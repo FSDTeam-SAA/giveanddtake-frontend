@@ -463,7 +463,7 @@ export function SiteHeader() {
               My EVP Profile
             </Link>
             {/* Upgrade Plan (desktop) */}
-            {status === "authenticated" && !isValid && getUpgradePath() && (
+            {status === "authenticated" && (
               <Link
                 href={getUpgradePath()!}
                 className={`transition-colors focus:outline-none font-semibold ${

@@ -3,9 +3,17 @@
 import type React from "react";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo } from "react";
-import { Globe, Linkedin, Twitter, LinkIcon, MapPin } from "lucide-react";
+import {
+  Globe,
+  Linkedin,
+  Twitter,
+  LinkIcon,
+  MapPin,
+  XCircle, // 🆕 for deactivated UI icon
+} from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card"; // 🆕 for deactivated UI card
 import { VideoPlayer } from "@/components/company/video-player";
 import CandidateSharePopover from "../../cp/_components/candidateShare";
 import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
@@ -22,6 +30,22 @@ interface RecruiterCompany {
   _id: string;
   cname: string;
   userId: string;
+}
+
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface RecruiterData {
@@ -45,22 +69,7 @@ interface RecruiterData {
   updatedAt: string;
   __v: number;
   companyId: RecruiterCompany; // company object with _id
-}
-
-interface PitchData {
-  _id: string;
-  userId: {
-    _id: string;
-    name: string;
-    email: string;
-    role: string;
-  };
-  video: {
-    hlsUrl: string;
-    encryptionKeyUrl: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  deactivate?: boolean; // 🆕 matches your API payload
 }
 
 interface ApiListResponse<T> {
@@ -106,6 +115,27 @@ interface SingleUserFollowingItem {
 interface SingleUserResponse {
   data?: { following?: Array<SingleUserFollowingItem | null> };
 }
+
+// ---------- Deactivated UI ----------
+const DeactivatedProfile: React.FC = () => (
+  <div className="min-h-[60vh] flex items-center justify-center px-4">
+    <Card className="max-w-md w-full text-center shadow-md border border-dashed border-gray-200">
+      <CardContent className="py-10 flex flex-col items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+          <XCircle className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-semibold">Profile is not available</h1>
+        <p className="text-gray-500 text-sm max-w-sm">
+          This recruiter profile has been deactivated. Please go back to the
+          home page to continue browsing.
+        </p>
+        <Button asChild className="mt-2">
+          <a href="/">Go to Home</a>
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+);
 
 export default function Recruiters({ userId }: MydataProps) {
   const { data: session, status } = useSession();
@@ -155,7 +185,7 @@ export default function Recruiters({ userId }: MydataProps) {
 
   // Safe IDs
   const recruiterId = recruiterData?.userId; // the person being followed
-  const companyId = recruiterData?.companyId?.userId; // use company _id
+  const companyId = recruiterData?.companyId?.userId; // use company userId
 
   // Follow count + (optional) follow status (for count/backup)
   const { data: followInfo, isLoading: followInfoLoading } = useQuery({
@@ -322,6 +352,11 @@ export default function Recruiters({ userId }: MydataProps) {
     );
   }
 
+  // 🆕 If deactivated, show the “profile not available” view instead of the profile
+  if (recruiterData.deactivate) {
+    return <DeactivatedProfile />;
+  }
+
   const iconMap: Record<string, React.ElementType> = {
     website: Globe,
     linkedin: Linkedin,
@@ -333,7 +368,6 @@ export default function Recruiters({ userId }: MydataProps) {
   const followersCount = followInfo?.count ?? 0;
   const followBusy = toggleFollowMutation.isPending;
 
-  console.log(followBusy)
   const disabled =
     !canFollow ||
     followBusy ||
@@ -360,7 +394,7 @@ export default function Recruiters({ userId }: MydataProps) {
       </div>
 
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-10px] md:mt-[-20px] lg:mt-[-30px] md:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-10px] md:mt-[-20px] lg:mt[-30px] md:px-6">
           {/* Profile Section */}
           <div className="col-span-1 md:col-span-4 space-y-4">
             <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gray-200 ring-2 ring-background shadow-md overflow-hidden bg-muted rounded-md">
@@ -410,6 +444,7 @@ export default function Recruiters({ userId }: MydataProps) {
                   } transition-colors`}
                   aria-label={isFollowing ? "Unfollow" : "Follow"}
                   title={!myId ? "Sign in to follow" : undefined}
+                  disabled={disabled}
                 >
                   {followBusy
                     ? "Please wait…"
@@ -476,26 +511,6 @@ export default function Recruiters({ userId }: MydataProps) {
         )}
 
         <div className="border-t border-gray-300 mt-6" />
-
-        {/* Skills */}
-        <section className="mt-6 bg-white p-6 rounded-lg shadow mb-4">
-          <h2 className="text-xl font-semibold">Skills</h2>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {[
-              "UX/UI Design",
-              "Prototyping",
-              "User Testing",
-              "Design Systems",
-            ].map((skill) => (
-              <span
-                key={skill}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );
