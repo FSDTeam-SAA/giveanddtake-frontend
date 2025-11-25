@@ -7,9 +7,12 @@ import {
   GraduationCap,
   Award as AwardIcon,
   MapPin,
+  XCircle,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useSession } from "next-auth/react";
 import { SocialIcon } from "@/components/company/social-icon";
 import CandidateShare from "./candidateShare";
@@ -37,6 +40,7 @@ interface ResumeResponse {
   success: boolean;
   message: string;
   data: {
+    deactivate?: boolean;
     resume: {
       _id: string;
       userId: string;
@@ -188,6 +192,27 @@ const SkeletonLoader: React.FC = () => (
   </div>
 );
 
+// ---------- deactivated UI ----------
+const DeactivatedProfile: React.FC = () => (
+  <div className="min-h-[60vh] flex items-center justify-center px-4">
+    <Card className="max-w-md w-full text-center shadow-md border border-dashed border-gray-200">
+      <CardContent className="py-10 flex flex-col items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center">
+          <XCircle className="w-7 h-7 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-semibold">Profile is not available</h1>
+        <p className="text-gray-500 text-sm max-w-sm">
+          This profile has been deactivated. Please go back to the home page to
+          continue browsing candidates.
+        </p>
+        <Button asChild className="mt-2">
+          <Link href="/">Go to Home</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  </div>
+);
+
 // ---------- main ----------
 const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   const { data: session } = useSession(); // keep if you’ll need token later
@@ -216,6 +241,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
   const experiences = myresume?.data?.experiences ?? [];
   const education = myresume?.data?.education ?? [];
   const awardsAndHonors = myresume?.data?.awardsAndHonors ?? [];
+  const isDeactivated = myresume?.data?.deactivate;
 
   // --- ALWAYS call memos before any conditional return ---
   const sortedExperiences = React.useMemo(
@@ -250,12 +276,15 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
   // --- conditional rendering happens AFTER hooks ---
   if (isLoading || isFetching) return <SkeletonLoader />;
+
+  // 🔒 If profile is deactivated, show friendly message + home button
+  if (isDeactivated) return <DeactivatedProfile />;
+
   if (!resume) return <SkeletonLoader />;
 
   return (
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
-      
       <div className="w-full h-auto">
         {resume.banner ? (
           <Image

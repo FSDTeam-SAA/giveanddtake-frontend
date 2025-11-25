@@ -23,6 +23,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 // Type definitions
 interface Payment {
@@ -150,7 +151,7 @@ export function PaymentHistory() {
         setIsModalOpen(false);
         router.refresh();
       } else {
-        alert(`Refund failed: ${data.message || "Unknown error"}`);
+        toast.error(`Refund failed: ${data.message || "Unknown error"}`);
       }
     } catch (err) {
       console.error(err);
