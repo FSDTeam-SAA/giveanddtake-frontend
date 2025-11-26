@@ -39,14 +39,7 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
-import {
-  Eye,
-  EyeOff,
-  User,
-  Mail,
-  Lock,
-  Building2,
-} from "lucide-react";
+import { Eye, EyeOff, User, Mail, Lock, Building2 } from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
@@ -59,9 +52,10 @@ import CustomDateInput from "@/components/custom-date-input";
    Types / constants
 ========================= */
 interface Country {
-  name: string;
-  code: string;
-  dial_code: string;
+  iso2: string;
+  iso3: string;
+  country: string;
+  cities: string[];
 }
 
 type ValidRole = "candidate" | "recruiter" | "company";
@@ -166,25 +160,38 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, role: selectedRole }));
   }, [selectedRole]);
 
-  // Fetch countries once
+  // Fetch countries once (new API shape)
   useEffect(() => {
     const fetchCountries = async () => {
       setIsLoadingCountries(true);
       try {
         const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/codes"
+          `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
         );
-        const data = await response.json();
-        if (!data.error) {
-          setCountries(data.data as Country[]);
-          // ❌ no default country selection here
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const json = await response.json();
+
+        // New response: { success: boolean, message: string, data: Country[] }
+        if (json.success && Array.isArray(json.data)) {
+          const apiCountries = json.data as Country[];
+          // optional: sort alphabetically by name
+          apiCountries.sort((a, b) => a.country.localeCompare(b.country));
+          setCountries(apiCountries);
+        } else {
+          console.error("Unexpected countries response:", json);
         }
       } catch (error) {
         console.error("Error fetching countries:", error);
+        toast.error("Failed to load countries. Please try again.");
       } finally {
         setIsLoadingCountries(false);
       }
     };
+
     fetchCountries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -413,7 +420,9 @@ export default function RegisterPage() {
                 )}
                 <Input
                   id="firstName"
-                  placeholder={isCompany ? "Enter Company Name" : "Enter First Name"}
+                  placeholder={
+                    isCompany ? "Enter Company Name" : "Enter First Name"
+                  }
                   value={firstName}
                   onChange={(e) => {
                     const raw = e.target.value;
@@ -447,7 +456,9 @@ export default function RegisterPage() {
                 <Input
                   id="surname"
                   placeholder={
-                    isCompany ? "e.g., Ltd, Inc, GmbH (optional)" : "Enter Surname"
+                    isCompany
+                      ? "e.g., Ltd, Inc, GmbH (optional)"
+                      : "Enter Surname"
                   }
                   value={surname}
                   onChange={(e) => {
@@ -519,8 +530,11 @@ export default function RegisterPage() {
                       "w-full justify-between",
                       !selectedCountry && "text-muted-foreground"
                     )}
+                    disabled={isLoadingCountries}
                   >
-                    {selectedCountry || "Select country"}
+                    {isLoadingCountries
+                      ? "Loading countries..."
+                      : selectedCountry || "Select country"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -532,21 +546,22 @@ export default function RegisterPage() {
                       <CommandGroup>
                         {countries.map((country) => (
                           <CommandItem
-                            key={country.code}
+                            key={country.iso2}
                             onSelect={() => {
-                              handleCountryChange(country.name);
+                              // Store the country name in formData.address
+                              handleCountryChange(country.country);
                               setOpenCountryPopover(false); // close popover on select
                             }}
                           >
                             <Check
                               className={cn(
                                 "mr-2 h-4 w-4",
-                                country.name === selectedCountry
+                                country.country === selectedCountry
                                   ? "opacity-100"
                                   : "opacity-0"
                               )}
                             />
-                            {country.name}
+                            {country.country}
                           </CommandItem>
                         ))}
                       </CommandGroup>
@@ -814,7 +829,8 @@ export default function RegisterPage() {
               </span>
             </div>
             <div>
-              Email: <span className="font-medium">{formData.email || "—"}</span>
+              Email:{" "}
+              <span className="font-medium">{formData.email || "—"}</span>
             </div>
             <div>
               Country:{" "}

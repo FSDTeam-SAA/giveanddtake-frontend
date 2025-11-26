@@ -803,9 +803,7 @@ export function SiteHeader() {
                         Blogs
                       </Link>
                       {/* Upgrade Plan (mobile) */}
-                      {status === "authenticated" &&
-                        !isValid &&
-                        getUpgradePath() && (
+                      {status === "authenticated" && (
                           <Link
                             href={getUpgradePath()!}
                             onClick={() => setSheetOpen(false)}

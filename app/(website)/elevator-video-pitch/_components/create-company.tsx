@@ -64,9 +64,7 @@ const formSchema = z.object({
     .min(1, "Country is required")
     .max(50, "Country name is too long"),
   city: z.string().min(1, "City is required").max(50, "City name is too long"),
-  zipcode: z
-    .string()
-    .max(20, "Zip code is too long"),
+  zipcode: z.string().max(20, "Zip code is too long"),
   cemail: z
     .string()
     .email("Invalid email address")
@@ -377,7 +375,7 @@ export default function CreateCompanyPage() {
     queryKey: ["countries"],
     queryFn: async () => {
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries"
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
       );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
@@ -404,7 +402,7 @@ export default function CreateCompanyPage() {
     queryFn: async () => {
       if (!selectedCountry) return [];
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -663,8 +661,6 @@ export default function CreateCompanyPage() {
     }
   };
 
-
-
   return (
     <div className="container mx-auto py-6 space-y-8 bg-white">
       <div className="text-center">
@@ -892,8 +888,6 @@ export default function CreateCompanyPage() {
                   </FormItem>
                 )}
               />
-
-            
             </div>
           </div>
 

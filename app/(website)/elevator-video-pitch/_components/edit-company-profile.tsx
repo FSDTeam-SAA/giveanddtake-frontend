@@ -71,7 +71,6 @@ const PLATFORMS_IN_STORAGE = [
   "Others",
 ] as const;
 
-
 // Form schema with sLink
 const formSchema = z.object({
   cname: z.string().min(1, "Company name is required"),
@@ -113,7 +112,7 @@ interface Honor {
 
 // API functions for countries and cities
 const fetchCountries = async (): Promise<Country[]> => {
-  const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/countries`);
   const data = await response.json();
   if (data.error) throw new Error("Failed to fetch countries");
   return data.data as Country[];
@@ -122,7 +121,7 @@ const fetchCountries = async (): Promise<Country[]> => {
 const fetchCities = async (country: string): Promise<string[]> => {
   if (!country) return [];
   const response = await fetch(
-    "https://countriesnow.space/api/v0.1/countries/cities",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
     {
       method: "POST",
       headers: {
@@ -215,7 +214,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       },
     });
 
-    console.log("", industriesData)
+  console.log("", industriesData);
 
   const industryOptions = useMemo(
     () =>
@@ -273,79 +272,78 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
     }
   }, [companyData]);
 
-useEffect(() => {
-  if (companyData?.data?.companies?.[0]) {
-    const company = companyData.data.companies[0];
+  useEffect(() => {
+    if (companyData?.data?.companies?.[0]) {
+      const company = companyData.data.companies[0];
 
-    // build lookup for quick access
-    const byLabel: Record<string, string> = {};
-    (company.sLink ?? []).forEach((s: { label: string; url: string }) => {
-      if (!s?.label) return;
-      const key = s.label.trim() === "Other" ? "Others" : s.label.trim(); // normalize
-      byLabel[key] = s.url ?? "";
-    });
+      // build lookup for quick access
+      const byLabel: Record<string, string> = {};
+      (company.sLink ?? []).forEach((s: { label: string; url: string }) => {
+        if (!s?.label) return;
+        const key = s.label.trim() === "Other" ? "Others" : s.label.trim(); // normalize
+        byLabel[key] = s.url ?? "";
+      });
 
-    // normalize sLink into our expected fixed order
-    const normalizedSLink = PLATFORMS_IN_STORAGE.map((label) => ({
-      label,
-      url: byLabel[label] ?? "",
-    }));
+      // normalize sLink into our expected fixed order
+      const normalizedSLink = PLATFORMS_IN_STORAGE.map((label) => ({
+        label,
+        url: byLabel[label] ?? "",
+      }));
 
-    // reset form with normalized values
-    form.reset({
-      cname: company.cname || "",
-      country: company.country || "",
-      city: company.city || "",
-      zipcode: company.zipcode || "",
-      cemail: company.cemail || "",
-      aboutUs: company.aboutUs || "",
-      industry: company.industry || "",
-      sLink: normalizedSLink,
-    });
+      // reset form with normalized values
+      form.reset({
+        cname: company.cname || "",
+        country: company.country || "",
+        city: company.city || "",
+        zipcode: company.zipcode || "",
+        cemail: company.cemail || "",
+        aboutUs: company.aboutUs || "",
+        industry: company.industry || "",
+        sLink: normalizedSLink,
+      });
 
-    // other data loading logic (keep your existing code)
-    if (company.service && company.service.length > 0) {
-      setServices(company.service);
+      // other data loading logic (keep your existing code)
+      if (company.service && company.service.length > 0) {
+        setServices(company.service);
+      } else {
+        setServices([""]);
+      }
+
+      if (company.employeesId) {
+        setSelectedEmployees(company.employeesId);
+      }
+    }
+
+    if (companyData?.data?.honors && companyData.data.honors.length > 0) {
+      const loadedHonors = companyData.data.honors.map(
+        (honor: any, index: number) => ({
+          id: `existing-${index}`,
+          _id: honor._id,
+          title: honor.title || "",
+          issuer: honor.issuer || "",
+          programeDate: honor.programeDate
+            ? new Date(honor.programeDate).toISOString().split("T")[0]
+            : "",
+          description: honor.description || "",
+          isNew: false,
+        })
+      );
+      setHonors(loadedHonors);
+      setOriginalHonors([...loadedHonors]);
     } else {
-      setServices([""]);
+      setHonors([
+        {
+          id: "1",
+          title: "",
+          issuer: "",
+          programeDate: "",
+          description: "",
+          isNew: true,
+        },
+      ]);
+      setOriginalHonors([]);
     }
-
-    if (company.employeesId) {
-      setSelectedEmployees(company.employeesId);
-    }
-  }
-
-  if (companyData?.data?.honors && companyData.data.honors.length > 0) {
-    const loadedHonors = companyData.data.honors.map(
-      (honor: any, index: number) => ({
-        id: `existing-${index}`,
-        _id: honor._id,
-        title: honor.title || "",
-        issuer: honor.issuer || "",
-        programeDate: honor.programeDate
-          ? new Date(honor.programeDate).toISOString().split("T")[0]
-          : "",
-        description: honor.description || "",
-        isNew: false,
-      })
-    );
-    setHonors(loadedHonors);
-    setOriginalHonors([...loadedHonors]);
-  } else {
-    setHonors([
-      {
-        id: "1",
-        title: "",
-        issuer: "",
-        programeDate: "",
-        description: "",
-        isNew: true,
-      },
-    ]);
-    setOriginalHonors([]);
-  }
-}, [companyData, form]);
-
+  }, [companyData, form]);
 
   const addService = () => {
     setServices([...services, ""]);
@@ -455,90 +453,90 @@ useEffect(() => {
     }
   };
 
- const onSubmit = async (data: FormData) => {
-  try {
-    setIsUpdating(true);
+  const onSubmit = async (data: FormData) => {
+    try {
+      setIsUpdating(true);
 
-    // clean up services
-    const filteredServices = services.map((s) => s.trim()).filter(Boolean);
+      // clean up services
+      const filteredServices = services.map((s) => s.trim()).filter(Boolean);
 
-    // only keep social links with non-empty URL
-    const cleanSLink = (data.sLink ?? [])
-      .map(({ label, url }) => ({
-        label: label === "Other" ? "Others" : label,
-        url: (url ?? "").trim(),
-      }))
-      .filter((x) => x.url !== ""); // remove empty ones ✅
+      // only keep social links with non-empty URL
+      const cleanSLink = (data.sLink ?? [])
+        .map(({ label, url }) => ({
+          label: label === "Other" ? "Others" : label,
+          url: (url ?? "").trim(),
+        }))
+        .filter((x) => x.url !== ""); // remove empty ones ✅
 
-    // process honors as before
-    const processedHonors = honors
-      .filter((honor) => !honor.isDeleted)
-      .filter(
-        (honor) =>
-          honor.title.trim() !== "" || honor.description.trim() !== ""
-      )
-      .map((honor) => {
-        const baseHonor = {
-          title: honor.title.trim(),
-          issuer: honor.issuer.trim(),
-          programeDate: honor.programeDate,
-          description: honor.description.trim(),
-        };
-
-        if (honor.isNew) {
-          return { ...baseHonor, type: "create" };
-        } else {
-          const original = originalHonors.find(
-            (orig) => orig._id === honor._id
-          );
-          const isModified =
-            !original ||
-            original.title !== honor.title ||
-            original.issuer !== honor.issuer ||
-            original.programeDate !== honor.programeDate ||
-            original.description !== honor.description;
-
-          return {
-            ...baseHonor,
-            _id: honor._id,
-            type: isModified ? "update" : "update",
+      // process honors as before
+      const processedHonors = honors
+        .filter((honor) => !honor.isDeleted)
+        .filter(
+          (honor) =>
+            honor.title.trim() !== "" || honor.description.trim() !== ""
+        )
+        .map((honor) => {
+          const baseHonor = {
+            title: honor.title.trim(),
+            issuer: honor.issuer.trim(),
+            programeDate: honor.programeDate,
+            description: honor.description.trim(),
           };
-        }
-      });
 
-    const deletedHonors = originalHonors
-      .filter((original) => {
-        const stillExists = honors.find(
-          (h) => h._id === original._id && !h.isDeleted
-        );
-        return !stillExists;
-      })
-      .map((honor) => ({
-        _id: honor._id,
-        type: "delete",
-      }));
+          if (honor.isNew) {
+            return { ...baseHonor, type: "create" };
+          } else {
+            const original = originalHonors.find(
+              (orig) => orig._id === honor._id
+            );
+            const isModified =
+              !original ||
+              original.title !== honor.title ||
+              original.issuer !== honor.issuer ||
+              original.programeDate !== honor.programeDate ||
+              original.description !== honor.description;
 
-    const allHonors = [...processedHonors, ...deletedHonors];
+            return {
+              ...baseHonor,
+              _id: honor._id,
+              type: isModified ? "update" : "update",
+            };
+          }
+        });
 
-    // prepare final data to send
-    const formData = {
-      ...data,
-      sLink: cleanSLink, // ✅ only filled links
-      service: filteredServices,
-      employeesId: selectedEmployees,
-      honors: allHonors,
-    };
+      const deletedHonors = originalHonors
+        .filter((original) => {
+          const stillExists = honors.find(
+            (h) => h._id === original._id && !h.isDeleted
+          );
+          return !stillExists;
+        })
+        .map((honor) => ({
+          _id: honor._id,
+          type: "delete",
+        }));
 
-    await updateCompany(formData);
-    toast.success("Company updated successfully!");
-    router.push("/elevator-video-pitch");
-  } catch (error: any) {
-    console.error("Error updating company:", error);
-    toast.error(error.message || "Failed to update company");
-  } finally {
-    setIsUpdating(false);
-  }
-};
+      const allHonors = [...processedHonors, ...deletedHonors];
+
+      // prepare final data to send
+      const formData = {
+        ...data,
+        sLink: cleanSLink, // ✅ only filled links
+        service: filteredServices,
+        employeesId: selectedEmployees,
+        honors: allHonors,
+      };
+
+      await updateCompany(formData);
+      toast.success("Company updated successfully!");
+      router.push("/elevator-video-pitch");
+    } catch (error: any) {
+      console.error("Error updating company:", error);
+      toast.error(error.message || "Failed to update company");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (isLoading) {
     return (
