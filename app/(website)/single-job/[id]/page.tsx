@@ -111,7 +111,7 @@ async function fetchJobCategories() {
 }
 
 async function fetchCountries() {
-  const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/countries`);
   const data = await response.json();
   if (data.error) throw new Error("Failed to fetch countries");
   return data.data as Country[];
@@ -119,7 +119,7 @@ async function fetchCountries() {
 
 async function fetchCities(country: string) {
   const response = await fetch(
-    "https://countriesnow.space/api/v0.1/countries/cities",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -383,7 +383,9 @@ export default function JobPreview() {
       setPublishNow(checked);
       if (checked) {
         const fallback =
-          jobData?.updatedAt || jobData?.publishDate || new Date().toISOString();
+          jobData?.updatedAt ||
+          jobData?.publishDate ||
+          new Date().toISOString();
         setSelectedDate(new Date(fallback));
       }
     },

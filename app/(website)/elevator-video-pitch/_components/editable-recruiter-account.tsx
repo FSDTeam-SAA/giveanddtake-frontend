@@ -146,7 +146,7 @@ function formatFollowerCount(n?: number) {
 }
 
 const fetchCountries = async (): Promise<Country[]> => {
-  const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/countries`);
   const data = await response.json();
   if (data.error) throw new Error("Failed to fetch countries");
   return data.data as Country[];
@@ -155,7 +155,7 @@ const fetchCountries = async (): Promise<Country[]> => {
 const fetchCities = async (country: string): Promise<string[]> => {
   if (!country) return [];
   const response = await fetch(
-    "https://countriesnow.space/api/v0.1/countries/cities",
+    `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -403,7 +403,7 @@ export default function EditableRecruiterAccount({
         />
       ) : (
         /* Show static banner when not editing */
-        recruiter?.banner !== undefined &&(
+        recruiter?.banner !== undefined && (
           <div className="w-full h-auto ">
             {recruiter.banner ? (
               <Image

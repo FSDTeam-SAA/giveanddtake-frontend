@@ -512,7 +512,7 @@ export default function CreateRecruiterAccountForm() {
     queryKey: ["countries"],
     queryFn: async () => {
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries"
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
       );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
@@ -525,7 +525,7 @@ export default function CreateRecruiterAccountForm() {
     queryFn: async () => {
       if (!selectedCountry) return [];
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -859,10 +859,10 @@ export default function CreateRecruiterAccountForm() {
               )}
               {isElevatorPitchUploaded && (
                 <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-                <p className="text-sm text-green-600 font-medium">
-                  ✓ Elevator pitch upload finished! We’re processing your video
-                  in the background—go ahead and submit.
-                </p>
+                  <p className="text-sm text-green-600 font-medium">
+                    ✓ Elevator pitch upload finished! We’re processing your
+                    video in the background—go ahead and submit.
+                  </p>
                 </div>
               )}
             </CardContent>

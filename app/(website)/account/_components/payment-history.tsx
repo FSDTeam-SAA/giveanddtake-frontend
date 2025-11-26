@@ -116,7 +116,11 @@ export function PaymentHistory() {
           setMeta(result.meta);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Error fetching payment history.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Error fetching payment history."
+        );
       } finally {
         setIsLoading(false);
       }
@@ -135,14 +139,17 @@ export function PaymentHistory() {
 
     setIsRefunding(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/refund-order`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ paymentId: selectedPayment._id }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/refund-order`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ paymentId: selectedPayment._id }),
+        }
+      );
 
       const data = await res.json();
 
@@ -201,7 +208,7 @@ export function PaymentHistory() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-6">
       <h2 className="text-2xl font-bold mb-6 text-center">Payment History</h2>
 
       {error && <p className="text-center text-red-500">{error}</p>}
@@ -213,51 +220,70 @@ export function PaymentHistory() {
           ))}
         </div>
       ) : paymentData.length === 0 ? (
-        <p className="text-center text-gray-600">No payment history available.</p>
+        <p className="text-center text-gray-600">
+          No payment history available.
+        </p>
       ) : (
-        <div className="overflow-x-auto">
-          <Table aria-label="Payment history table">
-            <TableHeader>
-              <TableRow>
-                <TableHead>Transaction ID</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Receipt</TableHead>
-                <TableHead>Refund</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paymentData.map((payment) => (
-                <TableRow key={payment._id}>
-                  <TableCell>{payment.transactionId}</TableCell>
-                  <TableCell>{format(new Date(payment.updatedAt), "PPp")}</TableCell>
-                  <TableCell>{payment.planTitle}</TableCell>
-                  <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                  <TableCell className="capitalize">{payment.paymentStatus}</TableCell>
-                  <TableCell>
-                    <Button size="sm" onClick={() => generateReceipt(payment)}>
-                      Download
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      disabled={payment.paymentStatus === "refunded"}
-                      onClick={() => {
-                        setSelectedPayment(payment);
-                        setIsModalOpen(true);
-                      }}
-                    >
-                      {payment.paymentStatus === "refunded" ? "Refunded" : "Refund"}
-                    </Button>
-                  </TableCell>
+        <div className="-mx-3 sm:mx-0">
+          <div className="overflow-x-auto md:overflow-visible">
+            <Table
+              aria-label="Payment history table"
+              className="min-w-[720px] md:min-w-0 w-full"
+            >
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transaction ID</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Receipt</TableHead>
+                  <TableHead>Refund</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paymentData.map((payment) => (
+                  <TableRow key={payment._id}>
+                    <TableCell className="text-xs sm:text-sm">
+                      {payment.transactionId}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      {format(new Date(payment.updatedAt), "PPp")}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      {payment.planTitle}
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm">
+                      ${payment.amount.toFixed(2)}
+                    </TableCell>
+                    <TableCell className="capitalize text-xs sm:text-sm">
+                      {payment.paymentStatus}
+                    </TableCell>
+                    <TableCell>
+                      <Button size="sm" onClick={() => generateReceipt(payment)}>
+                        Download
+                      </Button>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={payment.paymentStatus === "refunded"}
+                        onClick={() => {
+                          setSelectedPayment(payment);
+                          setIsModalOpen(true);
+                        }}
+                      >
+                        {payment.paymentStatus === "refunded"
+                          ? "Refunded"
+                          : "Refund"}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 

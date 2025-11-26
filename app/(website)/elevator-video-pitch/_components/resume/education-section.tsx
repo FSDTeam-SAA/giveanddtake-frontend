@@ -309,7 +309,7 @@ export function EducationSection({
     queryKey: ["countries"],
     queryFn: async () => {
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries"
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
       );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
@@ -321,7 +321,7 @@ export function EducationSection({
     if (!country) return [];
     try {
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
         {
           method: "POST",
           headers: {

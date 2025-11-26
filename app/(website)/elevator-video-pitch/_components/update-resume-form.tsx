@@ -223,7 +223,6 @@ export default function UpdateResumeForm({
   const [selectedCertifications, setSelectedCertifications] = useState<
     string[]
   >(resume.resume?.certifications || []);
-  
 
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
     Country[]
@@ -231,7 +230,7 @@ export default function UpdateResumeForm({
     queryKey: ["countries"],
     queryFn: async () => {
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries"
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
       );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
@@ -244,7 +243,7 @@ export default function UpdateResumeForm({
     queryFn: async () => {
       if (!selectedCountry) return [];
       const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -679,18 +678,18 @@ export default function UpdateResumeForm({
           />
 
           <div className="mt-6">
-              <FormField
-                control={form.control}
-                name="sLink"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <SocialLinksSection form={form} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="sLink"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <SocialLinksSection form={form} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
 
           <Card>

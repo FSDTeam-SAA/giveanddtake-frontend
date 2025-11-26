@@ -69,15 +69,24 @@ export function ExperienceSection({
   appendExperience,
   removeExperience,
 }: ExperienceSectionProps) {
-  const [selectedExperienceCountries, setSelectedExperienceCountries] = useState<string[]>([]);
-  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>([]);
-  const [loadingExperienceCities, setLoadingExperienceCities] = useState<boolean[]>([]);
+  const [selectedExperienceCountries, setSelectedExperienceCountries] =
+    useState<string[]>([]);
+  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>(
+    []
+  );
+  const [loadingExperienceCities, setLoadingExperienceCities] = useState<
+    boolean[]
+  >([]);
 
   // Fetch countries
-  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<Country[]>({
+  const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
+    Country[]
+  >({
     queryKey: ["countries"],
     queryFn: async () => {
-      const response = await fetch("https://countriesnow.space/api/v0.1/countries");
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
+      );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch countries");
       return data.data as Country[];
@@ -87,11 +96,14 @@ export function ExperienceSection({
   const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
     if (!country) return [];
     try {
-      const response = await fetch("https://countriesnow.space/api/v0.1/countries/cities", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ country }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country }),
+        }
+      );
       const data = await response.json();
       if (data.error) throw new Error("Failed to fetch cities");
       return data.data as string[];
@@ -129,7 +141,9 @@ export function ExperienceSection({
   // Sync experience countries state with form data
   useEffect(() => {
     setSelectedExperienceCountries(
-      experienceFields.map((field, idx) => form.getValues(`experiences.${idx}.country`) || "")
+      experienceFields.map(
+        (field, idx) => form.getValues(`experiences.${idx}.country`) || ""
+      )
     );
   }, [experienceFields]);
 
@@ -138,7 +152,9 @@ export function ExperienceSection({
     experienceFields.forEach((_, index) => {
       const startDate = form.getValues(`experiences.${index}.startDate`);
       const endDate = form.getValues(`experiences.${index}.endDate`);
-      const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+      const currentlyWorking = form.getValues(
+        `experiences.${index}.currentlyWorking`
+      );
 
       if (!currentlyWorking && startDate && endDate) {
         if (!isDateValid(startDate, endDate)) {
@@ -154,7 +170,8 @@ export function ExperienceSection({
   }, [form, experienceFields]);
 
   const countryOptions = useMemo(
-    () => countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
+    () =>
+      countriesData?.map((c) => ({ value: c.country, label: c.country })) || [],
     [countriesData]
   );
 
@@ -187,7 +204,7 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
-              
+
               {/* Company Field */}
               <FormField
                 control={form.control}
@@ -202,7 +219,7 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
-              
+
               {/* Country Field */}
               <FormField
                 control={form.control}
@@ -222,7 +239,11 @@ export function ExperienceSection({
                             return newCountries;
                           });
                         }}
-                        placeholder={isLoadingCountries ? "Loading countries..." : "Select Country"}
+                        placeholder={
+                          isLoadingCountries
+                            ? "Loading countries..."
+                            : "Select Country"
+                        }
                         minSearchLength={0}
                         disabled={isLoadingCountries}
                       />
@@ -231,7 +252,7 @@ export function ExperienceSection({
                   </FormItem>
                 )}
               />
-              
+
               {/* City Field */}
               <FormField
                 control={form.control}
@@ -252,14 +273,17 @@ export function ExperienceSection({
                             : "Select City"
                         }
                         minSearchLength={2}
-                        disabled={loadingExperienceCities[index] || !selectedExperienceCountries[index]}
+                        disabled={
+                          loadingExperienceCities[index] ||
+                          !selectedExperienceCountries[index]
+                        }
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               {/* Date Fields */}
               <div className="space-y-4">
                 <FormField
@@ -279,11 +303,13 @@ export function ExperienceSection({
                           }}
                         />
                       </FormControl>
-                      <FormLabel className="font-normal">Currently Working</FormLabel>
+                      <FormLabel className="font-normal">
+                        Currently Working
+                      </FormLabel>
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name={`experiences.${index}.startDate`}
@@ -296,16 +322,23 @@ export function ExperienceSection({
                           onChange={(value) => {
                             field.onChange(value);
                             // Trigger validation for end date
-                            const endDate = form.getValues(`experiences.${index}.endDate`);
-                            const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+                            const endDate = form.getValues(
+                              `experiences.${index}.endDate`
+                            );
+                            const currentlyWorking = form.getValues(
+                              `experiences.${index}.currentlyWorking`
+                            );
                             if (!currentlyWorking && endDate && value) {
                               if (!isDateValid(value, endDate)) {
                                 form.setError(`experiences.${index}.endDate`, {
                                   type: "manual",
-                                  message: "End date cannot be earlier than start date",
+                                  message:
+                                    "End date cannot be earlier than start date",
                                 });
                               } else {
-                                form.clearErrors(`experiences.${index}.endDate`);
+                                form.clearErrors(
+                                  `experiences.${index}.endDate`
+                                );
                               }
                             }
                           }}
@@ -316,7 +349,7 @@ export function ExperienceSection({
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name={`experiences.${index}.endDate`}
@@ -329,21 +362,30 @@ export function ExperienceSection({
                           onChange={(value) => {
                             field.onChange(value);
                             // Validate against start date
-                            const startDate = form.getValues(`experiences.${index}.startDate`);
-                            const currentlyWorking = form.getValues(`experiences.${index}.currentlyWorking`);
+                            const startDate = form.getValues(
+                              `experiences.${index}.startDate`
+                            );
+                            const currentlyWorking = form.getValues(
+                              `experiences.${index}.currentlyWorking`
+                            );
                             if (!currentlyWorking && startDate && value) {
                               if (!isDateValid(startDate, value)) {
                                 form.setError(`experiences.${index}.endDate`, {
                                   type: "manual",
-                                  message: "End date cannot be earlier than start date",
+                                  message:
+                                    "End date cannot be earlier than start date",
                                 });
                               } else {
-                                form.clearErrors(`experiences.${index}.endDate`);
+                                form.clearErrors(
+                                  `experiences.${index}.endDate`
+                                );
                               }
                             }
                           }}
                           placeholder="MM/YYYY"
-                          disabled={form.watch(`experiences.${index}.currentlyWorking`)}
+                          disabled={form.watch(
+                            `experiences.${index}.currentlyWorking`
+                          )}
                         />
                       </FormControl>
                       <FormMessage />
@@ -352,7 +394,7 @@ export function ExperienceSection({
                 />
               </div>
             </div>
-            
+
             {/* Job Description */}
             <FormField
               control={form.control}
@@ -370,7 +412,7 @@ export function ExperienceSection({
                 </FormItem>
               )}
             />
-            
+
             {/* Remove Button */}
             <Button
               type="button"
@@ -382,7 +424,7 @@ export function ExperienceSection({
             </Button>
           </div>
         ))}
-        
+
         {/* Add More Button */}
         <Button
           type="button"
