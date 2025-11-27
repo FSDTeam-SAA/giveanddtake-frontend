@@ -146,7 +146,6 @@ export default function JobPreview() {
   const router = useRouter();
   const params = useParams();
   const token = session.data?.accessToken;
-  console.log(token);
   const id = (params?.id as string) || "6896fb2b12980e468298ad0f";
 
   const [isEditing, setIsEditing] = useState(false);
@@ -294,7 +293,9 @@ export default function JobPreview() {
   const { mutate: updateJobMutation, isPending } = useMutation({
     mutationFn: (data: JobPostData) => updateJob(id, data, token),
     onSuccess: () => {
-      toast.success("Job updated successfully!");
+      toast.success(
+        "Job updated successfully! Admin will review and publish it soon."
+      );
       setIsEditing(false);
       router.refresh();
     },

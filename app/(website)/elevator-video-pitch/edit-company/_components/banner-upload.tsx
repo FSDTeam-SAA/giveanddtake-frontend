@@ -57,7 +57,6 @@ export function BannerUpload({ onFileSelect, previewUrl }: BannerUploadProps) {
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log("File input triggered", e.target.files) // Debug log
     const file = e.target.files?.[0]
     if (file) {
       handleFileSelect(file)

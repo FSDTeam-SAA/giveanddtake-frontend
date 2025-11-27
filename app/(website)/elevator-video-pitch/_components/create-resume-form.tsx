@@ -404,7 +404,6 @@ export default function CreateResumeForm() {
       const reader = new FileReader();
       reader.onload = () => {
         setPhotoPreview(reader.result as string);
-        console.log("Photo preview updated:", reader.result);
       };
       reader.onerror = (error) => {
         console.error("FileReader error:", error);
@@ -413,7 +412,6 @@ export default function CreateResumeForm() {
       reader.readAsDataURL(file);
     } else {
       setPhotoPreview(null);
-      console.log("Photo preview cleared");
     }
   };
 

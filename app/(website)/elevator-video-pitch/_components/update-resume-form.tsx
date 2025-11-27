@@ -635,7 +635,6 @@ export default function UpdateResumeForm({
       }
 
       await onUpdate(formData);
-      console.log("Form Data Submitted:", formData.getAll("awardsAndHonors"));
       toast.success("Resume updated successfully!");
     } catch (error) {
       console.error("Error in form submission:", error);

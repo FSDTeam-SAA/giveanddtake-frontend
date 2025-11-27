@@ -70,7 +70,6 @@ export default function JobList() {
     fetchApplications();
   }, [jobs]);
 
-  console.log("Total application counts:", applicationCounts);
 
   const deleteJobMutation = useMutation({
     mutationFn: (id: string) => deleteJob(id),

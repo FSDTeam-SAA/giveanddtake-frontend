@@ -81,12 +81,10 @@ export function SiteHeader() {
 
     // Define event handlers
     const handleNotification = (data: any) => {
-      console.log("🔔 Notification data:", data);
       setNotificationCount(data);
     };
 
     const handleMsgCount = (data: any) => {
-      console.log("💬 Message count:", data);
       setMsg(data);
     };
 
@@ -101,7 +99,6 @@ export function SiteHeader() {
     };
   }, [socket, userId]);
 
-  console.log(notificationCount, msg);
 
   const getUpgradePath = () => {
     switch (userRole) {

@@ -49,7 +49,6 @@ export default function RecruiterElevator({
 }: {
   recruiter: { bio: string };
 }) {
-  console.log("Recruiter data:", recruiter);
   const [loading, setLoading] = useState(true);
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [error, setError] = useState<string | null>(null);

@@ -121,7 +121,7 @@ export default function RecruiterListPage({
     retry: 2,
   });
 
-  console.log("DDDDDDDDDDDDD", data);
+  
 
   const handleInvalidate = () => {
     queryClient.invalidateQueries({
