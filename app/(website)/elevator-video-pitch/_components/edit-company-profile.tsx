@@ -214,7 +214,6 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       },
     });
 
-  console.log("", industriesData);
 
   const industryOptions = useMemo(
     () =>

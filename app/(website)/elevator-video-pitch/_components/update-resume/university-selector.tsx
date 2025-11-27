@@ -26,14 +26,12 @@ export const UniversitySelector = ({
         `${process.env.NEXT_PUBLIC_BASE_URL}/university`
       );
       const data = await response.json();
-      console.log(data);
       if (data.status !== "success" || !Array.isArray(data.data)) {
         throw new Error("Failed to fetch universities");
       }
       return data.data.map((uni: any) => uni.name);
     },
   });
-  console.log(universities);
 
   const filteredUniversities =
     universities?.filter((uni: string) =>

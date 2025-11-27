@@ -28,7 +28,6 @@ export default function RecruiterInfo() {
     })
 
 
-    console.log("Recruiter info: ", recruiter)
 
     return (
         <div className="lg:space-y-16 space-y-8">

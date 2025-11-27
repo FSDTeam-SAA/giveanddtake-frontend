@@ -457,7 +457,7 @@ export default function JobCard({
                   "No overlapping skills detected yet."
                 )}
                 {renderSkillPills(
-                  "Suggested skills to add",
+                  "Missing skills",
                   jobFit.missingSkills ?? [],
                   "Great news! You already cover all highlighted requirements."
                 )}

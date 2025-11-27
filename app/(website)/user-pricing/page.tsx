@@ -223,7 +223,9 @@ export default function PricingList() {
           const titleNorm = apiPlan?.title
             ? normalizeTitle(apiPlan.title)
             : null;
-          const vRaw = (apiPlan?.valid || "").toLowerCase().replace(/\s+/g, "");
+          const vRaw = (apiPlan?.valid || "")
+            .toLowerCase()
+            .replace(/\s+/g, "");
           const valid =
             vRaw === "monthly"
               ? "monthly"
@@ -296,6 +298,21 @@ export default function PricingList() {
   );
   const showFreeBanner = userIsValid === false && !!freePlan;
 
+  const currentPlanLabel = currentPlanMeta.titleNorm
+    ? toDisplayName(currentPlanMeta.titleNorm)
+    : null;
+
+  // 🔹 find matching plan and use its titleColor (fallback to default)
+  const currentPlanTitleColor = useMemo(() => {
+    if (!currentPlanMeta.titleNorm) return "#2B7FD0";
+
+    const match = pricingPlans.find(
+      (p) => p.titleKey === currentPlanMeta.titleNorm
+    );
+
+    return match?.titleColor ?? "#2B7FD0";
+  }, [pricingPlans, currentPlanMeta.titleNorm]);
+
   /* ----------------------------- UI ------------------------------ */
 
   if (isLoading)
@@ -317,10 +334,6 @@ export default function PricingList() {
       </div>
     );
 
-  const currentPlanLabel = currentPlanMeta.titleNorm
-    ? toDisplayName(currentPlanMeta.titleNorm)
-    : null;
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="text-center mb-12">
@@ -335,8 +348,11 @@ export default function PricingList() {
 
       {/* Banner logic */}
       {currentPlanLabel && (
-        <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700 text-center">
-          You&apos;re currently on our <strong>{currentPlanLabel}</strong>{" "}
+        <div className="mx-auto container max-w-[600px] mb-8 w-full rounded-lg border border-[#2B7FD0] p-4 text-center">
+          You&apos;re currently on our{" "}
+          <strong style={{ color: currentPlanTitleColor }}>
+            {currentPlanLabel}
+          </strong>{" "}
           {currentPlanMeta.valid ? `(${currentPlanMeta.valid})` : ""} plan.
         </div>
       )}

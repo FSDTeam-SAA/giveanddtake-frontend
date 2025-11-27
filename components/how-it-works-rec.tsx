@@ -19,7 +19,6 @@ export function HowItWorksRecruiter() {
     }
   };
 
-  console.log(token);
   return (
     <section className="w-full py-10 md:py-16 bg-gray-50">
       <div className="container px-4 md:px-6">
