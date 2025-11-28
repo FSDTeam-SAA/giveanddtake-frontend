@@ -51,6 +51,7 @@ interface JobDetailsData {
   experience: string;
   deadline: string;
   status: string;
+  updatedAt: string;
   location_Type: string;
   publishDate: string;
   compensation: string;
@@ -637,7 +638,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Published</span>
                   <span className="font-medium">
-                    {formatDate(job.publishDate)}
+                    {formatDate(job.updatedAt)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">

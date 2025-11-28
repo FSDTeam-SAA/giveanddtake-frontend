@@ -46,6 +46,7 @@ interface Job {
   createdAt: string;
   applicantCount?: number;
   counter?: number;
+  updatedAt: string;
 }
 interface JobFitInsight {
   score: number;
@@ -609,7 +610,7 @@ export default function JobCard({
       </div>
 
       <div className="text-[#059c05] font-semibold mt-3">
-        {formatDate(job.createdAt)}
+        {formatDate(job.updatedAt)}
       </div>
     </>
   );

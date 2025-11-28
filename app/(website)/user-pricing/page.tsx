@@ -353,7 +353,7 @@ export default function PricingList() {
           <strong style={{ color: currentPlanTitleColor }}>
             {currentPlanLabel}
           </strong>{" "}
-          {currentPlanMeta.valid ? `(${currentPlanMeta.valid})` : ""} plan.
+          {currentPlanMeta.valid ? `(${currentPlanMeta.valid})` : ""}.
         </div>
       )}
 

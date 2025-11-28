@@ -322,7 +322,6 @@ export default function PricingPage() {
         {currentPlanLabel && (
           <div className="mx-auto mb-8 w-full rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-700">
             You&apos;re currently on our <strong>{currentPlanLabel}</strong>{" "}
-            plan
             {currentPlanMeta.valid && ` (${currentPlanMeta.valid})`}.
           </div>
         )}
