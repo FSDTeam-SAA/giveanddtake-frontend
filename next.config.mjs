@@ -26,35 +26,46 @@ const PAYPAL_SCRIPT_HOSTS = [
   'https://www.sandbox.paypal.com',
 ]
 
-const PAYPAL_IMG_HOSTS = [
+const PAYPAL_MEDIA_HOSTS = [
   'https://www.paypalobjects.com',
   'https://www.paypal.com',
   'https://www.sandbox.paypal.com',
 ]
 
 const ContentSecurityPolicy = [
-  buildDirective('default-src', ["'self'"]),
+  buildDirective('default-src', ["'self'", 'https:', 'http:', 'data:', 'blob:']),
   buildDirective('script-src', [
     "'self'",
     "'unsafe-inline'",
     "'unsafe-eval'",
+    'https:',
+    'http:',
+    'data:',
+    'blob:',
     ...PAYPAL_SCRIPT_HOSTS,
   ]),
-  buildDirective('style-src', ["'self'", "'unsafe-inline'"]),
+  buildDirective('style-src', ["'self'", "'unsafe-inline'", 'https:', 'http:']),
   buildDirective('img-src', [
     "'self'",
     'data:',
     'blob:',
-    ...PAYPAL_IMG_HOSTS,
+    'https:',
+    'http:',
+    ...PAYPAL_MEDIA_HOSTS,
   ]),
+  buildDirective('media-src', ["'self'", 'data:', 'blob:', 'https:', 'http:']),
   buildDirective('connect-src', [
     "'self'",
+    'https:',
+    'http:',
+    'wss:',
+    'ws:',
     apiOrigin,
     socketHttpOrigin,
     socketWsOrigin,
     ...PAYPAL_SCRIPT_HOSTS,
   ]),
-  buildDirective('font-src', ["'self'"]),
+  buildDirective('font-src', ["'self'", 'data:', 'https:']),
   buildDirective('frame-ancestors', ["'none'"]),
 ].join(' ')
 
