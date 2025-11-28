@@ -1,11 +1,61 @@
+const parseOrigin = (value) => {
+  if (!value) return null
+  try {
+    return new URL(value.trim()).origin
+  } catch {
+    return null
+  }
+}
+
+const toWsOrigin = (origin) => {
+  if (!origin) return null
+  if (origin.startsWith('https://')) return origin.replace('https://', 'wss://')
+  if (origin.startsWith('http://')) return origin.replace('http://', 'ws://')
+  return origin
+}
+
+const apiOrigin = parseOrigin(process.env.NEXT_PUBLIC_BASE_URL)
+const socketHttpOrigin = parseOrigin(process.env.NEXT_PUBLIC_SOCKET_URL)
+const socketWsOrigin = toWsOrigin(socketHttpOrigin)
+
+const buildDirective = (name, values) =>
+  `${name} ${[...new Set(values.filter(Boolean))].join(' ')};`
+
+const PAYPAL_SCRIPT_HOSTS = [
+  'https://www.paypal.com',
+  'https://www.sandbox.paypal.com',
+]
+
+const PAYPAL_IMG_HOSTS = [
+  'https://www.paypalobjects.com',
+  'https://www.paypal.com',
+  'https://www.sandbox.paypal.com',
+]
+
 const ContentSecurityPolicy = [
-  "default-src 'self';",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval';",
-  "style-src 'self' 'unsafe-inline';",
-  "img-src 'self' data: blob:;",
-  "connect-src 'self';",
-  "font-src 'self';",
-  "frame-ancestors 'none';",
+  buildDirective('default-src', ["'self'"]),
+  buildDirective('script-src', [
+    "'self'",
+    "'unsafe-inline'",
+    "'unsafe-eval'",
+    ...PAYPAL_SCRIPT_HOSTS,
+  ]),
+  buildDirective('style-src', ["'self'", "'unsafe-inline'"]),
+  buildDirective('img-src', [
+    "'self'",
+    'data:',
+    'blob:',
+    ...PAYPAL_IMG_HOSTS,
+  ]),
+  buildDirective('connect-src', [
+    "'self'",
+    apiOrigin,
+    socketHttpOrigin,
+    socketWsOrigin,
+    ...PAYPAL_SCRIPT_HOSTS,
+  ]),
+  buildDirective('font-src', ["'self'"]),
+  buildDirective('frame-ancestors', ["'none'"]),
 ].join(' ')
 
 const securityHeaders = [
