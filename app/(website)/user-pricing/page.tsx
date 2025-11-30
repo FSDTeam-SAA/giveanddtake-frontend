@@ -72,6 +72,7 @@ type LocalPlan = {
 
 const normalizeTitle = (t: string) =>
   (t || "").replace(/\s+/g, " ").trim().toLowerCase();
+
 // legacy helper (kept if needed elsewhere); logic now uses price==0 rather than title
 const isFreeTitle = (name: string) => normalizeTitle(name) === "basic plan";
 
@@ -313,6 +314,17 @@ export default function PricingList() {
     return match?.titleColor ?? "#2B7FD0";
   }, [pricingPlans, currentPlanMeta.titleNorm]);
 
+  // 🔹 is the user's current plan the free ($0) one?
+  const currentPlanIsFree = useMemo(() => {
+    if (!currentPlanMeta.titleNorm) return false;
+
+    const match = pricingPlans.find(
+      (p) => p.titleKey === currentPlanMeta.titleNorm
+    );
+
+    return match ? isZeroPriced(match) : false;
+  }, [pricingPlans, currentPlanMeta.titleNorm]);
+
   /* ----------------------------- UI ------------------------------ */
 
   if (isLoading)
@@ -380,6 +392,11 @@ export default function PricingList() {
 
             const titleColor = plan.titleColor ?? "#2B7FD0";
 
+            // ⬇️ If user is on paid plan (currentPlanIsFree === false)
+            // and this card is the free ($0) plan, disable this button.
+            const isDowngradeToFree =
+              zeroPriced && !currentPlanIsFree && !!currentPlanMeta.titleNorm;
+
             return (
               <Card
                 key={index}
@@ -446,9 +463,13 @@ export default function PricingList() {
                     className="h-[58px] w-full rounded-[80px] text-lg font-semibold border-2 border-[#2B7FD0] bg-transparent text-[#2B7FD0] hover:bg-[#2B7FD0] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     variant="outline"
                     onClick={() => handlePlanSelect(plan)}
-                    disabled={isCurrent}
+                    disabled={isCurrent || isDowngradeToFree}
                   >
-                    {isCurrent ? "Current Plan" : plan.buttonText}
+                    {isCurrent
+                      ? "Current Plan"
+                      : isDowngradeToFree
+                      ? "Downgrade not allowed"
+                      : plan.buttonText}
                   </Button>
                 </CardFooter>
               </Card>

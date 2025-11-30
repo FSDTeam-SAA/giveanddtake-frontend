@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Edit } from "lucide-react";
+import { ArrowLeft, Edit, Check } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -73,6 +73,12 @@ interface JobPostData {
   career_Stage: string;
   location_Type: string;
 }
+
+// STATIC APPLICATION REQUIREMENTS
+const STATIC_REQUIREMENTS = [
+  { id: "resume", label: "Resume" },
+  { id: "visa", label: "Valid visa for this job location?" },
+];
 
 // keep this OUTSIDE the component
 async function updateJob(id: string, data: JobPostData, token?: string) {
@@ -172,9 +178,18 @@ export default function JobPreview() {
     locationType: "",
     careerStage: "",
   });
+
+  // Static application requirements state (Resume + Visa)
   const [applicationRequirements, setApplicationRequirements] = useState<
     ApplicationRequirement[]
-  >([]);
+  >(() =>
+    STATIC_REQUIREMENTS.map((r) => ({
+      id: r.id,
+      requirement: r.label,
+      status: "",
+    }))
+  );
+
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
 
   // react-query
@@ -212,6 +227,21 @@ export default function JobPreview() {
   // --- LOOP FIX: split initialization into two effects and guard with refs ---
   const initializedFromJobRef = useRef(false);
 
+  // util inside file
+  const deriveExpirationDays = (job: any) => {
+    const expirySource = job?.expiryDate || job?.deadline;
+    const publishBase = job?.publishDate || job?.createdAt;
+    if (!expirySource || !publishBase) return "";
+    const expiry = new Date(expirySource);
+    const base = new Date(publishBase);
+    if (Number.isNaN(expiry.getTime()) || Number.isNaN(base.getTime())) {
+      return "";
+    }
+    const diffMs = expiry.getTime() - base.getTime();
+    const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+    return diffDays.toString();
+  };
+
   // 1) Initialize from jobData ONCE
   useEffect(() => {
     if (!jobData || initializedFromJobRef.current) return;
@@ -229,7 +259,6 @@ export default function JobPreview() {
       region: region || "",
       employmentType: jobData.employement_Type || "",
       experience: jobData.experience || "",
-      // category & role set later after categories are available
       categoryId: jobData.jobCategoryId || "",
       compensationCurrency: jobData.compensationCurrency || "",
       compensation: jobData.salaryRange?.replace(/[^\d]/g, "") || "",
@@ -242,12 +271,20 @@ export default function JobPreview() {
       careerStage: jobData.career_Stage || "",
     }));
 
+    // Initialize static application requirements from job data statuses
     setApplicationRequirements(
-      jobData.applicationRequirement?.map((req: any, idx: number) => ({
-        id: req._id || `req-${idx}`,
-        requirement: req.requirement || "",
-        status: req.status || "",
-      })) || []
+      STATIC_REQUIREMENTS.map((r, idx) => {
+        const existing =
+          jobData.applicationRequirement?.find(
+            (req: any) => req.requirement === r.label
+          ) ?? jobData.applicationRequirement?.[idx];
+
+        return {
+          id: r.id,
+          requirement: r.label,
+          status: existing?.status || "",
+        };
+      })
     );
 
     setCustomQuestions(
@@ -304,21 +341,6 @@ export default function JobPreview() {
     },
   });
 
-  // utils inside the component file (or extract to a util)
-  const deriveExpirationDays = (job: any) => {
-    const expirySource = job?.expiryDate || job?.deadline;
-    const publishBase = job?.publishDate || job?.createdAt;
-    if (!expirySource || !publishBase) return "";
-    const expiry = new Date(expirySource);
-    const base = new Date(publishBase);
-    if (Number.isNaN(expiry.getTime()) || Number.isNaN(base.getTime())) {
-      return "";
-    }
-    const diffMs = expiry.getTime() - base.getTime();
-    const diffDays = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
-    return diffDays.toString();
-  };
-
   function computeDeadline(publishAt: string | Date, daysStr: string): string {
     const days = Number.parseInt(daysStr || "", 10);
     const safeDays = Number.isFinite(days) && days > 0 ? days : 30; // default 30
@@ -342,25 +364,17 @@ export default function JobPreview() {
     []
   );
 
-  const handleAddRequirement = useCallback(() => {
-    setApplicationRequirements((prev) => [
-      ...prev,
-      { id: `req-${Date.now()}`, requirement: "", status: "" },
-    ]);
-  }, []);
-
   const handleUpdateRequirement = useCallback(
     (id: string, field: string, value: string) => {
+      if (field !== "status") return;
       setApplicationRequirements((prev) =>
-        prev.map((req) => (req.id === id ? { ...req, [field]: value } : req))
+        prev.map((req) =>
+          req.id === id ? { ...req, status: value } : req
+        )
       );
     },
     []
   );
-
-  const handleRemoveRequirement = useCallback((id: string) => {
-    setApplicationRequirements((prev) => prev.filter((req) => req.id !== id));
-  }, []);
 
   const handleAddQuestion = useCallback(() => {
     setCustomQuestions((prev) => [
@@ -407,7 +421,7 @@ export default function JobPreview() {
       ? new Date(jobData?.updatedAt || Date.now()).toISOString()
       : selectedDate?.toISOString() ?? new Date().toISOString();
 
-    // 👇 turn “expiration days” into a real deadline date
+    // turn “expiration days” into a real deadline date
     const deadlineISO = computeDeadline(
       publishAtISO,
       String(formData.expirationDate || "")
@@ -461,6 +475,7 @@ export default function JobPreview() {
     applicationRequirements,
     customQuestions,
     updateJobMutation,
+    token,
   ]);
 
   const descriptionCharCount = formData.jobDescription.length;
@@ -645,96 +660,61 @@ export default function JobPreview() {
           {/* Application Requirements */}
           <Card className="border-none shadow-md col-span-1">
             <CardContent className="p-6 sm:p-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                 Application Requirements
               </h2>
+              <p className="text-sm text-gray-600 mb-6">
+                What personal info would you like to gather about each
+                applicant?
+              </p>
               <div className="space-y-4">
-                {applicationRequirements.length === 0 && !isEditing && (
-                  <div className="p-3 border border-dashed border-gray-300 rounded-lg text-gray-500">
-                    No requirements added.
-                  </div>
-                )}
                 {applicationRequirements.map((req) => (
                   <div
                     key={req.id}
-                    className="flex flex-col sm:flex-row sm:items-end gap-3"
+                    className="flex items-center justify-between gap-4 border border-gray-200 rounded-lg px-4 py-3 bg-gray-50"
                   >
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#2B7FD0] text-white">
+                        <Check className="h-4 w-4" />
+                      </span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {req.requirement}
+                      </span>
+                    </div>
+
                     {isEditing ? (
-                      <>
-                        <div className="flex-1">
-                          <label className="text-sm font-medium text-gray-700">
-                            Requirement
-                          </label>
-                          <input
-                            type="text"
-                            value={req.requirement}
-                            onChange={(e) =>
-                              handleUpdateRequirement(
-                                req.id,
-                                "requirement",
-                                e.target.value
-                              )
-                            }
-                            className="w-full h-11 px-3 border border-gray-300 rounded-lg"
-                            placeholder="Enter requirement"
-                          />
-                        </div>
-                        <div className="sm:w-48">
-                          <label className="text-sm font-medium text-gray-700">
-                            Status
-                          </label>
-                          <select
-                            value={req.status}
-                            onChange={(e) =>
-                              handleUpdateRequirement(
-                                req.id,
-                                "status",
-                                e.target.value
-                              )
-                            }
-                            className="w-full h-11 px-3 border border-gray-300 rounded-lg bg-white"
-                          >
-                            <option value="">Select Status</option>
-                            <option value="Required">Required</option>
-                            <option value="Optional">Optional</option>
-                          </select>
-                        </div>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRemoveRequirement(req.id)}
-                        >
-                          Remove
-                        </Button>
-                      </>
+                      <select
+                        value={req.status}
+                        onChange={(e) =>
+                          handleUpdateRequirement(
+                            req.id,
+                            "status",
+                            e.target.value
+                          )
+                        }
+                        className="w-40 h-9 px-3 border border-gray-300 rounded-md bg-white text-sm text-gray-700"
+                      >
+                        <option value="">Set status</option>
+                        <option value="Required">Required</option>
+                        <option value="Optional">Optional</option>
+                      </select>
                     ) : (
-                      <div className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50">
-                        <p className="font-medium">{req.requirement || "—"}</p>
-                        <p className="text-sm text-gray-600">
-                          {req.status === "Required" ? (
-                            <span className="text-red-600 font-semibold">
-                              Required
-                            </span>
-                          ) : req.status === "Optional" ? (
-                            <span className="text-blue-600 font-semibold">
-                              Optional
-                            </span>
-                          ) : (
-                            "—"
-                          )}
-                        </p>
+                      <div className="text-sm">
+                        {req.status === "Required" ? (
+                          <span className="px-3 py-1 rounded-full bg-red-50 text-red-600 font-semibold">
+                            Required
+                          </span>
+                        ) : req.status === "Optional" ? (
+                          <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-semibold">
+                            Optional
+                          </span>
+                        ) : (
+                          <span className="text-gray-500">Not set</span>
+                        )}
                       </div>
                     )}
                   </div>
                 ))}
-                {isEditing && (
-                  <Button
-                    onClick={handleAddRequirement}
-                    className="mt-2 bg-[#2B7FD0]"
-                  >
-                    Add Requirement
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>
