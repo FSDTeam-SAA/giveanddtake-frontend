@@ -31,20 +31,22 @@ import { usePathname } from "next/navigation";
 import { useState, useEffect, Fragment, useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getCompanyAccount,
   getMyResume,
   getRecruiterAccount,
 } from "@/lib/api-service";
 import { useSocket } from "@/hooks/use-socket";
-import { set } from "nprogress";
 
 interface Notification {
-  id: string;
+  _id: string;
   message: string;
-  timestamp: string;
+  createdAt?: string;
   isViewed: boolean;
+  type?: string;
+  to?: string;
+  id?: string;
 }
 
 interface ApiResponse {
@@ -64,8 +66,9 @@ export function SiteHeader() {
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [msg, setMsg] = useState(0);
-  const [notificationCount, setNotificationCount] = useState({});
+  const [liveNotificationCount, setLiveNotificationCount] = useState<number | null>(null);
   const safeHeaderHeight = headerHeight || 64;
+  const queryClient = useQueryClient();
 
   const userRole = session?.user?.role; // 'candidate', 'recruiter', 'company'
   const userId = session?.user?.id;
@@ -79,25 +82,55 @@ export function SiteHeader() {
     // Join notification room
     socket.emit("joinNotification", userId);
 
-    // Define event handlers
-    const handleNotification = (data: any) => {
-      setNotificationCount(data);
+    const handleNewNotification = (payload: any) => {
+      const incoming =
+        payload?.notification || payload?.n || payload?.notificationDoc || payload;
+
+      if (!incoming?._id && !incoming?.id) return;
+      const normalizedId = incoming._id || incoming.id;
+
+      setLiveNotificationCount((prev) => {
+        if (typeof payload?.count === "number") return payload.count;
+        return typeof prev === "number" ? prev + (incoming?.isViewed ? 0 : 1) : prev;
+      });
+
+      queryClient.setQueryData<Notification[]>(["notifications", userId], (old = []) => {
+        const exists = old.some((n) => n._id === normalizedId);
+        if (exists) return old;
+        const normalized: Notification = {
+          _id: normalizedId,
+          message: incoming.message ?? "",
+          createdAt: incoming.createdAt,
+          isViewed: Boolean(incoming.isViewed === true),
+          type: incoming.type,
+          to: incoming.to,
+          id: incoming.id,
+        };
+        return [normalized, ...old];
+      });
+    };
+
+    const handleCountUpdate = (payload: any) => {
+      if (typeof payload?.count === "number") {
+        setLiveNotificationCount(payload.count);
+      }
     };
 
     const handleMsgCount = (data: any) => {
       setMsg(data);
     };
 
-    // Attach listeners
-    socket.on("notification", handleNotification);
+    socket.on("newNotification", handleNewNotification);
+    socket.on("notificationCountUpdated", handleCountUpdate);
     socket.on("msg_count", handleMsgCount);
 
     // Cleanup on unmount or dependency change
     return () => {
-      socket.off("notification", handleNotification);
+      socket.off("newNotification", handleNewNotification);
+      socket.off("notificationCountUpdated", handleCountUpdate);
       socket.off("msg_count", handleMsgCount);
     };
-  }, [socket, userId]);
+  }, [socket, userId, queryClient]);
 
 
   const getUpgradePath = () => {
@@ -116,7 +149,7 @@ export function SiteHeader() {
   // Fetch notifications using useQuery
   const {
     data: notifications = [],
-    isLoading,
+    isLoading: notificationsLoading,
     isError,
     error,
   } = useQuery<Notification[], Error>({
@@ -152,6 +185,7 @@ export function SiteHeader() {
   const unreadCount = notifications.filter(
     (notification) => !notification.isViewed
   ).length;
+  const notificationCount = liveNotificationCount ?? unreadCount;
 
   // Resume query (only if role is candidate)
   const { data: myresume, isLoading: resumeLoading } = useQuery({
@@ -569,7 +603,7 @@ export function SiteHeader() {
                   </Button>
 
                   {/* Real-time unread notifications badge */}
-                  {(notificationCount as number) > 0 ? (
+                  {notificationCount > 0 ? (
                     <motion.span
                       key="notification-badge"
                       initial={{ scale: 0 }}
@@ -582,9 +616,9 @@ export function SiteHeader() {
                       }}
                       className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-semibold"
                     >
-                      {notificationCount as number}
+                      {notificationCount}
                     </motion.span>
-                  ) : isLoading ? (
+                  ) : notificationsLoading ? (
                     <span className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-gray-300 animate-pulse" />
                   ) : null}
                 </Link>
@@ -723,12 +757,12 @@ export function SiteHeader() {
                           >
                             <Bell className="h-4 w-4 mr-2" />
                             Notifications
-                            {unreadCount > 0 && !isLoading && (
+                            {notificationCount > 0 && !notificationsLoading && (
                               <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-red-500 text-white text-xs font-semibold">
-                                {unreadCount}
+                                {notificationCount}
                               </span>
                             )}
-                            {isLoading && (
+                            {notificationsLoading && (
                               <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gray-300 animate-pulse"></span>
                             )}
                           </Button>

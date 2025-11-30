@@ -4,12 +4,17 @@ import { useSession } from "next-auth/react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useMemo, useState } from "react"
+import { useSocket } from "@/hooks/use-socket"
 
 interface Notification {
-  id: string
+  _id: string
   message: string
-  timestamp: string
+  createdAt?: string
   isViewed: boolean
+  type?: string
+  to?: string
+  id?: string
 }
 
 interface ApiResponse {
@@ -22,6 +27,8 @@ export default function NotificationsPage() {
   const { data: session } = useSession()
   const userId = session?.user?.id
   const queryClient = useQueryClient()
+  const socket = useSocket()
+  const [liveUnreadCount, setLiveUnreadCount] = useState<number | null>(null)
 
   const {
     data: notifications = [],
@@ -54,9 +61,71 @@ export default function NotificationsPage() {
     gcTime: 10 * 60 * 1000,
   })
 
-  const markAsReadMutation = useMutation<void, Error, void, { previousNotifications?: Notification[] }>({
+  const unreadCountFromData = useMemo(
+    () => notifications.filter((n) => !n.isViewed).length,
+    [notifications]
+  )
+  const unreadCount = liveUnreadCount ?? unreadCountFromData
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    if (!socket || !userId) return
+
+    socket.emit("joinNotification", userId)
+
+    const handleNewNotification = (payload: any) => {
+      const incoming =
+        payload?.notification || payload?.n || payload?.notificationDoc || payload
+
+      if (!incoming?._id && !incoming?.id && !incoming?._id) return
+
+      const normalizedId = incoming._id || incoming.id
+      const normalized: Notification = {
+        _id: normalizedId,
+        message: incoming.message ?? "",
+        isViewed: Boolean(incoming.isViewed === true),
+        createdAt: incoming.createdAt,
+        type: incoming.type,
+        to: incoming.to,
+        id: incoming.id,
+      }
+
+      setLiveUnreadCount((prev) => {
+        if (typeof payload?.count === "number") return payload.count
+        if (typeof prev === "number") return prev + (normalized.isViewed ? 0 : 1)
+        return null
+      })
+
+      queryClient.setQueryData<Notification[]>(["notifications", userId], (old = []) => {
+        const alreadyExists = old.some((n) => n._id === normalized._id)
+        if (alreadyExists) return old
+        return [normalized, ...old]
+      })
+    }
+
+    const handleCountUpdate = (payload: any) => {
+      if (typeof payload?.count === "number") {
+        setLiveUnreadCount(payload.count)
+      }
+    }
+
+    socket.on("newNotification", handleNewNotification)
+    socket.on("notificationCountUpdated", handleCountUpdate)
+
+    return () => {
+      socket.off("newNotification", handleNewNotification)
+      socket.off("notificationCountUpdated", handleCountUpdate)
+    }
+  }, [socket, userId, queryClient])
+
+  const markAllAsReadMutation = useMutation<
+    { unreadCount: number },
+    Error,
+    void,
+    { previousNotifications?: Notification[] }
+  >({
     mutationFn: async () => {
-      if (!userId) return
+      if (!userId) throw new Error("User not found")
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/read/${userId}`,
@@ -67,28 +136,81 @@ export default function NotificationsPage() {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
-      const result: ApiResponse = await response.json()
+      const result: ApiResponse & { unreadCount?: number } = await response.json()
       if (!result.success) {
         throw new Error(result.message || "Failed to mark notifications as read.")
       }
+
+      return { unreadCount: result.unreadCount ?? 0 }
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["notifications", userId] })
       const previousNotifications = queryClient.getQueryData<Notification[]>(["notifications", userId])
-      queryClient.setQueryData<Notification[]>(["notifications", userId], (old) =>
-        old ? old.map((n) => ({ ...n, isRead: true })) : []
+      queryClient.setQueryData<Notification[]>(["notifications", userId], (old = []) =>
+        old.map((n) => ({ ...n, isViewed: true }))
       )
+      setLiveUnreadCount(0)
       return { previousNotifications }
     },
     onError: (_err, _variables, context) => {
       queryClient.setQueryData(["notifications", userId], context?.previousNotifications)
+      setLiveUnreadCount(unreadCountFromData)
+    },
+    onSuccess: (data) => {
+      setLiveUnreadCount(data.unreadCount ?? 0)
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications", userId] })
     },
   })
 
-  const unreadCount = notifications.filter((n) => !n.isViewed).length
+  const markSingleAsRead = useMutation<
+    { unreadCount?: number },
+    Error,
+    string,
+    { previousNotifications?: Notification[] }
+  >({
+    mutationFn: async (notificationId: string) => {
+      if (!userId) throw new Error("User not found")
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}/read/${notificationId}`,
+        { method: "PATCH", headers: { "Content-Type": "application/json" } }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const result: ApiResponse & { unreadCount?: number } = await response.json()
+      if (!result.success) {
+        throw new Error(result.message || "Failed to mark notification as read.")
+      }
+
+      return { unreadCount: result.unreadCount }
+    },
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({ queryKey: ["notifications", userId] })
+      const previousNotifications = queryClient.getQueryData<Notification[]>(["notifications", userId])
+      queryClient.setQueryData<Notification[]>(["notifications", userId], (old = []) =>
+        old.map((n) => (n._id === notificationId ? { ...n, isViewed: true } : n))
+      )
+      setLiveUnreadCount((prev) => (typeof prev === "number" ? Math.max(prev - 1, 0) : prev))
+      return { previousNotifications }
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(["notifications", userId], context?.previousNotifications)
+      setLiveUnreadCount(unreadCountFromData)
+    },
+    onSuccess: (data) => {
+      if (typeof data.unreadCount === "number") {
+        setLiveUnreadCount(data.unreadCount)
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", userId] })
+    },
+  })
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -125,20 +247,20 @@ export default function NotificationsPage() {
         <button
           className={cn(
             "text-sm text-gray-500 hover:text-gray-700",
-            markAsReadMutation.isPending && "opacity-50 cursor-not-allowed"
+            markAllAsReadMutation.isPending && "opacity-50 cursor-not-allowed"
           )}
-          onClick={() => markAsReadMutation.mutate()}
-          disabled={markAsReadMutation.isPending || unreadCount === 0}
+          onClick={() => markAllAsReadMutation.mutate()}
+          disabled={markAllAsReadMutation.isPending || unreadCount === 0}
         >
-          {markAsReadMutation.isPending ? "Marking..." : "Mark As Read"}
+          {markAllAsReadMutation.isPending ? "Marking..." : "Mark As Read"}
         </button>
       </div>
 
       {isLoading && <div className="text-center text-gray-500">Loading notifications...</div>}
       {isError && <div className="text-center text-red-500">Error: {error?.message}</div>}
-      {markAsReadMutation.isError && (
+      {markAllAsReadMutation.isError && (
         <div className="text-center text-red-500">
-          Error marking notifications: {markAsReadMutation.error?.message}
+          Error marking notifications: {markAllAsReadMutation.error?.message}
         </div>
       )}
       {!isLoading && notifications.length === 0 && !isError && (
@@ -148,7 +270,7 @@ export default function NotificationsPage() {
       <motion.div className="space-y-3" variants={containerVariants} initial="hidden" animate="visible">
         {notifications.map((notification) => (
           <motion.div
-            key={notification.id}
+            key={notification._id}
             className={cn(
               "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-colors duration-200",
               notification.isViewed ? "bg-white" : "bg-blue-50"
@@ -173,10 +295,26 @@ export default function NotificationsPage() {
             </div>
             <div className="flex-grow">
               <p className="text-sm text-gray-800 leading-snug">{renderMessage(notification.message)}</p>
-              <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {notification.createdAt
+                  ? new Date(notification.createdAt).toLocaleString()
+                  : "Just now"}
+              </p>
             </div>
             {!notification.isViewed && (
-              <span className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full ml-auto" aria-label="Unread notification" />
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  className="text-xs text-blue-600 hover:text-blue-700 underline"
+                  disabled={markSingleAsRead.isPending}
+                  onClick={() => markSingleAsRead.mutate(notification._id)}
+                >
+                  {markSingleAsRead.isPending ? "Marking..." : "Mark as read"}
+                </button>
+                <span
+                  className="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full"
+                  aria-label="Unread notification"
+                />
+              </div>
             )}
           </motion.div>
         ))}
