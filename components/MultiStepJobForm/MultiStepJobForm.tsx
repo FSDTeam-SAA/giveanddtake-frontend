@@ -414,11 +414,11 @@ export default function MultiStepJobForm() {
       await postJob(postData);
       // console.log(postData);
       toast.success("Job published successfully!");
-      if (role === "company") {
-        window.location.href = "/elevator-video-pitch";
-      } else if (role === "recruiter") {
-        window.location.href = "/recruiter-dashboard";
-      }
+      // if (role === "company") {
+      //   window.location.href = "/elevator-video-pitch";
+      // } else if (role === "recruiter") {
+      //   window.location.href = "/recruiter-dashboard";
+      // }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to publish job"
@@ -464,7 +464,13 @@ export default function MultiStepJobForm() {
                     : undefined,
               }}
               companyUrl={safeCompanyUrl}
-              applicationRequirements={formData.applicationRequirements ?? []}
+              applicationRequirements={(formData.applicationRequirements ?? []).map((req, index) => ({
+                id: String(index),
+                requirement: req.requirement,
+                status: req.status ?? "",
+                label: req.requirement,
+                required: req.status?.trim() !== "",
+              }))}
               customQuestions={(formData.customQuestions ?? []).map((q) => ({
                 id: q.id,
                 question: q.question ?? "",
