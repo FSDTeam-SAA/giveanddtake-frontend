@@ -23,7 +23,7 @@ export function useChangePassword() {
 
   return useMutation<ChangePasswordResponse, Error, ChangePasswordData>({
     mutationFn: async (data: ChangePasswordData) => {
-      const response = await fetch("https://giveandtake-backend.onrender.com/api/v1/user/change-password", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/user/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

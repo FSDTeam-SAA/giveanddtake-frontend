@@ -15,7 +15,7 @@ export function useSecurityQuestions() {
 
   return useMutation({
     mutationFn: async (data: SecurityQuestionsData) => {
-      const response = await fetch("https://giveandtake-backend.onrender.com/api/v1/security-answers", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/security-answers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
