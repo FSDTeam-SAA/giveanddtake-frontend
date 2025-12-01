@@ -641,12 +641,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     {formatDate(job.updatedAt)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
+                {/* <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Deadline</span>
                   <span className="font-medium">
                     {formatDate(job.deadline)}
                   </span>
-                </div>
+                </div> */}
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Location Type</span>
                   <span className="font-medium">

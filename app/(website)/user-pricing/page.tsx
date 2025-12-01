@@ -468,7 +468,7 @@ export default function PricingList() {
                     {isCurrent
                       ? "Current Plan"
                       : isDowngradeToFree
-                      ? "Downgrade not allowed"
+                      ? plan.buttonText
                       : plan.buttonText}
                   </Button>
                 </CardFooter>
