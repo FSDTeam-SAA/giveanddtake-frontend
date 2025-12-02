@@ -421,27 +421,6 @@ export default function JobDetailsStep({
             )}
           />
 
-          {/* Department */}
-          <FormField
-            control={form.control}
-            name="department"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-medium text-gray-700">
-                  Department
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="Enter department"
-                    className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Country & City */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Country (auto-close) */}
