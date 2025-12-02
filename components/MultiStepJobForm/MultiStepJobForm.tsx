@@ -142,7 +142,6 @@ export default function MultiStepJobForm() {
     resolver: zodResolver(jobSchema),
     defaultValues: {
       jobTitle: "",
-      department: "",
       country: "",
       region: "",
       vacancy: 1,
@@ -414,11 +413,11 @@ export default function MultiStepJobForm() {
       await postJob(postData);
       // console.log(postData);
       toast.success("Job published successfully!");
-      // if (role === "company") {
-      //   window.location.href = "/elevator-video-pitch";
-      // } else if (role === "recruiter") {
-      //   window.location.href = "/recruiter-dashboard";
-      // }
+      if (role === "company") {
+        window.location.href = "/elevator-video-pitch";
+      } else if (role === "recruiter") {
+        window.location.href = "/recruiter-dashboard";
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to publish job"

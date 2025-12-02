@@ -52,7 +52,6 @@ interface JobPostData {
 interface JobPreviewProps {
   formData: {
     jobTitle: string;
-    department?: string;
     country: string;
     region: string;
     employement_Type: string;
@@ -241,12 +240,6 @@ export default function JobPreview({
               <p className="text-sm font-medium text-gray-700">Job Title</p>
               <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
                 {formData.jobTitle || "N/A"}
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">Department</p>
-              <div className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800">
-                {formData.department || "N/A"}
               </div>
             </div>
             <div className="space-y-2">
