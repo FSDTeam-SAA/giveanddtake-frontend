@@ -31,6 +31,7 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  slug: string;
   avatar: { url: string };
 }
 
@@ -47,6 +48,25 @@ interface Answer {
 interface Application {
   _id: string;
   jobId: string;
+  resume?: {
+    _id: string;
+    userId: string;
+    photo?: string;
+    aboutUs?: string;
+    title: string;
+    firstName?: string;
+    lastName?: string;
+    country?: string;
+    city?: string;
+    email?: string;
+    phoneNumber?: string;
+    skills?: string[];
+    sLink?: Array<{ label: string; url: string; _id: string }>;
+    label: string;
+    url: string;
+    createdAt?: string;
+    updatedAt?: string;
+  };
   resumeId?: resumeId;
   userId: User;
   status:
@@ -78,23 +98,23 @@ interface ApiResponse {
 const STATUS_OPTIONS = [
   {
     label: "Application Received",
-    value: "pending",
+    value: "pending" as const,
     color: "border-slate-600 text-slate-700 hover:bg-slate-50",
     active: "bg-slate-200 border-slate-700 text-slate-900 font-bold",
   },
   {
     label: "Shortlisted",
-    value: "shortlisted",
+    value: "shortlisted" as const,
     color: "border-blue-600 text-blue-600 hover:bg-blue-50",
     active: "bg-blue-200 border-blue-700 text-blue-900 font-bold",
   },
   {
     label: "Unsuccessful",
-    value: "rejected",
+    value: "rejected" as const,
     color: "border-red-600 text-red-600 hover:bg-red-50",
     active: "bg-red-200 border-red-700 text-red-900 font-bold",
   },
-];
+] as const;
 
 const normalizeStatus = (
   status: Application["status"]
@@ -248,6 +268,9 @@ export default function JobApplicantsPage() {
     );
   }
 
+
+
+  console.log(applications)
   return (
     <div className="container mx-auto px-2 sm:px-4 py-8 w-full">
       <div className="mb-6">
@@ -325,7 +348,7 @@ export default function JobApplicantsPage() {
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link
-                        href={`/applicant-details/${application.userId.slug}?resumeId=${application.resumeId?._id || ""
+                        href={`/applicant-details/${application.userId.slug}?resumeId=${application.resume?._id || ""
                           }&applicationId=${application._id}`}
                         className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >

@@ -169,62 +169,6 @@ export default function ApplicantDetailsPage() {
   const [resumeLoading, setResumeLoading] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
 
-  const fetchResumeData = async () => {
-    if (!resumeId || !token) return;
-
-    try {
-      setResumeLoading(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/resume/user/${applicationId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch resume data");
-      }
-
-      const result: ResumeApiResponse = await response.json();
-
-      if (result.success) {
-        const matchingResume = result.data.find(
-          (resume) => resume._id === resumeId
-        );
-        if (matchingResume) {
-          setResumeData(matchingResume);
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching resume data:", error);
-    } finally {
-      setResumeLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (resumeId && token) {
-      fetchResumeData();
-    }
-  }, [resumeId, token]);
-
-  const handleResumeDownload = () => {
-    if (resumeData && resumeData.file.length > 0) {
-      const fileUrl = resumeData.file[0].url;
-      const filename = resumeData.file[0].filename;
-
-      const link = document.createElement("a");
-      link.href = fileUrl;
-      link.download = filename;
-      link.target = "_blank";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
-
   const fetchApplicantDetails = async (): Promise<ApplicantData> => {
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_BASE_URL}/create-resume/get-resume/${applicationId}`,
@@ -302,6 +246,75 @@ export default function ApplicantDetailsPage() {
     enabled: !!token && !!applicationId,
   });
 
+  console.log(applicantData?.resume?.userId);
+
+  const userId = applicantData?.resume?.userId;
+  console.log(userId);
+
+  const fetchResumeData = async () => {
+    if (!resumeId || !userId || !token) return;
+
+    try {
+      setResumeLoading(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/resume/user/${userId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch resume data");
+      }
+
+      const result: ResumeApiResponse = await response.json();
+
+      console.log(result.data)
+
+      if (result.success) {
+        const matchingResume = result.data.find(
+          (resume) => resume._id === resumeId
+        );
+        if (matchingResume) {
+          setResumeData(matchingResume);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching resume data:", error);
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (resumeId && userId && token) {
+      console.log("kkkk259526")
+      fetchResumeData();
+    }
+  }, [resumeId, userId, token]);
+
+  
+
+
+  console.log(resumeData)
+  const handleResumeDownload = () => {
+    console.log(resumeData)
+    if (resumeData && resumeData.file.length > 0) {
+      const fileUrl = resumeData.file[0].url;
+      const filename = resumeData.file[0].filename;
+
+      const link = document.createElement("a");
+      link.href = fileUrl;
+      link.download = filename;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   // Function to handle message room creation
   const handleCreateMessageRoom = async () => {
     if (!resume?.userId || !token) {
@@ -327,7 +340,7 @@ export default function ApplicantDetailsPage() {
           },
           body: JSON.stringify({
             userId: resume.userId, // applicant user
-            ...idField,  // current recruiter
+            ...idField, // current recruiter
           }),
         }
       );
