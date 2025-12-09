@@ -44,6 +44,9 @@ export function EmployeeSelector({
 }: EmployeeSelectorProps) {
   const [open, setOpen] = useState(false);
 
+
+  console.log("CCCCCCCCCCCCCCC", companyUserId)
+
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["users", companyUserId],
     queryFn: () => fetchUsers(companyUserId),
