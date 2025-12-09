@@ -246,10 +246,7 @@ export default function ApplicantDetailsPage() {
     enabled: !!token && !!applicationId,
   });
 
-  console.log(applicantData?.resume?.userId);
-
   const userId = applicantData?.resume?.userId;
-  console.log(userId);
 
   const fetchResumeData = async () => {
     if (!resumeId || !userId || !token) return;
@@ -271,15 +268,15 @@ export default function ApplicantDetailsPage() {
 
       const result: ResumeApiResponse = await response.json();
 
-      console.log(result.data)
-
       if (result.success) {
-        const matchingResume = result.data.find(
-          (resume) => resume._id === resumeId
-        );
-        if (matchingResume) {
-          setResumeData(matchingResume);
-        }
+        const matchingResume =
+          result.data.find((r) => String(r._id) === String(resumeId)) ||
+          result.data[0] ||
+          null;
+
+        setResumeData(matchingResume);
+      } else {
+        setResumeData(null);
       }
     } catch (error) {
       console.error("Error fetching resume data:", error);
@@ -290,17 +287,12 @@ export default function ApplicantDetailsPage() {
 
   useEffect(() => {
     if (resumeId && userId && token) {
-      console.log("kkkk259526")
+      console.log("kkkk259526");
       fetchResumeData();
     }
   }, [resumeId, userId, token]);
 
-  
-
-
-  console.log(resumeData)
   const handleResumeDownload = () => {
-    console.log(resumeData)
     if (resumeData && resumeData.file.length > 0) {
       const fileUrl = resumeData.file[0].url;
       const filename = resumeData.file[0].filename;
