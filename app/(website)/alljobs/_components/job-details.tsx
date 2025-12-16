@@ -513,25 +513,27 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
           <Card className="sticky top-16 z-10">
             <div className="p-3 sm:p-4">
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleToggleBookmark}
-                  disabled={
-                    toggleBookmarkMutation.isPending ||
-                    sessionStatus === "loading" ||
-                    isBookmarkLoading ||
-                    !userId
-                  }
-                  className="w-full bg-transparent"
-                >
-                  {toggleBookmarkMutation.isPending
-                    ? bookmarked
-                      ? "Unsaving..."
-                      : "Saving..."
-                    : bookmarked
-                    ? "Unsave Job"
-                    : "Save Job"}
-                </Button>
+                {role !== "recruiter" && role !== "company" && (
+                  <Button
+                    variant="outline"
+                    onClick={handleToggleBookmark}
+                    disabled={
+                      toggleBookmarkMutation.isPending ||
+                      sessionStatus === "loading" ||
+                      isBookmarkLoading ||
+                      !userId
+                    }
+                    className="w-full bg-transparent"
+                  >
+                    {toggleBookmarkMutation.isPending
+                      ? bookmarked
+                        ? "Unsaving..."
+                        : "Saving..."
+                      : bookmarked
+                      ? "Unsave Job"
+                      : "Save Job"}
+                  </Button>
+                )}
 
                 {canSeeApply && !isRecruiterOrCompany ? (
                   isUnauthed ? (

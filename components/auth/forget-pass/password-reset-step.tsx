@@ -64,7 +64,7 @@ export default function PasswordResetStep({
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-      const response = await fetch(`${baseUrl}/user/forget`, {
+      const response = await fetch(`${baseUrl}/user/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
