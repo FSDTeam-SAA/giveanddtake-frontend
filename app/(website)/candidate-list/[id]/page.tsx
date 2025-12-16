@@ -70,13 +70,13 @@ interface Application {
   resumeId?: resumeId;
   userId: User;
   status:
-  | "pending"
-  | "shortlisted"
-  | "rejected"
-  | "interviewed"
-  | "selected"
-  | "application received"
-  | "unsuccessful";
+    | "pending"
+    | "shortlisted"
+    | "rejected"
+    | "interviewed"
+    | "selected"
+    | "application received"
+    | "unsuccessful";
   createdAt: string;
   updatedAt: string;
   experience?: string;
@@ -218,12 +218,15 @@ export default function JobApplicantsPage() {
   };
 
   const confirmStatusChange = async () => {
-    if (!confirmDialog.applicationId || !confirmDialog.newStatus) return;
-    setStatusLoading((prev) => [...prev, confirmDialog.applicationId]);
-    await handleStatusUpdate(confirmDialog.applicationId, confirmDialog.newStatus);
-    setStatusLoading((prev) =>
-      prev.filter((id) => id !== confirmDialog.applicationId)
-    );
+    const { applicationId, newStatus } = confirmDialog;
+    if (!applicationId || !newStatus) return;
+
+    setStatusLoading((prev) => [...prev, applicationId]);
+
+    await handleStatusUpdate(applicationId, newStatus);
+
+    setStatusLoading((prev) => prev.filter((id) => id !== applicationId));
+
     setConfirmDialog({ open: false });
   };
 
@@ -268,9 +271,7 @@ export default function JobApplicantsPage() {
     );
   }
 
-
-
-  console.log(applications)
+  console.log(applications);
   return (
     <div className="container mx-auto px-2 sm:px-4 py-8 w-full">
       <div className="mb-6">
@@ -282,7 +283,8 @@ export default function JobApplicantsPage() {
           Applicant List
         </h1>
         <p className="text-gray-600 mt-2 text-sm sm:text-base">
-          Please update each applicant’s status at every stage of the recruitment process.
+          Please update each applicant’s status at every stage of the
+          recruitment process.
         </p>
       </div>
 
@@ -328,10 +330,11 @@ export default function JobApplicantsPage() {
                 return (
                   <TableRow
                     key={application._id}
-                    className={`text-sm sm:text-base ${application._id === selectedApplicationId
-                      ? "bg-blue-50 border-l-4 border-l-blue-500"
-                      : ""
-                      }`}
+                    className={`text-sm sm:text-base ${
+                      application._id === selectedApplicationId
+                        ? "bg-blue-50 border-l-4 border-l-blue-500"
+                        : ""
+                    }`}
                     onClick={() => setSelectedApplicationId(application._id)}
                   >
                     <TableCell>
@@ -348,8 +351,11 @@ export default function JobApplicantsPage() {
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
                       <Link
-                        href={`/applicant-details/${application.userId.slug}?resumeId=${application.resume?._id || ""
-                          }&applicationId=${application._id}`}
+                        href={`/applicant-details/${
+                          application.userId.slug
+                        }?resumeId=${
+                          application.resume?._id || ""
+                        }&applicationId=${application._id}`}
                         className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >
                         Details
@@ -357,11 +363,16 @@ export default function JobApplicantsPage() {
                     </TableCell>
                     {application.answer && application.answer.length > 0 && (
                       <TableCell>
-                        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                        <Dialog
+                          open={isModalOpen}
+                          onOpenChange={setIsModalOpen}
+                        >
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              onClick={() => handleOpenModal(application.answer)}
+                              onClick={() =>
+                                handleOpenModal(application.answer)
+                              }
                             >
                               Answer
                             </Button>
@@ -373,7 +384,10 @@ export default function JobApplicantsPage() {
                             <div className="mt-4">
                               {selectedAnswers.length > 0 ? (
                                 selectedAnswers.map((answer) => (
-                                  <div key={answer._id} className="border-b pb-4">
+                                  <div
+                                    key={answer._id}
+                                    className="border-b pb-4"
+                                  >
                                     <h3 className="font-semibold text-gray-800">
                                       {answer.question}
                                     </h3>
@@ -396,19 +410,20 @@ export default function JobApplicantsPage() {
                       <div className="flex flex-wrap gap-2">
                         {STATUS_OPTIONS.map((opt) => {
                           const active = normalized === opt.value;
-                          const isDisabled =
-                            opt.value === "pending";
+                          const isDisabled = opt.value === "pending";
                           return (
                             <Button
                               key={opt.value}
                               variant={active ? "default" : "outline"}
-                              className={`h-9 px-3 border rounded-lg ${active ? opt.active : opt.color
-                                } ${isUpdating
+                              className={`h-9 px-3 border rounded-lg ${
+                                active ? opt.active : opt.color
+                              } ${
+                                isUpdating
                                   ? "opacity-60 cursor-not-allowed"
                                   : isDisabled
-                                    ? "opacity-50 cursor-not-allowed"
-                                    : ""
-                                }`}
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
                               disabled={isUpdating || isDisabled}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -423,7 +438,6 @@ export default function JobApplicantsPage() {
                             >
                               {opt.label}
                             </Button>
-
                           );
                         })}
                       </div>
@@ -443,7 +457,10 @@ export default function JobApplicantsPage() {
       </div>
 
       {/* Confirm Dialog */}
-      <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ open })}>
+      <Dialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => setConfirmDialog({ open })}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Status Change</DialogTitle>
@@ -453,7 +470,10 @@ export default function JobApplicantsPage() {
             <strong>{confirmDialog.newStatus}</strong>?
           </p>
           <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setConfirmDialog({ open: false })}>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialog({ open: false })}
+            >
               Cancel
             </Button>
             <Button onClick={confirmStatusChange}>Confirm</Button>
@@ -484,7 +504,9 @@ export default function JobApplicantsPage() {
                 return (
                   <Button
                     key={pageNum}
-                    variant={pageNum === meta.currentPage ? "default" : "outline"}
+                    variant={
+                      pageNum === meta.currentPage ? "default" : "outline"
+                    }
                     size="sm"
                     onClick={() => handlePageChange(pageNum)}
                     disabled={loading}

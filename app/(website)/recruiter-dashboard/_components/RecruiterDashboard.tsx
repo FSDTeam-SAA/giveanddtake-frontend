@@ -131,7 +131,7 @@ interface RecruiterAccount {
   country: string;
   city: string;
   zipCode: string;
-  slug: slug;
+  slug: string;
   location: string;
   emailAddress: string;
   phoneNumber: string;
@@ -602,6 +602,8 @@ export default function RecruiterDashboard() {
   };
 
 
+
+ 
   // =============== UI ===============
   return (
     <div className="min-h-screen py-6 md:py-8 px-4 md:px-6 lg:px-8 bg-gray-50">
@@ -664,11 +666,11 @@ export default function RecruiterDashboard() {
               )}
               <Link
                 href={`/rp/${encodeURIComponent(
-                  recruiterAccount?.data?.slug?.slug ?? ""
+                  recruiterAccount?.data?.slug ?? ""
                 )}`}
               >
                 <Button
-                  disabled={!recruiterAccount?.data?.slug?.slug}
+                  disabled={!recruiterAccount?.data?.slug}
                   className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white px-4 md:px-6 py-2 md:py-3 text-sm md:text-base shadow-md"
                 >
                   Public view
@@ -708,12 +710,11 @@ export default function RecruiterDashboard() {
                     )}
                     <Link
                       href={`/rp/${encodeURIComponent(
-                        recruiterAccount?.data?.slug?.slug ?? ""
-                      )}`}
+                        recruiterAccount?.data?.slug ?? "")}`}
                       onClick={() => setIsDrawerOpen(false)}
                     >
                       <Button
-                        disabled={!recruiterAccount?.data?.slug?.slug}
+                        disabled={!recruiterAccount?.data?.slug}
                         className="w-full bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-3 text-base"
                       >
                         Public view
