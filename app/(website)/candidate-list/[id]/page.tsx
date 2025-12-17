@@ -67,7 +67,7 @@ interface Application {
     createdAt?: string;
     updatedAt?: string;
   };
-  resumeId?: resumeId;
+  resumeId?: resumeId | string;
   userId: User;
   status:
     | "pending"
@@ -324,6 +324,10 @@ export default function JobApplicantsPage() {
               ))
             ) : applications.length > 0 ? (
               applications.map((application) => {
+                const resumeId =
+                  typeof application.resumeId === "string"
+                    ? application.resumeId
+                    : application.resumeId?._id || "";
                 const normalized = normalizeStatus(application.status);
                 const isUpdating = statusLoading.includes(application._id);
 
@@ -354,7 +358,7 @@ export default function JobApplicantsPage() {
                         href={`/applicant-details/${
                           application.userId.slug
                         }?resumeId=${
-                          application.resume?._id || ""
+                          resumeId
                         }&applicationId=${application._id}`}
                         className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
                       >

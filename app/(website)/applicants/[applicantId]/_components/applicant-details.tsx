@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getResumeByUserId } from "@/lib/api-service";
+import { getResumeByUserId, getResumeDownloadUrl } from "@/lib/api-service";
 import { useQuery } from "@tanstack/react-query";
 import {
   AwardIcon,
@@ -37,6 +37,7 @@ export default function ApplicantDetails({
   const session = useSession();
   const router = useRouter();
   const [isLoadingRoomCreation, setIsLoadingRoomCreation] = useState(false);
+  const [isDownloadingResume, setIsDownloadingResume] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -66,6 +67,21 @@ export default function ApplicantDetails({
   const applicationDate = applicantResume?.applications?.find(
     (application: any) => application?.userId?._id === applicantId
   ).createdAt;
+
+  const latestApplication = applicantResume?.applications?.reduce(
+    (latest: any, current: any) => {
+      if (!latest) return current;
+      if (!current?.createdAt) return latest;
+      if (!latest?.createdAt) return current;
+      return new Date(current.createdAt) > new Date(latest.createdAt)
+        ? current
+        : latest;
+    },
+    null
+  );
+
+  const resumeId =
+    latestApplication?.resumeId?._id ?? latestApplication?.resumeId;
 
 
   const handleCreateChatRoom = async () => {
@@ -98,6 +114,37 @@ export default function ApplicantDetails({
       toast.error("Failed to create chat room");
     } finally {
       setIsLoadingRoomCreation(false);
+    }
+  };
+
+  const handleResumeDownload = async () => {
+    if (!resumeId) {
+      toast.error("Resume not available");
+      return;
+    }
+
+    setIsDownloadingResume(true);
+    try {
+      const res = await getResumeDownloadUrl(resumeId);
+      const downloadUrl = res?.data?.url;
+      const filename = res?.data?.filename || "resume.pdf";
+
+      if (!downloadUrl) {
+        toast.error("Resume link is unavailable");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast.error("Failed to download resume");
+    } finally {
+      setIsDownloadingResume(false);
     }
   };
 
@@ -151,8 +198,13 @@ export default function ApplicantDetails({
               {applicantResume?.createResume?.email}
             </p>
             
-            <Button className="bg-[#2B7FD0]/90 hover:bg-[#2B7FD0] h-8 sm:h-[35px] text-sm sm:text-base px-3 sm:px-4 rounded-[8px]">
-              Resume <Download className="ml-2 h-4 w-4" />
+            <Button
+              onClick={handleResumeDownload}
+              disabled={isDownloadingResume || !resumeId}
+              className="bg-[#2B7FD0]/90 hover:bg-[#2B7FD0] h-8 sm:h-[35px] text-sm sm:text-base px-3 sm:px-4 rounded-[8px]"
+            >
+              {isDownloadingResume ? "Downloading..." : "Resume"}
+              <Download className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>

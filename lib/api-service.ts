@@ -233,6 +233,12 @@ export async function getResumeByUserId(userId: string) {
   return res.data;
 }
 
+export async function getResumeDownloadUrl(resumeId: string, fileId?: string) {
+  const query = fileId ? `?fileId=${fileId}` : "";
+  const res = await apiClient.get(`/resume/${resumeId}/download${query}`);
+  return res.data;
+}
+
 // Get candidate applied jobs
 export async function getAppliedJobs(userId: string) {
   const res = await apiClient.get(`/applied-jobs/user/${userId}`);

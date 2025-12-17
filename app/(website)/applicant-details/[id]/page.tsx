@@ -21,6 +21,7 @@ import { toast } from "sonner";
 
 import { VideoPlayer } from "@/components/company/video-player";
 import Image from "next/image";
+import { getResumeDownloadUrl } from "@/lib/api-service";
 
 interface Resume {
   _id: string;
@@ -167,6 +168,7 @@ export default function ApplicantDetailsPage() {
 
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [resumeLoading, setResumeLoading] = useState(false);
+  const [isDownloadingResume, setIsDownloadingResume] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
 
   const fetchApplicantDetails = async (): Promise<ApplicantData> => {
@@ -292,18 +294,38 @@ export default function ApplicantDetailsPage() {
     }
   }, [resumeId, userId, token]);
 
-  const handleResumeDownload = () => {
-    if (resumeData && resumeData.file.length > 0) {
-      const fileUrl = resumeData.file[0].url;
-      const filename = resumeData.file[0].filename;
+  const handleResumeDownload = async () => {
+    const targetResumeId = resumeId || resumeData?._id;
+    if (!targetResumeId) {
+      toast.error("Resume not available");
+      return;
+    }
+
+    setIsDownloadingResume(true);
+    try {
+      const result = await getResumeDownloadUrl(targetResumeId);
+      const downloadUrl = result?.data?.url;
+      const filename =
+        result?.data?.filename ||
+        resumeData?.file?.[0]?.filename ||
+        "resume.pdf";
+
+      if (!downloadUrl) {
+        toast.error("Resume link is unavailable");
+        return;
+      }
 
       const link = document.createElement("a");
-      link.href = fileUrl;
+      link.href = downloadUrl;
       link.download = filename;
       link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    } catch (error) {
+      toast.error("Failed to download resume");
+    } finally {
+      setIsDownloadingResume(false);
     }
   };
 
@@ -536,10 +558,14 @@ export default function ApplicantDetailsPage() {
                   <Button
                     className="bg-primary hover:bg-blue-700"
                     onClick={handleResumeDownload}
-                    disabled={!resumeData || resumeLoading}
+                    disabled={!resumeId || resumeLoading || isDownloadingResume}
                   >
                     <Download className="h-4 w-4 mr-2" />
-                    {resumeLoading ? "Loading..." : "Resume"}
+                    {resumeLoading
+                      ? "Loading..."
+                      : isDownloadingResume
+                      ? "Downloading..."
+                      : "Resume"}
                   </Button>
                 </div>
               </div>
