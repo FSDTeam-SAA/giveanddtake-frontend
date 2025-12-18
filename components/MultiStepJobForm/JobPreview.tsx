@@ -440,7 +440,7 @@ export default function JobPreview({
             onClick={handlePublish}
             disabled={isPending}
           >
-            {isPending ? "Publishing..." : "Publish Your Post"}
+            {isPending ? "Posting..." : "Post  your Job"}
           </Button>
         </div>
       </div>

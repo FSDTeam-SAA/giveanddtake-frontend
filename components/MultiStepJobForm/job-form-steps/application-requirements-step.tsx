@@ -66,7 +66,7 @@ export default function ApplicationRequirementsStep({
           </h2>
         </div>
         <p className="text-xl text-[#000000] mb-6">
-          What personal info would you like to gather about each applicant?
+          What further details would you like to gather about each applicant?
         </p>
 
         <div className="space-y-4">

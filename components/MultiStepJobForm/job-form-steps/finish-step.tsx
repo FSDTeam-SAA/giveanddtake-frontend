@@ -34,7 +34,7 @@ export default function FinishStep({ form, onPreview, onPublish, isPending }: Fi
                 onClick={onPublish}
                 disabled={isPending}
               >
-                {isPending ? "Publishing..." : "Publish Your Post"}
+                {isPending ? "Posting..." : "Post  your Job"}
               </Button>
             </div>
           </div>
