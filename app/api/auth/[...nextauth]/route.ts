@@ -27,7 +27,31 @@ const handler = NextAuth({
             }
           );
 
-          const data = await response.json();
+          let data: any = null;
+          try {
+            data = await response.json();
+          } catch {
+            data = null;
+          }
+
+          if (!response.ok || !data?.success) {
+            const message =
+              data?.message ||
+              (response.status === 401 || response.status === 403
+                ? "Invalid email or password"
+                : "Unable to sign in");
+            const nextStep = data?.data?.nextStep;
+            const errorPayload = {
+              message,
+              code: nextStep === "verify-otp" ? "UNVERIFIED" : "LOGIN_FAILED",
+              status: response.status,
+              email: data?.data?.email ?? credentials.email,
+              nextStep: nextStep ?? null,
+              needsSecurityQuestions:
+                data?.data?.needsSecurityQuestions ?? false,
+            };
+            throw new Error(JSON.stringify(errorPayload));
+          }
 
           if (response.ok && data.success) {
             const userData = data.data ?? {};
@@ -66,7 +90,9 @@ const handler = NextAuth({
           return null;
         } catch (error) {
           console.error("Login error:", error);
-          return null;
+          const fallbackMessage =
+            error instanceof Error ? error.message : "Unable to sign in";
+          throw new Error(fallbackMessage);
         }
       },
     }),

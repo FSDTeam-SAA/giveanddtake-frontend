@@ -375,6 +375,30 @@ const applyForCompanyEmployee = async (
   return data;
 };
 
+const leaveCompany = async (
+  companyId: string,
+  token?: string
+): Promise<{ success: boolean; message: string }> => {
+  const headers: HeadersInit = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const response = await fetch(
+    `${apiBase()}/company/recruiter-leave-company`,
+    {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({ companyId }),
+    }
+  );
+
+  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+  const data = await response.json();
+  if (!data.success)
+    throw new Error(data.message || "Failed to leave company");
+  return data;
+};
+
 // =============== Component ===============
 export default function RecruiterDashboard() {
   const { data: session } = useSession();
@@ -394,6 +418,7 @@ export default function RecruiterDashboard() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isApplicantWarningModalOpen, setIsApplicantWarningModalOpen] =
     useState(false);
+  const [isLeaveConfirmOpen, setIsLeaveConfirmOpen] = useState(false);
 
   // NEW: archive confirmation state
   const [archiveJobId, setArchiveJobId] = useState<string | null>(null);
@@ -468,6 +493,21 @@ export default function RecruiterDashboard() {
     },
     onError: (error) =>
       toast.error(error.message || "Failed to apply to company"),
+  });
+
+  const leaveMutation = useMutation<
+    { success: boolean; message: string },
+    Error,
+    string
+  >({
+    mutationFn: (companyId) => leaveCompany(companyId, token),
+    onSuccess: (data) => {
+      toast.success(data.message || "Left company successfully");
+      queryClient.invalidateQueries({ queryKey: ["recruiter"] });
+      setIsLeaveConfirmOpen(false);
+    },
+    onError: (error) =>
+      toast.error(error.message || "Failed to leave company"),
   });
 
   const deleteMutation = useMutation<DeleteJobResponse, Error, string>({
@@ -590,6 +630,15 @@ export default function RecruiterDashboard() {
     selectedCompanyId
       ? applyMutation.mutate(selectedCompanyId)
       : toast.error("Please select a company.");
+  const handleRequestLeave = () => setIsLeaveConfirmOpen(true);
+  const handleConfirmLeave = () => {
+    const companyId = recruiterAccount?.data?.companyId?._id;
+    if (!companyId) {
+      toast.error("No company to leave.");
+      return;
+    }
+    leaveMutation.mutate(companyId);
+  };
 
   // NEW: open archive confirmation if job has applicants and we are archiving (not unarchiving)
   const requestArchive = (job: Job) => {
@@ -664,6 +713,16 @@ export default function RecruiterDashboard() {
                   Connect with a Company
                 </Button>
               )}
+              {recruiterAccount?.data?.companyId?._id && (
+                <Button
+                  variant="outline"
+                  onClick={handleRequestLeave}
+                  disabled={leaveMutation.isPending}
+                  className="px-4 md:px-6 py-2 md:py-3 text-sm md:text-base border-red-200 text-red-700 hover:bg-red-50"
+                >
+                  {leaveMutation.isPending ? "Leaving..." : "Leave Company"}
+                </Button>
+              )}
               <Link
                 href={`/rp/${encodeURIComponent(
                   recruiterAccount?.data?.slug ?? ""
@@ -697,7 +756,7 @@ export default function RecruiterDashboard() {
                 </DrawerTrigger>
                 <DrawerContent>
                   <DrawerHeader>
-                    <DrawerTitle>Menu</DrawerTitle>
+                  <DrawerTitle>Menu</DrawerTitle>
                   </DrawerHeader>
                   <div className="flex flex-col gap-3 p-4">
                     {!recruiterAccount?.data?.companyId?._id && (
@@ -706,6 +765,16 @@ export default function RecruiterDashboard() {
                         className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/85 text-white py-3 text-base"
                       >
                         Connect with a Company
+                      </Button>
+                    )}
+                    {recruiterAccount?.data?.companyId?._id && (
+                      <Button
+                        variant="outline"
+                        onClick={handleRequestLeave}
+                        disabled={leaveMutation.isPending}
+                        className="py-3 text-base border-red-200 text-red-700 hover:bg-red-50"
+                      >
+                        {leaveMutation.isPending ? "Leaving..." : "Leave Company"}
                       </Button>
                     )}
                     <Link
@@ -1220,6 +1289,33 @@ export default function RecruiterDashboard() {
                 ) : (
                   "Connect"
                 )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Leave company confirmation */}
+        <Dialog open={isLeaveConfirmOpen} onOpenChange={setIsLeaveConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Leave company?</DialogTitle>
+              <DialogDescription>
+                You will be disconnected from this company and your future job posts will no longer link to it.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsLeaveConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleConfirmLeave}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending ? "Leaving..." : "Leave company"}
               </Button>
             </DialogFooter>
           </DialogContent>

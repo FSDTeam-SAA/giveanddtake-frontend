@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -20,6 +21,16 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+
+  const parseAuthError = (errorString?: string): Record<string, any> => {
+    if (!errorString) return {};
+    const cleaned = errorString.replace(/^Error:\s*/, "");
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      return { message: cleaned };
+    }
+  };
 
   // Load saved credentials on component mount
   useEffect(() => {
@@ -56,7 +67,15 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password. Please try again.");
+        const parsed = parseAuthError(result.error);
+        const message =
+          parsed.message || "Invalid email or password. Please try again.";
+        setError(message);
+        toast.error(message);
+
+        if (parsed.code === "UNVERIFIED" && parsed.email) {
+          router.push(`/verify?email=${encodeURIComponent(parsed.email)}`);
+        }
       } else if (result?.ok) {
         // Save or clear credentials based on rememberMe
         try {
@@ -76,7 +95,12 @@ export default function LoginPage() {
         window.location.href = "/elevator-video-pitch";
       }
     } catch (error) {
-      setError("Something went wrong. Please try again.");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Something went wrong. Please try again.";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
