@@ -639,7 +639,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                 {isElevatorPitchUploaded && (
                   <p className="mt-2 text-sm text-green-600">
                     Elevator pitch upload finished! Processing continues in the
-                    background.
+                    background. Please refresh the page in a few seconds.
                   </p>
                 )}
 
