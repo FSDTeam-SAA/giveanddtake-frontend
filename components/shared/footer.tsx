@@ -179,7 +179,7 @@ export function Footer() {
         </div>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
-        <p>&copy; 2025 Elevator Video Pitch©. All rights reserved.</p>
+        <p>&copy; 2026 Elevator Video Pitch©. All rights reserved.</p>
       </div>
     </footer>
   );
