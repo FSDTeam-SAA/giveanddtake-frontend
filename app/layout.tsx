@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ReactQueryProvider } from "@/lib/react-query";
 import { Roboto } from "next/font/google";
-import Script from "next/script";
 import { Toaster } from "sonner";
 import { DynamicTitle } from "@/components/DynamicTitle";
 import TopLoader from "./TopLoader";
@@ -36,11 +35,6 @@ export default function RootLayout({
           <TopLoader />
         </Suspense>
         <ReactQueryProvider>{children}</ReactQueryProvider>
-        <Script
-          src="https://www.paypal.com/sdk/js?client-id=AXmwL-mntKGqTAb6_DaY5o6qh5R0UTxuMkwDJsgUlHW72W-x5t4SZsgSNi9XOfbGYoxlAHiXlSsjnB_L&currency=USD&intent=capture&disable-funding=paylater,venmo"
-          data-sdk-integration-source="button-factory"
-          strategy="afterInteractive"
-        />
         <Toaster position="top-right" richColors />
       </body>
     </html>

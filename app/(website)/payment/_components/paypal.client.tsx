@@ -15,7 +15,6 @@ declare global {
           shape: string;
           label: string;
         };
-        // createOrder now creates a *new* order via your backend
         createOrder: () => string | Promise<string>;
         onApprove: (data: { orderID: string }) => Promise<void>;
         onError: (err: unknown) => void;
@@ -23,6 +22,7 @@ declare global {
         render: (element: HTMLDivElement | null) => void;
       };
     };
+    paypalSdkPromise?: Promise<Window["paypal"] | undefined>;
   }
 }
 
@@ -31,6 +31,71 @@ interface CaptureOrderRequest {
   userId: string;
   planId: string;
 }
+
+const buildSdkUrl = (clientId: string) =>
+  `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`;
+
+const removeStalePaypalScripts = () => {
+  document
+    .querySelectorAll<HTMLScriptElement>('script[src*="paypal.com/sdk/js"]')
+    .forEach((script) => {
+      if (script.dataset.paypalSdk !== "true") {
+        script.remove();
+      }
+    });
+};
+
+const loadPaypalSdk = (clientId: string) => {
+  if (!clientId) {
+    return Promise.reject(new Error("Missing NEXT_PUBLIC_PAYPAL_CLIENT_ID"));
+  }
+
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Window is not available"));
+  }
+
+  if (window.paypal) {
+    return Promise.resolve(window.paypal);
+  }
+
+  const scriptUrl = buildSdkUrl(clientId);
+
+  if (!window.paypalSdkPromise) {
+    removeStalePaypalScripts();
+    window.paypalSdkPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector<HTMLScriptElement>(
+        'script[data-paypal-sdk="true"]'
+      );
+
+      if (existingScript) {
+        if (window.paypal) {
+          resolve(window.paypal);
+          return;
+        }
+
+        existingScript.addEventListener("load", () => resolve(window.paypal));
+        existingScript.addEventListener("error", () =>
+          reject(new Error("Failed to load PayPal SDK"))
+        );
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = scriptUrl;
+      script.async = true;
+      script.dataset.paypalSdk = "true";
+      script.onload = () => resolve(window.paypal);
+      script.onerror = (err) => {
+        console.error("Failed to load PayPal SDK", err);
+        window.paypalSdkPromise = undefined;
+        reject(new Error("Failed to load PayPal SDK"));
+      };
+      document.body.appendChild(script);
+    });
+  }
+
+  return window.paypalSdkPromise;
+};
 
 export default function PayPalCheckoutClient() {
   const paypalRef = useRef<HTMLDivElement | null>(null);
@@ -42,121 +107,121 @@ export default function PayPalCheckoutClient() {
   const userId = searchParams.get("userId") || "";
   const amount = searchParams.get("amount") || "0.00";
   const planId = searchParams.get("planId") || "";
+  const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "";
 
   useEffect(() => {
-    if (!paypalRef.current || isRendered.current) return;
-
-    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+    let isActive = true;
     if (!clientId) {
       console.error("Missing NEXT_PUBLIC_PAYPAL_CLIENT_ID");
       setSdkLoading(false);
       return;
     }
 
-    const scriptUrl = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`;
+    const renderButtons = async () => {
+      if (!paypalRef.current || isRendered.current) {
+        setSdkLoading(false);
+        return;
+      }
 
-    const renderButtons = () => {
-      if (!window.paypal || !paypalRef.current || isRendered.current) return;
+      setSdkLoading(true);
 
-      isRendered.current = true;
-      setSdkLoading(false);
+      try {
+        const paypalSdk = await loadPaypalSdk(clientId);
+        if (!isActive || !paypalRef.current || !paypalSdk || isRendered.current) {
+          setSdkLoading(false);
+          return;
+        }
 
-      window.paypal
-        ?.Buttons({
-          style: {
-            layout: "vertical",
-            color: "gold",
-            shape: "rect",
-            label: "paypal",
-          },
+        isRendered.current = true;
+        setSdkLoading(false);
 
-          // ✅ Create a *fresh* order on the server every time
-          createOrder: async () => {
-            try {
-              const res = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ amount, planId, userId }),
+        paypalSdk
+          ?.Buttons({
+            style: {
+              layout: "vertical",
+              color: "gold",
+              shape: "rect",
+              label: "paypal",
+            },
+
+            // Create a fresh order on the server every time
+            createOrder: async () => {
+              try {
+                const res = await fetch(
+                  `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ amount, planId, userId }),
+                  }
+                );
+
+                if (!res.ok) {
+                  throw new Error("Failed to create PayPal order");
                 }
-              );
 
-              if (!res.ok) {
-                throw new Error("Failed to create PayPal order");
+                const data = await res.json();
+                return data.orderId || data.data?.orderId;
+              } catch (err) {
+                console.error("PayPal createOrder error:", err);
+                throw err;
               }
+            },
 
-              const data = await res.json();
-              return data.orderId || data.data?.orderId;
-            } catch (err) {
-              console.error("PayPal createOrder error:", err);
-              throw err;
-            }
-          },
+            // Use the orderID that PayPal returns
+            onApprove: async (data) => {
+              try {
+                const requestData: CaptureOrderRequest = {
+                  orderId: data.orderID,
+                  userId,
+                  planId,
+                };
 
-          // ✅ Use the orderID that PayPal returns
-          onApprove: async (data) => {
-            try {
-              const requestData: CaptureOrderRequest = {
-                orderId: data.orderID,
-                userId,
-                planId,
-              };
+                const response = await fetch(
+                  `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(requestData),
+                  }
+                );
 
-              const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
-                {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(requestData),
+                if (!response.ok) {
+                  throw new Error("Failed to capture PayPal order");
                 }
-              );
 
-              if (!response.ok) {
-                throw new Error("Failed to capture PayPal order");
+                router.push("/success");
+              } catch (err) {
+                console.error("PayPal Capture Error:", err);
               }
+            },
 
-              router.push("/success");
-            } catch (err) {
-              console.error("PayPal Capture Error:", err);
-            }
-          },
-
-          onError: (err: unknown) => {
-            console.error("PayPal Checkout Error:", err);
-          },
-        })
-        .render(paypalRef.current);
+            onError: (err: unknown) => {
+              console.error("PayPal Checkout Error:", err);
+            },
+          })
+          .render(paypalRef.current);
+      } catch (err) {
+        console.error("PayPal SDK load error:", err);
+        setSdkLoading(false);
+      }
     };
 
-    // If SDK already loaded, just render
-    if (window.paypal) {
-      renderButtons();
-      return;
-    }
+    renderButtons();
 
-    // Check if script tag already exists
-    let script = document.querySelector<HTMLScriptElement>(
-      `script[src="${scriptUrl}"]`
-    );
+    // Retry once if the SDK hangs (network hiccup)
+    const retryTimer = window.setTimeout(() => {
+      if (!isRendered.current) {
+        window.paypalSdkPromise = undefined;
+        renderButtons();
+      }
+    }, 8000);
 
-    if (script) {
-      const handleLoad = () => renderButtons();
-      script.addEventListener("load", handleLoad);
-      return () => script?.removeEventListener("load", handleLoad);
-    }
-
-    // Create script tag
-    script = document.createElement("script");
-    script.src = scriptUrl;
-    script.async = true;
-    script.onload = () => renderButtons();
-    script.onerror = (e) => {
-      console.error("Failed to load PayPal SDK", e);
-      setSdkLoading(false);
+    return () => {
+      isActive = false;
+      window.clearTimeout(retryTimer);
     };
-    document.body.appendChild(script);
-  }, [amount, planId, userId, router]);
+  }, [amount, planId, userId, clientId]);
 
   return (
     <div className="container mx-auto p-4">
@@ -173,7 +238,7 @@ export default function PayPalCheckoutClient() {
           <div className="mb-6">
             <h3 className="text-lg font-semibold mb-2">Payment Details:</h3>
             <ul className="list-disc list-inside text-gray-600">
-              <li>Plan ID: {planId || "—"}</li>
+              <li>Plan ID: {planId || "N/A"}</li>
               <li>Charges include Applicable VAT/GST and/or Sales Taxes</li>
             </ul>
           </div>
@@ -225,7 +290,7 @@ export default function PayPalCheckoutClient() {
           >
             {sdkLoading && (
               <p className="text-sm text-gray-500">
-                Loading secure PayPal checkout…
+                Loading secure PayPal checkout...
               </p>
             )}
           </div>
