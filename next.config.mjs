@@ -23,41 +23,43 @@ const buildDirective = (name, values) =>
 
 const PAYPAL_SCRIPT_HOSTS = [
   'https://www.paypal.com',
-  'https://www.sandbox.paypal.com',
 ]
 
 const PAYPAL_MEDIA_HOSTS = [
   'https://www.paypalobjects.com',
   'https://www.paypal.com',
-  'https://www.sandbox.paypal.com',
 ]
 
 const ContentSecurityPolicy = [
-  buildDirective('default-src', ["'self'", 'https:', 'http:', 'data:', 'blob:']),
+  // EASY FIX: removed `http:` from everywhere
+  buildDirective('default-src', ["'self'", 'https:', 'data:', 'blob:']),
+
+  // EASY FIX: removed `'unsafe-eval'` and removed `http:`
   buildDirective('script-src', [
     "'self'",
-    "'unsafe-inline'",
-    "'unsafe-eval'",
+    "'unsafe-inline'", // keep for now (hard to remove safely)
     'https:',
-    'http:',
     'data:',
     'blob:',
     ...PAYPAL_SCRIPT_HOSTS,
   ]),
-  buildDirective('style-src', ["'self'", "'unsafe-inline'", 'https:', 'http:']),
+
+  buildDirective('style-src', ["'self'", "'unsafe-inline'", 'https:']),
+
   buildDirective('img-src', [
     "'self'",
     'data:',
     'blob:',
     'https:',
-    'http:',
     ...PAYPAL_MEDIA_HOSTS,
   ]),
-  buildDirective('media-src', ["'self'", 'data:', 'blob:', 'https:', 'http:']),
+
+  buildDirective('media-src', ["'self'", 'data:', 'blob:', 'https:']),
+
+  // removed `http:` scheme allowance; keep ws/wss for sockets for now
   buildDirective('connect-src', [
     "'self'",
     'https:',
-    'http:',
     'wss:',
     'ws:',
     apiOrigin,
@@ -65,8 +67,13 @@ const ContentSecurityPolicy = [
     socketWsOrigin,
     ...PAYPAL_SCRIPT_HOSTS,
   ]),
+
   buildDirective('font-src', ["'self'", 'data:', 'https:']),
   buildDirective('frame-ancestors', ["'none'"]),
+
+  // helps avoid mixed-content issues (good for scanners too)
+  'upgrade-insecure-requests;',
+  'block-all-mixed-content;',
 ].join(' ')
 
 const securityHeaders = [
