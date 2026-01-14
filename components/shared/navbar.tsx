@@ -59,6 +59,7 @@ export function SiteHeader() {
   const { data: session, status } = useSession();
   const token = session?.accessToken;
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [userAvatar, setUserAvatar] = useState("");
   const [userName, setUserName] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -75,6 +76,10 @@ export function SiteHeader() {
   const isValid = session?.user?.isValid === true ? true : false;
 
   const socket = useSocket();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!socket || !userId) return;
@@ -432,8 +437,12 @@ export function SiteHeader() {
     </DropdownMenuContent>
   );
 
+  if (!mounted) {
+    return <div style={{ height: 64 }} />;
+  }
+
   return (
-    <div className="w-full">
+    <div className="w-full" suppressHydrationWarning>
       {/* Top Navbar */}
       <div
         ref={headerRef}
