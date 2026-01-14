@@ -28,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={roboto.variable}>
-      <body className="font-sans">
+    <html lang="en" className={roboto.variable} suppressHydrationWarning>
+      <body className="font-sans" suppressHydrationWarning>
         <Suspense fallback={null}>
           <DynamicTitle />
           <TopLoader />
