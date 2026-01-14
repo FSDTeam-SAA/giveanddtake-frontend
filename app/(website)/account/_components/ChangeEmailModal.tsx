@@ -15,7 +15,7 @@ import { toast } from "sonner";
 
 import { SecurityQuestions } from "./security-questions";
 import axios from "axios";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 interface ChangeEmailModalProps {
   open: boolean;
@@ -76,10 +76,11 @@ export function ChangeEmailModal({
       );
 
       if (res.data?.success) {
-        toast.success("Email updated successfully.");
+        toast.success("Email updated successfully. Please sign in again.");
         onEmailUpdated?.(trimmedEmail);
-        onOpenChange(false);
         resetState();
+        onOpenChange(false);
+        await signOut({ callbackUrl: "/login", redirect: true });
         return;
       }
 

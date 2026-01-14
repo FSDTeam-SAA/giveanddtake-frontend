@@ -635,7 +635,7 @@ export default function UpdateResumeForm({
       }
 
       await onUpdate(formData);
-      toast.success("Resume updated successfully!");
+      toast.success("Elevator Pitch updated successfully");
     } catch (error) {
       console.error("Error in form submission:", error);
       toast.error("Failed to update resume. Please try again.");

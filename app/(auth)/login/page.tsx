@@ -73,8 +73,11 @@ export default function LoginPage() {
         setError(message);
         toast.error(message);
 
-        if (parsed.code === "UNVERIFIED" && parsed.email) {
-          router.push(`/verify?email=${encodeURIComponent(parsed.email)}`);
+        if (parsed.code === "UNVERIFIED") {
+          const autoMsg =
+            "Your account is now verified automatically. Please try signing in again.";
+          setError(autoMsg);
+          toast.error(autoMsg);
         }
       } else if (result?.ok) {
         // Save or clear credentials based on rememberMe

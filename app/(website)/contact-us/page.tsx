@@ -256,10 +256,10 @@ export default function ContactForm() {
                   <Mail className="w-5 h-5" />
                 </div>
                 <a
-                  href="mailto:info@evpitch.com"
+                  href="mailto:clientsupport@evpitch.com"
                   className="text-gray-700 hover:underline"
                 >
-                  info@evpitch.com
+                  clientsupport@evpitch.com
                 </a>
               </div>
               <div className="flex items-center gap-16">

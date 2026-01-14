@@ -188,7 +188,7 @@ export function PaymentHistory() {
       doc.setTextColor("#333333");
       doc.setFontSize(10);
       doc.text("124 City Road, London EC1V 2NX", margin, y);
-      doc.text("info@evpitch.com", margin, y + 14);
+      doc.text("clientsupport@evpitch.com", margin, y + 14);
       doc.text("+44 0203 954 2530", margin, y + 28);
 
       const validTill = computeValidTill(payment.updatedAt, payment.planValid);
