@@ -746,10 +746,13 @@ export function PersonalInformation() {
         </DialogContent>
       </Dialog>
       <ChangeEmailModal
-  open={isEmailModalOpen}
-  onOpenChange={setIsEmailModalOpen}
-  currentEmail={formData.email}
-/>
+        open={isEmailModalOpen}
+        onOpenChange={setIsEmailModalOpen}
+        currentEmail={formData.email}
+        onEmailUpdated={(email) =>
+          setFormData((prev) => ({ ...prev, email }))
+        }
+      />
 
     </div>
   );
