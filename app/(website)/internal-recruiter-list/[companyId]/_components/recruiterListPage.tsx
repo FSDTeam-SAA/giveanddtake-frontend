@@ -241,14 +241,14 @@ export default function RecruiterListPage({
         {recruiters.length > 0 && (
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-semibold mb-6 md:mb-0 ">
-              Internal recruiter List
+              Internal Recruiter List
             </h1>
           </div>
         )}
 
         <div className="flex gap-4">
           <Button onClick={() => setShowAddModal(true)}>
-            Add Internal recruiter
+            Add Internal Recruiter
           </Button>
         </div>
       </div>
