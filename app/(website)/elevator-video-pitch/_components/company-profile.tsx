@@ -259,7 +259,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
       toast.success(
-        "Upload completed! We’re processing your video—check back shortly."
+        "Video processing in the background - please refresh your browser shortly"
       );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
@@ -814,7 +814,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
           </div>
         )}
         <div className="mt-4 flex justify-end">
-          <Link href={`/recruiter-list/${company.userId}`}>
+          <Link href={`/internal-recruiter-list/${company.userId}`}>
             <Button>Manage all Internal recruiters</Button>
           </Link>
         </div>

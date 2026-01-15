@@ -112,7 +112,7 @@ export default function RecruiterElevator({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
       toast.success(
-        "Upload completed! We’re processing your video—check back shortly."
+        "Video processing in the background - please refresh your browser shortly"
       );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
