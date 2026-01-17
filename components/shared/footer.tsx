@@ -42,7 +42,7 @@ export function Footer() {
   };
 
   const handleRecruiterPostJobClick = (
-    e: React.MouseEvent<HTMLAnchorElement>
+    e: React.MouseEvent<HTMLAnchorElement>,
   ) => {
     e.preventDefault();
     if (!token) {
@@ -55,7 +55,7 @@ export function Footer() {
   };
 
   const handleCompanyPostJobClick = (
-    e: React.MouseEvent<HTMLAnchorElement>
+    e: React.MouseEvent<HTMLAnchorElement>,
   ) => {
     e.preventDefault();
     if (!token) {
@@ -179,6 +179,10 @@ export function Footer() {
         </div>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
+        <p className="mb-2">
+          Elevator Video Pitch© Ltd. is registered in England in the United
+          Kingdom at Companies House. Company Number 15978879
+        </p>
         <p>&copy; 2026 Elevator Video Pitch©. All rights reserved.</p>
       </div>
     </footer>
