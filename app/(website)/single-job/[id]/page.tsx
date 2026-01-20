@@ -77,7 +77,7 @@ interface JobPostData {
 // STATIC APPLICATION REQUIREMENTS
 const STATIC_REQUIREMENTS = [
   { id: "resume", label: "Resume" },
-  { id: "visa", label: "Valid visa for this job location?" },
+  { id: "visa", label: "Have you got a valid visa for this location?" },
 ];
 
 // keep this OUTSIDE the component

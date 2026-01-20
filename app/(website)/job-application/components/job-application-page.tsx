@@ -125,16 +125,16 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     });
 
   const isResumeRequired = jobData?.data.applicationRequirement?.some(
-    (req) => req.requirement === "Resume" && req.status === "Required"
+    (req) => req.requirement === "Resume" && req.status === "Required",
   );
   const isResumeOptional = jobData?.data.applicationRequirement?.some(
-    (req) => req.requirement === "Resume" && req.status === "Optional"
+    (req) => req.requirement === "Resume" && req.status === "Optional",
   );
   const visaRequirementLabel = "Have you got a valid visa for this location?";
   const visaRequirement = jobData?.data.applicationRequirement?.find(
     (req) =>
       req.requirement?.trim().toLowerCase() ===
-      visaRequirementLabel.toLowerCase()
+      visaRequirementLabel.toLowerCase(),
   );
   const shouldAskVisaStatus = Boolean(visaRequirement);
   const isVisaRequired =
@@ -257,14 +257,18 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
     const customQuestions = jobData?.data.customQuestion || [];
     const missing = customQuestions.filter(
-      (q) => !answers[q._id] || !answers[q._id].trim()
+      (q) => !answers[q._id] || !answers[q._id].trim(),
     );
     if (missing.length > 0)
       return toast.error("Please answer all custom questions.");
 
-    if (shouldAskVisaStatus && isVisaRequired && typeof hasValidVisa !== "boolean")
+    if (
+      shouldAskVisaStatus &&
+      isVisaRequired &&
+      typeof hasValidVisa !== "boolean"
+    )
       return toast.error(
-        "Please confirm if you have a valid visa for this location."
+        "Please confirm if you have a valid visa for this location.",
       );
 
     const answer = customQuestions.map((q) => ({
@@ -278,7 +282,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       resumeId: selectedResume?.id,
       answer,
       hasValidVisa: shouldAskVisaStatus
-        ? hasValidVisa ?? undefined
+        ? (hasValidVisa ?? undefined)
         : undefined,
     });
   };
@@ -286,9 +290,6 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const userData: UserData = data?.data || {};
   const visaQuestionSection = shouldAskVisaStatus ? (
     <div className="space-y-3">
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 border-b pb-2">
-        Eligibility
-      </h2>
       <div>
         <Label className="block text-lg font-medium mb-3">
           {visaRequirementLabel}
@@ -449,11 +450,11 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       {/* Resume Section */}
       {(isResumeRequired || isResumeOptional) && (
         <div className="my-12">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 border-b pb-4">
-            Resume {isResumeRequired ? "(Required)" : "(Optional)"}
-          </h2>
           <form onSubmit={handleSubmit} className="space-y-8">
             {visaQuestionSection}
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 border-b pb-4">
+              Resume {isResumeRequired ? "(Required)" : "(Optional)"}
+            </h2>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50">
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600 mb-4 text-sm sm:text-base">
@@ -499,12 +500,12 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                             prev.map((r) => ({
                               ...r,
                               selected: r.id === resume.id,
-                            }))
+                            })),
                           )
                         }
                       />
                       <Label htmlFor={`resume-${resume.id}`}>
-                        {resume.name} 
+                        {resume.name}
                       </Label>
                     </div>
                   ))}
@@ -556,8 +557,8 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   onCheckedChange={(checked) => setAgreedToShareCV(!!checked)}
                 />
                 <Label htmlFor="agree-cv" className="text-sm text-gray-700">
-                  I agree to my Elevator Video Pitch© being shared with the Recruiter for the role
-                  I am applying for
+                  I agree to my Elevator Video Pitch© being shared with the
+                  Recruiter for the role I am applying for
                 </Label>
               </div>
             </div>

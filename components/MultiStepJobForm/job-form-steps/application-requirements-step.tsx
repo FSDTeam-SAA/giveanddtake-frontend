@@ -39,7 +39,7 @@ export default function ApplicationRequirementsStep({
     if (!applicationRequirements || applicationRequirements.length === 0) {
       append({ requirement: "Resume", status: undefined });
       append({
-        requirement: "Valid visa for this job location?",
+        requirement: "Have you got a valid visa for this location?",
         status: undefined,
       });
       return;

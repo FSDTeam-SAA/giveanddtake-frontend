@@ -159,7 +159,7 @@ export default function MultiStepJobForm() {
       // NEW shape: requirement/status
       applicationRequirements: [
         { requirement: "Resume", status: "" },
-        { requirement: "Valid visa for this job location?", status: "" },
+        { requirement: "Have you got a valid visa for this location?", status: "" },
       ],
       customQuestions: [{ id: "1", question: "" }],
       userId,
