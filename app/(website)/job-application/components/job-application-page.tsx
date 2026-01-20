@@ -84,6 +84,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [agreedToShareCV, setAgreedToShareCV] = useState(false);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [hasValidVisa, setHasValidVisa] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -129,6 +130,15 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const isResumeOptional = jobData?.data.applicationRequirement?.some(
     (req) => req.requirement === "Resume" && req.status === "Optional"
   );
+  const visaRequirementLabel = "Have you got a valid visa for this location?";
+  const visaRequirement = jobData?.data.applicationRequirement?.find(
+    (req) =>
+      req.requirement?.trim().toLowerCase() ===
+      visaRequirementLabel.toLowerCase()
+  );
+  const shouldAskVisaStatus = Boolean(visaRequirement);
+  const isVisaRequired =
+    (visaRequirement?.status || "").toLowerCase() === "required";
 
   // Upload resume mutation
   const uploadResumeMutation = useMutation({
@@ -187,15 +197,18 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       userId,
       resumeId,
       answer,
+      hasValidVisa,
     }: {
       jobId: string;
       userId: string;
       resumeId?: string;
       answer: { question: string; ans: string }[];
+      hasValidVisa?: boolean;
     }) => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL");
       const body: any = { jobId, userId, answer };
       if (resumeId) body.resumeId = resumeId;
+      if (typeof hasValidVisa === "boolean") body.hasValidVisa = hasValidVisa;
 
       const response = await fetch(`${baseUrl}/applied-jobs`, {
         method: "POST",
@@ -249,6 +262,11 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     if (missing.length > 0)
       return toast.error("Please answer all custom questions.");
 
+    if (shouldAskVisaStatus && isVisaRequired && typeof hasValidVisa !== "boolean")
+      return toast.error(
+        "Please confirm if you have a valid visa for this location."
+      );
+
     const answer = customQuestions.map((q) => ({
       question: q.question,
       ans: answers[q._id],
@@ -259,10 +277,48 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       userId,
       resumeId: selectedResume?.id,
       answer,
+      hasValidVisa: shouldAskVisaStatus
+        ? hasValidVisa ?? undefined
+        : undefined,
     });
   };
 
   const userData: UserData = data?.data || {};
+  const visaQuestionSection = shouldAskVisaStatus ? (
+    <div className="space-y-3">
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-2 border-b pb-2">
+        Eligibility
+      </h2>
+      <div>
+        <Label className="block text-lg font-medium mb-3">
+          {visaRequirementLabel}
+          {isVisaRequired ? " *" : ""}
+        </Label>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              name="visa-status"
+              value="yes"
+              checked={hasValidVisa === true}
+              onChange={() => setHasValidVisa(true)}
+            />
+            <span>Yes</span>
+          </label>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="radio"
+              name="visa-status"
+              value="no"
+              checked={hasValidVisa === false}
+              onChange={() => setHasValidVisa(false)}
+            />
+            <span>No</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div className="container mx-auto px-4 sm:px-6">
@@ -397,6 +453,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
             Resume {isResumeRequired ? "(Required)" : "(Optional)"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-8">
+            {visaQuestionSection}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50">
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
               <p className="text-gray-600 mb-4 text-sm sm:text-base">
@@ -490,6 +547,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       {!isResumeRequired && !isResumeOptional && (
         <div className="my-12">
           <form onSubmit={handleSubmit} className="space-y-8">
+            {visaQuestionSection}
             <div className="flex items-center justify-end">
               <div className="flex items-center space-x-2">
                 <Checkbox

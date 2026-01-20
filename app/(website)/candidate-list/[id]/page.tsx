@@ -81,6 +81,7 @@ interface Application {
   updatedAt: string;
   experience?: string;
   answer?: Answer[];
+  hasValidVisa?: boolean | null;
 }
 
 interface ApiResponse {
@@ -155,6 +156,9 @@ export default function JobApplicantsPage() {
 
   const { data: session } = useSession();
   const token = (session as any)?.accessToken as string | undefined;
+  const hasVisaField = applications.some(
+    (app) => typeof app.hasValidVisa === "boolean"
+  );
 
   useEffect(() => {
     fetchApplications();
@@ -256,6 +260,11 @@ export default function JobApplicantsPage() {
     setIsModalOpen(true);
   };
 
+  const renderVisaStatus = (status: boolean | null | undefined) => {
+    if (typeof status !== "boolean") return "Not provided";
+    return status ? "Yes" : "No";
+  };
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -301,6 +310,11 @@ export default function JobApplicantsPage() {
               <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
                 Details
               </TableHead>
+              {hasVisaField && (
+                <TableHead className="text-sm sm:text-base text-[#2B7FD0] font-bold">
+                  Valid Visa
+                </TableHead>
+              )}
               {applications.length > 0 &&
                 applications[0].answer &&
                 applications[0].answer.length > 0 && (
@@ -317,7 +331,7 @@ export default function JobApplicantsPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={hasVisaField ? 6 : 5}>
                     <Skeleton className="h-10 w-full" />
                   </TableCell>
                 </TableRow>
@@ -365,6 +379,9 @@ export default function JobApplicantsPage() {
                         Details
                       </Link>
                     </TableCell>
+                    {hasVisaField && (
+                      <TableCell>{renderVisaStatus(application.hasValidVisa)}</TableCell>
+                    )}
                     {application.answer && application.answer.length > 0 && (
                       <TableCell>
                         <Dialog
@@ -451,7 +468,7 @@ export default function JobApplicantsPage() {
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
+                <TableCell colSpan={hasVisaField ? 6 : 5} className="text-center py-8">
                   <p className="text-gray-500">No applications found</p>
                 </TableCell>
               </TableRow>
