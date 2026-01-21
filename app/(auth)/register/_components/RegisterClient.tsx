@@ -140,9 +140,8 @@ export default function RegisterPage() {
   const registerMutation = useMutation({
     mutationFn: authAPI.register,
     onSuccess: () => {
-      router.push(
-        `/security-questions?email=${encodeURIComponent(formData.email)}`
-      );
+      toast.success("Account created. Please verify the OTP we sent to your email.");
+      router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
     },
     onError: (error: any) => {
       console.error("Registration failed:", error);
