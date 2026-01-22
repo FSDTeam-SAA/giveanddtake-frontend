@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type React from "react";
 import { useState, useRef, useEffect } from "react";
@@ -23,7 +23,8 @@ export default function OtpStep({
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [timeLeft, setTimeLeft] = useState(123);
+  const OTP_EXPIRY_SECONDS = 600;
+  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   /* ---------------- Timer Countdown ---------------- */
@@ -103,14 +104,17 @@ export default function OtpStep({
   const handleResendCode = async () => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-      await fetch(`${baseUrl}/user/forget`, {
+      const res = await fetch(`${baseUrl}/user/forget`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email }),
       });
-      setTimeLeft(123);
+      if (!res.ok) {
+        throw new Error("Resend failed");
+      }
+      setTimeLeft(OTP_EXPIRY_SECONDS);
       setError("");
     } catch (error) {
       setError("Failed to resend code. Please try again.");
@@ -123,7 +127,7 @@ export default function OtpStep({
         <h1 className="text-2xl font-semibold text-gray-900">Verify OTP</h1>
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         <p className="text-gray-600 mt-2">
-          We’ve sent a code to your registered email address.
+          We've sent a code to your registered email address.
         </p>
       </div>
 
@@ -139,7 +143,7 @@ export default function OtpStep({
               value={value}
               onChange={(e) => handleInputChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              onPaste={(e) => handlePaste(e, index)} // 👈 works on ANY input
+              onPaste={(e) => handlePaste(e, index)} // Works on any input
               className="w-12 h-12 text-center text-lg font-semibold border-2 focus:ring-2 focus:ring-blue-500"
               placeholder={value ? "•" : ""}
             />
@@ -185,3 +189,7 @@ export default function OtpStep({
     </div>
   );
 }
+
+
+
+

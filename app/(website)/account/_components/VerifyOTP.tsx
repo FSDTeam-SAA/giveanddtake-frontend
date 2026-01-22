@@ -1,12 +1,10 @@
-"use client";
-import React, { useRef, useState } from "react";
+﻿"use client";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { headers } from "next/headers";
-import { useSession } from "next-auth/react";
 
 interface VerifyOTPProps {
   email: string;
@@ -16,10 +14,8 @@ interface VerifyOTPProps {
 
 export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
-
-  const { data: session } = useSession();
-  const token = session?.accessToken;
 
   /* ---------------- Verify OTP Mutation ---------------- */
   const { mutate, isPending } = useMutation({
@@ -60,6 +56,12 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
     setOtp(newOtp);
     if (digit && index < otp.length - 1) focusInput(index + 1);
   };
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((t) => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace") {
@@ -103,25 +105,23 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
   const handleResendCode = async () => {
     try {
       toast.info("Resending OTP...");
+      setResendCooldown(60);
 
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/change-email`,
-        { email },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        `${process.env.NEXT_PUBLIC_BASE_URL}/user/resend-otp`,
+        { email }
       );
 
       if (res.data?.success) {
         toast.success("OTP resent successfully!");
       } else {
         toast.error(res.data?.message || "Failed to resend OTP.");
+        setResendCooldown(0);
       }
     } catch (error: any) {
       const msg = error?.response?.data?.message || "Failed to resend OTP.";
       toast.error(msg);
+      setResendCooldown(0);
     }
   };
 
@@ -149,16 +149,16 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
         </div>
       </div>
 
-
       <div className="flex justify-between items-center">
-        {/* <span className="text-sm text-gray-600">Didn’t get a code?</span>
+        <span className="text-sm text-gray-600">Didn't get a code?</span>
         <button
           type="button"
           onClick={handleResendCode}
-          className="text-sm text-blue-600 hover:underline"
+          disabled={resendCooldown > 0}
+          className={`text-sm ${resendCooldown > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
         >
-          Resend Code
-        </button> */}
+          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
+        </button>
       </div>
 
       <div className="flex space-x-3 pt-4">
@@ -182,3 +182,5 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
     </form>
   );
 }
+
+

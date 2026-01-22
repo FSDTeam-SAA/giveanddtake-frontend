@@ -12,6 +12,8 @@ import { authAPI } from "@/lib/auth-api";
 export default function VerifyPage() {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [email, setEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
@@ -22,6 +24,12 @@ export default function VerifyPage() {
       setEmail(emailParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((t) => t - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   // Destructure isPending and mutate from useMutation (v5)
   const {
@@ -116,9 +124,29 @@ export default function VerifyPage() {
     }
   };
 
-  const handleResendCode = () => {
-    console.log("Resending code...");
-    // Add resend OTP logic here
+  const handleResendCode = async () => {
+    if (!email) return;
+    setResendMessage(null);
+    try {
+      setResendCooldown(60);
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/user/resend-otp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to resend");
+      }
+      setResendMessage("A new code has been sent to your email.");
+    } catch (err) {
+      setResendMessage("Failed to resend code. Please try again.");
+      setResendCooldown(0);
+    }
   };
 
   // Use isPending (mutation) — this is the correct boolean to show a "loading" state for a mutation in v5
@@ -130,8 +158,11 @@ export default function VerifyPage() {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Enter OTP</CardTitle>
           <p className="text-gray-600">
-            We have sent a code to your registered email address (Expires in 1 Hour)
+            We have sent a code to your registered email address (Expires in 10 minutes)
           </p>
+          {resendMessage && (
+            <p className="text-sm text-gray-700 mt-1">{resendMessage}</p>
+          )}
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,9 +195,10 @@ export default function VerifyPage() {
               <button
                 type="button"
                 onClick={handleResendCode}
-                className="text-sm text-blue-600 hover:underline"
+                className={`text-sm ${resendCooldown > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
+                disabled={resendCooldown > 0}
               >
-                Resend Code
+                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
               </button>
             </div>
 
