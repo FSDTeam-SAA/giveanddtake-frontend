@@ -11,12 +11,14 @@ interface EmailStepProps {
   email: string;
   onEmailChange: (email: string) => void;
   onNext: () => void;
+  onOtpSent: () => void;
 }
 
 export default function EmailStep({
   email,
   onEmailChange,
   onNext,
+  onOtpSent,
 }: EmailStepProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +39,7 @@ export default function EmailStep({
       });
 
       if (response.ok) {
+        onOtpSent();
         onNext();
       } else {
         const errorData = await response.json();

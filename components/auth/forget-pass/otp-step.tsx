@@ -11,6 +11,9 @@ interface OtpStepProps {
   onOtpChange: (otp: string) => void;
   onNext: () => void;
   onBack: () => void;
+  otpExpiresAt: number | null;
+  otpDurationSeconds: number;
+  onOtpTimerRestart: () => void;
 }
 
 export default function OtpStep({
@@ -19,21 +22,35 @@ export default function OtpStep({
   onOtpChange,
   onNext,
   onBack,
+  otpExpiresAt,
+  otpDurationSeconds,
+  onOtpTimerRestart,
 }: OtpStepProps) {
   const [otpValues, setOtpValues] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const OTP_EXPIRY_SECONDS = 600;
-  const [timeLeft, setTimeLeft] = useState(OTP_EXPIRY_SECONDS);
+  const [timeLeft, setTimeLeft] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  /* ---------------- Timer Countdown ---------------- */
+  /* ---------------- Timer Countdown (persists across step navigation) ---------------- */
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
+    if (!otpExpiresAt) {
+      setTimeLeft(0);
+      return;
     }
-  }, [timeLeft]);
+
+    const updateTimeLeft = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor((otpExpiresAt - Date.now()) / 1000)
+      );
+      setTimeLeft(remaining);
+    };
+
+    updateTimeLeft();
+    const timer = setInterval(updateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, [otpExpiresAt]);
 
   /* ---------------- OTP Input Change ---------------- */
   const handleInputChange = (index: number, value: string) => {
@@ -114,7 +131,8 @@ export default function OtpStep({
       if (!res.ok) {
         throw new Error("Resend failed");
       }
-      setTimeLeft(OTP_EXPIRY_SECONDS);
+      onOtpTimerRestart();
+      setTimeLeft(otpDurationSeconds);
       setError("");
     } catch (error) {
       setError("Failed to resend code. Please try again.");
@@ -136,7 +154,7 @@ export default function OtpStep({
           {otpValues.map((value, index) => (
             <Input
               key={index}
-              ref={(el) => (inputRefs.current[index] = el)}
+              ref={(el) => { inputRefs.current[index] = el; }}
               type="text"
               inputMode="numeric"
               maxLength={1}
