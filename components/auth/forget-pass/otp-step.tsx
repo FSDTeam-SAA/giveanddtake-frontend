@@ -31,6 +31,7 @@ export default function OtpStep({
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const isExpired = otpExpiresAt !== null && timeLeft <= 0;
 
   /* ---------------- Timer Countdown (persists across step navigation) ---------------- */
   useEffect(() => {
@@ -108,6 +109,12 @@ export default function OtpStep({
       return;
     }
 
+    if (isExpired) {
+      setError("Code expired. Please resend a new OTP.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       onNext();
     } catch (error) {
@@ -134,6 +141,8 @@ export default function OtpStep({
       onOtpTimerRestart();
       setTimeLeft(otpDurationSeconds);
       setError("");
+      setOtpValues(["", "", "", "", "", ""]);
+      onOtpChange("");
     } catch (error) {
       setError("Failed to resend code. Please try again.");
     }
@@ -173,6 +182,11 @@ export default function OtpStep({
             Code expires in {Math.floor(timeLeft / 60)}:
             {(timeLeft % 60).toString().padStart(2, "0")}
           </span>
+          {isExpired && (
+            <span className="text-red-500 text-xs">
+              Code expired. Resend to continue.
+            </span>
+          )}
           <button
             type="button"
             onClick={handleResendCode}
@@ -189,7 +203,7 @@ export default function OtpStep({
           <Button
             type="submit"
             className="w-full bg-primary hover:bg-blue-700"
-            disabled={isLoading || otpValues.join("").length !== 6}
+            disabled={isLoading || otpValues.join("").length !== 6 || isExpired}
           >
             {isLoading ? "Verifying..." : "Verify"}
           </Button>

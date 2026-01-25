@@ -9,14 +9,22 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { authAPI } from "@/lib/auth-api";
 
+const OTP_DURATION_SECONDS = 600; // 10 minutes
+
 export default function VerifyPage() {
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [email, setEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const expiryStorageKey =
+    email && typeof window !== "undefined"
+      ? `otp-expiry:${email}`
+      : null;
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
@@ -24,6 +32,38 @@ export default function VerifyPage() {
       setEmail(emailParam);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!email || !expiryStorageKey) return;
+    const now = Date.now();
+    const storedExpiry = Number(
+      sessionStorage.getItem(expiryStorageKey) || ""
+    );
+    const expiry =
+      storedExpiry && storedExpiry > now
+        ? storedExpiry
+        : now + OTP_DURATION_SECONDS * 1000;
+
+    setOtpExpiresAt(expiry);
+    sessionStorage.setItem(expiryStorageKey, String(expiry));
+  }, [email, expiryStorageKey]);
+
+  useEffect(() => {
+    if (!otpExpiresAt) {
+      setTimeLeft(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor((otpExpiresAt - Date.now()) / 1000)
+      );
+      setTimeLeft(remaining);
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [otpExpiresAt]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
@@ -115,6 +155,12 @@ export default function VerifyPage() {
     e.preventDefault();
     const otpString = otp.join("");
 
+    if (otpExpiresAt && timeLeft <= 0) {
+      setResendMessage("Code expired. Please resend a new OTP.");
+      setResendCooldown(0);
+      return;
+    }
+
     if (otpString.length === 6) {
       // use mutate (destructured) instead of verifyMutation.mutate
       mutate({
@@ -129,6 +175,13 @@ export default function VerifyPage() {
     setResendMessage(null);
     try {
       setResendCooldown(60);
+      const newExpiry = Date.now() + OTP_DURATION_SECONDS * 1000;
+      setOtpExpiresAt(newExpiry);
+      setTimeLeft(Math.ceil(OTP_DURATION_SECONDS));
+      if (expiryStorageKey) {
+        sessionStorage.setItem(expiryStorageKey, String(newExpiry));
+      }
+      setOtp(["", "", "", "", "", ""]);
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/user/resend-otp`,
         {
@@ -151,6 +204,7 @@ export default function VerifyPage() {
 
   // Use isPending (mutation) — this is the correct boolean to show a "loading" state for a mutation in v5
   const isVerifying = isPending;
+  const isExpired = otpExpiresAt !== null && timeLeft <= 0;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -160,6 +214,15 @@ export default function VerifyPage() {
           <p className="text-gray-600">
             We have sent a code to your registered email address (Expires in 10 minutes)
           </p>
+          <p className="text-sm text-gray-600">
+            Expires in {Math.floor(timeLeft / 60)}:
+            {(timeLeft % 60).toString().padStart(2, "0")}
+          </p>
+          {isExpired && (
+            <p className="text-sm text-red-600">
+              Code expired. Please tap Resend Code to get a fresh OTP.
+            </p>
+          )}
           {resendMessage && (
             <p className="text-sm text-gray-700 mt-1">{resendMessage}</p>
           )}
@@ -195,17 +258,19 @@ export default function VerifyPage() {
               <button
                 type="button"
                 onClick={handleResendCode}
-                className={`text-sm ${resendCooldown > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
-                disabled={resendCooldown > 0}
+                className={`text-sm ${(resendCooldown > 0 && !isExpired) ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
+                disabled={resendCooldown > 0 && !isExpired}
               >
-                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
+                {resendCooldown > 0 && !isExpired
+                  ? `Resend in ${resendCooldown}s`
+                  : "Resend Code"}
               </button>
             </div>
 
             <Button
               type="submit"
               className="w-full"
-              disabled={isVerifying || otp.join("").length !== 6}
+              disabled={isVerifying || otp.join("").length !== 6 || isExpired}
             >
               {isVerifying ? "Verifying..." : "Verify"}
             </Button>

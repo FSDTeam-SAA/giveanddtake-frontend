@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 
+const OTP_DURATION_SECONDS = 600; // 10 minutes
+
 interface VerifyOTPProps {
   email: string;
   onBack: () => void;
@@ -15,7 +17,45 @@ interface VerifyOTPProps {
 export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [otpExpiresAt, setOtpExpiresAt] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState(0);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const expiryStorageKey =
+    email && typeof window !== "undefined"
+      ? `otp-expiry:${email}`
+      : null;
+
+  useEffect(() => {
+    if (!email || !expiryStorageKey) return;
+    const now = Date.now();
+    const storedExpiry = Number(
+      sessionStorage.getItem(expiryStorageKey) || ""
+    );
+    const expiry =
+      storedExpiry && storedExpiry > now
+        ? storedExpiry
+        : now + OTP_DURATION_SECONDS * 1000;
+
+    setOtpExpiresAt(expiry);
+    sessionStorage.setItem(expiryStorageKey, String(expiry));
+  }, [email, expiryStorageKey]);
+
+  useEffect(() => {
+    if (!otpExpiresAt) {
+      setTimeLeft(0);
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(
+        0,
+        Math.floor((otpExpiresAt - Date.now()) / 1000)
+      );
+      setTimeLeft(remaining);
+    };
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [otpExpiresAt]);
 
   /* ---------------- Verify OTP Mutation ---------------- */
   const { mutate, isPending } = useMutation({
@@ -41,6 +81,7 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
       toast.error(msg);
     },
   });
+  const isExpired = otpExpiresAt !== null && timeLeft <= 0;
 
   /* ---------------- OTP Input Behavior ---------------- */
   const focusInput = (index: number) => {
@@ -95,6 +136,11 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const otpString = otp.join("");
+    if (isExpired) {
+      toast.error("Code expired. Please resend a new OTP.");
+      setResendCooldown(0);
+      return;
+    }
     if (otpString.length === 6) {
       mutate();
     } else {
@@ -106,6 +152,13 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
     try {
       toast.info("Resending OTP...");
       setResendCooldown(60);
+      const newExpiry = Date.now() + OTP_DURATION_SECONDS * 1000;
+      setOtpExpiresAt(newExpiry);
+      setTimeLeft(Math.ceil(OTP_DURATION_SECONDS));
+      if (expiryStorageKey) {
+        sessionStorage.setItem(expiryStorageKey, String(newExpiry));
+      }
+      setOtp(["", "", "", "", "", ""]);
 
       const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}/user/resend-otp`,
@@ -128,6 +181,15 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="text-center text-sm text-gray-600">
+        Expires in {Math.floor(timeLeft / 60)}:
+        {(timeLeft % 60).toString().padStart(2, "0")}
+      </div>
+      {isExpired && (
+        <p className="text-center text-sm text-red-600">
+          Code expired. Please resend a new OTP.
+        </p>
+      )}
 
       <div className="space-y-5">
 
@@ -154,10 +216,12 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
         <button
           type="button"
           onClick={handleResendCode}
-          disabled={resendCooldown > 0}
-          className={`text-sm ${resendCooldown > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
+          disabled={resendCooldown > 0 && !isExpired}
+          className={`text-sm ${(resendCooldown > 0 && !isExpired) ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
         >
-          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
+          {resendCooldown > 0 && !isExpired
+            ? `Resend in ${resendCooldown}s`
+            : "Resend Code"}
         </button>
       </div>
 
@@ -173,7 +237,7 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
         </Button>
         <Button
           type="submit"
-          disabled={isPending || otp.join("").length !== 6}
+          disabled={isPending || otp.join("").length !== 6 || isExpired}
           className="flex-1 bg-primary hover:bg-blue-700 text-white"
         >
           {isPending ? "Verifying..." : "Verify"}
