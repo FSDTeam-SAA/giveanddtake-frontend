@@ -178,7 +178,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                     <FormItem>
                       <FormLabel>Company Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. IBM" {...field} />
+                        <Input placeholder="" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -369,7 +369,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                         />
                       </FormControl>
                       <div className="space-y-1 leading-none">
-                        <FormLabel>Currently Working</FormLabel>
+                        <FormLabel>Current Position</FormLabel>
                       </div>
                     </FormItem>
                   )}

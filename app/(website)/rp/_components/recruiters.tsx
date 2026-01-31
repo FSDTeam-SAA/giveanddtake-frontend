@@ -466,7 +466,7 @@ export default function Recruiters({ userId }: MydataProps) {
           <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
             <div className="flex items-center justify-between border-b-2 pb-2">
               <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
-                About
+                About me
               </h3>
               {userId ? (
                 <CandidateSharePopover

@@ -162,7 +162,7 @@ export const resumeSchema = z.object({
             data.currentlyWorking ||
             (!data.currentlyWorking && !!data.endDate),
           {
-            message: "End date is required unless currently working",
+            message: "End date is required unless Current Position is checked",
             path: ["endDate"],
           }
         )

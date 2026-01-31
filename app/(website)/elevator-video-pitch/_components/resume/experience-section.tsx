@@ -213,7 +213,7 @@ export function ExperienceSection({
                   <FormItem>
                     <FormLabel>Company Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. IBM" {...field} />
+                      <Input placeholder="" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -304,7 +304,7 @@ export function ExperienceSection({
                         />
                       </FormControl>
                       <FormLabel className="font-normal">
-                        Currently Working
+                        Current Position
                       </FormLabel>
                     </FormItem>
                   )}

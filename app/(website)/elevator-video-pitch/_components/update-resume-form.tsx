@@ -91,7 +91,7 @@ export const resumeFormSchema = z.object({
             data.currentlyWorking === true ||
             (!!data.endDate && data.currentlyWorking === false),
           {
-            message: "End date is required unless currently working",
+            message: "End date is required unless Current Position is checked",
             path: ["endDate"],
           }
         )

@@ -150,7 +150,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
       toast.success(
-        "Video processing in the background - please refresh your browser shortly"
+        "Video processing in the background - please refresh your browser shortly",
       );
       setIsElevatorPitchUploaded(true);
       setElevatorPitchFile(null);
@@ -409,7 +409,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                       {isElevatorPitchUploaded && (
                         <p className="mt-2 text-sm text-green-600">
                           Elevator pitch upload finished! Processing continues
-                          in the background. Please refresh the page in a few seconds.
+                          in the background. Please refresh the page in a few
+                          seconds.
                         </p>
                       )}
 
@@ -456,14 +457,11 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
               <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                About
+                About Me
               </h3>
-              <p
-                className="list-item !text-gray-600 leading-relaxed list-none"
-                dangerouslySetInnerHTML={{
-                  __html: resume.resume.aboutUs || "No description provided",
-                }}
-              />
+              <p className="list-item !text-gray-600 leading-relaxed list-none">
+                {resume.resume.aboutUs}
+              </p>
             </section>
 
             <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">

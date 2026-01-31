@@ -5,6 +5,7 @@ import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/comp
 import type { UseFormReturn } from "react-hook-form"
 import { PhotoUpload } from "./photo-upload"
 import TextEditor from "@/components/MultiStepJobForm/TextEditor"
+import { Textarea } from "@/components/ui/textarea"
 
 interface PhotoAboutSectionProps {
   form: UseFormReturn<any>
@@ -37,7 +38,7 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
                   <FormLabel className="text-blue-600 font-medium">About Me</FormLabel>
                   <FormControl>
                     <div className="mt-2">
-                      <TextEditor value={field.value ?? ""} onChange={field.onChange} />
+                      <Textarea value={field.value ?? ""} onChange={field.onChange} />
                     </div>
                   </FormControl>
                   <FormMessage />

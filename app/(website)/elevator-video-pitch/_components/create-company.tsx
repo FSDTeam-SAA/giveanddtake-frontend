@@ -762,10 +762,7 @@ export default function CreateCompanyPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <TextEditor
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
+                      <Textarea value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
                       Word count: {field.value.trim().split(/\s+/).length}

@@ -33,6 +33,7 @@ import { SocialLinksSection } from "../social-links-section";
 import { useQuery } from "@tanstack/react-query";
 import { PhotoUpload } from "../update-resume/photo-upload";
 import type { UseFormReturn } from "react-hook-form";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Country {
   country: string;
@@ -269,7 +270,7 @@ export function PersonalInfoSection({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <TextEditor
+                      <Textarea
                         value={field.value}
                         onChange={field.onChange}
                       />

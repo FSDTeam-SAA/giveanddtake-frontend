@@ -10,7 +10,6 @@ import {
   updateResume,
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
-import RecruiterElevator from "./recruiter-elevator";
 import CompanyProfilePage from "./company-profile";
 import CreateCompanyPage from "./create-company";
 import { Card, CardContent } from "@/components/ui/card";
@@ -89,7 +88,6 @@ export default function ElevatorPitchAndResume() {
           recruiter ? (
             <div className="lg:space-y-16 space-y-6">
               <EditableRecruiterAccount recruiter={recruiter} />
-              <RecruiterElevator recruiter={recruiter} />
             </div>
           ) : (
             <CreateRecruiterAccount />

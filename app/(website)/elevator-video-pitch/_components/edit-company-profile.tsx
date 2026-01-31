@@ -592,7 +592,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           About Us*
                         </FormLabel>
                         <FormControl>
-                          <TextEditor
+                          <Textarea
                             value={field.value || ""}
                             onChange={field.onChange}
                             placeholder="Write about your company..."

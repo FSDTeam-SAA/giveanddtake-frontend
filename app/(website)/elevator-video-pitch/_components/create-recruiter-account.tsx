@@ -61,6 +61,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Option {
   value: string;
@@ -898,10 +899,10 @@ export default function CreateRecruiterAccountForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-sm font-medium">
-                          Bio (Optional)
+                          About me
                         </FormLabel>
                         <FormControl>
-                          <TextEditor
+                          <Textarea
                             value={field.value ?? ""}
                             onChange={field.onChange}
                           />

@@ -4,7 +4,8 @@ import type React from "react";
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,14 +18,27 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Edit, Save, X, Check, ChevronsUpDown } from "lucide-react";
+import {
+  Edit,
+  Save,
+  X,
+  Check,
+  ChevronsUpDown,
+  Trash2,
+  MoreHorizontal,
+} from "lucide-react";
 import DOMPurify from "dompurify";
-import { editRecruiterAccount } from "@/lib/api-service";
+import {
+  deleteElevatorPitchVideo,
+  editRecruiterAccount,
+  uploadElevatorPitch,
+} from "@/lib/api-service";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { CompanySelector } from "@/components/company/company-selector";
 import SocialLinks from "./SocialLinks";
 import { SocialLinksSection } from "./social-links-section";
+import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import {
   Command,
   CommandEmpty,
@@ -42,6 +56,15 @@ import { cn } from "@/lib/utils";
 import { BannerUpload } from "@/components/shared/banner-upload";
 import { PhotoUpload } from "./update-resume/photo-upload";
 import Image from "next/image";
+import { VideoPlayer } from "@/components/company/video-player";
+import { VideoProcessingCard } from "@/components/VideoProcessingCard";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Textarea } from "@/components/ui/textarea";
 
 type MaybeStringifiedArray = string[] | string | undefined | null;
 
@@ -105,6 +128,12 @@ export type Recruiter = {
   sLink?: SLinkItem[];
   followerCount?: number;
   banner?: string;
+  elevatorPitch?: {
+    processing?: {
+      state?: string;
+      startedAt?: string;
+    };
+  };
 };
 
 const FALLBACK_IMAGE = "/placeholder.svg";
@@ -167,6 +196,28 @@ const fetchCities = async (country: string): Promise<string[]> => {
   return data.data as string[];
 };
 
+interface ApiResponse {
+  success: boolean;
+  total: number;
+  data: PitchData[];
+}
+
+interface PitchData {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
+  video: {
+    hlsUrl: string;
+    encryptionKeyUrl: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function EditableRecruiterAccount({
   recruiter,
   onSave,
@@ -190,6 +241,12 @@ export default function EditableRecruiterAccount({
   );
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
+  const [loadingPitch, setLoadingPitch] = useState(true);
+  const [pitchData, setPitchData] = useState<PitchData | null>(null);
+  const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
+  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
+    useState<boolean>(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const form = useForm<Recruiter>({
     defaultValues: {
@@ -198,6 +255,13 @@ export default function EditableRecruiterAccount({
     },
     mode: "onChange",
   });
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const token = session?.accessToken;
+
+  const processingInfo = recruiter?.elevatorPitch?.processing;
+  const isProcessing = processingInfo?.state === "processing";
 
   const {
     data: countriesData = [],
@@ -236,6 +300,119 @@ export default function EditableRecruiterAccount({
     if (countriesError) toast.error("Failed to load countries.");
     if (citiesError) toast.error("Failed to load cities.");
   }, [countriesError, citiesError]);
+
+  useEffect(() => {
+    const fetchPitchData = async () => {
+      if (!userId || !token) {
+        setLoadingPitch(false);
+        return;
+      }
+
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+        const response = await fetch(
+          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=recruiter`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch pitch data");
+        }
+
+        const apiResponse: ApiResponse = await response.json();
+        const userPitch = apiResponse.data.find(
+          (pitch) => pitch.userId._id === userId
+        );
+
+        if (userPitch) {
+          setPitchData(userPitch);
+          setIsElevatorPitchUploaded(true);
+        } else {
+          setIsElevatorPitchUploaded(false);
+        }
+      } catch (err) {
+        console.error(
+          "Failed to fetch elevator pitch:",
+          err instanceof Error ? err.message : err
+        );
+      } finally {
+        setLoadingPitch(false);
+      }
+    };
+
+    fetchPitchData();
+  }, [userId, token, isProcessing]);
+
+  const uploadElevatorPitchMutation = useMutation({
+    mutationFn: uploadElevatorPitch,
+    onSuccess: () => {
+      toast.success(
+        "Video processing in the background - please refresh your browser shortly"
+      );
+      setIsElevatorPitchUploaded(true);
+      setElevatorPitchFile(null);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to upload video");
+      setIsElevatorPitchUploaded(false);
+    },
+  });
+
+  const deleteElevatorPitchMutation = useMutation({
+    mutationFn: deleteElevatorPitchVideo,
+    onSuccess: () => {
+      toast.success("Elevator pitch deleted successfully!");
+      setIsElevatorPitchUploaded(false);
+      setElevatorPitchFile(null);
+      setPitchData(null);
+      setIsDeleteModalOpen(false);
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to delete elevator pitch.");
+      console.error("Error deleting elevator pitch:", error);
+    },
+  });
+
+  const handleElevatorPitchUpload = async () => {
+    if (elevatorPitchFile && userId) {
+      try {
+        await uploadElevatorPitchMutation.mutateAsync({
+          videoFile: elevatorPitchFile,
+          userId,
+        });
+      } catch {
+        // Error toast is handled in mutation onError
+      }
+    } else {
+      toast.error("Please select a video file to upload");
+    }
+  };
+
+  const handleDeleteElevatorPitch = async () => {
+    if (userId && pitchData) {
+      try {
+        await deleteElevatorPitchMutation.mutateAsync(userId);
+      } catch {
+        // Error toast is handled in mutation onError
+      }
+    }
+  };
+
+  const openDeleteModal = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+  };
 
   const handleBannerUpload = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -518,7 +695,7 @@ export default function EditableRecruiterAccount({
                         name="sureName"
                         render={({ field }) => (
                           <FormItem>
-                            <Label htmlFor="sureName">Sure Name</Label>
+                            <Label htmlFor="sureName">Surname</Label>
                             <FormControl>
                               <Input id="sureName" {...field} />
                             </FormControl>
@@ -717,10 +894,10 @@ export default function EditableRecruiterAccount({
                       render={({ field }) => (
                         <FormItem>
                           <Label htmlFor="bio" className="text-sm font-medium">
-                            Bio
+                            About me
                           </Label>
                           <FormControl>
-                            <TextEditor
+                            <Textarea
                               value={field.value || ""}
                               onChange={(value) => field.onChange(value)}
                             />
@@ -838,6 +1015,161 @@ export default function EditableRecruiterAccount({
             </aside>
           </div>
         </div>
+      </div>
+
+      <div className="container mx-auto">
+        <div className="lg:pb-12 pb-5">
+          <h2 className="text-2xl lg:text-3xl font-semibold text-gray-900 text-left mb-6">
+            Elevator Video Pitch
+          </h2>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-sm md:text-lg lg:text-xl">
+                  Upload or view a short video introducing yourself.
+                </CardTitle>
+                {isElevatorPitchUploaded && pitchData && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="Options"
+                        className="bg-gray-100 hover:bg-gray-200"
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={openDeleteModal}
+                        disabled={deleteElevatorPitchMutation.isPending}
+                        className="text-red-600 focus:text-red-700 cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isProcessing ? (
+                <VideoProcessingCard
+                  startedAt={processingInfo?.startedAt}
+                  onRetry={() => window.location.reload()}
+                  className="w-full"
+                />
+              ) : pitchData ? (
+                <VideoPlayer
+                  pitchId={pitchData._id}
+                  className="w-full mx-auto"
+                />
+              ) : loadingPitch ? (
+                <div>Loading pitch...</div>
+              ) : (
+                <>
+                  <ElevatorPitchUpload
+                    onFileSelect={setElevatorPitchFile}
+                    selectedFile={elevatorPitchFile}
+                  />
+                  <Button
+                    type="button"
+                    className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleElevatorPitchUpload}
+                    disabled={
+                      uploadElevatorPitchMutation.isPending ||
+                      !elevatorPitchFile
+                    }
+                  >
+                    {uploadElevatorPitchMutation.isPending ? (
+                      <div className="flex items-center gap-2">
+                        <svg
+                          className="animate-spin h-5 w-5 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Uploading...
+                      </div>
+                    ) : (
+                      "Upload Elevator Pitch"
+                    )}
+                  </Button>
+
+                  {isElevatorPitchUploaded && (
+                    <p className="mt-2 text-sm text-green-600">
+                      Elevator pitch upload finished! Processing continues in
+                      the background. Please refresh the page in a few seconds.
+                    </p>
+                  )}
+
+                  {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                    <p className="mt-2 text-sm text-gray-600">
+                      No pitch available.
+                    </p>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {!isEditing && (
+          <div className="lg:space-y-8 space-y-4 py-8">
+            <h2 className="text-xl lg:text-2xl font-bold">About Me</h2>
+            <div
+              className="text-gray-600 text-sm text-start pb-8 list-item list-none"
+            >
+              <p>{recruiter?.bio}</p>
+            </div>
+          </div>
+        )}
+
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+              <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Are you sure you want to delete your elevator pitch? This action
+                cannot be undone.
+              </p>
+              <div className="flex justify-end gap-4">
+                <Button
+                  variant="outline"
+                  onClick={closeDeleteModal}
+                  className="px-4 py-2"
+                >
+                  No
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteElevatorPitch}
+                  disabled={deleteElevatorPitchMutation.isPending}
+                  className="px-4 py-2"
+                >
+                  Yes
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
