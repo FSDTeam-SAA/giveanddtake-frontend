@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import CreateResumeForm from "./create-resume-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,6 +10,7 @@ import {
   updateResume,
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import CompanyProfilePage from "./company-profile";
 import CreateCompanyPage from "./create-company";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import CreateRecruiterAccount from "./create-recruiter-account";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ElevatorPitchAndResume() {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
@@ -61,7 +63,14 @@ export default function ElevatorPitchAndResume() {
     }
   };
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [router, status]);
+
   if (status === "loading") return <LoadingSkeleton />;
+  if (status === "unauthenticated") return null;
 
 
   if (resumeLoading || recruiterLoading || companyLoading)
