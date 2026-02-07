@@ -4,7 +4,6 @@ import { Search, User, Building2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { on } from "events";
 
 type Role = "candidate" | "recruiter" | "company";
 
@@ -97,20 +96,21 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
         return;
       }
 
-      const response = await fetch(`${base}/fetch/all/users`, {
+      const response = await fetch(
+        `${base}/fetch/all/users?q=${encodeURIComponent(searchQuery)}`,
+        {
         signal: controller.signal,
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
-      });
+        }
+      );
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const result: SearchResult = await response.json();
 
       if (result?.success && Array.isArray(result.data)) {
-        const q = searchQuery.toLowerCase();
-
-        // filter out nulls and match fields (name, role, address, position)
+        // filter out nulls and exclude admin roles
         const filteredResults = result.data
           .filter(Boolean)
           .map((u) => u as SearchUser)
@@ -120,17 +120,7 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
             // Exclude admin and super-admin roles
             const role = safeLower(user.role);
             if (role === "admin" || role === "super-admin") return false;
-
-            const name = safeLower(user.name);
-            const address = safeLower(user.address);
-            const position = safeLower(user.position);
-
-            return (
-              name.includes(q) ||
-              role.includes(q) ||
-              address.includes(q) ||
-              position.includes(q)
-            );
+            return true;
           });
 
         // sort: immediately available candidates first, then others
@@ -206,7 +196,7 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
   ).length;
 
   return (
-    <div ref={searchRef} className="relative w-full max-w-md">
+    <div ref={searchRef} className="relative w-full max-w-md min-w-[220px]">
       <div className="relative">
         <Search
           aria-hidden

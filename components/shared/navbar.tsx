@@ -349,6 +349,22 @@ export function SiteHeader() {
       : navLinkInactiveClasses;
     return `${base} ${navLinkUnderlineClasses} ${stateClass} ${extra}`.trim();
   };
+  const getMobileNavLinkClasses = (href: string) => {
+    const active = isActive(href);
+    return `flex w-full items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+      active
+        ? "bg-blue-50 text-[#2B7FD0] shadow-sm"
+        : "text-slate-700 hover:bg-slate-50 hover:text-[#2B7FD0]"
+    }`;
+  };
+  const getMobileSubLinkClasses = (href: string) => {
+    const active = isActive(href);
+    return `flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      active
+        ? "bg-blue-50 text-[#2B7FD0]"
+        : "text-slate-600 hover:bg-slate-50 hover:text-[#2B7FD0]"
+    }`;
+  };
 
   const links = getDashboardLinks();
 
@@ -475,7 +491,7 @@ export function SiteHeader() {
           </div>
 
           {/* Navigation Links (desktop) */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
+          <nav className="hidden xl:flex items-center gap-6 text-sm font-medium">
             <Link
               href="/"
               className={`transition-colors focus:outline-none ${
@@ -601,7 +617,7 @@ export function SiteHeader() {
                 {/* 🔔 Notifications */}
                 <Link
                   href="/notifications"
-                  className="hidden lg:block relative"
+                  className="hidden xl:block relative"
                 >
                   <Button
                     size="icon"
@@ -633,7 +649,7 @@ export function SiteHeader() {
                 </Link>
 
                 {/* 💬 Messages */}
-                <Link href="/messages" className="hidden lg:block relative">
+                <Link href="/messages" className="hidden xl:block relative">
                   <Button
                     size="icon"
                     className="rounded-full bg-blue-500 text-white hover:bg-primary transition-all duration-200"
@@ -662,7 +678,7 @@ export function SiteHeader() {
                 </Link>
 
                 {/* DESKTOP Avatar */}
-                <div className="hidden lg:block">
+                <div className="hidden xl:block">
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Avatar className="h-10 w-10 cursor-pointer">
@@ -677,7 +693,7 @@ export function SiteHeader() {
                 </div>
 
                 {/* MOBILE Avatar (to the LEFT of hamburger, outside the Sheet) */}
-                <div className="lg:hidden">
+                <div className="xl:hidden">
                   <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Avatar className="h-9 w-9 cursor-pointer">
@@ -692,7 +708,7 @@ export function SiteHeader() {
                 </div>
               </>
             ) : (
-              <Link href="/login" className="hidden lg:block">
+              <Link href="/login" className="hidden xl:block">
                 <Button
                   className={`bg-blue-500 hover:bg-primary text-white ${
                     isActive("/login") ? "bg-[#2B7FD0]" : ""
@@ -709,7 +725,7 @@ export function SiteHeader() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={`lg:hidden h-10 w-10 rounded-full transition-all duration-300 active:scale-95 ${
+                  className={`xl:hidden h-10 w-10 rounded-full transition-all duration-300 active:scale-95 ${
                     sheetOpen
                       ? "bg-blue-50 text-blue-600 shadow-sm"
                       : "hover:bg-blue-50"
@@ -793,26 +809,18 @@ export function SiteHeader() {
                     )}
 
                     {/* Mobile nav links */}
-                    <nav className="grid gap-4 text-sm font-medium">
+                    <nav className="grid gap-2 text-sm font-medium">
                       <Link
                         href="/"
                         onClick={() => setSheetOpen(false)}
-                        className={`transition-colors focus:outline-none ${
-                          isActive("/")
-                            ? "text-[#2B7FD0]"
-                            : "hover:text-[#2B7FD0]"
-                        }`}
+                        className={getMobileNavLinkClasses("/")}
                       >
                         Home
                       </Link>
                       <Link
                         href="/alljobs"
                         onClick={() => setSheetOpen(false)}
-                        className={`transition-colors focus:outline-none ${
-                          isActive("/alljobs")
-                            ? "text-[#2B7FD0]"
-                            : "hover:text-[#2B7FD0]"
-                        }`}
+                        className={getMobileNavLinkClasses("/alljobs")}
                       >
                         Jobs
                       </Link>
@@ -822,11 +830,9 @@ export function SiteHeader() {
                         <Link
                           href="/elevator-video-pitch"
                           onClick={() => setSheetOpen(false)}
-                          className={`transition-colors focus:outline-none ${
-                            isActive("/elevator-video-pitch")
-                              ? "text-[#2B7FD0]"
-                              : "hover:text-[#2B7FD0]"
-                          }`}
+                          className={getMobileNavLinkClasses(
+                            "/elevator-video-pitch"
+                          )}
                         >
                           My EVP Profile
                         </Link>
@@ -834,11 +840,7 @@ export function SiteHeader() {
                       <Link
                         href="/blogs"
                         onClick={() => setSheetOpen(false)}
-                        className={`transition-colors focus:outline-none ${
-                          isActive("/blogs")
-                            ? "text-[#2B7FD0]"
-                            : "hover:text-[#2B7FD0]"
-                        }`}
+                        className={getMobileNavLinkClasses("/blogs")}
                       >
                         Blogs
                       </Link>
@@ -847,11 +849,9 @@ export function SiteHeader() {
                           <Link
                             href={getUpgradePath()!}
                             onClick={() => setSheetOpen(false)}
-                            className={`transition-colors focus:outline-none ${
-                              isActive(getUpgradePath()!)
-                                ? "text-[#2B7FD0]"
-                                : "hover:text-[#2B7FD0]"
-                            }`}
+                            className={getMobileNavLinkClasses(
+                              getUpgradePath()!
+                            )}
                           >
                             Upgrade Plan
                           </Link>
@@ -859,65 +859,51 @@ export function SiteHeader() {
                       <Link
                         href="/about-us"
                         onClick={() => setSheetOpen(false)}
-                        className={`transition-colors focus:outline-none ${
-                          isActive("/about-us")
-                            ? "text-[#2B7FD0]"
-                            : "hover:text-[#2B7FD0]"
-                        }`}
+                        className={getMobileNavLinkClasses("/about-us")}
                       >
                         About Us
                       </Link>
-                      <div className="space-y-2">
-                        <div className="font-medium text-gray-900">
+                      <div className="space-y-1.5">
+                        <div className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                           Help & Info
                         </div>
-                        <div className="pl-4 space-y-2">
+                        <div className="space-y-1">
                           <Link
                             href="/faq"
                             onClick={() => setSheetOpen(false)}
-                            className={`block transition-colors focus:outline-none ${
-                              isActive("/faq")
-                                ? "text-[#2B7FD0]"
-                                : "hover:text-[#2B7FD0]"
-                            }`}
+                            className={getMobileSubLinkClasses("/faq")}
                           >
                             FAQs
                           </Link>
                           <Link
                             href="/contact-us"
                             onClick={() => setSheetOpen(false)}
-                            className={`block transition-colors focus:outline-none ${
-                              isActive("/contact-us")
-                                ? "text-[#2B7FD0]"
-                                : "hover:text-[#2B7FD0]"
-                            }`}
+                            className={getMobileSubLinkClasses("/contact-us")}
                           >
                             Contact Us
                           </Link>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <div className="font-medium text-gray-900">More</div>
-                        <div className="pl-4 space-y-2">
+                      <div className="space-y-1.5">
+                        <div className="px-3 pt-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          More
+                        </div>
+                        <div className="space-y-1">
                           <Link
                             href="/privacy-policy"
                             onClick={() => setSheetOpen(false)}
-                            className={`block transition-colors focus:outline-none ${
-                              isActive("/privacy-policy")
-                                ? "text-[#2B7FD0]"
-                                : "hover:text-[#2B7FD0]"
-                            }`}
+                            className={getMobileSubLinkClasses(
+                              "/privacy-policy"
+                            )}
                           >
                             Privacy Policy
                           </Link>
                           <Link
                             href="/terms-condition"
                             onClick={() => setSheetOpen(false)}
-                            className={`block transition-colors focus:outline-none ${
-                              isActive("/terms-condition")
-                                ? "text-[#2B7FD0]"
-                                : "hover:text-[#2B7FD0]"
-                            }`}
+                            className={getMobileSubLinkClasses(
+                              "/terms-condition"
+                            )}
                           >
                             Terms and Conditions
                           </Link>
