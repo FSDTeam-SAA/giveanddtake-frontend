@@ -322,7 +322,7 @@ export default function RecruiterAccount({
 
               <div className="space-y-3 pt-2">
                 <p className="text-sm text-muted-foreground">
-                  {"All job posts free until February 2026"}
+                  {"All job posts free until June 2026"}
                 </p>
                 <Button
                   size="lg"

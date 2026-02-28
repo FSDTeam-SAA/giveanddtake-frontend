@@ -54,7 +54,7 @@ export function ScrollingInfoBar() {
         "Post Job Adverts",
         "Hear the Pitch behind the Resume",
         "One-click Candidate feedback",
-        "‘Free Job Posts until April 2026",
+        "‘All job posts free until June 2026",
       ],
     },
     {
@@ -65,7 +65,7 @@ export function ScrollingInfoBar() {
         "Post Job Adverts",
         "Hear the Pitch behind the Resume",
         "One-click Candidate feedback",
-        "‘Free Job Posts until April 2026",
+        "‘All job posts free until June 2026",
       ],
     },
   ];
