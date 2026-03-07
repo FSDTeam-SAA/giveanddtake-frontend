@@ -15,8 +15,19 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://evpitch.com"),
   title: "Elevator Video Pitch©",
   description: "Shape Your Future with the Right Elevator Video Pitch©",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "Elevator Video Pitch©",
+    description: "Shape Your Future with the Right Elevator Video Pitch©",
+    url: "https://evpitch.com",
+    siteName: "Elevator Video Pitch©",
+    type: "website",
+  },
   icons: {
     icon: "/assets/fav.ico",
   },
