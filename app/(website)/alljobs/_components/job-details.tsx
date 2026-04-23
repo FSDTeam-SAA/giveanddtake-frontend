@@ -474,18 +474,24 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
                     {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
                     {(() => {
-                      const salary = (job.salaryRange ?? "").trim();
-                      const formattedSalary = salary.replace(
-                        /\d[\d,]*/g,
-                        (value) => {
-                          const amount = Number(value.replace(/,/g, ""));
-                          return Number.isNaN(amount)
-                            ? value
-                            : amount.toLocaleString();
-                        },
-                      );
-                      return formattedSalary;
-                    })()}
+  const salary = (job.salaryRange ?? "").trim();
+  const numeric = Number(salary.replace(/,/g, ""));
+
+  if (!salary || Number.isNaN(numeric) || numeric <= 0) return null;
+
+  const formattedSalary = salary.replace(/\d[\d,]*/g, (value) => {
+    const amount = Number(value.replace(/,/g, ""));
+    return Number.isNaN(amount)
+      ? value
+      : amount.toLocaleString();
+  });
+
+  return (
+    <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
+      {formattedSalary}
+    </div>
+  );
+})()}
                   </div>
                 )}
 
