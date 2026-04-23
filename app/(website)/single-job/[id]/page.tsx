@@ -67,6 +67,7 @@ interface JobPostData {
   jobCategoryId: string;
   employement_Type: string;
   compensation: string;
+  currencyType?: string;
   arcrivedJob: boolean;
   applicationRequirement: { requirement: string; status: string }[];
   customQuestion: { question: string }[];
@@ -145,6 +146,10 @@ async function fetchCurrencies() {
   return (Array.isArray(data.data) ? data.data : []) as CurrencyApiItem[];
 }
 
+function getRouteParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default function JobPreview() {
   const session = useSession();
   const userId = session.data?.user?.id;
@@ -152,7 +157,9 @@ export default function JobPreview() {
   const router = useRouter();
   const params = useParams();
   const token = session.data?.accessToken;
-  const id = (params?.id as string) || "6896fb2b12980e468298ad0f";
+  const routeId = getRouteParam(params?.id as string | string[] | undefined);
+  const id = routeId && routeId !== "undefined" ? routeId : undefined;
+  const hasValidJobId = Boolean(id);
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
@@ -193,16 +200,27 @@ export default function JobPreview() {
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
 
   // react-query
-  const { data: jobData, isLoading: jobLoading } = useQuery({
+  const {
+    data: jobData,
+    isLoading: jobLoading,
+    isError: jobError,
+    error: jobErrorData,
+  } = useQuery({
     queryKey: ["job", id],
     queryFn: async () => {
+      if (!id) throw new Error("Missing job id");
+
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`,
+        { cache: "no-store" }
       );
       if (!response.ok) throw new Error("Failed to fetch job");
       const res = await response.json();
       return res.data;
     },
+    enabled: hasValidJobId,
+    refetchOnMount: "always",
+    staleTime: 0,
   });
 
   const { data: jobCategories = [] } = useQuery({
@@ -226,6 +244,12 @@ export default function JobPreview() {
 
   // --- LOOP FIX: split initialization into two effects and guard with refs ---
   const initializedFromJobRef = useRef(false);
+
+  useEffect(() => {
+    initializedFromJobRef.current = false;
+    setIsEditing(false);
+    setSelectedCountry("");
+  }, [id]);
 
   // util inside file
   const deriveExpirationDays = (job: any) => {
@@ -260,7 +284,10 @@ export default function JobPreview() {
       employmentType: jobData.employement_Type || "",
       experience: jobData.experience || "",
       categoryId: jobData.jobCategoryId || "",
-      compensationCurrency: jobData.compensationCurrency || "",
+      compensationCurrency:
+        jobData.currencyType ||
+        jobData.salaryRange?.match(/^([A-Za-z]{3})\b/)?.[1] ||
+        "",
       compensation: jobData.salaryRange?.replace(/[^\d]/g, "") || "",
       expirationDate: deriveExpirationDays(jobData) || "",
       jobDescription: jobData.description || "",
@@ -328,7 +355,10 @@ export default function JobPreview() {
   }, [jobData, jobCategories]);
 
   const { mutate: updateJobMutation, isPending } = useMutation({
-    mutationFn: (data: JobPostData) => updateJob(id, data, token),
+    mutationFn: (data: JobPostData) => {
+      if (!id) throw new Error("Missing job id");
+      return updateJob(id, data, token);
+    },
     onSuccess: () => {
       toast.success(
         "Job updated successfully! Admin will review and publish it soon."
@@ -408,6 +438,10 @@ export default function JobPreview() {
   );
 
   const handleSave = useCallback(() => {
+    if (!hasValidJobId) {
+      toast.error("Missing job id");
+      return;
+    }
     if (!userId) {
       toast.error("User not authenticated");
       return;
@@ -421,7 +455,7 @@ export default function JobPreview() {
       ? new Date(jobData?.updatedAt || Date.now()).toISOString()
       : selectedDate?.toISOString() ?? new Date().toISOString();
 
-    // turn “expiration days” into a real deadline date
+    // Turn expiration days into a real deadline date.
     const deadlineISO = computeDeadline(
       publishAtISO,
       String(formData.expirationDate || "")
@@ -451,6 +485,7 @@ export default function JobPreview() {
       jobCategoryId: formData.categoryId,
       employement_Type: formData.employmentType,
       compensation: formData.compensationCurrency || "Negotiable",
+      currencyType: formData.compensationCurrency || "",
       arcrivedJob: jobData?.arcrivedJob || false,
       applicationRequirement: applicationRequirements.map((req) => ({
         requirement: req.requirement,
@@ -476,6 +511,7 @@ export default function JobPreview() {
     customQuestions,
     updateJobMutation,
     token,
+    hasValidJobId,
   ]);
 
   const descriptionCharCount = formData.jobDescription.length;
@@ -485,10 +521,20 @@ export default function JobPreview() {
     .split(/\s+/)
     .filter((w) => w.length > 0).length;
 
-  if (jobLoading) {
+  if (!hasValidJobId || (jobLoading && !jobData)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Loading...
+      </div>
+    );
+  }
+
+  if (jobError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        {jobErrorData instanceof Error
+          ? jobErrorData.message
+          : "Failed to load job"}
       </div>
     );
   }

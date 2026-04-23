@@ -1,7 +1,6 @@
 "use client";
 
-import type React from "react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -137,6 +136,48 @@ export type Recruiter = {
 };
 
 const FALLBACK_IMAGE = "/placeholder.svg";
+const BIO_WORD_LIMIT = 200;
+
+function getWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean);
+}
+
+function limitWords(value: string) {
+  const words = getWords(value);
+  return words.length > BIO_WORD_LIMIT
+    ? words.slice(0, BIO_WORD_LIMIT).join(" ")
+    : value;
+}
+
+function shouldBlockTyping(
+  event: KeyboardEvent<HTMLTextAreaElement>,
+  value: string
+) {
+  const target = event.currentTarget;
+  const hasSelection = target.selectionStart !== target.selectionEnd;
+  const isShortcut = event.ctrlKey || event.metaKey || event.altKey;
+  const allowedKeys = [
+    "Backspace",
+    "Delete",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Home",
+    "End",
+    "Tab",
+    "Escape",
+  ];
+  const isTypingKey = event.key.length === 1 || event.key === "Enter";
+
+  return (
+    getWords(value).length >= BIO_WORD_LIMIT &&
+    isTypingKey &&
+    !hasSelection &&
+    !isShortcut &&
+    !allowedKeys.includes(event.key)
+  );
+}
 
 function parseMaybeStringifiedArray(input: MaybeStringifiedArray): string[] {
   if (!input) return [];
@@ -891,20 +932,35 @@ export default function EditableRecruiterAccount({
                     <FormField
                       control={form.control}
                       name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label htmlFor="bio" className="text-sm font-medium">
-                            About me
-                          </Label>
-                          <FormControl>
-                            <Textarea
-                              value={field.value || ""}
-                              onChange={(value) => field.onChange(value)}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      render={({ field }) => {
+                        const value = field.value || "";
+                        const wordCount = getWords(value).length;
+
+                        return (
+                          <FormItem>
+                            <Label htmlFor="bio" className="text-sm font-medium">
+                              About me
+                            </Label>
+                            <FormControl>
+                              <Textarea
+                                value={value}
+                                onKeyDown={(event) => {
+                                  if (shouldBlockTyping(event, value)) {
+                                    event.preventDefault();
+                                  }
+                                }}
+                                onChange={(event) =>
+                                  field.onChange(limitWords(event.target.value))
+                                }
+                              />
+                            </FormControl>
+                            <p className="text-sm text-muted-foreground">
+                              Word count: {wordCount}/{BIO_WORD_LIMIT}
+                            </p>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
                     />
 
                     <Card className="mt-6">

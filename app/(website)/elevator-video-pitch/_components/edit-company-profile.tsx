@@ -1,7 +1,7 @@
 // pages/EditCompanyPage.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, type KeyboardEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -70,6 +70,48 @@ const PLATFORMS_IN_STORAGE = [
   "Fiverr",
   "Others",
 ] as const;
+
+const ABOUT_WORD_LIMIT = 200;
+
+function getWords(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean);
+}
+
+function limitWords(value: string) {
+  const words = getWords(value);
+  return words.length > ABOUT_WORD_LIMIT
+    ? words.slice(0, ABOUT_WORD_LIMIT).join(" ")
+    : value;
+}
+
+function shouldBlockTyping(
+  event: KeyboardEvent<HTMLTextAreaElement>,
+  value: string
+) {
+  const target = event.currentTarget;
+  const hasSelection = target.selectionStart !== target.selectionEnd;
+  const isShortcut = event.ctrlKey || event.metaKey || event.altKey;
+  const allowedKeys = [
+    "Backspace",
+    "Delete",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "ArrowDown",
+    "Home",
+    "End",
+    "Tab",
+    "Escape",
+  ];
+
+  return (
+    getWords(value).length >= ABOUT_WORD_LIMIT &&
+    event.key.length === 1 &&
+    !hasSelection &&
+    !isShortcut &&
+    !allowedKeys.includes(event.key)
+  );
+}
 
 // Form schema with sLink
 const formSchema = z.object({
@@ -586,21 +628,36 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                   <FormField
                     control={form.control}
                     name="aboutUs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-medium text-gray-900">
-                          About Us*
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            value={field.value || ""}
-                            onChange={field.onChange}
-                            placeholder="Write about your company..."
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const value = field.value || "";
+                      const wordCount = getWords(value).length;
+
+                      return (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-gray-900">
+                            About Us*
+                          </FormLabel>
+                          <FormControl>
+                            <Textarea
+                              value={value}
+                              onKeyDown={(event) => {
+                                if (shouldBlockTyping(event, value)) {
+                                  event.preventDefault();
+                                }
+                              }}
+                              onChange={(event) =>
+                                field.onChange(limitWords(event.target.value))
+                              }
+                              placeholder="Write about your company..."
+                            />
+                          </FormControl>
+                          <p className="text-sm text-muted-foreground">
+                            Word count: {wordCount}/{ABOUT_WORD_LIMIT}
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                 </div>
               </div>

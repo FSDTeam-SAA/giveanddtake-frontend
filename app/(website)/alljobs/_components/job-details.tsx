@@ -123,7 +123,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     queryFn: async () => {
       if (!jobId || jobId === "undefined") throw new Error("Invalid job ID");
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`,
       );
       if (!response.ok)
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -152,12 +152,12 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
           {
             method: "GET",
             headers: { Authorization: `Bearer ${token}` },
-          }
+          },
         );
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(
-            errorData.message || "Failed to fetch bookmark status"
+            errorData.message || "Failed to fetch bookmark status",
           );
         }
         return (await response.json()) as BookmarkResponse;
@@ -187,19 +187,20 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({ jobId, userId, bookmarked: !bookmarked }),
-        }
+        },
       );
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
-          errorData.message || `Failed to ${bookmarked ? "unsave" : "save"} job`
+          errorData.message ||
+            `Failed to ${bookmarked ? "unsave" : "save"} job`,
         );
       }
       return response.json();
     },
     onSuccess: () => {
       toast.success(
-        ` ${bookmarked ? "Bookmark removed" : "Bookmarked"} successfully!`
+        ` ${bookmarked ? "Bookmark removed" : "Bookmarked"} successfully!`,
       );
       queryClient.invalidateQueries({ queryKey: ["bookmark", jobId, userId] });
       queryClient.invalidateQueries({ queryKey: ["saved-jobs", userId] });
@@ -469,22 +470,26 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </div>
 
               <div className="flex flex-col items-start sm:items-end gap-2">
-                {Number(job.salaryRange) > 0 && (
-                  <div className="flex items-center text-[#707070] text-sm sm:text-base font-medium">
+                {Boolean((job.salaryRange ?? "").trim()) && (
+                  <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
                     {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
                     {(() => {
-                      const salary = job.salaryRange ?? ""; // "₦ 100000"
-                      const parts = salary.split(" ");
-                      const currency = parts[0] ?? "";
-                      const amount = Number(parts[1] ?? "");
-                      return isNaN(amount)
-                        ? salary
-                        : `${currency} ${amount.toLocaleString()}`;
+                      const salary = (job.salaryRange ?? "").trim();
+                      const formattedSalary = salary.replace(
+                        /\d[\d,]*/g,
+                        (value) => {
+                          const amount = Number(value.replace(/,/g, ""));
+                          return Number.isNaN(amount)
+                            ? value
+                            : amount.toLocaleString();
+                        },
+                      );
+                      return formattedSalary;
                     })()}
                   </div>
                 )}
 
-                <div className="inline-flex items-center bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
+                <div className="inline-flex items-center text-nowrap bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
                   {job.employement_Type || "Not specified"}
                 </div>
               </div>
@@ -510,10 +515,10 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
         {/* Right / Side column */}
         <div className="lg:col-span-3 space-y-4 sm:space-y-6">
-          <Card className="sticky top-16 z-10">
-            <div className="p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                {role !== "recruiter" && role !== "company" && (
+          {role !== "recruiter" && role !== "company" && (
+            <Card className="sticky top-16 z-10">
+              <div className="p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 ">
                   <Button
                     variant="outline"
                     onClick={handleToggleBookmark}
@@ -530,40 +535,40 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                         ? "Unsaving..."
                         : "Saving..."
                       : bookmarked
-                      ? "Unsave Job"
-                      : "Save Job"}
+                        ? "Unsave Job"
+                        : "Save Job"}
                   </Button>
-                )}
 
-                {canSeeApply && !isRecruiterOrCompany ? (
-                  isUnauthed ? (
-                    <Button
-                      className="w-full bg-primary hover:bg-blue-700"
-                      onClick={handleUnauthedApply}
-                      disabled={isRedirecting}
-                    >
-                      {isRedirecting ? "Redirecting..." : "Apply Now"}
-                    </Button>
-                  ) : (
-                    // Authenticated candidate: EVP gate
-                    <Button
-                      className="w-full bg-primary hover:bg-blue-700"
-                      onClick={handleCandidateApply}
-                      disabled={
-                        isRedirecting || resumeLoading || resumeFetching
-                      }
-                    >
-                      {resumeLoading || resumeFetching
-                        ? "Checking…"
-                        : isRedirecting
-                        ? "Redirecting..."
-                        : "Apply Now"}
-                    </Button>
-                  )
-                ) : null}
+                  {canSeeApply && !isRecruiterOrCompany ? (
+                    isUnauthed ? (
+                      <Button
+                        className="w-full bg-primary hover:bg-blue-700"
+                        onClick={handleUnauthedApply}
+                        disabled={isRedirecting}
+                      >
+                        {isRedirecting ? "Redirecting..." : "Apply Now"}
+                      </Button>
+                    ) : (
+                      // Authenticated candidate: EVP gate
+                      <Button
+                        className="w-full bg-primary hover:bg-blue-700"
+                        onClick={handleCandidateApply}
+                        disabled={
+                          isRedirecting || resumeLoading || resumeFetching
+                        }
+                      >
+                        {resumeLoading || resumeFetching
+                          ? "Checking…"
+                          : isRedirecting
+                            ? "Redirecting..."
+                            : "Apply Now"}
+                      </Button>
+                    )
+                  ) : null}
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          )}
 
           <div className="space-y-4 sm:space-y-6">
             {!!job.responsibilities?.length && (
@@ -670,7 +675,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             </Card>
 
             {job.applicationRequirement?.some(
-              (req) => req.status !== "Optional"
+              (req) => req.status !== "Optional",
             ) && (
               <Card>
                 <CardHeader>
