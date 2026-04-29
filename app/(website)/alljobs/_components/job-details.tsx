@@ -13,6 +13,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path
+import { formatSalaryRange } from "@/lib/salary-format";
 
 interface Recruiter {
   _id: string;
@@ -470,30 +471,17 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </div>
 
               <div className="flex flex-col items-start sm:items-end gap-2">
-                {Boolean((job.salaryRange ?? "").trim()) && (
-                  <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
-                    {/* Formats "₦ 100000" or "ر.ع. 500000" nicely */}
-                    {(() => {
-  const salary = (job.salaryRange ?? "").trim();
-  const numeric = Number(salary.replace(/,/g, ""));
+                {(() => {
+                  const salary = formatSalaryRange(job.salaryRange);
 
-  if (!salary || Number.isNaN(numeric) || numeric <= 0) return null;
-
-  const formattedSalary = salary.replace(/\d[\d,]*/g, (value) => {
-    const amount = Number(value.replace(/,/g, ""));
-    return Number.isNaN(amount)
-      ? value
-      : amount.toLocaleString();
-  });
-
-  return (
-    <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
-      {formattedSalary}
-    </div>
-  );
-})()}
-                  </div>
-                )}
+                  return (
+                    salary && (
+                      <div className="flex items-center whitespace-nowrap text-[#707070] text-sm sm:text-base font-medium">
+                        {salary}
+                      </div>
+                    )
+                  );
+                })()}
 
                 <div className="inline-flex items-center text-nowrap bg-[#E9ECFC] px-3 py-1 rounded-lg capitalize text-sm">
                   {job.employement_Type || "Not specified"}

@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { getMyResume } from "@/lib/api-service";
 import { DescriptionClamp } from "@/components/DescriptionClamp";
+import { formatSalaryRange } from "@/lib/salary-format";
 
 interface Recruiter {
   _id: string;
@@ -599,17 +600,17 @@ export default function JobCard({
           <MapPin className="h-4 w-4 mr-1" aria-hidden />
           <span className="truncate">{job.location}</span>
         </div>
-      {(() => {
-  const salary = (job.salaryRange ?? "").trim();
-  const shouldShow = salary !== "" && salary !== "00" && salary !== "0" && salary !== " 00";
-  return (
-    shouldShow && (
-      <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
-        <span className="truncate">{salary}</span>
-      </div>
-    )
-  );
-})()}
+        {(() => {
+          const salary = formatSalaryRange(job.salaryRange);
+
+          return (
+            salary && (
+              <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg">
+                <span className="truncate">{salary}</span>
+              </div>
+            )
+          );
+        })()}
 
         <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
           {job.location_Type || "Onsite"}
