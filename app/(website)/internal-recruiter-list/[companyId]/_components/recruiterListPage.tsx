@@ -101,7 +101,12 @@ export default function RecruiterListPage({
     queryKey: ["employees", companyId, currentPage],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/company-employess/skills/${companyId}?page=${currentPage}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/company-employess/skills/${companyId}?page=${currentPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!res.ok) {
         throw new Error(
@@ -119,6 +124,7 @@ export default function RecruiterListPage({
     placeholderData: (prev) => prev,
     staleTime: 1000 * 60 * 5,
     retry: 2,
+    enabled: !!token,
   });
 
   

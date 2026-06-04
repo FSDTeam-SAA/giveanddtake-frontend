@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getBackendHeaders } from '@/lib/server-auth'
 
 export async function GET(
     request: NextRequest,
@@ -12,14 +13,14 @@ export async function GET(
         const response = await fetch(
             `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.roomId}?page=${page}&limit=${limit}`,
             {
-                headers: {
+                headers: await getBackendHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
             }
         )
 
         const data = await response.json()
-        return NextResponse.json(data)
+        return NextResponse.json(data, { status: response.status })
     } catch (error) {
         return NextResponse.json(
             { success: false, message: 'Failed to fetch messages' },
@@ -39,15 +40,15 @@ export async function PATCH(
             `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.messageId}`,
             {
                 method: 'PUT',
-                headers: {
+                headers: await getBackendHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
                 body: JSON.stringify(body),
             }
         )
 
         const data = await response.json()
-        return NextResponse.json(data)
+        return NextResponse.json(data, { status: response.status })
     } catch (error) {
         return NextResponse.json(
             { success: false, message: 'Failed to update message' },
@@ -65,14 +66,14 @@ export async function DELETE(
             `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.roomId}`,
             {
                 method: 'DELETE',
-                headers: {
+                headers: await getBackendHeaders({
                     'Content-Type': 'application/json',
-                },
+                }),
             }
         )
 
         const data = await response.json()
-        return NextResponse.json(data)
+        return NextResponse.json(data, { status: response.status })
     } catch (error) {
         return NextResponse.json(
             { success: false, message: 'Failed to delete message' },

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import PageHeaders from "@/components/shared/PageHeaders";
 import Image from "next/image";
 
@@ -102,6 +103,8 @@ export default function PayPalCheckoutClient() {
   const isRendered = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
+  const token = session?.accessToken || "";
   const [sdkLoading, setSdkLoading] = useState(true);
 
   const userId = searchParams.get("userId") || "";
@@ -151,7 +154,10 @@ export default function PayPalCheckoutClient() {
                   `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
                   {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
                     body: JSON.stringify({ amount, planId, userId }),
                   }
                 );
@@ -181,7 +187,10 @@ export default function PayPalCheckoutClient() {
                   `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/capture-order`,
                   {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
                     body: JSON.stringify(requestData),
                   }
                 );
@@ -221,7 +230,7 @@ export default function PayPalCheckoutClient() {
       isActive = false;
       window.clearTimeout(retryTimer);
     };
-  }, [amount, planId, userId, clientId]);
+  }, [amount, planId, userId, clientId, token]);
 
   return (
     <div className="container mx-auto p-4">

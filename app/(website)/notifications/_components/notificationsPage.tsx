@@ -26,6 +26,7 @@ interface ApiResponse {
 export default function NotificationsPage() {
   const { data: session } = useSession()
   const userId = session?.user?.id
+  const token = session?.accessToken
   const queryClient = useQueryClient()
   const socket = useSocket()
   const [liveUnreadCount, setLiveUnreadCount] = useState<number | null>(null)
@@ -41,7 +42,10 @@ export default function NotificationsPage() {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}`,
         {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       )
 
@@ -56,7 +60,7 @@ export default function NotificationsPage() {
         throw new Error(result.message || "Failed to fetch notifications.")
       }
     },
-    enabled: !!userId,
+    enabled: !!userId && !!token,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })
@@ -129,7 +133,13 @@ export default function NotificationsPage() {
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/read/${userId}`,
-        { method: "PATCH", headers: { "Content-Type": "application/json" } }
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
 
       if (!response.ok) {
@@ -175,7 +185,13 @@ export default function NotificationsPage() {
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BASE_URL}/notifications/${userId}/read/${notificationId}`,
-        { method: "PATCH", headers: { "Content-Type": "application/json" } }
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       )
 
       if (!response.ok) {

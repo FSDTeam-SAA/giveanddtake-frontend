@@ -93,6 +93,7 @@ export default function ApplicantDetails({
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.data?.accessToken}`,
           },
           body: JSON.stringify({
             userId: applicantId,

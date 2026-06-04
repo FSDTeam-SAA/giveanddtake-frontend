@@ -78,13 +78,14 @@ async function fetchJobCategories(retries = 2): Promise<JobCategoriesResponse> {
   }
 }
 
-async function postJob(data: any, retries = 2): Promise<any> {
+async function postJob(data: any, token: string, retries = 2): Promise<any> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
     const response = await fetch(`${baseUrl}/jobs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     });
@@ -105,7 +106,7 @@ async function postJob(data: any, retries = 2): Promise<any> {
     if (retries > 0) {
       console.warn(`Retrying job post... (${retries} attempts left)`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return postJob(data, retries - 1);
+      return postJob(data, token, retries - 1);
     }
     throw error;
   }
@@ -410,7 +411,7 @@ export default function MultiStepJobForm() {
         location_Type: data.locationType,
       };
 
-      await postJob(postData);
+      await postJob(postData, session?.accessToken || "");
       // console.log(postData);
       toast.success("Job published successfully!");
       if (role === "company") {

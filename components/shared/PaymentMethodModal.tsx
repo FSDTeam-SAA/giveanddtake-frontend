@@ -29,13 +29,17 @@ interface PayPalOrderResponse {
   orderId: string;
 }
 
-async function createPayPalOrder(amount: string): Promise<PayPalOrderResponse> {
+async function createPayPalOrder(
+  amount: string,
+  token: string
+): Promise<PayPalOrderResponse> {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/payments/paypal/create-order`,
     {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ amount }),
     }
@@ -57,12 +61,13 @@ export function PaymentMethodModal({
   const [paymentMethod, setPaymentMethod] = useState("paypal");
   const session = useSession();
   const userId = session?.data?.user?.id || "";
+  const token = session?.data?.accessToken || "";
   const router = useRouter();
 
   const plan = session?.data;
 
   const { mutate, isPending } = useMutation({
-    mutationFn: () => createPayPalOrder(price),
+    mutationFn: () => createPayPalOrder(price, token),
     onSuccess: (data) => {
       // Redirect with static planId and without bookingId
       router.push(

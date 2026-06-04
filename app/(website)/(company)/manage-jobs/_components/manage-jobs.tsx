@@ -138,9 +138,15 @@ interface ManagePageProps {
 }
 
 // Fetch function
-const fetchJobs = async (userId: string): Promise<Job[]> => {
+const fetchJobs = async (userId: string, token?: string): Promise<Job[]> => {
+  const headers: HeadersInit = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/all-jobs-for-company/company/${userId}`
+    `${process.env.NEXT_PUBLIC_BASE_URL}/all-jobs-for-company/company/${userId}`,
+    {
+      headers,
+    }
   );
 
   if (!response.ok) {
@@ -262,9 +268,9 @@ const { data: postingUsage } = useQuery({
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["jobs", userId],
-    queryFn: () => fetchJobs(userId),
-    enabled: !!userId, // Only run query if userId exists
+    queryKey: ["jobs", userId, token],
+    queryFn: () => fetchJobs(userId, token),
+    enabled: !!userId && !!token, // Only run query if userId and token exist
   });
 
   const toggleArchive = async (jobId: string) => {

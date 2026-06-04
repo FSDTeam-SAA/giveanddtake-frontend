@@ -46,15 +46,19 @@ interface BookmarksResponse {
 export default function BookmarksPage() {
   const { data: session, status } = useSession();
   const userId = session?.user?.id;
+  const token = session?.accessToken;
   const queryClient = useQueryClient();
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useQuery<BookmarksResponse>({
     queryKey: ["bookmarks", userId],
-    enabled: status === "authenticated" && !!userId,
+    enabled: status === "authenticated" && !!userId && !!token,
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/user/${userId}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks/user/${userId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       const json: BookmarksResponse = await res.json();
       if (!json.success) throw new Error(json.message);
@@ -67,7 +71,10 @@ export default function BookmarksPage() {
       setSubmittingId(jobId);
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookmarks`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ userId, jobId }),
       });
       const json = await res.json();

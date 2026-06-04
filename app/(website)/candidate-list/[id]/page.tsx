@@ -161,15 +161,21 @@ export default function JobApplicantsPage() {
   );
 
   useEffect(() => {
+    if (!token) return;
     fetchApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, currentPage]);
+  }, [jobId, currentPage, token]);
 
   const fetchApplications = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}?page=${currentPage}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}?page=${currentPage}`,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        }
       );
 
       if (!response.ok) throw new Error("Failed to fetch applications");

@@ -195,7 +195,12 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     queryKey: ["employees", company?.userId, currentPage],
     queryFn: async () => {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/company/company-employess/skills/${company.userId}?page=${currentPage}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/company/company-employess/skills/${company.userId}?page=${currentPage}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!res.ok) {
         throw new Error(
@@ -213,7 +218,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     placeholderData: (previousData) => previousData,
     staleTime: 1000 * 60 * 5,
     retry: 2,
-    enabled: !!company?.userId,
+    enabled: !!company?.userId && !!token,
   });
 
   const deleteMutation = useMutation<DeleteResponse, Error, string>({

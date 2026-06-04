@@ -75,13 +75,18 @@ interface JobPreviewProps {
   onBackToEdit: () => void;
 }
 
-async function postJob(data: JobPostData, retries = 2): Promise<any> {
+async function postJob(
+  data: JobPostData,
+  token: string | undefined,
+  retries = 2
+): Promise<any> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
     const response = await fetch(`${baseUrl}/jobs`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(data),
     });
@@ -100,7 +105,7 @@ async function postJob(data: JobPostData, retries = 2): Promise<any> {
     if (retries > 0) {
       console.warn(`Retrying job post... (${retries} attempts left)`);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return postJob(data, retries - 1);
+      return postJob(data, token, retries - 1);
     }
     throw error instanceof Error
       ? error
@@ -120,10 +125,11 @@ export default function JobPreview({
   const companyId = "687b65e9153a2f59d4b57ba8"; // TODO: Replace with dynamic value
   const { data: session } = useSession();
   const userId = session?.user?.id;
+  const token = session?.accessToken;
   const router = useRouter();
 
   const { mutate: publishJob, isPending } = useMutation({
-    mutationFn: postJob,
+    mutationFn: (data: JobPostData) => postJob(data, token),
     onSuccess: () => {
       toast.success("Job published successfully!");
       router.push("/jobs");
