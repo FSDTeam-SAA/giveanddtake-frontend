@@ -14,6 +14,7 @@ import * as React from "react";
 
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path
 import { formatSalaryRange } from "@/lib/salary-format";
+import JobSharePopover from "./job-share";
 
 interface Recruiter {
   _id: string;
@@ -471,6 +472,18 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
               </div>
 
               <div className="flex flex-col items-start sm:items-end gap-2">
+                {job?._id && (
+                  <JobSharePopover
+                    jobId={job._id}
+                    title={`${job.title}${
+                      postedByName ? ` at ${postedByName}` : ""
+                    }`}
+                    summary={[job.title, postedByName, job.location]
+                      .filter(Boolean)
+                      .join(" • ")}
+                  />
+                )}
+
                 {(() => {
                   const salary = formatSalaryRange(job.salaryRange);
 

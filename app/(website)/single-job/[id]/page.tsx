@@ -162,6 +162,11 @@ export default function JobPreview() {
   const hasValidJobId = Boolean(id);
 
   const [isEditing, setIsEditing] = useState(false);
+  // Tracks whether `formData` has been populated from the fetched job. The
+  // screen renders from `formData` (not `jobData`), so we must not paint until
+  // this is true — otherwise every field flashes "N/A" on the first frame
+  // before the hydration effect runs (most visible on cached SPA navigation).
+  const [isHydrated, setIsHydrated] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [publishNow, setPublishNow] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -247,6 +252,7 @@ export default function JobPreview() {
 
   useEffect(() => {
     initializedFromJobRef.current = false;
+    setIsHydrated(false);
     setIsEditing(false);
     setSelectedCountry("");
   }, [id]);
@@ -275,6 +281,13 @@ export default function JobPreview() {
       : undefined;
     const [country, region] = jobData.location?.split(", ") || ["", ""];
 
+    // Resolve the category name/role up front when categories are already
+    // cached, so the page paints fully populated. The second effect below is
+    // kept as a fallback for the rare case where categories arrive later.
+    const matchedCategory = jobData.jobCategoryId
+      ? jobCategories.find((c) => c._id === jobData.jobCategoryId)
+      : undefined;
+
     setFormData((prev) => ({
       ...prev,
       jobTitle: jobData.title || "",
@@ -284,6 +297,8 @@ export default function JobPreview() {
       employmentType: jobData.employement_Type || "",
       experience: jobData.experience || "",
       categoryId: jobData.jobCategoryId || "",
+      category: matchedCategory?.name || "",
+      role: matchedCategory?.role?.[0] || "",
       compensationCurrency:
         jobData.currencyType ||
         jobData.salaryRange?.match(/^([A-Za-z]{3})\b/)?.[1] ||
@@ -338,6 +353,7 @@ export default function JobPreview() {
     }
 
     initializedFromJobRef.current = true;
+    setIsHydrated(true);
   }, [jobData]);
 
   // 2) After categories load, fill category name & role ONLY if values differ
@@ -543,6 +559,16 @@ export default function JobPreview() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         Job not found
+      </div>
+    );
+  }
+
+  // Job has loaded but `formData` has not been populated yet — keep showing the
+  // loader for this one frame so the fields never flash "N/A".
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
       </div>
     );
   }
