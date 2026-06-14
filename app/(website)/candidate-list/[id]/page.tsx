@@ -68,7 +68,8 @@ interface Application {
     updatedAt?: string;
   };
   resumeId?: resumeId | string;
-  userId: User;
+  // Populated from a deleted user account comes back as null.
+  userId: User | null;
   status:
     | "pending"
     | "shortlisted"
@@ -247,13 +248,13 @@ export default function JobApplicantsPage() {
       year: "numeric",
     });
 
-  const getInitials = (name: string) =>
-    name
+  const getInitials = (name?: string) =>
+    (name ?? "")
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || "?";
 
   const handlePageChange = (page: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -364,26 +365,32 @@ export default function JobApplicantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                          <AvatarImage src={application.userId.avatar.url} />
+                          <AvatarImage src={application.userId?.avatar?.url} />
                           <AvatarFallback className="bg-gray-200 text-gray-700">
-                            {getInitials(application.userId.name)}
+                            {getInitials(application.userId?.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div>{application.userId.name}</div>
+                        <div>{application.userId?.name ?? "Unknown applicant"}</div>
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(application.createdAt)}</TableCell>
                     <TableCell>
-                      <Link
-                        href={`/applicant-details/${
-                          application.userId.slug
-                        }?resumeId=${
-                          resumeId
-                        }&applicationId=${application._id}`}
-                        className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
-                      >
-                        Details
-                      </Link>
+                      {application.userId?.slug ? (
+                        <Link
+                          href={`/applicant-details/${
+                            application.userId.slug
+                          }?resumeId=${
+                            resumeId
+                          }&applicationId=${application._id}`}
+                          className="text-xs sm:text-sm bg-[#2B7FD0] text-white py-2 px-3 rounded-lg font-medium"
+                        >
+                          Details
+                        </Link>
+                      ) : (
+                        <span className="text-xs sm:text-sm text-gray-400">
+                          N/A
+                        </span>
+                      )}
                     </TableCell>
                     {hasVisaField && (
                       <TableCell>{renderVisaStatus(application.hasValidVisa)}</TableCell>

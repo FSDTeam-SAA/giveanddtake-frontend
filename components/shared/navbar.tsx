@@ -367,6 +367,7 @@ export function SiteHeader() {
   };
 
   const links = getDashboardLinks();
+  const upgradePath = getUpgradePath();
 
   // Shared user dropdown content (used for desktop and mobile avatar)
   const UserMenuContent = () => (
@@ -519,11 +520,11 @@ export function SiteHeader() {
               My EVP Profile
             </Link>
             {/* Upgrade Plan (desktop) */}
-            {status === "authenticated" && (
+            {status === "authenticated" && upgradePath && (
               <Link
-                href={getUpgradePath()!}
+                href={upgradePath}
                 className={`transition-colors focus:outline-none font-semibold ${
-                  isActive(getUpgradePath()!)
+                  isActive(upgradePath)
                     ? "text-[#2B7FD0]"
                     : "text-[#2B7FD0] hover:opacity-80"
                 }`}
@@ -845,13 +846,11 @@ export function SiteHeader() {
                         Blogs
                       </Link>
                       {/* Upgrade Plan (mobile) */}
-                      {status === "authenticated" && (
+                      {status === "authenticated" && upgradePath && (
                           <Link
-                            href={getUpgradePath()!}
+                            href={upgradePath}
                             onClick={() => setSheetOpen(false)}
-                            className={getMobileNavLinkClasses(
-                              getUpgradePath()!
-                            )}
+                            className={getMobileNavLinkClasses(upgradePath)}
                           >
                             Upgrade Plan
                           </Link>

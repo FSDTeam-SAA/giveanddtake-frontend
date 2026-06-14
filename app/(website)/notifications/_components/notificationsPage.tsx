@@ -1,6 +1,7 @@
 "use client"
 
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -14,7 +15,66 @@ interface Notification {
   isViewed: boolean
   type?: string
   to?: string
+  // The related entity's id (NOT the notification's own _id). What it points at
+  // depends on `type`: an AppliedJob, a Job, a ReqCompany, a PaymentInfo, etc.
   id?: string
+}
+
+/**
+ * Resolve the page a notification should open when clicked.
+ *
+ * The backend stamps every notification with a `type` and a related-entity `id`.
+ * We deep-link with that id only where the destination route's param matches the
+ * id we actually have (e.g. owner job notifications carry a Job id). Otherwise we
+ * fall back to the most relevant list/landing page so a click never 404s.
+ * Returns null when there's no sensible destination (row just marks-as-read).
+ */
+function resolveNotificationHref(
+  notification: Notification,
+  role?: string
+): string | null {
+  const { type, id } = notification
+  const isOwner = role === "recruiter" || role === "company"
+  const pricingHref =
+    role === "company"
+      ? "/company-pricing"
+      : role === "recruiter"
+      ? "/recruiter-pricing"
+      : "/user-pricing"
+
+  switch (type) {
+    // Recruiter/company: a candidate applied to one of their jobs.
+    case "job_application":
+      return "/applicants"
+    // Candidate: confirmation that they applied / their application status changed.
+    case "job_application_confirmation":
+      return "/applied-jobs"
+    // Overloaded: candidates get this with an AppliedJob id (-> their applications),
+    // owners get "job approved/declined" with a Job id (-> that job's detail page).
+    case "job_application_status":
+      return isOwner && id ? `/alljobs/${id}` : "/applied-jobs"
+    // Owner job lifecycle events — id is the Job id.
+    case "job_post":
+    case "job_update":
+    case "job_expiry_warning":
+      return id ? `/alljobs/${id}` : "/applicants"
+    // Billing / subscription — send them to the right pricing page to renew.
+    case "payg_expired":
+    case "Subscription Expired":
+      return pricingHref
+    // Elevator pitch was removed/needs re-upload.
+    case "elevator_pitch_removed":
+    case "Update elevator pitch":
+      return "/elevator-video-pitch"
+    // Recruiter<->company connection request / acceptance.
+    case "req_application":
+      return "/account"
+    // New chat message.
+    case "message":
+      return "/messages"
+    default:
+      return null
+  }
 }
 
 interface ApiResponse {
@@ -25,7 +85,9 @@ interface ApiResponse {
 
 export default function NotificationsPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const userId = session?.user?.id
+  const role = session?.user?.role
   const token = session?.accessToken
   const queryClient = useQueryClient()
   const socket = useSocket()
@@ -228,6 +290,17 @@ export default function NotificationsPage() {
     },
   })
 
+  // Clicking a notification marks it read (if needed) and routes to the page it
+  // relates to. The explicit "Mark as read" button stops propagation so it can
+  // mark-without-navigating.
+  const handleNotificationClick = (notification: Notification) => {
+    if (!notification.isViewed) {
+      markSingleAsRead.mutate(notification._id)
+    }
+    const href = resolveNotificationHref(notification, role)
+    if (href) router.push(href)
+  }
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.05 } },
@@ -287,8 +360,17 @@ export default function NotificationsPage() {
         {notifications.map((notification) => (
           <motion.div
             key={notification._id}
+            role="button"
+            tabIndex={0}
+            onClick={() => handleNotificationClick(notification)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                handleNotificationClick(notification)
+              }
+            }}
             className={cn(
-              "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-colors duration-200",
+              "flex items-center gap-4 p-3 rounded-lg shadow-sm transition-colors duration-200 cursor-pointer hover:shadow-md hover:bg-blue-100/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400",
               notification.isViewed ? "bg-white" : "bg-blue-50"
             )}
             variants={itemVariants}
@@ -322,7 +404,10 @@ export default function NotificationsPage() {
                 <button
                   className="text-xs text-blue-600 hover:text-blue-700 underline"
                   disabled={markSingleAsRead.isPending}
-                  onClick={() => markSingleAsRead.mutate(notification._id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    markSingleAsRead.mutate(notification._id)
+                  }}
                 >
                   {markSingleAsRead.isPending ? "Marking..." : "Mark as read"}
                 </button>
