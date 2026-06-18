@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import axios from "axios";
 
 const VideoUploader = () => {
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState("");
 
   const presignedUrl =
     "https://flimsabucket.s3.us-east-2.amazonaws.com/askd?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQOMKTO3OWMA4YL7Y%2F20251006%2Fus-east-2%2Fs3%2Faws4_request&X-Amz-Date=20251006T045842Z&X-Amz-Expires=3600&X-Amz-Signature=24e77ef161c2544b0194a30b7233544c441003fb4b64c1e9bba8b33de6b16748&X-Amz-SignedHeaders=host&partNumber=1&uploadId=3Ot4W_curHp97kR3kvNbhiQTBf9iQj5zo_PMk5AgYeBIj.cvpWQoEbhw_ZIre8oihoUefJ.V_rkj5jB_Gn29.C5tJaSSuFBRxe2zlR_iRXE4KhUfq4QkVH8kfvqf4pyt";
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFile(e.target.files?.[0] ?? null);
     setProgress(0);
     setUploadedUrl("");
   };
@@ -29,6 +29,7 @@ const VideoUploader = () => {
           "Content-Type": file.type,
         },
         onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
           const percent = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );

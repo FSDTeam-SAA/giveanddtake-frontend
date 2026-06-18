@@ -71,6 +71,7 @@ interface JobCardProps {
   applicantCount?: number;
   onToggleBookmark?: () => void;
   bookmarkLoading?: boolean;
+  onSelect?: () => void;
 }
 
 const FIT_THEMES: Record<
@@ -108,6 +109,7 @@ export default function JobCard({
   variant,
   className,
   applicantCount,
+  onSelect,
 }: JobCardProps) {
   const { data: session, status } = useSession();
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -548,7 +550,10 @@ export default function JobCard({
         <div className="flex items-start justify-between gap-2">
           <button
             type="button"
-            onClick={() => router.push(detailsLink)}
+            onClick={() => {
+              onSelect?.();
+              router.push(detailsLink);
+            }}
             className="text-left"
           >
             <h3 className="font-semibold text-base sm:text-lg md:text-xl text-gray-900 hover:underline">
@@ -571,7 +576,10 @@ export default function JobCard({
             <ApplyButton />
             <button
               type="button"
-              onClick={() => router.push(detailsLink)}
+              onClick={() => {
+                onSelect?.();
+                router.push(detailsLink);
+              }}
               className="text-primary text-sm font-medium underline underline-offset-2 hover:opacity-90 text-right sm:text-left"
             >
               View details

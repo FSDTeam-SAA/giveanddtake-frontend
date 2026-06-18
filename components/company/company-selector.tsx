@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchCompanies, Company } from "@/lib/api-service";
+import { fetchCompanies } from "@/lib/api-service";
 import {
   Command,
   CommandEmpty,
@@ -20,6 +20,12 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+interface Company {
+  id: string;
+  clogo?: string;
+  cname: string;
+}
+
 interface CompanySelectorProps {
   selectedCompany?: string; // ✅ just one company id, not array
   onCompanyChange: (companyId: string) => void;
@@ -33,7 +39,7 @@ export function CompanySelector({
 
   const { data: companies = [], isLoading } = useQuery<Company[]>({
     queryKey: ["companies"],
-    queryFn: fetchCompanies,
+    queryFn: () => fetchCompanies() as unknown as Promise<Company[]>,
   });
 
   // Find currently selected company

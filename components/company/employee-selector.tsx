@@ -51,7 +51,7 @@ export function EmployeeSelector({
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["users", companyUserId],
-    queryFn: () => fetchUsers(companyUserId),
+    queryFn: () => fetchUsers(companyUserId) as unknown as Promise<User[]>,
   });
 
   const selectedUsers = users.filter((user) =>
