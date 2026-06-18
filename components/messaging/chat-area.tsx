@@ -26,6 +26,11 @@ import {
   Title,
 } from "chart.js/auto";
 import { useSession } from "next-auth/react";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
@@ -347,13 +352,14 @@ export function ChatArea({
           <Avatar className="w-10 h-10">
             <AvatarImage
               src={
-                roomAvatarUrl ||
-                `/placeholder.svg?height=40&width=40&text=${
-                  roomName?.charAt(0) || "U"
-                }`
+                isRealMediaUrl(roomAvatarUrl) ? roomAvatarUrl : undefined
               }
             />
-            <AvatarFallback>{roomName?.charAt(0) || "U"}</AvatarFallback>
+            <AvatarFallback
+              className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} font-semibold`}
+            >
+              {roomName?.charAt(0)?.toUpperCase() || "U"}
+            </AvatarFallback>
           </Avatar>
           <div className="ml-3 flex-1 min-w-0">
             <h2 className="font-semibold truncate">

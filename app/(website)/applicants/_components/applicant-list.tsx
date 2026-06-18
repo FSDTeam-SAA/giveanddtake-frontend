@@ -24,6 +24,11 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import Link from 'next/link';
+import {
+    isRealMediaUrl,
+    PALE_BLUE_MEDIA_BG,
+    PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface Applicant {
     _id: string;
@@ -114,8 +119,8 @@ export default function ApplicantsList() {
                         <div key={applicant._id} className="bg-white border rounded-lg p-4 shadow-sm">
                             <div className="flex items-center space-x-3 mb-3">
                                 <Avatar className="h-12 w-12">
-                                    <AvatarImage src={applicant.userId.image} />
-                                    <AvatarFallback>
+                                    <AvatarImage src={isRealMediaUrl(applicant.userId.image) ? applicant.userId.image : undefined} />
+                                    <AvatarFallback className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}>
                                         {(() => {
                                             const fullName = applicant.userId.name || "";
                                             const words = fullName.trim().split(" ");
@@ -170,8 +175,8 @@ export default function ApplicantsList() {
                                 <TableRow key={applicant._id} className="border-b hover:bg-gray-50">
                                     <TableCell className="py-4">
                                         <Avatar className="h-12 w-12">
-                                            <AvatarImage src={applicant.userId.image} />
-                                            <AvatarFallback className="bg-gray-200">
+                                            <AvatarImage src={isRealMediaUrl(applicant.userId.image) ? applicant.userId.image : undefined} />
+                                            <AvatarFallback className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}>
                                                 {(() => {
                                                     const fullName = applicant.userId.name || "";
                                                     const words = fullName.trim().split(" ");

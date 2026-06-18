@@ -197,7 +197,9 @@ export function VerifyOTP({ email, onBack, onSuccess }: VerifyOTPProps) {
           {otp.map((digit, index) => (
             <Input
               key={index}
-              ref={(el) => (inputsRef.current[index] = el)}
+              ref={(el) => {
+                inputsRef.current[index] = el;
+              }}
               type="tel"
               inputMode="numeric"
               maxLength={1}

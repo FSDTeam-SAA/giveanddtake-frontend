@@ -216,7 +216,6 @@ export default function CreateCompanyPage() {
             <FileUpload
               onFileSelect={setElevatorPitchFile}
               accept="video/*"
-              maxSize={32 * 1024 * 1024}
               variant="dark"
             ></FileUpload>
           </div>

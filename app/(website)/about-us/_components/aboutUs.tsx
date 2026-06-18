@@ -38,7 +38,7 @@ function RightBackgroundBubbles() {
           <motion.div
             key={i}
             variants={bubbleVariants}
-            animate={b.variant as keyof typeof bubbleVariants}
+            animate={b.variant}
             initial={{ opacity: 0, scale: 0 }}
             whileInView={{ opacity: 0.8, scale: 1 }}
             transition={{ duration: 0.8, delay: b.delay }}

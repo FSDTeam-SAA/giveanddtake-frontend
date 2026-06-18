@@ -33,6 +33,11 @@ import {
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import SocialLinks from "./SocialLinks";
 import { VideoProcessingCard } from "@/components/VideoProcessingCard";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface ResumeResponse {
   success: boolean;
@@ -216,7 +221,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     <main className="min-h-screen">
       <div className="lg:container lg:mx-auto lg:px-6">
         <div className="w-full h-auto">
-          {resume.resume.banner ? (
+          {isRealMediaUrl(resume.resume.banner) ? (
             <Image
               src={resume.resume.banner}
               alt="Resume Header Background"
@@ -225,7 +230,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               className="w-full h-auto  object-cover"
             />
           ) : (
-            <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
+            <MediaPlaceholder className="w-full h-[150px] md:h-[300px] lg:h-[400px]" />
           )}
         </div>
         <div className="container mx-auto border-0 mb-16">
@@ -233,8 +238,8 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
             <div className="flex flex-col lg:flex-row border-b-2 mt-[-10px] md:mt-[-20px] lg:mt-[-30px] pb-4 gap-6 sm:px-6">
               <div className="lg:w-1/3 w-full">
                 <div className="mb-6">
-                  <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded-md bg-gray-300 ring-2 ring-background shadow-md overflow-hidden bg-muted mb-4">
-                    {resume.resume.photo ? (
+                  <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded-md ring-2 ring-background shadow-md overflow-hidden mb-4">
+                    {isRealMediaUrl(resume.resume.photo) ? (
                       <Image
                         src={resume.resume.photo}
                         alt={`${resume.resume.firstName} ${resume.resume.lastName}`}
@@ -243,10 +248,13 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top"
                       />
                     ) : (
-                      <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                        {resume.resume.firstName?.[0] || "U"}
-                        {resume.resume.lastName?.[0] || "U"}
-                      </div>
+                      <MediaPlaceholder
+                        className="text-2xl"
+                        initials={getMediaInitials(
+                          resume.resume.firstName,
+                          resume.resume.lastName,
+                        )}
+                      />
                     )}
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">

@@ -878,7 +878,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                   : "No industry found."}
                               </CommandEmpty>
                               <CommandGroup>
-                                {industryOptions.map((industry) => (
+                                {industryOptions.map((industry: { value: string; label: string }) => (
                                   <CommandItem
                                     key={industry.value}
                                     value={industry.value}

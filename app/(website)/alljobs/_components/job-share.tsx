@@ -14,6 +14,7 @@ import {
   TelegramIcon,
 } from "next-share";
 import { RiShareForwardLine } from "react-icons/ri";
+import { FaInstagram, FaTiktok } from "react-icons/fa6";
 import { toast } from "sonner";
 
 type Props = {
@@ -57,7 +58,7 @@ export default function JobSharePopover({
   const [useMobileCenter, setUseMobileCenter] = React.useState(false);
 
   /** tune these if you change popup size/padding */
-  const POPUP_WIDTH = 320; // px (approx; matches icon row + copy)
+  const POPUP_WIDTH = 400; // px (approx; matches icon row + copy)
   const POPUP_HEIGHT = 56; // px (approx)
   const EDGE_PAD = 8; // px safe padding from viewport edge
 
@@ -130,6 +131,23 @@ export default function JobSharePopover({
     setOpen(false);
   };
 
+  const copyAndOpenPlatform = async (
+    platformUrl: string,
+    platformName: string,
+  ) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(`Job link copied. Opening ${platformName}.`);
+      window.open(platformUrl, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error(`Could not copy the link for ${platformName}`);
+    }
+    setOpen(false);
+  };
+
+  const platformButtonClass =
+    "inline-flex h-8 w-8 items-center justify-center rounded-full text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60";
+
   return (
     <div ref={wrapperRef} className={`relative ${className}`}>
       {/* Trigger */}
@@ -168,9 +186,9 @@ export default function JobSharePopover({
                 placeAbove ? "bottom-[125%] mb-2" : "top-[125%] mt-2",
                 // horizontal alignment
                 alignRight ? "right-0" : "left-0",
-                "w-[min(320px,90vw)]",
+                "w-[min(400px,90vw)]",
               ].join(" ")}
-              style={{ maxWidth: 360 }}
+              style={{ maxWidth: 420 }}
             >
               <FacebookShareButton
                 url={url}
@@ -213,6 +231,30 @@ export default function JobSharePopover({
               >
                 <TelegramIcon className="w-8 h-8" round />
               </TelegramShareButton>
+
+              <button
+                type="button"
+                onClick={() =>
+                  copyAndOpenPlatform("https://www.instagram.com/", "Instagram")
+                }
+                className={`${platformButtonClass} bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45]`}
+                title="Share on Instagram"
+                aria-label="Share job on Instagram"
+              >
+                <FaInstagram className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  copyAndOpenPlatform("https://www.tiktok.com/", "TikTok")
+                }
+                className={`${platformButtonClass} bg-black`}
+                title="Share on TikTok"
+                aria-label="Share job on TikTok"
+              >
+                <FaTiktok className="h-4 w-4" />
+              </button>
 
               <button
                 type="button"
@@ -276,6 +318,30 @@ export default function JobSharePopover({
               >
                 <TelegramIcon className="w-8 h-8" round />
               </TelegramShareButton>
+
+              <button
+                type="button"
+                onClick={() =>
+                  copyAndOpenPlatform("https://www.instagram.com/", "Instagram")
+                }
+                className={`${platformButtonClass} bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#FCAF45]`}
+                title="Share on Instagram"
+                aria-label="Share job on Instagram"
+              >
+                <FaInstagram className="h-4 w-4" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  copyAndOpenPlatform("https://www.tiktok.com/", "TikTok")
+                }
+                className={`${platformButtonClass} bg-black`}
+                title="Share on TikTok"
+                aria-label="Share job on TikTok"
+              >
+                <FaTiktok className="h-4 w-4" />
+              </button>
 
               <button
                 type="button"

@@ -46,6 +46,13 @@ import { toast } from "sonner";
 import SocialLinks from "./SocialLinks";
 import Image from "next/image";
 import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
+import {
   Drawer,
   DrawerContent,
   DrawerHeader,
@@ -424,17 +431,20 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-6 shadow-md border relative">
         <div className="flex flex-col md:flex-row items-start gap-6">
-          <div className="w-20 h-20 bg-gray-900 rounded-lg flex-shrink-0">
-            {company.clogo ? (
+          <div className="w-20 h-20 rounded-lg flex-shrink-0 overflow-hidden">
+            {isRealMediaUrl(company.clogo) ? (
               <Image
-                src={company.clogo || "/placeholder.svg"}
+                src={company.clogo}
                 alt={company.cname}
                 width={80}
                 height={80}
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
-              <div className="w-full h-full bg-gray-900 rounded-lg" />
+              <MediaPlaceholder
+                className="rounded-lg"
+                initials={getMediaInitials(company.cname)}
+              />
             )}
           </div>
 
@@ -731,10 +741,16 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src={recruiter.photo.url}
+                            src={
+                              isRealMediaUrl(recruiter.photo?.url)
+                                ? recruiter.photo.url
+                                : undefined
+                            }
                             alt={recruiter.name}
                           />
-                          <AvatarFallback className="bg-gray-200 text-gray-900 text-sm">
+                          <AvatarFallback
+                            className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} text-sm`}
+                          >
                             {recruiter.name
                               .split(" ")
                               .map((n) => n[0])

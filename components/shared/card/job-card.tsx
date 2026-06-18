@@ -14,6 +14,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { getMyResume } from "@/lib/api-service";
 import { DescriptionClamp } from "@/components/DescriptionClamp";
 import { formatSalaryRange } from "@/lib/salary-format";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface Recruiter {
   _id: string;
@@ -37,17 +42,17 @@ interface Job {
   salaryRange: string;
   location: string;
   location_Type?: string;
-  shift: string;
+  shift?: string;
   employement_Type?: string;
   companyId?: CompanyId;
   recruiterId?: Recruiter;
-  vacancy: number;
-  experience: number;
-  compensation: string;
-  createdAt: string;
+  vacancy?: number;
+  experience?: number;
+  compensation?: string;
+  createdAt?: string;
   applicantCount?: number;
   counter?: number;
-  updatedAt: string;
+  updatedAt?: string;
 }
 interface JobFitInsight {
   score: number;
@@ -64,6 +69,8 @@ interface JobCardProps {
   variant: "suggested" | "list";
   className?: string;
   applicantCount?: number;
+  onToggleBookmark?: () => void;
+  bookmarkLoading?: boolean;
 }
 
 const FIT_THEMES: Record<
@@ -189,15 +196,6 @@ export default function JobCard({
     router.push(applicationLink);
   };
 
-  const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .filter(Boolean)
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-GB", {
@@ -209,18 +207,18 @@ export default function JobCard({
 
   // ===== postedBy =====
   let postedByName = "company";
-  let postedByLogo = "/default-logo.png";
+  let postedByLogo: string | undefined;
   let postedById = "#";
   let postedByType: "company" | "recruiter" = "company";
 
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
-    postedByLogo = job.recruiterId.photo || "/default-logo.png";
+    postedByLogo = job.recruiterId.photo;
     postedById = job.recruiterId.slug || "#";
     postedByType = "recruiter";
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
-    postedByLogo = job.companyId.clogo || "/default-logo.png";
+    postedByLogo = job.companyId.clogo;
     postedById = job.companyId.slug || "#";
     postedByType = "company";
   }
@@ -235,7 +233,7 @@ export default function JobCard({
       className="relative shrink-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/60"
       aria-label="Open job details"
     >
-      {postedByLogo !== "/default-logo.png" ? (
+      {isRealMediaUrl(postedByLogo) ? (
         <Image
           src={postedByLogo}
           alt={postedByType === "recruiter" ? "Recruiter Photo" : "Company Logo"}
@@ -245,9 +243,10 @@ export default function JobCard({
           sizes="(max-width: 768px) 40px, 48px"
         />
       ) : (
-        <div className="h-10 w-10 md:h-12 md:w-12 rounded-lg bg-blue-100 text-gray-700 grid place-items-center font-semibold">
-          {getInitials(postedByName)}
-        </div>
+        <MediaPlaceholder
+          className="h-10 w-10 rounded-lg text-sm md:h-12 md:w-12 md:text-base"
+          initials={getMediaInitials(postedByName)}
+        />
       )}
     </button>
   );
@@ -620,7 +619,8 @@ export default function JobCard({
       </div>
 
       <div className="text-[#059c05] font-semibold mt-3">
-        {formatDate(job.updatedAt)}
+        {(job.updatedAt || job.createdAt) &&
+          formatDate(job.updatedAt || job.createdAt || "")}
       </div>
     </>
   );

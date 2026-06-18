@@ -1,8 +1,8 @@
 import React from 'react'
 import ManagePage from '../_components/manage-jobs'
 
-function Page({ params }: { params: { id: string } }) {
-  const companyId = params.id;
+async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id: companyId } = await params;
   
   return (
     <div>

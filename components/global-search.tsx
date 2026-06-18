@@ -3,6 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { Search, User, Building2, UserCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 import { Button } from "@/components/ui/button";
 
 type Role = "candidate" | "recruiter" | "company";
@@ -278,8 +283,9 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
                 const firstLetter = (
                   user?.name?.charAt(0) || "U"
                 ).toUpperCase();
-                const avatarUrl =
-                  user?.avatar?.url || "/placeholder.svg?height=40&width=40";
+                const avatarUrl = isRealMediaUrl(user?.avatar?.url)
+                  ? user.avatar.url
+                  : undefined;
 
                 const isCandidate = user.role === "candidate";
                 const isAvailable = user.immediatelyAvailable === true;
@@ -296,7 +302,9 @@ export function GlobalSearch({ onResultSelect }: GlobalSearchProps) {
                     <div className="flex items-center gap-3 w-full">
                       <Avatar className="h-10 w-10">
                         <AvatarImage src={avatarUrl} alt={displayName} />
-                        <AvatarFallback className="bg-[#4B98DE] text-white">
+                        <AvatarFallback
+                          className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}
+                        >
                           {firstLetter}
                         </AvatarFallback>
                       </Avatar>

@@ -19,6 +19,11 @@ import CandidateSharePopover from "../../cp/_components/candidateShare";
 import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner"; // sonner toast
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface SocialLink {
   label: string;
@@ -380,7 +385,7 @@ export default function Recruiters({ userId }: MydataProps) {
     <div className="lg:container lg:mx-auto lg:px-6 pb-8 md:pb-16">
       {/* Banner */}
       <div className="w-full h-auto">
-        {recruiterData.banner ? (
+        {isRealMediaUrl(recruiterData.banner) ? (
           <Image
             src={recruiterData.banner}
             alt={`${recruiterData.firstName} banner`}
@@ -389,7 +394,7 @@ export default function Recruiters({ userId }: MydataProps) {
             className="w-full h-auto object-cover lg:object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px]  bg-gray-200" />
+          <MediaPlaceholder className="w-full h-[150px] md:h-[300px] lg:h-[400px]" />
         )}
       </div>
 
@@ -397,8 +402,8 @@ export default function Recruiters({ userId }: MydataProps) {
         <div className="grid grid-cols-1 md:grid-cols-10 gap-6 mt-[-10px] md:mt-[-20px] lg:mt[-30px] md:px-6">
           {/* Profile Section */}
           <div className="col-span-1 md:col-span-4 space-y-4">
-            <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gray-200 ring-2 ring-background shadow-md overflow-hidden bg-muted rounded-md">
-              {recruiterData.photo ? (
+            <div className="relative w-[120px] h-[120px] md:h-[170px] md:w-[170px] ring-2 ring-background shadow-md overflow-hidden rounded-md">
+              {isRealMediaUrl(recruiterData.photo) ? (
                 <Image
                   src={recruiterData.photo}
                   alt={`${recruiterData.firstName} ${recruiterData.lastName}`}
@@ -406,9 +411,14 @@ export default function Recruiters({ userId }: MydataProps) {
                   className="rounded-md object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gray-200 rounded-md flex items-center justify-center">
-                  <span className="text-gray-500">No Photo</span>
-                </div>
+                <MediaPlaceholder
+                  className="rounded-md text-2xl"
+                  initials={getMediaInitials(
+                    recruiterData.firstName,
+                    recruiterData.sureName,
+                    recruiterData.lastName,
+                  )}
+                />
               )}
             </div>
             <div>
@@ -466,7 +476,7 @@ export default function Recruiters({ userId }: MydataProps) {
           <div className="col-span-1 md:col-span-6 pt-4 md:pt-24">
             <div className="flex items-center justify-between border-b-2 pb-2">
               <h3 className="font-semibold text-gray-800 mb-3 text-2xl">
-                About me
+                About
               </h3>
               {userId ? (
                 <CandidateSharePopover

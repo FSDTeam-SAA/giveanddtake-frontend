@@ -10,6 +10,11 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Button } from "../ui/button";
 import { useSocket } from "@/hooks/use-socket";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface SideUser {
   _id: string;
@@ -235,12 +240,16 @@ export function MessageSidebar({
                 <Avatar className="w-12 h-12">
                   <AvatarImage
                     src={
-                      otherUser?.avatar?.url ||
-                      `/placeholder.svg?height=48&width=48&text=${
-                        otherUser.name?.charAt(0) || "U"
-                      }`
+                      isRealMediaUrl(otherUser?.avatar?.url)
+                        ? otherUser.avatar.url
+                        : undefined
                     }
                   />
+                  <AvatarFallback
+                    className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} font-semibold`}
+                  >
+                    {otherUser.name?.charAt(0)?.toUpperCase() || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />
               </div>

@@ -34,7 +34,7 @@ export function FileUpload({
     defaultUrl || null
   );
   const inputRef = useRef<HTMLInputElement>(null);
-  const maxSize = MAX_FILE_SIZE_BYTES; 
+  const maxSize = MAX_FILE_SIZE_BYTES;
 
   useEffect(() => {
     if (selectedFile) {

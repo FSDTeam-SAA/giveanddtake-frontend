@@ -15,6 +15,11 @@ import * as React from "react";
 import { getMyResume } from "@/lib/api-service"; // <-- adjust path
 import { formatSalaryRange } from "@/lib/salary-format";
 import JobSharePopover from "./job-share";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface Recruiter {
   _id: string;
@@ -382,18 +387,18 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   // Determine postedBy data
   let postedByName = "Unknown";
-  let postedByLogo = "/default-logo.png";
+  let postedByLogo: string | undefined;
   let postedById = "#";
   let postedByType: "company" | "recruiter" = "company";
 
   if (job.recruiterId) {
     postedByName = `${job.recruiterId.firstName} ${job.recruiterId.sureName}`;
-    postedByLogo = job.recruiterId.photo || "/default-logo.png";
+    postedByLogo = job.recruiterId.photo;
     postedById = job.recruiterId.slug || "#";
     postedByType = "recruiter";
   } else if (job.companyId) {
     postedByName = job.companyId.cname || "Unknown Company";
-    postedByLogo = job.companyId.clogo || "/default-logo.png";
+    postedByLogo = job.companyId.clogo;
     postedById = job.companyId.slug || "#";
     postedByType = "company";
   }
@@ -427,18 +432,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   aria-label={postedByType === "recruiter" ? "rp" : "cmp"}
                 >
                   <div className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-full overflow-hidden ring-1 ring-gray-200">
-                    <Image
-                      src={postedByLogo}
-                      alt={
-                        postedByType === "recruiter"
-                          ? "Recruiter Photo"
-                          : "Company Logo"
-                      }
-                      fill
-                      sizes="(max-width: 640px) 56px, 64px"
-                      className="object-cover"
-                      priority
-                    />
+                    {isRealMediaUrl(postedByLogo) ? (
+                      <Image
+                        src={postedByLogo}
+                        alt={
+                          postedByType === "recruiter"
+                            ? "Recruiter Photo"
+                            : "Company Logo"
+                        }
+                        fill
+                        sizes="(max-width: 640px) 56px, 64px"
+                        className="object-cover"
+                        priority
+                      />
+                    ) : (
+                      <MediaPlaceholder
+                        className="text-base sm:text-lg"
+                        initials={getMediaInitials(postedByName)}
+                      />
+                    )}
                   </div>
                 </Link>
                 <div className="min-w-0">

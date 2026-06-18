@@ -15,6 +15,11 @@ import CandidateSharePopover from "@/app/(website)/cp/_components/candidateShare
 import SocialLinks from "@/app/(website)/elevator-video-pitch/_components/SocialLinks";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface Honor {
   id: string;
@@ -342,7 +347,7 @@ export default function CompanyProfilePage() {
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
       <div className="w-full h-auto  rounded-b-lg">
-        {company.banner ? (
+        {isRealMediaUrl(company.banner) ? (
           <Image
             src={company.banner}
             alt={`${company.cname} banner`}
@@ -351,7 +356,7 @@ export default function CompanyProfilePage() {
             className=" w-full h-auto  object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px]  bg-gray-200" />
+          <MediaPlaceholder className="w-full h-[150px] md:h-[300px] lg:h-[400px]" />
         )}
       </div>
 
@@ -360,18 +365,21 @@ export default function CompanyProfilePage() {
         <div className="md:px-6 lg:pl-10 mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
             <div className="col-span-3">
-              <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] flex-shrink-0 ring-2 ring-background shadow-md overflow-hidden bg-muted">
-                <Image
-                  src={
-                    company.clogo && company.clogo.trim() !== ""
-                      ? company.clogo
-                      : "/placeholder.svg"
-                  }
-                  alt={company.cname}
-                  width={170}
-                  height={170}
-                  className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded"
-                />
+              <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] flex-shrink-0 ring-2 ring-background shadow-md overflow-hidden rounded">
+                {isRealMediaUrl(company.clogo) ? (
+                  <Image
+                    src={company.clogo}
+                    alt={company.cname}
+                    width={170}
+                    height={170}
+                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover rounded"
+                  />
+                ) : (
+                  <MediaPlaceholder
+                    className="text-2xl"
+                    initials={getMediaInitials(company.cname)}
+                  />
+                )}
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold mb-2 text-gray-900">

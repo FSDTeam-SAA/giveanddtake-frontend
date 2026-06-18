@@ -20,6 +20,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import Image from "next/image";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface User {
   _id: string;
@@ -108,7 +113,7 @@ export function EmployeeSelector({
                           }`}
                         />
                         <div className="flex items-center gap-2">
-                          {user.avatar?.url && user.avatar.url !== "" ? (
+                          {isRealMediaUrl(user.avatar?.url) ? (
                             <Image
                               src={user.avatar.url}
                               alt={`${user.name}'s avatar`}
@@ -117,7 +122,9 @@ export function EmployeeSelector({
                               className="rounded-full"
                             />
                           ) : (
-                            <div className="bg-gray-200 w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs">
+                            <div
+                              className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs`}
+                            >
                               {user.name?.charAt(0) || "?"}
                             </div>
                           )}
@@ -149,7 +156,7 @@ export function EmployeeSelector({
                 variant="secondary"
                 className="flex items-center gap-1 py-1"
               >
-                {user.avatar?.url && user.avatar.url !== "" ? (
+                {isRealMediaUrl(user.avatar?.url) ? (
                   <Image
                     src={user.avatar.url}
                     alt={`${user.name}'s avatar`}
@@ -158,7 +165,9 @@ export function EmployeeSelector({
                     className="rounded-full"
                   />
                 ) : (
-                  <div className="bg-gray-200 w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs">
+                  <div
+                    className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} w-[24px] h-[24px] rounded-full flex items-center justify-center text-xs`}
+                  >
                     {user.name?.charAt(0) || "?"}
                   </div>
                 )}

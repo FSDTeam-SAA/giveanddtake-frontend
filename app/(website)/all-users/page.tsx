@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -341,12 +346,15 @@ function AllUsersContent() {
                       <Avatar className="h-12 w-12">
                         <AvatarImage
                           src={
-                            user?.avatar?.url ||
-                            "/placeholder.svg?height=48&width=48"
+                            isRealMediaUrl(user?.avatar?.url)
+                              ? user.avatar.url
+                              : undefined
                           }
                           alt={user?.name ?? "User"}
                         />
-                        <AvatarFallback className="bg-[#4B98DE] text-white font-semibold">
+                        <AvatarFallback
+                          className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} font-semibold`}
+                        >
                           {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>

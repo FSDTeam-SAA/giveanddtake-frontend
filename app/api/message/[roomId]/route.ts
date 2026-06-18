@@ -3,15 +3,16 @@ import { getBackendHeaders } from '@/lib/server-auth'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { roomId: string } }
+    { params }: { params: Promise<{ roomId: string }> }
 ) {
+    const { roomId } = await params
     const { searchParams } = new URL(request.url)
     const page = searchParams.get('page') || '1'
     const limit = searchParams.get('limit') || '20'
 
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.roomId}?page=${page}&limit=${limit}`,
+            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${roomId}?page=${page}&limit=${limit}`,
             {
                 headers: await getBackendHeaders({
                     'Content-Type': 'application/json',
@@ -31,13 +32,14 @@ export async function GET(
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { messageId: string } }
+    { params }: { params: Promise<{ messageId: string }> }
 ) {
     try {
+        const { messageId } = await params
         const body = await request.json()
 
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.messageId}`,
+            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${messageId}`,
             {
                 method: 'PUT',
                 headers: await getBackendHeaders({
@@ -59,11 +61,12 @@ export async function PATCH(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { roomId: string } }
+    { params }: { params: Promise<{ roomId: string }> }
 ) {
     try {
+        const { roomId } = await params
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${params.roomId}`,
+            `${process.env.NEXT_PUBLIC_BASE_URL}/message/${roomId}`,
             {
                 method: 'DELETE',
                 headers: await getBackendHeaders({

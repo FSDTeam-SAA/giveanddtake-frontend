@@ -26,6 +26,11 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface User {
   _id: string;
@@ -365,8 +370,16 @@ export default function JobApplicantsPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                          <AvatarImage src={application.userId?.avatar?.url} />
-                          <AvatarFallback className="bg-gray-200 text-gray-700">
+                          <AvatarImage
+                            src={
+                              isRealMediaUrl(application.userId?.avatar?.url)
+                                ? application.userId.avatar.url
+                                : undefined
+                            }
+                          />
+                          <AvatarFallback
+                            className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}
+                          >
                             {getInitials(application.userId?.name)}
                           </AvatarFallback>
                         </Avatar>

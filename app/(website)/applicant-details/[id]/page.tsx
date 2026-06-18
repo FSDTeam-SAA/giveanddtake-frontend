@@ -22,6 +22,11 @@ import { toast } from "sonner";
 import { VideoPlayer } from "@/components/company/video-player";
 import Image from "next/image";
 import { getResumeDownloadUrl } from "@/lib/api-service";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface Resume {
   _id: string;
@@ -214,7 +219,7 @@ export default function ApplicantDetailsPage() {
         ? {
             _id: apiData.resume._id,
             userId: apiData.resume.userId,
-            photo: apiData.resume.photo || "/placeholder.svg",
+            photo: apiData.resume.photo,
             aboutUs: apiData.resume.aboutUs,
             title: apiData.resume.title,
             firstName: apiData.resume.firstName,
@@ -531,13 +536,23 @@ export default function ApplicantDetailsPage() {
           <CardContent className="p-6">
             <div className="md:flex  gap-6 ">
               <div className="h-[170px] w-[170px] overflow-hidden">
-                <Image
-                  src={resume?.photo || "/placeholder.svg"}
-                  alt={`${resume?.firstName ?? ""} ${resume?.lastName ?? ""}`}
-                  width={170}
-                  height={170}
-                  className="object-cover"
-                />
+                {isRealMediaUrl(resume?.photo) ? (
+                  <Image
+                    src={resume.photo}
+                    alt={`${resume?.firstName ?? ""} ${resume?.lastName ?? ""}`}
+                    width={170}
+                    height={170}
+                    className="object-cover"
+                  />
+                ) : (
+                  <MediaPlaceholder
+                    className="h-full w-full text-2xl"
+                    initials={getMediaInitials(
+                      resume?.firstName,
+                      resume?.lastName,
+                    )}
+                  />
+                )}
               </div>
 
               <div className="flex-1">

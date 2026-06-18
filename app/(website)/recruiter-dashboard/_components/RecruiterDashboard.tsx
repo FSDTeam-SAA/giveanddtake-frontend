@@ -33,6 +33,11 @@ import {
 } from "@/components/ui/drawer";
 import DOMPurify from "dompurify";
 import { Input } from "@/components/ui/input";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 // =============== Types ===============
 interface ApplicationRequirement {
@@ -845,13 +850,14 @@ export default function RecruiterDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
               <div className="col-span-1 md:col-span-3">
                 <div className="flex gap-3">
-                  {recruiterAccount?.data?.companyId?.clogo ||
-                  recruiterAccount?.data?.photo ? (
+                  {isRealMediaUrl(
+                    recruiterAccount?.data?.companyId?.clogo ||
+                      recruiterAccount?.data?.photo,
+                  ) ? (
                     <Image
                       src={
                         recruiterAccount?.data?.companyId?.clogo ||
-                        recruiterAccount?.data?.photo ||
-                        "/placeholder.png"
+                        (recruiterAccount?.data?.photo as string)
                       }
                       alt={
                         recruiterAccount?.data?.companyId
@@ -863,9 +869,14 @@ export default function RecruiterDashboard() {
                       className="mt-1 w-[120px] h-[120px] md:w-[170px] md:h-[170px] object-cover rounded-lg"
                     />
                   ) : (
-                    <div className="w-[120px] h-[120px] md:w-[170px] md:h-[170px] bg-gray-200 flex items-center justify-center text-gray-500 rounded-lg">
-                      No Image
-                    </div>
+                    <MediaPlaceholder
+                      className="w-[120px] h-[120px] md:w-[170px] md:h-[170px] rounded-lg text-2xl"
+                      initials={getMediaInitials(
+                        recruiterAccount?.data?.companyId?.cname,
+                        recruiterAccount?.data?.firstName,
+                        recruiterAccount?.data?.sureName,
+                      )}
+                    />
                   )}
                   <div className="space-y-2 md:space-y-3">
                     <div>
@@ -1225,7 +1236,7 @@ export default function RecruiterDashboard() {
                       onClick={() => setSelectedCompanyId(company.id)}
                     >
                       <div className="flex items-center gap-3 md:gap-4">
-                        {company.clogo ? (
+                        {isRealMediaUrl(company.clogo) ? (
                           <Image
                             src={company.clogo}
                             alt={`${company.cname} logo`}
@@ -1234,7 +1245,10 @@ export default function RecruiterDashboard() {
                             className="rounded-full object-cover"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200" />
+                          <MediaPlaceholder
+                            className="w-10 h-10 rounded-full text-sm"
+                            initials={getMediaInitials(company.cname)}
+                          />
                         )}
                         <span className="text-sm md:text-base font-medium truncate">
                           {company.cname}

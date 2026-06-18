@@ -3,7 +3,8 @@ import { BlogDetailsClient } from "@/app/(website)/blogs/[id]/_components/BlogDe
 export default async function BlogDetailsPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  return <BlogDetailsClient slugOrId={params.id} />;
+  const { id } = await params;
+  return <BlogDetailsClient slugOrId={id} />;
 }

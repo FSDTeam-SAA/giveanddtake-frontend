@@ -17,6 +17,11 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 export default function ApplicantDetails({
   applicantId,
@@ -158,10 +163,16 @@ export default function ApplicantDetails({
         <div className="lg:-mt-5">
           <Avatar className="h-[200px] w-[200px] mx-auto lg:mx-0">
             <AvatarImage
-              src={applicantResume?.createResume?.photo}
+              src={
+                isRealMediaUrl(applicantResume?.createResume?.photo)
+                  ? applicantResume.createResume.photo
+                  : undefined
+              }
               alt={applicantResume?.createResume?.firstName}
             />
-            <AvatarFallback className="text-4xl font-semibold bg-gray-200">
+            <AvatarFallback
+              className={`text-4xl font-semibold ${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}
+            >
               {applicantResume?.createResume?.firstName[0]}
               {applicantResume?.createResume?.lastName[0]}
             </AvatarFallback>

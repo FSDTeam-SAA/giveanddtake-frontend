@@ -21,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 /**
  * Wrapper component that provides the required Suspense boundary
@@ -317,11 +322,15 @@ function SearchResultsInner() {
                   <Avatar className="h-16 w-16">
                     <AvatarImage
                       src={
-                        user.avatar.url || "/placeholder.svg?height=64&width=64"
+                        isRealMediaUrl(user.avatar?.url)
+                          ? user.avatar.url
+                          : undefined
                       }
                       alt={user.name}
                     />
-                    <AvatarFallback className="bg-[#4B98DE] text-white text-lg">
+                    <AvatarFallback
+                      className={`text-lg ${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}
+                    >
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>

@@ -13,6 +13,11 @@ import { useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 interface Resume {
   id: string;
@@ -358,16 +363,20 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
             </div>
           ) : (
             <>
-              <Image
-                src={
-                  userData.avatar?.url ||
-                  "/placeholder.svg?height=170&width=170"
-                }
-                alt={userData.name || "User"}
-                width={170}
-                height={170}
-                className="rounded object-cover w-[170px] h-[170px]"
-              />
+              {isRealMediaUrl(userData.avatar?.url) ? (
+                <Image
+                  src={userData.avatar.url}
+                  alt={userData.name || "User"}
+                  width={170}
+                  height={170}
+                  className="rounded object-cover w-[170px] h-[170px]"
+                />
+              ) : (
+                <MediaPlaceholder
+                  className="rounded w-[170px] h-[170px] text-2xl"
+                  initials={getMediaInitials(userData.name)}
+                />
+              )}
               <h2 className="text-xl sm:text-2xl font-semibold mt-3">
                 {userData.name}
               </h2>

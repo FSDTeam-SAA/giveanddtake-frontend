@@ -13,6 +13,11 @@ import {
 } from "@/components/ui/table";
 import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
 import Link from "next/link";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface EmployeeData {
   _id: string;
@@ -68,10 +73,16 @@ export default function RecruiterTable({
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={recruiter?.photo?.url}
+                        src={
+                          isRealMediaUrl(recruiter?.photo?.url)
+                            ? recruiter.photo.url
+                            : undefined
+                        }
                         alt={recruiter.name}
                       />
-                      <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                      <AvatarFallback
+                        className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} text-sm`}
+                      >
                         {recruiter.name
                           .split(" ")
                           .map((n) => n[0])

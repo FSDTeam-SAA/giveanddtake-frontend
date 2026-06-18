@@ -19,6 +19,11 @@ import { useSession, signOut } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Cropper, { type Area } from "react-easy-crop";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 async function fetchUserData(token: string) {
   const response = await fetch(
@@ -262,11 +267,15 @@ export function ProfileSidebar() {
           <Avatar className="h-24 w-24">
             <AvatarImage
               src={
-                userData?.data?.avatar?.url || "https://via.placeholder.com/150"
+                isRealMediaUrl(userData?.data?.avatar?.url)
+                  ? userData.data.avatar.url
+                  : undefined
               }
               alt={session?.user?.name || "User Avatar"}
             />
-            <AvatarFallback className="text-xl bg-gray-200">
+            <AvatarFallback
+              className={`text-xl ${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT}`}
+            >
               {userData?.data?.name?.[0]?.toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>

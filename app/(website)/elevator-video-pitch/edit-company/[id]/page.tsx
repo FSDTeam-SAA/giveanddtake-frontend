@@ -2,13 +2,13 @@ import React from "react";
 import EditCompanyPage from "../../_components/edit-company-profile";
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-const Page = ({ params }: PageProps) => {
-  const { id } = params;
+const Page = async ({ params }: PageProps) => {
+  const { id } = await params;
 
   return (
     <div>

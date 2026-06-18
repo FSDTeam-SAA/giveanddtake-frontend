@@ -16,6 +16,11 @@ import {
 import { useSession } from "next-auth/react";
 import { toast } from "sonner"; // Import toast
 import Link from "next/link";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface UserData {
   _id: string;
@@ -160,10 +165,16 @@ export default function PendingEmployeeRequest({
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage
-                              src={req.userId?.avatar?.url || "/placeholder.svg"}
+                              src={
+                                isRealMediaUrl(req.userId?.avatar?.url)
+                                  ? req.userId.avatar.url
+                                  : undefined
+                              }
                               alt={req.userId?.name}
                             />
-                            <AvatarFallback className="bg-gray-200 text-gray-600 text-sm">
+                            <AvatarFallback
+                              className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} text-sm`}
+                            >
                               {req.userId?.name
                                 .split(" ")
                                 .map((n) => n[0])

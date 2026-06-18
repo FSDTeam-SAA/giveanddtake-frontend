@@ -18,6 +18,11 @@ import { SocialIcon } from "@/components/company/social-icon";
 import CandidateShare from "./candidateShare";
 import CandidateSharePopover from "./candidateShare";
 import SocialLinks from "../../elevator-video-pitch/_components/SocialLinks";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 // ---------- utils ----------
 const toMonthYear = (date?: string) => {
@@ -286,7 +291,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
     <div className="lg:container lg:mx-auto lg:px-6">
       {/* Banner */}
       <div className="w-full h-auto">
-        {resume.banner ? (
+        {isRealMediaUrl(resume.banner) ? (
           <Image
             src={resume.banner}
             alt={`${resume.firstName} banner`}
@@ -295,7 +300,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             className="w-full h-auto object-cover object-center"
           />
         ) : (
-          <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
+          <MediaPlaceholder className="w-full h-[150px] md:h-[300px] lg:h-[400px]" />
         )}
       </div>
 
@@ -303,8 +308,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
         {/* Profile */}
         <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 md:px-6 mt-[-10px] md:mt-[-20px] lg:mt-[-30px]">
           <div className="col-span-3">
-            <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded-md bg-gray-200 ring-2 ring-background shadow-md overflow-hidden bg-muted">
-              {resume.photo ? (
+            <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded-md ring-2 ring-background shadow-md overflow-hidden">
+              {isRealMediaUrl(resume.photo) ? (
                 <Image
                   src={resume.photo}
                   alt={`${resume.firstName} ${resume.lastName}`}
@@ -313,10 +318,10 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                   className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-blue-600 text-white text-2xl font-bold">
-                  {resume.firstName?.[0]}
-                  {resume.lastName?.[0]}
-                </div>
+                <MediaPlaceholder
+                  className="text-2xl"
+                  initials={getMediaInitials(resume.firstName, resume.lastName)}
+                />
               )}
             </div>
 

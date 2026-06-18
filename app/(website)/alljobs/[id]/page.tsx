@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/breadcrumb";
 
 interface PageProps {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-export default function Page({ params }: PageProps) {
+export default async function Page({ params }: PageProps) {
+  const { id } = await params;
   return (
     <div>
       <div
@@ -45,7 +46,7 @@ export default function Page({ params }: PageProps) {
         </div>
       </div>
       <div className="container mx-auto py-8">
-        <JobDetails jobId={params.id} />
+        <JobDetails jobId={id} />
       </div>
     </div>
   );

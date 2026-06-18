@@ -2,7 +2,6 @@
 
 import type React from "react";
 
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +21,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
+import {
+  isRealMediaUrl,
+  MediaPlaceholder,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 type MaybeStringifiedArray = string[] | string | undefined;
 
@@ -210,18 +215,7 @@ export default function RecruiterAccount({
     <div className="w-full bg-background">
       {/* Cover */}
       <div className="w-full">
-        <div className="relative h-36 sm:h-44 md:h-56 lg:h-80 bg-muted">
-          <Image
-            src={
-              "/placeholder.svg?height=256&width=1600&query=recruiter%20profile%20cover%20subtle%20gray"
-            }
-            alt={"Cover image"}
-            fill
-            className="object-cover opacity-80"
-            priority
-            sizes="100vw"
-          />
-        </div>
+        <MediaPlaceholder className="h-36 sm:h-44 md:h-56 lg:h-80" />
       </div>
 
       {/* Content */}
@@ -234,10 +228,16 @@ export default function RecruiterAccount({
                 {/* shadcn/ui Avatar with fallback [^1] */}
                 <Avatar className="h-full w-full rounded-lg">
                   <AvatarImage
-                    src={photo || "/placeholder.svg"}
+                    src={isRealMediaUrl(photo) ? photo : undefined}
                     alt={`${fullName} photo`}
                   />
-                  <AvatarFallback className="rounded-lg">
+                  <AvatarFallback
+                    className={cn(
+                      "rounded-lg",
+                      PALE_BLUE_MEDIA_BG,
+                      PALE_BLUE_MEDIA_TEXT,
+                    )}
+                  >
                     {getInitials(firstName, lastName)}
                   </AvatarFallback>
                 </Avatar>
@@ -341,11 +341,21 @@ export default function RecruiterAccount({
                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
                       <Avatar>
                         <AvatarImage
-                          src={companyId?.avatar?.url || "/placeholder.svg"}
+                          src={
+                            isRealMediaUrl(companyId?.avatar?.url)
+                              ? companyId?.avatar?.url
+                              : undefined
+                          }
                           alt={companyId?.name || ""}
                           className="rounded-none object-cover"
                         />
-                        <AvatarFallback className="rounded-none">
+                        <AvatarFallback
+                          className={cn(
+                            "rounded-none",
+                            PALE_BLUE_MEDIA_BG,
+                            PALE_BLUE_MEDIA_TEXT,
+                          )}
+                        >
                           {companyId?.name
                             ?.split(" ")
                             .map((word: string) => word[0]?.toUpperCase())

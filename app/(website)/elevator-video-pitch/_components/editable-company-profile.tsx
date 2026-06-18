@@ -29,6 +29,11 @@ import {
   Camera,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+} from "@/components/shared/media-placeholder";
 
 type Company = {
   _id: string;
@@ -155,15 +160,18 @@ export default function EditableCompanyProfile({
       {/* Header Section */}
       <div className="bg-gray-100 rounded-lg p-8">
         <div className="flex items-start gap-6">
-          <div className="relative w-20 h-20 bg-gray-600 rounded-lg flex-shrink-0 group">
-            {logoPreview || company.clogo ? (
+          <div className="relative w-20 h-20 rounded-lg flex-shrink-0 group overflow-hidden">
+            {logoPreview || isRealMediaUrl(company.clogo) ? (
               <img
-                src={logoPreview || company.clogo || "/placeholder.svg"}
+                src={logoPreview || company.clogo}
                 alt={company.cname}
                 className="w-full h-full object-cover rounded-lg"
               />
             ) : (
-              <div className="w-full h-full bg-gray-600 rounded-lg" />
+              <MediaPlaceholder
+                className="rounded-lg"
+                initials={getMediaInitials(company.cname)}
+              />
             )}
 
             {isEditing && (

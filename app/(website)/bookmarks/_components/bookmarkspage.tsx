@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Briefcase } from "lucide-react";
 import { toast } from "sonner";
@@ -172,7 +172,7 @@ export default function BookmarksPage() {
               <div key={bookmark._id}>
                 <JobCard
                   key={job._id}
-                  job={job}
+                  job={job as ComponentProps<typeof JobCard>["job"]}
                   variant="list"
                   // optional: if your JobCard supports a bookmark toggle, pass it
                   onToggleBookmark={() => handleToggleBookmark(job._id)}

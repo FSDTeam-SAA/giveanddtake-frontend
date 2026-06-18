@@ -8,6 +8,7 @@ import { CircleCheck } from 'lucide-react';
 import { useSession } from 'next-auth/react'
 import Link from 'next/link';
 import React from 'react'
+import { isRealMediaUrl } from '@/components/shared/media-placeholder';
 
 
 const benefits = [
@@ -37,7 +38,7 @@ export default function RecruiterInfo() {
 
                         <Avatar className="h-32 w-32 rounded-none aspect-square overflow-hidden">
                             <AvatarImage
-                                src={recruiter?.companyId?.avatar?.url}
+                                src={isRealMediaUrl(recruiter?.companyId?.avatar?.url) ? recruiter.companyId.avatar.url : undefined}
                                 alt={recruiter?.companyId?.cname || ""}
                                 className="rounded-none object-cover"
                             />

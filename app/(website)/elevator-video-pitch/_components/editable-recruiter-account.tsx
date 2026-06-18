@@ -64,6 +64,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  getMediaInitials,
+  isRealMediaUrl,
+  MediaPlaceholder,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 type MaybeStringifiedArray = string[] | string | undefined | null;
 
@@ -135,7 +142,6 @@ export type Recruiter = {
   };
 };
 
-const FALLBACK_IMAGE = "/placeholder.svg";
 const BIO_WORD_LIMIT = 200;
 
 function getWords(value: string) {
@@ -455,7 +461,8 @@ export default function EditableRecruiterAccount({
     setIsDeleteModalOpen(false);
   };
 
-  const handleBannerUpload = (file: File) => {
+  const handleBannerUpload = (file: File | null) => {
+    if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload a valid image file.");
       return;
@@ -472,7 +479,8 @@ export default function EditableRecruiterAccount({
     reader.readAsDataURL(file);
   };
 
-  const handlePhotoSelect = (file: File) => {
+  const handlePhotoSelect = (file: File | null) => {
+    if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error("Please upload a valid image file.");
       return;
@@ -592,8 +600,11 @@ export default function EditableRecruiterAccount({
   const taglineParts = [title, roleAtCompany].filter(Boolean);
   const primaryLocation =
     location || [city, country].filter(Boolean).join(", ");
-  const displayPhoto = photoPreview || recruiter.photo || FALLBACK_IMAGE;
-  const displayBanner = bannerPreview || recruiter.banner || "";
+  const displayPhoto =
+    photoPreview || (isRealMediaUrl(recruiter.photo) ? recruiter.photo : null);
+  const displayBanner =
+    bannerPreview ||
+    (isRealMediaUrl(recruiter.banner) ? recruiter.banner : null);
 
   const followersText = useMemo(() => {
     const formatted = formatFollowerCount(followerCount);
@@ -623,7 +634,7 @@ export default function EditableRecruiterAccount({
         /* Show static banner when not editing */
         recruiter?.banner !== undefined && (
           <div className="w-full h-auto ">
-            {recruiter.banner ? (
+            {isRealMediaUrl(recruiter.banner) ? (
               <Image
                 src={recruiter.banner}
                 alt="Resume Header Background"
@@ -632,7 +643,7 @@ export default function EditableRecruiterAccount({
                 className="w-full h-auto object-cover"
               />
             ) : (
-              <div className="w-full h-[150px] md:h-[300px] lg:h-[400px] bg-gray-200" />
+              <MediaPlaceholder className="w-full h-[150px] md:h-[300px] lg:h-[400px]" />
             )}
           </div>
         )
@@ -652,20 +663,23 @@ export default function EditableRecruiterAccount({
                       onUploadSuccess={() => setIsPhotoUploaded(true)}
                     />
                   </div>
-                ) : recruiter?.photo ? (
+                ) : isRealMediaUrl(recruiter?.photo) ? (
                   // Show static avatar when not editing and photo exists
                   <Image
-                    src={recruiter.photo || FALLBACK_IMAGE}
+                    src={recruiter.photo}
                     alt={`${recruiter.firstName || ""}`}
                     height={500}
                     width={500}
-                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top bg-gray-300 ring-2 ring-background shadow-md overflow-hidden bg-muted  rounded"
+                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] object-cover object-top ring-2 ring-background shadow-md overflow-hidden rounded"
                   />
                 ) : (
-                  // Fallback gradient avatar
-                  <div className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                    {/* {recruiter.full?.[0] || "U"} */}
-                  </div>
+                  <MediaPlaceholder
+                    className="w-[120px] h-[120px] md:h-[170px] md:w-[170px] rounded text-2xl ring-2 ring-background shadow-md"
+                    initials={getMediaInitials(
+                      recruiter.firstName,
+                      recruiter.sureName,
+                    )}
+                  />
                 )}
               </div>
 
@@ -1048,11 +1062,21 @@ export default function EditableRecruiterAccount({
                     <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-muted">
                       <Avatar>
                         <AvatarImage
-                          src={companyId?.avatar?.url || FALLBACK_IMAGE}
+                          src={
+                            isRealMediaUrl(companyId?.avatar?.url)
+                              ? companyId?.avatar?.url
+                              : undefined
+                          }
                           alt={companyId?.name || ""}
                           className="rounded-none object-cover"
                         />
-                        <AvatarFallback className="rounded-none">
+                        <AvatarFallback
+                          className={cn(
+                            "rounded-none",
+                            PALE_BLUE_MEDIA_BG,
+                            PALE_BLUE_MEDIA_TEXT,
+                          )}
+                        >
                           {companyId?.name
                             ?.split(" ")
                             .map((word: string) => word[0]?.toUpperCase())

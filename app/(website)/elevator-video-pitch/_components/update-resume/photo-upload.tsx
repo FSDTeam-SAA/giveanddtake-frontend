@@ -16,12 +16,17 @@ import Image from "next/image";
 interface PhotoUploadProps {
   onFileSelect: (file: File | null) => void;
   previewUrl?: string | null;
+  onUploadSuccess?: () => void;
 }
 
 const OUTPUT_SIZE = 250; // final square size in px
 const ASPECT = 1; // square
 
-export function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
+export function PhotoUpload({
+  onFileSelect,
+  previewUrl,
+  onUploadSuccess,
+}: PhotoUploadProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -118,6 +123,7 @@ export function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
       );
       const file = new File([blob], "photo.jpg", { type: "image/jpeg" });
       onFileSelect(file);
+      onUploadSuccess?.();
       setCropModalOpen(false);
       setSourceImage(null);
       setZoom(1);
@@ -128,7 +134,7 @@ export function PhotoUpload({ onFileSelect, previewUrl }: PhotoUploadProps) {
       console.error("Crop failed:", e);
       alert("Failed to crop image. Try another image.");
     }
-  }, [sourceImage, croppedAreaPixels, rotation, onFileSelect]);
+  }, [sourceImage, croppedAreaPixels, rotation, onFileSelect, onUploadSuccess]);
 
   return (
     <>

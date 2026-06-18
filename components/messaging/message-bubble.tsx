@@ -4,6 +4,11 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "./messaging";
+import {
+  isRealMediaUrl,
+  PALE_BLUE_MEDIA_BG,
+  PALE_BLUE_MEDIA_TEXT,
+} from "@/components/shared/media-placeholder";
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -86,10 +91,16 @@ export function MessageBubble({
           <Avatar className="w-8 h-8 mt-1 flex-shrink-0">
             <AvatarImage
               src={
-                perMessageAvatar || "/placeholder.svg?height=32&width=32&text=U"
+                isRealMediaUrl(perMessageAvatar)
+                  ? perMessageAvatar
+                  : undefined
               }
             />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarFallback
+              className={`${PALE_BLUE_MEDIA_BG} ${PALE_BLUE_MEDIA_TEXT} font-semibold`}
+            >
+              U
+            </AvatarFallback>
           </Avatar>
         )}
 
