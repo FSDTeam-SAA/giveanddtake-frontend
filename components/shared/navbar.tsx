@@ -60,8 +60,6 @@ export function SiteHeader() {
   const token = session?.accessToken;
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
-  const [userAvatar, setUserAvatar] = useState("");
-  const [userName, setUserName] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
@@ -216,34 +214,24 @@ export function SiteHeader() {
     enabled: userRole !== "candidate" && userRole !== "recruiter" && !!userId,
   });
 
-  // Fetch user data from API
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (status === "authenticated" && session?.accessToken) {
-        try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
-            {
-              headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-              },
-            }
-          );
-          const result = await response.json();
-          if (result.success) {
-            setUserAvatar(result.data.avatar.url || "");
-            setUserName(result.data.name || "U");
-          } else {
-            console.error("Failed to fetch user data:", result.message);
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      }
-    };
-
-    fetchUserData();
-  }, [status, session?.accessToken]);
+  // Current user's own name + avatar. Shares the ["userData", token] React
+  // Query cache with the account pages so any profile edit (which calls
+  // invalidateProfileQueries) refetches this and the navbar updates instantly,
+  // instead of staying stale until a full page reload.
+  const { data: userSingle } = useQuery({
+    queryKey: ["userData", token],
+    queryFn: async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/user/single`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!response.ok) throw new Error("Failed to fetch user data");
+      return response.json();
+    },
+    enabled: !!token && status === "authenticated",
+  });
+  const userAvatar = userSingle?.data?.avatar?.url || "";
+  const userName = userSingle?.data?.name || "";
 
   useEffect(() => {
     const handleScroll = () => {

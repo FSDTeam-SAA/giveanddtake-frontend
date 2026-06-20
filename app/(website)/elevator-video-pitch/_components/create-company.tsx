@@ -762,11 +762,18 @@ export default function CreateCompanyPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea value={field.value} onChange={field.onChange} />
+                      <Textarea
+                        value={field.value ?? ""}
+                        onChange={field.onChange}
+                        placeholder="Write about your company — what you do, your mission and what makes you stand out."
+                        className="min-h-[160px] resize-y leading-relaxed"
+                      />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Word count: {field.value.trim().split(/\s+/).length}
-                      /200
+                    <p className="text-sm text-muted-foreground text-right">
+                      {field.value?.trim()
+                        ? field.value.trim().split(/\s+/).length
+                        : 0}
+                      /200 words
                     </p>
                     <FormMessage />
                   </FormItem>

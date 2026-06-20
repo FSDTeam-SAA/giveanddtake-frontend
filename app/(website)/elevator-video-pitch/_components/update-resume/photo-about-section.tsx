@@ -7,6 +7,7 @@ import type { UseFormReturn } from "react-hook-form"
 import { PhotoUpload } from "./photo-upload"
 import TextEditor from "@/components/MultiStepJobForm/TextEditor"
 import { Textarea } from "@/components/ui/textarea"
+import { cn } from "@/lib/utils"
 
 interface PhotoAboutSectionProps {
   form: UseFormReturn<any>
@@ -84,23 +85,32 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
                   <FormItem>
                     <FormLabel className="text-blue-600 font-medium">About Me</FormLabel>
                     <FormControl>
-                      <div className="mt-2">
-                        <Textarea
-                          value={value}
-                          onKeyDown={(event) => {
-                            if (shouldBlockTyping(event, value)) {
-                              event.preventDefault()
-                            }
-                          }}
-                          onChange={(event) =>
-                            field.onChange(limitWords(event.target.value))
+                      <Textarea
+                        value={value}
+                        placeholder="Write a short introduction about yourself — your strengths, experience, and what you're looking for."
+                        onKeyDown={(event) => {
+                          if (shouldBlockTyping(event, value)) {
+                            event.preventDefault()
                           }
-                        />
-                      </div>
+                        }}
+                        onChange={(event) =>
+                          field.onChange(limitWords(event.target.value))
+                        }
+                        className="mt-2 min-h-[180px] md:min-h-[250px] resize-y leading-relaxed"
+                      />
                     </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Word count: {wordCount}/{ABOUT_WORD_LIMIT}
-                    </p>
+                    <div className="mt-1.5 flex justify-end">
+                      <span
+                        className={cn(
+                          "text-xs",
+                          wordCount >= ABOUT_WORD_LIMIT
+                            ? "text-red-500"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {wordCount}/{ABOUT_WORD_LIMIT} words
+                      </span>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )

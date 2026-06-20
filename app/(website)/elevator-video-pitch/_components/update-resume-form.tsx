@@ -549,7 +549,6 @@ export default function UpdateResumeForm({
 
       const formData = new FormData();
       const resumeObject = {
-        type: "update",
         _id: resume.resume?._id,
         firstName: data.firstName,
         lastName: data.lastName,

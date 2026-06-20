@@ -11,6 +11,7 @@ import {
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 import CompanyProfilePage from "./company-profile";
 import CreateCompanyPage from "./create-company";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,7 +57,9 @@ export default function ElevatorPitchAndResume() {
   const handleUpdate = async (data: FormData) => {
     try {
       await updateResume(data);
-      queryClient.invalidateQueries({ queryKey: ["my-resume"] });
+      // Resume edit also syncs User.name/avatar on the backend — refresh the
+      // navbar and every other profile surface, not just ["my-resume"].
+      await invalidateProfileQueries(queryClient);
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to update resume:", error);

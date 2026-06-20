@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,7 @@ import {
   uploadElevatorPitch,
 } from "@/lib/api-service";
 import { toast } from "sonner";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import { CompanySelector } from "@/components/company/company-selector";
 import SocialLinks from "./SocialLinks";
@@ -306,6 +307,7 @@ export default function EditableRecruiterAccount({
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const token = session?.accessToken;
+  const queryClient = useQueryClient();
 
   const processingInfo = recruiter?.elevatorPitch?.processing;
   const isProcessing = processingInfo?.state === "processing";
@@ -553,6 +555,11 @@ export default function EditableRecruiterAccount({
       setIsBannerUploaded(false);
       setIsPhotoUploaded(false);
       form.reset(updatedRecruiter);
+
+      // Recruiter edit syncs User.name/avatar on the backend — refresh the
+      // navbar, dashboard, EVP page and public /rp profile, none of which this
+      // component invalidated before.
+      await invalidateProfileQueries(queryClient);
 
       toast.success("Profile updated successfully!");
       // setTimeout(() => {
@@ -958,6 +965,7 @@ export default function EditableRecruiterAccount({
                             <FormControl>
                               <Textarea
                                 value={value}
+                                placeholder="Write a short introduction about yourself — your strengths, experience and what you do."
                                 onKeyDown={(event) => {
                                   if (shouldBlockTyping(event, value)) {
                                     event.preventDefault();
@@ -966,6 +974,7 @@ export default function EditableRecruiterAccount({
                                 onChange={(event) =>
                                   field.onChange(limitWords(event.target.value))
                                 }
+                                className="min-h-[160px] resize-y leading-relaxed"
                               />
                             </FormControl>
                             <p className="text-sm text-muted-foreground">

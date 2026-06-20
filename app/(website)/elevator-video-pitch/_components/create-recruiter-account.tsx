@@ -13,6 +13,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -672,9 +673,9 @@ export default function CreateRecruiterAccountForm() {
     mutationFn: createRecruiterAccount,
     onSuccess: () => {
       toast.success("Recruiter account created successfully");
-      queryClient.invalidateQueries({ queryKey: ["recruiter"] });
-      queryClient.invalidateQueries({ queryKey: ["company-account"] });
-      queryClient.invalidateQueries({ queryKey: ["my-resume"] });
+      // Creating the account also sets User.name/avatar — refresh all profile
+      // surfaces (navbar included) so the new identity shows immediately.
+      invalidateProfileQueries(queryClient);
     },
     onError: (error: any) => {
       toast.error(
@@ -905,6 +906,8 @@ export default function CreateRecruiterAccountForm() {
                           <Textarea
                             value={field.value ?? ""}
                             onChange={field.onChange}
+                            placeholder="Write a short introduction about yourself — your strengths, experience and what you do."
+                            className="min-h-[160px] resize-y leading-relaxed"
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">

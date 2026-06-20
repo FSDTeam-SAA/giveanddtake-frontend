@@ -19,6 +19,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import Cropper, { type Area } from "react-easy-crop";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 import {
   isRealMediaUrl,
   PALE_BLUE_MEDIA_BG,
@@ -101,7 +102,9 @@ export function ProfileSidebar() {
   const avatarMutation = useMutation({
     mutationFn: updateAvatar,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userData", token] });
+      // Refresh every surface that shows this user's avatar (navbar, dashboard,
+      // EVP & public profile), not just this sidebar's own query.
+      invalidateProfileQueries(queryClient);
       toast.success("Avatar updated successfully!");
       setConfirmOpen(false);
       setSelectedFile(null);

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
 import { ChangeEmailModal } from "./ChangeEmailModal";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 
 /* ----------------------------- API helpers ----------------------------- */
 
@@ -210,7 +211,9 @@ export function PersonalInformation() {
   const updateMutation = useMutation({
     mutationFn: updateUserData,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["userData", token] });
+      // Name change also updates User.name, shown in navbar/sidebar/profile —
+      // refresh all profile surfaces, not just this page's query.
+      invalidateProfileQueries(queryClient);
       toast.success("Personal information updated successfully!");
       setIsEditing(false);
     },

@@ -249,7 +249,7 @@ export function PersonalInfoSection({
                   Profile photo
                 </FormLabel>
               </div>
-              <div className="border border-gray-400 rounded-lg p-6 w-full max-w-[250px] h-[250px] flex items-center justify-center overflow-hidden">
+              <div className="w-full max-w-[250px]">
                 <PhotoUpload
                   onFileSelect={onPhotoUpload}
                   previewUrl={photoPreview}
@@ -267,21 +267,37 @@ export function PersonalInfoSection({
               <FormField
                 control={form.control}
                 name="aboutUs"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        value={field.value}
-                        onChange={field.onChange}
-                      />
-                    </FormControl>
-                    <p className="text-sm text-muted-foreground">
-                      Word count: {field.value.trim().split(/\s+/).length}
-                      /200
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const value = field.value ?? "";
+                  const wordCount = value.trim()
+                    ? value.trim().split(/\s+/).length
+                    : 0;
+                  return (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          value={value}
+                          placeholder="Write a short introduction about yourself — your strengths, experience, and what you're looking for."
+                          onChange={field.onChange}
+                          className="min-h-[180px] md:min-h-[250px] resize-y leading-relaxed"
+                        />
+                      </FormControl>
+                      <div className="mt-1.5 flex justify-end">
+                        <span
+                          className={cn(
+                            "text-xs",
+                            wordCount >= 200
+                              ? "text-red-500"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {wordCount}/200 words
+                        </span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
           </div>

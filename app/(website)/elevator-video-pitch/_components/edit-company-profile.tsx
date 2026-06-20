@@ -40,7 +40,8 @@ import { SocialLinksSection } from "./social-links-section";
 import { useRouter } from "next/navigation";
 import CustomDateInput from "@/components/custom-date-input";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { invalidateProfileQueries } from "@/lib/profile-cache";
 import { LogoUpload } from "./logo-upload";
 import { BannerUpload } from "@/components/shared/banner-upload";
 
@@ -222,6 +223,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
 
   const session = useSession();
   const token = session?.data?.accessToken || "";
+  const queryClient = useQueryClient();
 
   const { data: countriesData = [], isLoading: isLoadingCountries } = useQuery({
     queryKey: ["countries"],
@@ -569,6 +571,9 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
       };
 
       await updateCompany(formData);
+      // With the backend now syncing clogo/cname onto User.avatar/name, refresh
+      // every profile surface (navbar, EVP page, public /cmp) before leaving.
+      await invalidateProfileQueries(queryClient);
       toast.success("Company updated successfully!");
       router.push("/elevator-video-pitch");
     } catch (error: any) {
@@ -648,12 +653,22 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                               onChange={(event) =>
                                 field.onChange(limitWords(event.target.value))
                               }
-                              placeholder="Write about your company..."
+                              placeholder="Write about your company — what you do, your mission and what makes you stand out."
+                              className="min-h-[160px] resize-y leading-relaxed"
                             />
                           </FormControl>
-                          <p className="text-sm text-muted-foreground">
-                            Word count: {wordCount}/{ABOUT_WORD_LIMIT}
-                          </p>
+                          <div className="mt-1.5 flex justify-end">
+                            <span
+                              className={cn(
+                                "text-xs",
+                                wordCount >= ABOUT_WORD_LIMIT
+                                  ? "text-red-500"
+                                  : "text-muted-foreground"
+                              )}
+                            >
+                              {wordCount}/{ABOUT_WORD_LIMIT} words
+                            </span>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       );

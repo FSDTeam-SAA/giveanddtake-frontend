@@ -48,11 +48,11 @@ function resolveNotificationHref(
       return "/applicants"
     // Candidate: confirmation that they applied / their application status changed.
     case "job_application_confirmation":
-      return "/applied-jobs"
+      return "/account/job-history"
     // Overloaded: candidates get this with an AppliedJob id (-> their applications),
     // owners get "job approved/declined" with a Job id (-> that job's detail page).
     case "job_application_status":
-      return isOwner && id ? `/alljobs/${id}` : "/applied-jobs"
+      return isOwner && id ? `/alljobs/${id}` : "/account/job-history"
     // Owner job lifecycle events — id is the Job id.
     case "job_post":
     case "job_update":
