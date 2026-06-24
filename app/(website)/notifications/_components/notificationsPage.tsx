@@ -18,6 +18,7 @@ interface Notification {
   // The related entity's id (NOT the notification's own _id). What it points at
   // depends on `type`: an AppliedJob, a Job, a ReqCompany, a PaymentInfo, etc.
   id?: string
+  href?: string
 }
 
 /**
@@ -33,7 +34,9 @@ function resolveNotificationHref(
   notification: Notification,
   role?: string
 ): string | null {
-  const { type, id } = notification
+  const { type, id, href } = notification
+  if (href) return href
+
   const isOwner = role === "recruiter" || role === "company"
   const pricingHref =
     role === "company"
@@ -43,9 +46,9 @@ function resolveNotificationHref(
       : "/user-pricing"
 
   switch (type) {
-    // Recruiter/company: a candidate applied to one of their jobs.
+    // Recruiter/company: id is the Job id, so open the existing applicant list.
     case "job_application":
-      return "/applicants"
+      return id ? `/candidate-list/${id}` : null
     // Candidate: confirmation that they applied / their application status changed.
     case "job_application_confirmation":
       return "/account/job-history"
@@ -53,12 +56,14 @@ function resolveNotificationHref(
     // owners get "job approved/declined" with a Job id (-> that job's detail page).
     case "job_application_status":
       return isOwner && id ? `/alljobs/${id}` : "/account/job-history"
-    // Owner job lifecycle events — id is the Job id.
+    // Owner job lifecycle events - id is the Job id.
     case "job_post":
     case "job_update":
-    case "job_expiry_warning":
       return id ? `/alljobs/${id}` : "/applicants"
-    // Billing / subscription — send them to the right pricing page to renew.
+    // Expiry reminders ask owners to update applicants, so open that job's list.
+    case "job_expiry_warning":
+      return role === "recruiter" ? "/recruiter-dashboard" : null
+    // Billing / subscription - send them to the right pricing page to renew.
     case "payg_expired":
     case "Subscription Expired":
       return pricingHref
@@ -68,7 +73,9 @@ function resolveNotificationHref(
       return "/elevator-video-pitch"
     // Recruiter<->company connection request / acceptance.
     case "req_application":
-      return "/account"
+      return notification.message.toLowerCase().includes("request received") && id
+        ? `/internal-recruiter-list/${id}`
+        : "/account"
     // New chat message.
     case "message":
       return "/messages"
@@ -154,6 +161,7 @@ export default function NotificationsPage() {
         type: incoming.type,
         to: incoming.to,
         id: incoming.id,
+        href: incoming.href,
       }
 
       setLiveUnreadCount((prev) => {
