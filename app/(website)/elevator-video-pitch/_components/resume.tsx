@@ -361,6 +361,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     <VideoPlayer
                       pitchId={resume.elevatorPitch[0]._id}
                       className="w-full mx-auto"
+                      access="private"
                     />
                   ) : (
                     <>

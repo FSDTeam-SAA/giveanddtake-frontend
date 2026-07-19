@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { ArrowRight, CreditCard, Lock } from "lucide-react";
+import { ArrowRight, Lock } from "lucide-react";
+import { FaPaypal, FaStripe } from "react-icons/fa6";
 import {
   Dialog,
   DialogContent,
@@ -118,19 +118,14 @@ export function PaymentMethodModal({
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-gray-100">
                   {option.id === "card" ? (
-                    <CreditCard
-                      className={cn(
-                        "h-5 w-5",
-                        isSelected ? "text-[#2B7FD0]" : "text-gray-400"
-                      )}
+                    <FaStripe
+                      aria-hidden="true"
+                      className="h-8 w-8 text-[#635BFF]"
                     />
                   ) : (
-                    <Image
-                      src="/assets/paypal.png"
-                      alt=""
-                      width={22}
-                      height={22}
-                      className="h-5 w-5 object-contain"
+                    <FaPaypal
+                      aria-hidden="true"
+                      className="h-6 w-6 text-[#003087]"
                     />
                   )}
                 </div>

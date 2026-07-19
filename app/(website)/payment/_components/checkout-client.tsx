@@ -9,10 +9,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   BadgeCheck,
-  CreditCard,
   Lock,
   ShieldCheck,
 } from "lucide-react";
+import { FaPaypal, FaStripe } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import StripeCheckout from "./stripe-checkout";
 import PayPalCheckout from "./paypal-checkout";
@@ -99,7 +99,7 @@ export default function CheckoutClient() {
             Secure checkout
           </h1>
           <p className="mt-1.5 text-sm text-[#8593A3] sm:text-base">
-            Complete your upgrade with your card or PayPal account.
+            Choose Stripe or PayPal to complete your upgrade securely.
           </p>
         </div>
 
@@ -136,34 +136,35 @@ export default function CheckoutClient() {
                   <button
                     type="button"
                     role="tab"
+                    aria-label="Pay with Stripe"
                     aria-selected={method === "card"}
                     onClick={() => setMethod("card")}
                     className={cn(
                       "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-3 transition sm:flex-row sm:gap-3 sm:p-4",
                       method === "card"
-                        ? "border-[#2B7FD0] bg-[#2B7FD0]/5 shadow-sm"
+                        ? "border-[#635BFF] bg-[#635BFF]/5 shadow-sm"
                         : "border-gray-200 bg-white hover:border-gray-300"
                     )}
                   >
-                    <CreditCard
-                      className={cn(
-                        "h-5 w-5 shrink-0",
-                        method === "card" ? "text-[#2B7FD0]" : "text-gray-400"
-                      )}
-                    />
+                    <div className="flex h-9 w-11 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-gray-100">
+                      <FaStripe
+                        aria-hidden="true"
+                        className="h-8 w-9 text-[#635BFF]"
+                      />
+                    </div>
                     <div className="text-center sm:text-left">
                       <span
                         className={cn(
                           "block text-sm font-semibold",
                           method === "card"
-                            ? "text-[#2B7FD0]"
+                            ? "text-[#635BFF]"
                             : "text-[#282828]"
                         )}
                       >
-                        Card
+                        Stripe
                       </span>
                       <span className="hidden text-xs text-[#8593A3] sm:block">
-                        Visa, Mastercard, Amex
+                        Card, Cash App &amp; more
                       </span>
                     </div>
                   </button>
@@ -171,41 +172,72 @@ export default function CheckoutClient() {
                   <button
                     type="button"
                     role="tab"
+                    aria-label="Pay with PayPal"
                     aria-selected={method === "paypal"}
                     onClick={() => setMethod("paypal")}
                     className={cn(
                       "flex flex-col items-center justify-center gap-2 rounded-xl border-2 p-3 transition sm:flex-row sm:gap-3 sm:p-4",
                       method === "paypal"
-                        ? "border-[#2B7FD0] bg-[#2B7FD0]/5 shadow-sm"
+                        ? "border-[#0070BA] bg-[#0070BA]/5 shadow-sm"
                         : "border-gray-200 bg-white hover:border-gray-300"
                     )}
                   >
-                    <Image
-                      src="/assets/paypal.png"
-                      alt=""
-                      width={20}
-                      height={20}
-                      className="h-5 w-5 shrink-0 object-contain"
-                    />
+                    <div className="flex h-9 w-11 shrink-0 items-center justify-center rounded-lg bg-white ring-1 ring-gray-100">
+                      <FaPaypal
+                        aria-hidden="true"
+                        className="h-6 w-6 text-[#003087]"
+                      />
+                    </div>
                     <div className="text-center sm:text-left">
                       <span
                         className={cn(
                           "block text-sm font-semibold",
                           method === "paypal"
-                            ? "text-[#2B7FD0]"
+                            ? "text-[#0070BA]"
                             : "text-[#282828]"
                         )}
                       >
                         PayPal
                       </span>
                       <span className="hidden text-xs text-[#8593A3] sm:block">
-                        Pay with your balance
+                        Balance or linked account
                       </span>
                     </div>
                   </button>
                 </div>
 
                 <div className="mt-6 border-t border-gray-100 pt-6">
+                  <div
+                    className={cn(
+                      "mb-5 flex items-center gap-3 rounded-lg border px-3 py-2.5",
+                      method === "card"
+                        ? "border-[#635BFF]/20 bg-[#635BFF]/5"
+                        : "border-[#0070BA]/20 bg-[#0070BA]/5"
+                    )}
+                  >
+                    {method === "card" ? (
+                      <FaStripe
+                        aria-hidden="true"
+                        className="h-8 w-9 shrink-0 text-[#635BFF]"
+                      />
+                    ) : (
+                      <FaPaypal
+                        aria-hidden="true"
+                        className="h-6 w-6 shrink-0 text-[#003087]"
+                      />
+                    )}
+                    <div>
+                      <p className="text-sm font-semibold text-[#282828]">
+                        {method === "card" ? "Stripe checkout" : "PayPal checkout"}
+                      </p>
+                      <p className="text-xs text-[#8593A3]">
+                        {method === "card"
+                          ? "Choose a Stripe-supported payment option below."
+                          : "Pay with your PayPal balance or linked account."}
+                      </p>
+                    </div>
+                  </div>
+
                   {method === "card" ? (
                     <StripeCheckout
                       userId={userId}
@@ -310,13 +342,18 @@ export default function CheckoutClient() {
                       height={30}
                       className="h-7 w-auto object-contain"
                     />
-                    <Image
-                      src="/assets/paypal.png"
-                      alt="PayPal"
-                      width={60}
-                      height={30}
-                      className="h-7 w-auto object-contain"
-                    />
+                    <div
+                      aria-label="PayPal"
+                      className="flex h-7 items-center gap-1.5 rounded border border-gray-200 bg-white px-2"
+                    >
+                      <FaPaypal
+                        aria-hidden="true"
+                        className="h-4 w-4 text-[#003087]"
+                      />
+                      <span className="text-xs font-semibold text-[#0070BA]">
+                        PayPal
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

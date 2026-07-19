@@ -8,18 +8,34 @@ interface VideoPlayerProps {
   className?: string;
   poster?: string;
   title?: string;
+  /**
+   * "public"  — company/recruiter pitches, playable by anyone (default).
+   * "private" — candidate pitches; requires a login and authorization. The
+   *             player mints a short-lived playback token before loading.
+   */
+  access?: "public" | "private";
 }
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 2; // keep small to avoid loops
 const CONTROLS_HIDE_DELAY = 2000;
+
+// private-access gating states
+type AccessState = "ready" | "loading" | "login" | "denied";
+
 export function VideoPlayer({
   pitchId,
   className = "",
   poster = "/assets/thumbnail.png",
   title = "Video Player",
+  access = "public",
 }: VideoPlayerProps) {
   const { data: session } = useSession();
   const token = session?.accessToken;
+  // Playback token for gated (candidate) videos; empty for public videos.
+  const [playbackToken, setPlaybackToken] = useState("");
+  const [accessState, setAccessState] = useState<AccessState>(
+    access === "private" ? "loading" : "ready"
+  );
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -34,8 +50,13 @@ export function VideoPlayer({
     if (!trimmedId) return "";
     const base = (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "");
     if (!base) return "";
-    return `${base}/elevator-pitch/stream/${trimmedId}`;
-  }, [pitchId]);
+    const url = `${base}/elevator-pitch/stream/${trimmedId}`;
+    // Gated videos carry a short-lived token in the URL so native HLS / iOS
+    // (which can't send an Authorization header) can play too.
+    return playbackToken
+      ? `${url}?t=${encodeURIComponent(playbackToken)}`
+      : url;
+  }, [pitchId, playbackToken]);
   latestSourceRef.current = resolvedSrc;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -316,7 +337,71 @@ export function VideoPlayer({
       video.removeEventListener("error", handleVideoError);
     });
   };
+  // For gated (candidate) videos, obtain a playback token before loading.
+  // Public videos skip this entirely and keep the original anonymous flow.
   useEffect(() => {
+    if (access !== "private") {
+      setAccessState("ready");
+      setPlaybackToken("");
+      return;
+    }
+    const trimmedId = pitchId?.trim();
+    if (!trimmedId) return;
+    if (!token) {
+      setAccessState("login");
+      setPlaybackToken("");
+      return;
+    }
+
+    let cancelled = false;
+    setAccessState("loading");
+    (async () => {
+      try {
+        const base = (process.env.NEXT_PUBLIC_BASE_URL || "").replace(/\/$/, "");
+        const res = await fetch(
+          `${base}/elevator-pitch/playback-token/${trimmedId}`,
+          { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+        );
+        if (cancelled) return;
+        if (res.status === 401) {
+          setAccessState("login");
+          return;
+        }
+        if (res.status === 403) {
+          setAccessState("denied");
+          return;
+        }
+        if (!res.ok) {
+          setAccessState("denied");
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (data?.public) {
+          setPlaybackToken("");
+          setAccessState("ready");
+        } else if (data?.token) {
+          setPlaybackToken(data.token);
+          setAccessState("ready");
+        } else {
+          setAccessState("denied");
+        }
+      } catch {
+        if (!cancelled) setAccessState("denied");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [access, pitchId, token]);
+
+  useEffect(() => {
+    // Don't load a gated video until we're authorized to.
+    if (access === "private" && accessState !== "ready") {
+      runCleanup();
+      setLoading(false);
+      return;
+    }
     clearRetryTimeout();
     setRetryCount(0);
     setError(null);
@@ -326,7 +411,7 @@ export function VideoPlayer({
       clearRetryTimeout();
       runCleanup();
     };
-  }, [resolvedSrc, token]);
+  }, [resolvedSrc, token, access, accessState]);
   useEffect(() => {
     if (!isPlaying) {
       setShowControls(true);
@@ -480,6 +565,23 @@ export function VideoPlayer({
           </div>
         </div>
       )}
+      {access === "private" &&
+        (accessState === "login" || accessState === "denied") && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 px-6 text-center">
+            <div className="max-w-xs">
+              <p className="mb-1 text-lg font-medium text-white">
+                {accessState === "login"
+                  ? "This video is private"
+                  : "You don't have access"}
+              </p>
+              <p className="text-sm text-gray-300">
+                {accessState === "login"
+                  ? "Please log in to view this candidate's video pitch."
+                  : "Only the candidate and recruiters they've applied to can view this pitch."}
+              </p>
+            </div>
+          </div>
+        )}
       <video
         ref={videoRef}
         poster={poster}
@@ -489,6 +591,10 @@ export function VideoPlayer({
         muted={isMuted} // state-driven, default false
         preload="auto"
         crossOrigin="anonymous"
+        // Download deterrents (best-effort — not a guarantee for HLS)
+        controlsList="nodownload noplaybackrate"
+        disablePictureInPicture
+        onContextMenu={(e) => e.preventDefault()}
         onClick={togglePlay}
         onPlay={() => {
           autoplayAttemptsRef.current = 0;

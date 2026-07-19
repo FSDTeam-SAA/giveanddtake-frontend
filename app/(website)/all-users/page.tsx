@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import {
   Search,
   User,
@@ -10,227 +10,118 @@ import {
   Clock,
 } from "lucide-react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-
-interface SearchUser {
-  _id: string;
-  name: string;
-  role: "candidate" | "recruiter" | "company" | "admin" | "super-admin";
-  phoneNum: string | null;
-  address: string | null;
-  position?: string | null;
-  slug: string;
-  avatar?: {
-    url?: string | null;
-  } | null;
-  immediatelyAvailable?: boolean | null;
-}
-
-interface SearchResult {
-  success: boolean;
-  message: string;
-  data: Array<SearchUser | null | undefined>;
-}
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Pagination } from "@/components/shared/pagination";
+import { useDebounce } from "@/hooks/use-debounce";
+import { fetchPeople, type PersonResult } from "@/lib/search-api";
 
 const PAGE_SIZE = 12;
+const ROLES = ["candidate", "recruiter", "company"];
 
 function AllUsersContent() {
-  const [users, setUsers] = useState<SearchUser[]>([]);
-  const [filteredUsers, setFilteredUsers] = useState<SearchUser[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedRole, setSelectedRole] = useState<string>("all");
-  const [isLoading, setIsLoading] = useState(true);
-  const [page, setPage] = useState<number>(1);
-  const [onlyImmediate, setOnlyImmediate] = useState<boolean>(false);
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
-  // Initial params
+  // URL params are the source of truth
+  const s = searchParams.get("s") ?? "";
+  const roleParam = searchParams.get("role") ?? "all";
+  const role = ROLES.includes(roleParam) ? roleParam : "all";
+  const pageParam = Number(searchParams.get("page") ?? "1");
+  const page = Number.isFinite(pageParam) && pageParam >= 1 ? pageParam : 1;
+  const immediate = searchParams.get("immediate") === "1";
+
+  // Local input state, debounced into the URL
+  const [searchInput, setSearchInput] = useState(s);
+  const debouncedInput = useDebounce(searchInput.trim(), 300);
+
   useEffect(() => {
-    const s = searchParams.get("s") ?? "";
-    const role = searchParams.get("role") ?? "all";
-    const p = Number(searchParams.get("page") ?? "1");
-    const immediate = searchParams.get("immediate") === "1";
-    setSearchQuery(s);
-    setSelectedRole(
-      ["candidate", "recruiter", "company"].includes(role) ? role : "all"
-    );
-    setPage(Number.isFinite(p) && p >= 1 ? p : 1);
-    setOnlyImmediate(immediate);
+    setSearchInput(s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [s]);
 
-  // Fetch all users
   useEffect(() => {
-    fetchAllUsers();
+    if (debouncedInput === s) return;
+    const params = new URLSearchParams(searchParams.toString());
+    if (debouncedInput) params.set("s", debouncedInput);
+    else params.delete("s");
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [debouncedInput]);
 
-  // Apply filters
-  useEffect(() => {
-    filterUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users, searchQuery, selectedRole, onlyImmediate]);
-
-  // Sync URL params
-  useEffect(() => {
-    const id = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (searchQuery.trim()) params.set("s", searchQuery.trim());
-      if (selectedRole !== "all") params.set("role", selectedRole);
-      params.set("page", String(page));
-      if (onlyImmediate) params.set("immediate", "1");
-      router.replace(`${pathname}?${params.toString()}`);
-    }, 200);
-    return () => clearTimeout(id);
-  }, [searchQuery, selectedRole, page, onlyImmediate, router, pathname]);
-
-  // Reset pagination when filters change
-  useEffect(() => {
-    setPage(1);
-  }, [searchQuery, selectedRole, onlyImmediate]);
-
-  // Fetch and clean user data
-  const fetchAllUsers = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/fetch/all/users`,
-        { cache: "no-store" }
-      );
-      const result: SearchResult = await response.json();
-
-      if (result?.success && Array.isArray(result?.data)) {
-        const safe = result.data
-          .filter(
-            (u): u is SearchUser => !!u && typeof u === "object" && !!u._id
-          )
-          .map((u) => ({
-            ...u,
-            name: u.name ?? "Unknown",
-            phoneNum: u.phoneNum ?? null,
-            address: u.address ?? null,
-            avatar: u.avatar ?? null,
-            immediatelyAvailable:
-              typeof u.immediatelyAvailable === "boolean"
-                ? u.immediatelyAvailable
-                : null,
-          }))
-          // 🚫 Exclude admin/super-admin users right after fetch
-          .filter(
-            (u) => u.role !== "admin" && u.role !== "super-admin"
-          );
-
-        setUsers(safe);
-        setFilteredUsers(safe);
-      } else {
-        setUsers([]);
-        setFilteredUsers([]);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]);
-      setFilteredUsers([]);
-    } finally {
-      setIsLoading(false);
+  const setParam = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) params.set(key, value);
+      else params.delete(key);
     }
+    router.replace(`${pathname}?${params.toString()}`);
   };
 
-  // Filter users
-  const filterUsers = () => {
-    let filtered = users.slice();
+  // Only an actual search returns results — we never list every user (and so
+  // never reveal how many users exist).
+  const hasSearch = s.trim().length > 0;
 
-    // 🚫 Always exclude admin/super-admin just in case
-    filtered = filtered.filter(
-      (u) => u.role !== "admin" && u.role !== "super-admin"
-    );
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["all-users", { s, role, immediate, page }],
+    queryFn: ({ signal }) =>
+      fetchPeople(
+        {
+          q: s,
+          role: role === "all" ? undefined : role,
+          immediate,
+          page,
+          limit: PAGE_SIZE,
+        },
+        signal
+      ),
+    enabled: hasSearch,
+    placeholderData: keepPreviousData,
+  });
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      filtered = filtered.filter((user) => {
-        const name = user?.name?.toLowerCase() ?? "";
-        const role = user?.role?.toLowerCase() ?? "";
-        const address = user?.address?.toLowerCase() ?? "";
-        const position = user?.position?.toLowerCase() ?? "";
-        return (
-          name.includes(q) ||
-          address.includes(q) ||
-          position.includes(q) ||
-          role.includes(q)
-        );
-      });
-    } else {
-      filtered = [];
-    }
+  const users = hasSearch ? data?.data?.users ?? [] : [];
+  const meta = data?.data?.meta;
 
-    // Filter by role
-    if (selectedRole !== "all") {
-      filtered = filtered.filter((user) => user?.role === selectedRole);
-    }
-
-    // Immediate-only toggle
-    if (onlyImmediate) {
-      filtered = filtered.filter(
-        (u) => u.role === "candidate" && u.immediatelyAvailable === true
-      );
-    }
-
-    // Sort: immediately available candidates first
-    filtered.sort((a, b) => {
-      const aAvail = a.immediatelyAvailable === true ? 1 : 0;
-      const bAvail = b.immediatelyAvailable === true ? 1 : 0;
-      return bAvail - aAvail;
-    });
-
-    setFilteredUsers(filtered);
-  };
-
-  // Handle click
-  const handleUserClick = (user?: SearchUser) => {
+  const handleUserClick = (user?: PersonResult) => {
     if (!user) return;
-    const role = user.role ?? "candidate";
+    const userRole = user.role ?? "candidate";
     const id = user.slug;
     const profileUrl =
-      role === "company"
+      userRole === "company"
         ? `/cmp/${id}`
-        : role === "recruiter"
+        : userRole === "recruiter"
         ? `/rp/${id}`
         : `/cp/${id}`;
     router.push(profileUrl);
   };
 
-  // Role icon
-  const getRoleIcon = (role?: string) => {
-    switch (role) {
+  const getRoleIcon = (userRole?: string) => {
+    switch (userRole) {
       case "candidate":
-        return <User className="h-5 w-5 text-green-600" />;
+        return <User className="h-5 w-5 text-green-600" aria-hidden />;
       case "recruiter":
-        return <UserCheck className="h-5 w-5 text-blue-600" />;
+        return <UserCheck className="h-5 w-5 text-primary" aria-hidden />;
       case "company":
-        return <Building2 className="h-5 w-5 text-purple-600" />;
+        return <Building2 className="h-5 w-5 text-purple-600" aria-hidden />;
       default:
-        return <User className="h-5 w-5 text-gray-600" />;
+        return <User className="h-5 w-5 text-gray-600" aria-hidden />;
     }
   };
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-  const paginatedUsers = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-    return filteredUsers.slice(start, end).filter(Boolean);
-  }, [filteredUsers, page]);
-
-  const totalResults = filteredUsers.length;
-  const immediateCount = filteredUsers.filter(
-    (u) => u.role === "candidate" && u.immediatelyAvailable === true
-  ).length;
+  const hasActiveFilters = Boolean(s || role !== "all" || immediate);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -240,16 +131,14 @@ function AllUsersContent() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Search Results
+                {hasSearch ? "Search Results" : "Find People & Companies"}
               </h1>
-              <p className="text-gray-600 mt-1">
-                {isLoading
-                  ? "Loading..."
-                  : searchQuery.trim()
-                  ? `${totalResults} user${
-                      totalResults === 1 ? "" : "s"
-                    } found · ${immediateCount} immediate`
-                  : "Type to search users"}
+              <p className="text-gray-600 mt-1" aria-live="polite">
+                {!hasSearch
+                  ? "Search by name, role, skill or location to see results."
+                  : isLoading
+                  ? "Searching…"
+                  : `Showing results for “${s}”`}
               </p>
             </div>
 
@@ -260,45 +149,56 @@ function AllUsersContent() {
                 <Input
                   type="text"
                   placeholder="Search users..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  maxLength={200}
                   className="pl-10 w-full sm:w-64 text-[16px] leading-5"
                   aria-label="Search users"
                 />
               </div>
 
               <div className="flex items-center gap-2">
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#4B98DE] focus:border-transparent"
-                  aria-label="Filter by role"
+                <Select
+                  value={role}
+                  onValueChange={(v) =>
+                    setParam({ role: v === "all" ? null : v, page: "1" })
+                  }
                 >
-                  <option value="all">All Roles</option>
-                  <option value="candidate">Candidates</option>
-                  <option value="recruiter">Recruiters</option>
-                  <option value="company">Companies</option>
-                </select>
+                  <SelectTrigger
+                    className="w-[150px] bg-white"
+                    aria-label="Filter by role"
+                  >
+                    <SelectValue placeholder="All Roles" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="candidate">Candidates</SelectItem>
+                    <SelectItem value="recruiter">Recruiters</SelectItem>
+                    <SelectItem value="company">Companies</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {/* Immediate toggle */}
                 <button
                   type="button"
-                  onClick={() => setOnlyImmediate((v) => !v)}
+                  onClick={() =>
+                    setParam({ immediate: immediate ? null : "1", page: "1" })
+                  }
                   className={`inline-flex items-center gap-2 px-3 py-2 text-sm rounded-md border ${
-                    onlyImmediate
+                    immediate
                       ? "bg-green-50 border-green-300 text-green-800"
                       : "bg-white border-gray-200 text-gray-700"
-                  } focus:outline-none`}
-                  aria-pressed={onlyImmediate}
+                  } focus:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
+                  aria-pressed={immediate}
                 >
-                  {onlyImmediate ? (
+                  {immediate ? (
                     <>
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-4 w-4" aria-hidden />
                       Immediate only
                     </>
                   ) : (
                     <>
-                      <Clock className="h-4 w-4" />
+                      <Clock className="h-4 w-4" aria-hidden />
                       Immediate (off)
                     </>
                   )}
@@ -311,7 +211,26 @@ function AllUsersContent() {
 
       {/* User grid */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {isLoading ? (
+        {!hasSearch ? (
+          <div className="text-center py-16">
+            <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Start typing to search
+            </h3>
+            <p className="text-gray-600">
+              Enter a name, role, skill or location to find people and companies.
+            </p>
+          </div>
+        ) : isError ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 mb-4">
+              Something went wrong while searching. Please try again.
+            </p>
+            <Button variant="outline" onClick={() => refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -327,13 +246,13 @@ function AllUsersContent() {
               </Card>
             ))}
           </div>
-        ) : searchQuery.trim() && filteredUsers.length > 0 ? (
+        ) : users.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedUsers.map((user) => (
+              {users.map((user) => (
                 <Card
                   key={user._id}
-                  className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-[#4B98DE] hover:border-l-[#3a7bc8]"
+                  className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4 border-l-primary hover:border-l-primary/80"
                   onClick={() => handleUserClick(user)}
                 >
                   <CardContent className="p-6">
@@ -346,33 +265,41 @@ function AllUsersContent() {
                           }
                           alt={user?.name ?? "User"}
                         />
-                        <AvatarFallback className="bg-[#4B98DE] text-white font-semibold">
+                        <AvatarFallback className="bg-primary text-white font-semibold">
                           {user?.name?.charAt(0)?.toUpperCase() || "U"}
                         </AvatarFallback>
                       </Avatar>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center gap-1.5">
                           <h3 className="font-semibold text-gray-900 truncate">
                             {user?.name ?? "Unknown"}
                           </h3>
-
-                          {user.role === "candidate" &&
-                            user.immediatelyAvailable === true && (
-                              <span className="ml-2 inline-flex items-center gap-2 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800">
-                                <span className="h-2 w-2 rounded-full bg-green-600 inline-block" />
-                                Immediate
-                              </span>
-                            )}
-
-                          {getRoleIcon(user?.role)}
+                          <span className="shrink-0">
+                            {getRoleIcon(user?.role)}
+                          </span>
                         </div>
 
-                        <div className="space-y-2 text-sm text-gray-600">
+                        {user.role === "candidate" &&
+                          user.immediatelyAvailable === true && (
+                            <span className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-medium rounded-full px-2 py-0.5 bg-green-50 text-green-800">
+                              <span className="h-1.5 w-1.5 rounded-full bg-green-600 inline-block" />
+                              Immediately available
+                            </span>
+                          )}
+
+                        <div className="space-y-2 text-sm text-gray-600 mt-2">
+                          {user?.position && (
+                            <div className="truncate font-medium text-gray-700">
+                              {user.position}
+                            </div>
+                          )}
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
                             <span className="truncate">
-                              {user?.address ?? "No address available."}
+                              {user?.location ||
+                                user?.address ||
+                                "No address available."}
                             </span>
                           </div>
                         </div>
@@ -383,7 +310,7 @@ function AllUsersContent() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="w-full text-[#4B98DE] border-[#4B98DE] hover:bg-[#4B98DE] hover:text-white transition-colors bg-transparent"
+                        className="w-full text-primary border-primary hover:bg-primary hover:text-white transition-colors bg-transparent"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleUserClick(user);
@@ -398,27 +325,18 @@ function AllUsersContent() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2 flex-wrap">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-700 px-2">
-                  Page {page} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                >
-                  Next
-                </Button>
+            {meta && meta.totalPages > 1 && (
+              <div className="mt-8">
+                <Pagination
+                  currentPage={meta.currentPage}
+                  totalPages={meta.totalPages}
+                  onPageChange={(nextPage) =>
+                    setParam({ page: String(nextPage) })
+                  }
+                  isLoading={isFetching}
+                  totalItems={meta.totalItems}
+                  itemsPerPage={meta.itemsPerPage}
+                />
               </div>
             )}
           </>
@@ -426,25 +344,18 @@ function AllUsersContent() {
           <div className="text-center py-12">
             <Search className="h-12 w-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchQuery.trim()
-                ? "No users match your search"
-                : "Type to search users"}
+              No users match your search
             </h3>
             <p className="text-gray-600 mb-4">
-              {searchQuery.trim()
-                ? "Try adjusting your search or filter criteria"
-                : "Start typing in the search box to see results"}
+              Try adjusting your search or filter criteria
             </p>
 
-            {(searchQuery || selectedRole !== "all" || onlyImmediate) && (
+            {hasActiveFilters && (
               <Button
-                variant="outline"
                 onClick={() => {
-                  setSearchQuery("");
-                  setSelectedRole("all");
-                  setOnlyImmediate(false);
+                  setSearchInput("");
+                  setParam({ s: null, role: null, immediate: null, page: "1" });
                 }}
-                className=" border-[#4B98DE] bg-[#4B98DE] text-white"
               >
                 Clear Filters
               </Button>

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import JobCard from "@/components/shared/card/job-card";
 import { Pagination } from "@/components/shared/pagination";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search } from "lucide-react";
+import { fetchJobs } from "@/lib/search-api";
+import JobSearchBar from "./job-search-bar";
+import ActiveFilterChips from "./active-filter-chips";
 
 interface Job {
   _id: string;
@@ -79,35 +82,46 @@ export default function JobsListing() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get("title") || "");
-
-  const querySearchTerm = searchParams.get("title") || "";
+  // URL is the single source of truth (`title` kept as legacy inbound alias)
+  const querySearchTerm =
+    searchParams.get("q") || searchParams.get("title") || "";
+  const category = searchParams.get("category") || "";
+  const locationType = searchParams.get("locationType") || "";
+  const employmentType = searchParams.get("employmentType") || "";
+  const location = searchParams.get("location") || "";
   const currentPage = Number.parseInt(searchParams.get("page") || "1", 10);
 
-  useEffect(() => {
-    setLocalSearchTerm(searchParams.get("title") || "");
-  }, [searchParams]);
+  const hasActiveFilters = Boolean(
+    querySearchTerm || category || locationType || employmentType || location
+  );
 
   const { data: session, status } = useSession();
   const token = session?.accessToken;
-  const role = (session?.user as any)?.role as string | undefined;
-  const isCandidate = role === "candidate";
 
   // Fetch all jobs
   const {
     data: jobsData,
     isLoading: isJobsLoading,
+    isError: isJobsError,
+    refetch: refetchJobs,
   } = useQuery<JobsResponse, Error>({
-    queryKey: ["jobs", currentPage, querySearchTerm],
-    queryFn: async () => {
-      const url = new URL(`${process.env.NEXT_PUBLIC_BASE_URL}/jobs`);
-      url.searchParams.append("page", currentPage.toString());
-      if (querySearchTerm) url.searchParams.append("title", querySearchTerm);
-
-      const response = await fetch(url.toString());
-      if (!response.ok) throw new Error("Failed to fetch jobs");
-      return response.json();
-    },
+    queryKey: [
+      "jobs",
+      { q: querySearchTerm, category, locationType, employmentType, location, page: currentPage },
+    ],
+    queryFn: ({ signal }) =>
+      fetchJobs(
+        {
+          q: querySearchTerm,
+          category,
+          locationType,
+          employmentType,
+          location,
+          page: currentPage,
+        },
+        signal
+      ) as Promise<JobsResponse>,
+    placeholderData: keepPreviousData,
   });
 
   // Fetch recommended jobs
@@ -153,48 +167,15 @@ export default function JobsListing() {
     );
   }
 
-  // Handle filter click
-  const handleFilter = () => {
-    const newParams = new URLSearchParams(searchParams.toString());
-    if (localSearchTerm) {
-      newParams.set("title", localSearchTerm);
-    } else {
-      newParams.delete("title");
-    }
-    newParams.set("page", "1");
-    router.push(`?${newParams.toString()}`);
-  };
-
   return (
     <div className="container mx-auto px-4">
-      {/* Search Filter */}
-      <div className="bg-[#E9ECFC] p-6 mb-12 w-full rounded-md">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between w-full">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Title, Skill, Category, Location, Location Type"
-              className="pl-10 p-2 border rounded w-full"
-              value={localSearchTerm}
-              onChange={(e) => setLocalSearchTerm(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleFilter();
-                }
-              }}
-            />
-          </div>
-          <button
-            onClick={handleFilter}
-            className="bg-primary hover:bg-blue-700 text-white p-2 rounded w-full md:w-auto"
-          >
-            Search
-          </button>
-        </div>
+      {/* Search + Filters */}
+      <div className="bg-primary/5 border border-primary/10 p-6 mb-8 w-full rounded-lg">
+        <JobSearchBar />
+        <ActiveFilterChips />
       </div>
 
-      {!querySearchTerm && recommendedJobs.length > 0 && (
+      {!hasActiveFilters && recommendedJobs.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Suggested jobs for you</h2>
           {isRecommendedLoading || !token ? (
@@ -230,10 +211,19 @@ export default function JobsListing() {
       {/* All Jobs */}
       <div>
         <h2 className="text-2xl font-bold mb-6">
-          {querySearchTerm ? "Search results" : "Recent jobs"}
+          {hasActiveFilters ? "Search results" : "Recent jobs"}
         </h2>
 
-        {isJobsLoading ? (
+        {isJobsError ? (
+          <div className="text-center py-10">
+            <p className="text-gray-600 mb-4">
+              Something went wrong while loading jobs. Please try again.
+            </p>
+            <Button variant="outline" onClick={() => refetchJobs()}>
+              Retry
+            </Button>
+          </div>
+        ) : isJobsLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             {Array(4)
               .fill(0)
@@ -243,8 +233,8 @@ export default function JobsListing() {
           </div>
         ) : jobs.length === 0 ? (
           <div className="text-center text-gray-600 py-10">
-            {querySearchTerm
-              ? "No results found. Try a different query."
+            {hasActiveFilters
+              ? "No results found. Try a different search or remove some filters."
               : "No jobs available at the moment."}
           </div>
         ) : (
@@ -259,7 +249,7 @@ export default function JobsListing() {
             ))}
           </div>
         )}
-        {meta.totalPages > 10 && (
+        {meta.totalPages > 1 && (
           <div className="px-6 py-4">
             <Pagination
               currentPage={meta.currentPage}

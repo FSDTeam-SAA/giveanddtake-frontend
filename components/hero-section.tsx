@@ -12,15 +12,15 @@ export function HeroSection() {
   const session = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialJobTitle = searchParams.get("title") || "";
+  const initialJobTitle = searchParams.get("q") || searchParams.get("title") || "";
   const [jobTitleInput, setJobTitleInput] = useState(initialJobTitle);
 
 
 
   const handleSearch = () => {
     const currentParams = new URLSearchParams();
-    if (jobTitleInput) {
-      currentParams.set("title", jobTitleInput);
+    if (jobTitleInput.trim()) {
+      currentParams.set("q", jobTitleInput.trim());
     }
     currentParams.set("page", "1");
     router.push(`/alljobs?${currentParams.toString()}`);
@@ -371,7 +371,11 @@ export function HeroSection() {
                         placeholder="Title, Skill, Category, Location, Location Type"
                         className="w-full pl-8 border-none h-[28px] px-0 !focus:outline-none !focus:ring-0 outline-none"
                         value={jobTitleInput}
+                        maxLength={200}
                         onChange={(e) => setJobTitleInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSearch();
+                        }}
                       />
                     </div>
                   </div>

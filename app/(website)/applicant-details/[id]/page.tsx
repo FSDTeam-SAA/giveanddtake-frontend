@@ -599,6 +599,7 @@ export default function ApplicantDetailsPage() {
             <VideoPlayer
               pitchId={elevatorPitch[0]._id}
               className="w-full mx-auto"
+              access="private"
             />
           </div>
         )}
