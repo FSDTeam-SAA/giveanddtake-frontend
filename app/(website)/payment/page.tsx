@@ -1,17 +1,17 @@
-// app/checkout/paypal/page.tsx
 import { Suspense } from "react";
-import PayPalCheckoutClient from "./_components/paypal.client";
+import { Loader2 } from "lucide-react";
+import CheckoutClient from "./_components/checkout-client";
 
 export default function Page() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center h-screen">
-          <svg className="h-12 w-12 animate-spin" viewBox="0 0 24 24" />
+        <div className="flex min-h-screen items-center justify-center bg-[#F7F9FC]">
+          <Loader2 className="h-10 w-10 animate-spin text-[#2B7FD0]" />
         </div>
       }
     >
-      <PayPalCheckoutClient />
+      <CheckoutClient />
     </Suspense>
   );
 }
