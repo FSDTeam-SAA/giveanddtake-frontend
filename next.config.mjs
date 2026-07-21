@@ -34,6 +34,15 @@ const PAYPAL_ASSET_HOSTS = [
   'https://www.sandbox.paypalobjects.com',
 ]
 
+// Stripe Elements is embedded, not a hosted-checkout redirect: Stripe.js
+// loads from js.stripe.com and renders the card fields in iframes from the
+// same origin, hooks.stripe.com serves 3-D Secure challenges, and the SDK
+// talks to api.stripe.com directly. No form-action entry — nothing is ever
+// submitted cross-origin.
+const STRIPE_JS = 'https://js.stripe.com'
+const STRIPE_API = 'https://api.stripe.com'
+const STRIPE_HOOKS = 'https://hooks.stripe.com'
+
 // Video pitches and images upload straight from the browser to Cloudflare R2
 // via presigned URLs. Cover the account endpoint (path-style) and both
 // buckets' virtual-hosted endpoints.
@@ -58,6 +67,7 @@ const ContentSecurityPolicy = [
     isDev && "'unsafe-eval'", // React Refresh needs eval in dev only
     ...PAYPAL_HOSTS,
     ...PAYPAL_ASSET_HOSTS,
+    STRIPE_JS,
   ]),
 
   buildDirective('style-src', ["'self'", "'unsafe-inline'"]),
@@ -80,12 +90,14 @@ const ContentSecurityPolicy = [
     ...R2_UPLOAD_HOSTS,
     ...PAYPAL_HOSTS,
     ...PAYPAL_ASSET_HOSTS,
+    STRIPE_API,
+    STRIPE_JS,
     isDev && 'ws:', // Next.js HMR websocket
   ]),
 
   buildDirective('font-src', ["'self'", 'data:']),
   buildDirective('worker-src', ["'self'", 'blob:']),
-  buildDirective('frame-src', ["'self'", ...PAYPAL_HOSTS]),
+  buildDirective('frame-src', ["'self'", ...PAYPAL_HOSTS, STRIPE_JS, STRIPE_HOOKS]),
   buildDirective('object-src', ["'none'"]),
   buildDirective('base-uri', ["'self'"]),
   buildDirective('form-action', ["'self'", ...PAYPAL_HOSTS]),
