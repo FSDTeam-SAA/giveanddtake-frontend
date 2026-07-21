@@ -6,7 +6,6 @@ import { MapPin, Mail, Phone } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { FooterLegalLinks } from "@/components/shared/FooterLegalLinks";
 
 export function Footer() {
   const { data: session } = useSession();
@@ -180,7 +179,6 @@ export function Footer() {
         </div>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
-        <FooterLegalLinks />
         <p className="mb-2">
           Elevator Video Pitch© Ltd. is registered in England in the United
           Kingdom at Companies House. Company Number 15978879
