@@ -38,6 +38,7 @@ import {
   getRecruiterAccount,
 } from "@/lib/api-service";
 import { useSocket } from "@/hooks/use-socket";
+import { isCustomPage } from "@/lib/content-pages";
 
 interface Notification {
   _id: string;
@@ -151,6 +152,8 @@ export function SiteHeader() {
     }
   };
 
+  const upgradePath = getUpgradePath();
+
   // Fetch notifications using useQuery
   const {
     data: notifications = [],
@@ -214,6 +217,23 @@ export function SiteHeader() {
     queryFn: () => getCompanyAccount(userId || ""),
     select: (data) => data?.data,
     enabled: userRole !== "candidate" && userRole !== "recruiter" && !!userId,
+  });
+
+  // Dynamic admin-managed content pages surfaced in the "More" menu.
+  const { data: morePages = [] } = useQuery<
+    Array<{ _id: string; type: string; title: string; isSystem?: boolean }>
+  >({
+    queryKey: ["content", "more-pages"],
+    queryFn: async () => {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/content/published`
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json?.data ?? []).filter(isCustomPage);
+    },
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
   // Fetch user data from API
@@ -519,11 +539,11 @@ export function SiteHeader() {
               My EVP Profile
             </Link>
             {/* Upgrade Plan (desktop) */}
-            {status === "authenticated" && (
+            {status === "authenticated" && upgradePath && (
               <Link
-                href={getUpgradePath()!}
+                href={upgradePath}
                 className={`transition-colors focus:outline-none font-semibold ${
-                  isActive(getUpgradePath()!)
+                  isActive(upgradePath)
                     ? "text-[#2B7FD0]"
                     : "text-[#2B7FD0] hover:opacity-80"
                 }`}
@@ -605,6 +625,16 @@ export function SiteHeader() {
                     Terms and Conditions
                   </Link>
                 </DropdownMenuItem>
+                {morePages.map((page) => (
+                  <DropdownMenuItem key={page._id} asChild>
+                    <Link
+                      href={`/pages/${page.type}`}
+                      className="w-full px-2 py-1.5 block"
+                    >
+                      {page.title}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </nav>
@@ -845,13 +875,11 @@ export function SiteHeader() {
                         Blogs
                       </Link>
                       {/* Upgrade Plan (mobile) */}
-                      {status === "authenticated" && (
+                      {status === "authenticated" && upgradePath && (
                           <Link
-                            href={getUpgradePath()!}
+                            href={upgradePath}
                             onClick={() => setSheetOpen(false)}
-                            className={getMobileNavLinkClasses(
-                              getUpgradePath()!
-                            )}
+                            className={getMobileNavLinkClasses(upgradePath)}
                           >
                             Upgrade Plan
                           </Link>
@@ -907,6 +935,18 @@ export function SiteHeader() {
                           >
                             Terms and Conditions
                           </Link>
+                          {morePages.map((page) => (
+                            <Link
+                              key={page._id}
+                              href={`/pages/${page.type}`}
+                              onClick={() => setSheetOpen(false)}
+                              className={getMobileSubLinkClasses(
+                                `/pages/${page.type}`
+                              )}
+                            >
+                              {page.title}
+                            </Link>
+                          ))}
                         </div>
                       </div>
                       {status === "authenticated" ? (

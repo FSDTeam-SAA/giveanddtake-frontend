@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isCustomPage } from "@/lib/content-pages";
 
 const CACHE_REVALIDATE_SECONDS = 3600;
 
@@ -97,6 +98,28 @@ const getDynamicBlogUrls = async (): Promise<SitemapItem[]> => {
     );
 };
 
+const getDynamicPageUrls = async (): Promise<SitemapItem[]> => {
+  const payload = await fetchJson<{
+    data?: Array<{
+      type?: string;
+      isSystem?: boolean;
+      updatedAt?: string;
+      createdAt?: string;
+    }>;
+  }>("/content/published");
+
+  const pages = payload?.data ?? [];
+  return pages
+    .filter((page) => isCustomPage(page))
+    .map((page) =>
+      toSitemapItem(`/pages/${page.type}`, {
+        lastModified: page.updatedAt || page.createdAt || new Date(),
+        changeFrequency: "monthly",
+        priority: 0.5,
+      })
+    );
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticUrls = staticRoutes.map((route) =>
     toSitemapItem(route.path, {
@@ -105,10 +128,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
-  const [jobUrls, blogUrls] = await Promise.all([
+  const [jobUrls, blogUrls, pageUrls] = await Promise.all([
     getDynamicJobUrls(),
     getDynamicBlogUrls(),
+    getDynamicPageUrls(),
   ]);
 
-  return [...staticUrls, ...jobUrls, ...blogUrls];
+  return [...staticUrls, ...jobUrls, ...blogUrls, ...pageUrls];
 }

@@ -10,6 +10,10 @@ export function DynamicTitle() {
   useEffect(() => {
     if (!pathname) return;
 
+    // Routes that set their own SEO <title> server-side (generateMetadata)
+    // must not be overwritten client-side.
+    if (pathname.startsWith("/pages/")) return;
+
     // Convert "/about-us" -> "About Us"
     let routeName =
       pathname === "/"

@@ -3,21 +3,10 @@
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-
-interface PublishedPage {
-  _id: string;
-  type: string;
-  title: string;
-  showInFooter?: boolean;
-  isSystem?: boolean;
-}
-
-/** Built-in pages have their own dedicated routes; everything else lives under /pages/:slug. */
-const BUILT_IN_ROUTES: Record<string, string> = {
-  about: "/about-us",
-  privacy: "/privacy-policy",
-  terms: "/terms-condition",
-};
+import {
+  BUILT_IN_ROUTES,
+  type PublishedPage,
+} from "@/lib/content-pages";
 
 const hrefFor = (page: PublishedPage) =>
   BUILT_IN_ROUTES[page.type] ?? `/pages/${page.type}`;
