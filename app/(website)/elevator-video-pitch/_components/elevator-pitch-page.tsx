@@ -20,6 +20,10 @@ import EditableRecruiterAccount from "./editable-recruiter-account";
 import CreateRecruiterAccount from "./create-recruiter-account";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Processing states where the video is not watchable yet and the document is
+// still changing server-side.
+const PENDING_PITCH_STATES = ["pending", "uploaded", "queued", "processing"];
+
 export default function ElevatorPitchAndResume() {
   const router = useRouter();
   const { data: session, status } = useSession();
@@ -29,12 +33,21 @@ export default function ElevatorPitchAndResume() {
   const role = session?.user?.role;
   const userId = session?.user?.id;
 
-  // Resume query (only if role is candidate)
+  // Resume query (only if role is candidate).
+  // While a pitch is still encoding, poll so the player swaps in on its own —
+  // the pitch _id changes on every re-upload, so a stale cache points at a
+  // document that no longer exists.
   const { data: myresume, isLoading: resumeLoading } = useQuery({
     queryKey: ["my-resume"],
     queryFn: getMyResume,
     select: (data) => data?.data,
     enabled: role === "candidate" && !!userId,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const state =
+        (query.state.data as any)?.data?.elevatorPitch?.[0]?.processing?.state;
+      return PENDING_PITCH_STATES.includes(state) ? 5000 : false;
+    },
   });
 
   // Recruiter query (only if role is recruiter)

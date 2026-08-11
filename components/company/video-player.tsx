@@ -14,13 +14,26 @@ interface VideoPlayerProps {
    *             player mints a short-lived playback token before loading.
    */
   access?: "public" | "private";
+  /**
+   * Called when the pitch this player points at no longer exists (404) or is
+   * still encoding (409). Both mean the caller is holding a stale id — pitches
+   * are recreated with a new _id on every re-upload — so the owner should
+   * refetch rather than be told they lack access.
+   */
+  onUnavailable?: () => void;
 }
 const MAX_RETRIES = 4;
 const AUTOPLAY_MAX_ATTEMPTS = 2; // keep small to avoid loops
 const CONTROLS_HIDE_DELAY = 2000;
 
 // private-access gating states
-type AccessState = "ready" | "loading" | "login" | "denied";
+type AccessState =
+  | "ready"
+  | "loading"
+  | "login"
+  | "denied"
+  | "missing"
+  | "processing";
 
 export function VideoPlayer({
   pitchId,
@@ -28,6 +41,7 @@ export function VideoPlayer({
   poster = "/assets/thumbnail.png",
   title = "Video Player",
   access = "public",
+  onUnavailable,
 }: VideoPlayerProps) {
   const { data: session } = useSession();
   const token = session?.accessToken;
@@ -36,6 +50,12 @@ export function VideoPlayer({
   const [accessState, setAccessState] = useState<AccessState>(
     access === "private" ? "loading" : "ready"
   );
+  // Held in a ref so a caller passing an inline callback can't retrigger the
+  // token effect on every render.
+  const onUnavailableRef = useRef(onUnavailable);
+  useEffect(() => {
+    onUnavailableRef.current = onUnavailable;
+  }, [onUnavailable]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -371,6 +391,13 @@ export function VideoPlayer({
           setAccessState("denied");
           return;
         }
+        // 404: the pitch was deleted/replaced and this id is stale.
+        // 409: it exists but is still encoding.
+        if (res.status === 404 || res.status === 409) {
+          setAccessState(res.status === 404 ? "missing" : "processing");
+          onUnavailableRef.current?.();
+          return;
+        }
         if (!res.ok) {
           setAccessState("denied");
           return;
@@ -566,18 +593,29 @@ export function VideoPlayer({
         </div>
       )}
       {access === "private" &&
-        (accessState === "login" || accessState === "denied") && (
+        (accessState === "login" ||
+          accessState === "denied" ||
+          accessState === "missing" ||
+          accessState === "processing") && (
           <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/85 px-6 text-center">
             <div className="max-w-xs">
               <p className="mb-1 text-lg font-medium text-white">
                 {accessState === "login"
                   ? "This video is private"
-                  : "You don't have access"}
+                  : accessState === "missing"
+                    ? "This video is no longer available"
+                    : accessState === "processing"
+                      ? "This video is still processing"
+                      : "You don't have access"}
               </p>
               <p className="text-sm text-gray-300">
                 {accessState === "login"
                   ? "Please log in to view this candidate's video pitch."
-                  : "Only the candidate and recruiters they've applied to can view this pitch."}
+                  : accessState === "missing"
+                    ? "It may have been replaced or removed. Refresh the page to see the latest version."
+                    : accessState === "processing"
+                      ? "It will play automatically once encoding finishes."
+                      : "Only the candidate and recruiters they've applied to can view this pitch."}
               </p>
             </div>
           </div>

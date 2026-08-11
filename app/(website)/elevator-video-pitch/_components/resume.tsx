@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import SocialLinks from "./SocialLinks";
 import { VideoProcessingCard } from "@/components/VideoProcessingCard";
+import { VideoFailedCard } from "@/components/VideoFailedCard";
 
 interface ResumeResponse {
   success: boolean;
@@ -124,40 +125,67 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const userId = session?.user?.id;
   const token = session?.accessToken;
 
-  const processingInfo = resume?.elevatorPitch?.[0]?.processing;
-  const isProcessing = processingInfo?.state === "processing";
+  const queryClient = useQueryClient();
+
+  // Everything about what to render is derived from the server document, never
+  // from local flags: a pitch is deleted and recreated on every replace, so the
+  // _id changes and stale local state points at a document that no longer
+  // exists (which the player reports as "no access").
+  const pitchDoc = resume?.elevatorPitch?.[0];
+  const processingInfo = pitchDoc?.processing;
+  const pitchState: string | undefined = processingInfo?.state;
+
+  // 'pending' | 'uploaded' | 'queued' | 'processing' are all "not watchable yet".
+  const isProcessing =
+    !!pitchDoc &&
+    ["pending", "uploaded", "queued", "processing"].includes(pitchState ?? "");
+  const isFailed = pitchState === "failed";
+  // Only mount the player once there is something real to play.
+  const isPlayable =
+    !!pitchDoc && pitchState === "ready" && !!pitchDoc?.video?.hlsUrl;
 
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
-    useState<boolean>(!!resume.elevatorPitch[0]);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Pull the resume again so the new pitch _id and processing state are picked
+  // up without a manual browser refresh.
+  const refreshResume = () =>
+    queryClient.invalidateQueries({ queryKey: ["my-resume"] });
 
   const deleteElevatorPitchMutation = useMutation({
     mutationFn: deleteElevatorPitchVideo,
     onSuccess: () => {
       toast.success("Elevator pitch deleted successfully!");
-      setIsElevatorPitchUploaded(false);
       setElevatorPitchFile(null);
       setIsDeleteModalOpen(false);
+      refreshResume();
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete elevator pitch.");
-      console.error("Error deleting elevator pitch:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to delete elevator pitch.",
+      );
+      setIsDeleteModalOpen(false);
+      // The document may already be gone — resync rather than trusting the UI.
+      refreshResume();
     },
   });
 
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success(
-        "Video processing in the background - please refresh your browser shortly",
-      );
-      setIsElevatorPitchUploaded(true);
+      toast.success("Upload complete — your video is being processed.");
       setElevatorPitchFile(null);
+      refreshResume();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
-      setIsElevatorPitchUploaded(false);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to upload video. Please try again.",
+      );
+      refreshResume();
     },
   });
 
@@ -177,7 +205,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   };
 
   const handleDeleteElevatorPitch = async () => {
-    if (userId && resume.elevatorPitch[0]) {
+    if (userId && pitchDoc) {
       try {
         await deleteElevatorPitchMutation.mutateAsync(userId);
       } catch (error) {
@@ -323,7 +351,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     <CardTitle className="text-sm md:text-lg lg:text-xl">
                       Upload or view a short video introducing yourself.
                     </CardTitle>
-                    {isElevatorPitchUploaded && resume.elevatorPitch[0] && (
+                    {!!pitchDoc && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -351,17 +379,31 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {isProcessing ? (
+                  {uploadElevatorPitchMutation.isPending ? (
                     <VideoProcessingCard
-                      startedAt={processingInfo?.startedAt}
-                      onRetry={() => window.location.reload()}
+                      label="Uploading your video…"
+                      description="Keep this tab open until the upload finishes."
                       className="w-full"
                     />
-                  ) : isElevatorPitchUploaded && resume.elevatorPitch[0] ? (
+                  ) : isProcessing ? (
+                    <VideoProcessingCard
+                      startedAt={processingInfo?.startedAt}
+                      onRetry={refreshResume}
+                      className="w-full"
+                    />
+                  ) : isFailed ? (
+                    <VideoFailedCard
+                      message={processingInfo?.error}
+                      onRetry={refreshResume}
+                      className="w-full"
+                    />
+                  ) : isPlayable ? (
                     <VideoPlayer
-                      pitchId={resume.elevatorPitch[0]._id}
+                      key={pitchDoc._id}
+                      pitchId={pitchDoc._id}
                       className="w-full mx-auto"
                       access="private"
+                      onUnavailable={refreshResume}
                     />
                   ) : (
                     <>
@@ -407,15 +449,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         )}
                       </Button>
 
-                      {isElevatorPitchUploaded && (
-                        <p className="mt-2 text-sm text-green-600">
-                          Elevator pitch upload finished! Processing continues
-                          in the background. Please refresh the page in a few
-                          seconds.
-                        </p>
-                      )}
-
-                      {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                      {!elevatorPitchFile && (
                         <p className="mt-2 text-sm text-gray-600">
                           No pitch available
                         </p>
