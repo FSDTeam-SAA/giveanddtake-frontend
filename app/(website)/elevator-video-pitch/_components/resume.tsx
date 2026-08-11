@@ -34,6 +34,7 @@ import { ElevatorPitchUpload } from "./elevator-pitch-upload";
 import SocialLinks from "./SocialLinks";
 import { VideoProcessingCard } from "@/components/VideoProcessingCard";
 import { VideoFailedCard } from "@/components/VideoFailedCard";
+import { isPendingPitchState } from "@/lib/pitch-states";
 
 interface ResumeResponse {
   success: boolean;
@@ -136,9 +137,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   const pitchState: string | undefined = processingInfo?.state;
 
   // 'pending' | 'uploaded' | 'queued' | 'processing' are all "not watchable yet".
-  const isProcessing =
-    !!pitchDoc &&
-    ["pending", "uploaded", "queued", "processing"].includes(pitchState ?? "");
+  const isProcessing = !!pitchDoc && isPendingPitchState(pitchState);
   const isFailed = pitchState === "failed";
   // Only mount the player once there is something real to play.
   const isPlayable =

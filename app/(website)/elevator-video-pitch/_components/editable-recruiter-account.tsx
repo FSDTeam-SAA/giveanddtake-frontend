@@ -32,6 +32,7 @@ import {
   deleteElevatorPitchVideo,
   editRecruiterAccount,
   uploadElevatorPitch,
+  getElevatorPitchVideo,
 } from "@/lib/api-service";
 import { toast } from "sonner";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
@@ -58,6 +59,8 @@ import { PhotoUpload } from "./update-resume/photo-upload";
 import Image from "next/image";
 import { VideoPlayer } from "@/components/company/video-player";
 import { VideoProcessingCard } from "@/components/VideoProcessingCard";
+import { VideoFailedCard } from "@/components/VideoFailedCard";
+import { PENDING_PITCH_STATES } from "@/lib/pitch-states";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -241,11 +244,7 @@ export default function EditableRecruiterAccount({
   );
   const [countryOpen, setCountryOpen] = useState(false);
   const [cityOpen, setCityOpen] = useState(false);
-  const [loadingPitch, setLoadingPitch] = useState(true);
-  const [pitchData, setPitchData] = useState<PitchData | null>(null);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
-    useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const form = useForm<Recruiter>({
@@ -260,8 +259,32 @@ export default function EditableRecruiterAccount({
   const userId = session?.user?.id;
   const token = session?.accessToken;
 
-  const processingInfo = recruiter?.elevatorPitch?.processing;
-  const isProcessing = processingInfo?.state === "processing";
+  // The pitch is deleted and recreated with a NEW _id on every re-upload, so
+  // it must come from a live query rather than a one-shot fetch into state —
+  // otherwise the player keeps asking for a document that no longer exists.
+  const {
+    data: pitchResponse,
+    isLoading: loadingPitch,
+    refetch: refetchPitch,
+  } = useQuery({
+    queryKey: ["my-elevator-pitch", userId],
+    queryFn: () => getElevatorPitchVideo(userId as string),
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const state = (query.state.data as any)?.data?.processing?.state;
+      return PENDING_PITCH_STATES.includes(state) ? 5000 : false;
+    },
+  });
+
+  const pitchData = pitchResponse?.data ?? null;
+  const processingInfo = pitchData?.processing;
+  const pitchState: string | undefined = processingInfo?.state;
+  const isProcessing =
+    !!pitchData && PENDING_PITCH_STATES.includes(pitchState ?? "");
+  const isFailed = pitchState === "failed";
+  const isPlayable =
+    !!pitchData && pitchState === "ready" && !!pitchData?.video?.hlsUrl;
 
   const {
     data: countriesData = [],
@@ -301,68 +324,21 @@ export default function EditableRecruiterAccount({
     if (citiesError) toast.error("Failed to load cities.");
   }, [countriesError, citiesError]);
 
-  useEffect(() => {
-    const fetchPitchData = async () => {
-      if (!userId || !token) {
-        setLoadingPitch(false);
-        return;
-      }
-
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-        const response = await fetch(
-          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=recruiter`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pitch data");
-        }
-
-        const apiResponse: ApiResponse = await response.json();
-        const userPitch = apiResponse.data.find(
-          (pitch) => pitch.userId._id === userId
-        );
-
-        if (userPitch) {
-          setPitchData(userPitch);
-          setIsElevatorPitchUploaded(true);
-        } else {
-          setIsElevatorPitchUploaded(false);
-        }
-      } catch (err) {
-        console.error(
-          "Failed to fetch elevator pitch:",
-          err instanceof Error ? err.message : err
-        );
-      } finally {
-        setLoadingPitch(false);
-      }
-    };
-
-    fetchPitchData();
-  }, [userId, token, isProcessing]);
-
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success(
-        "Video processing in the background - please refresh your browser shortly"
-      );
-      setIsElevatorPitchUploaded(true);
+      toast.success("Upload complete — your video is being processed.");
       setElevatorPitchFile(null);
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Poll picks it up from here; no page reload, and no stale _id.
+      refetchPitch();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
-      setIsElevatorPitchUploaded(false);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to upload video. Please try again."
+      );
+      refetchPitch();
     },
   });
 
@@ -370,14 +346,19 @@ export default function EditableRecruiterAccount({
     mutationFn: deleteElevatorPitchVideo,
     onSuccess: () => {
       toast.success("Elevator pitch deleted successfully!");
-      setIsElevatorPitchUploaded(false);
       setElevatorPitchFile(null);
-      setPitchData(null);
       setIsDeleteModalOpen(false);
+      refetchPitch();
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete elevator pitch.");
-      console.error("Error deleting elevator pitch:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to delete elevator pitch."
+      );
+      setIsDeleteModalOpen(false);
+      // It may already be gone — resync instead of trusting local state.
+      refetchPitch();
     },
   });
 
@@ -1028,7 +1009,7 @@ export default function EditableRecruiterAccount({
                 <CardTitle className="text-sm md:text-lg lg:text-xl">
                   Upload or view a short video introducing yourself.
                 </CardTitle>
-                {isElevatorPitchUploaded && pitchData && (
+                {!!pitchData && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -1056,16 +1037,30 @@ export default function EditableRecruiterAccount({
               </div>
             </CardHeader>
             <CardContent>
-              {isProcessing ? (
+              {uploadElevatorPitchMutation.isPending ? (
                 <VideoProcessingCard
-                  startedAt={processingInfo?.startedAt}
-                  onRetry={() => window.location.reload()}
+                  label="Uploading your video…"
+                  description="Keep this tab open until the upload finishes."
                   className="w-full"
                 />
-              ) : pitchData ? (
+              ) : isProcessing ? (
+                <VideoProcessingCard
+                  startedAt={processingInfo?.startedAt}
+                  onRetry={() => refetchPitch()}
+                  className="w-full"
+                />
+              ) : isFailed ? (
+                <VideoFailedCard
+                  message={processingInfo?.error}
+                  onRetry={() => refetchPitch()}
+                  className="w-full"
+                />
+              ) : isPlayable ? (
                 <VideoPlayer
+                  key={pitchData._id}
                   pitchId={pitchData._id}
                   className="w-full mx-auto"
+                  onUnavailable={() => refetchPitch()}
                 />
               ) : loadingPitch ? (
                 <div>Loading pitch...</div>
@@ -1113,14 +1108,8 @@ export default function EditableRecruiterAccount({
                     )}
                   </Button>
 
-                  {isElevatorPitchUploaded && (
-                    <p className="mt-2 text-sm text-green-600">
-                      Elevator pitch upload finished! Processing continues in
-                      the background. Please refresh the page in a few seconds.
-                    </p>
-                  )}
 
-                  {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                  {!elevatorPitchFile && (
                     <p className="mt-2 text-sm text-gray-600">
                       No pitch available.
                     </p>

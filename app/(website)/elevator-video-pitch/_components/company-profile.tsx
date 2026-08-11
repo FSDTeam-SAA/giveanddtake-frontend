@@ -10,6 +10,7 @@ import {
   fetchCompanyDetails,
   uploadElevatorPitch,
   deleteElevatorPitchVideo,
+  getElevatorPitchVideo,
 } from "@/lib/api-service";
 import {
   MapPin,
@@ -53,6 +54,8 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { VideoProcessingCard } from "@/components/VideoProcessingCard";
+import { VideoFailedCard } from "@/components/VideoFailedCard";
+import { PENDING_PITCH_STATES } from "@/lib/pitch-states";
 
 interface PitchData {
   _id: string;
@@ -124,13 +127,8 @@ interface DeleteResponse {
 
 export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const { data: session } = useSession();
-  const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [elevatorPitchFile, setElevatorPitchFile] = useState<File | null>(null);
-  const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] =
-    useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State for drawer
   const queryClient = useQueryClient();
@@ -157,8 +155,32 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const company = companyData?.companies?.[0];
   const companyId = company?._id;
 
-  const processing = company?.elevatorPitch?.processing; // has state, startedAt
-  const isProcessing = processing?.state === "processing";
+  // Live query rather than a one-shot fetch into state: the pitch is deleted
+  // and recreated with a NEW _id on every re-upload, so a cached id goes stale
+  // the moment the user replaces their video.
+  const {
+    data: pitchResponse,
+    isLoading: loadingPitch,
+    refetch: refetchPitch,
+  } = useQuery({
+    queryKey: ["my-elevator-pitch", userId],
+    queryFn: () => getElevatorPitchVideo(userId as string),
+    enabled: !!userId,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const state = (query.state.data as any)?.data?.processing?.state;
+      return PENDING_PITCH_STATES.includes(state) ? 5000 : false;
+    },
+  });
+
+  const pitchData = pitchResponse?.data ?? null;
+  const processing = pitchData?.processing; // has state, startedAt
+  const pitchState: string | undefined = processing?.state;
+  const isProcessing =
+    !!pitchData && PENDING_PITCH_STATES.includes(pitchState ?? "");
+  const isFailed = pitchState === "failed";
+  const isPlayable =
+    !!pitchData && pitchState === "ready" && !!pitchData?.video?.hlsUrl;
 
   const {
     data: jobs = [],
@@ -258,19 +280,19 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
   const uploadElevatorPitchMutation = useMutation({
     mutationFn: uploadElevatorPitch,
     onSuccess: () => {
-      toast.success(
-        "Video processing in the background - please refresh your browser shortly"
-      );
-      setIsElevatorPitchUploaded(true);
+      toast.success("Upload complete — your video is being processed.");
       setElevatorPitchFile(null);
       queryClient.invalidateQueries({ queryKey: ["company", userId] });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      // Poll takes it from here; no reload, so no stale _id.
+      refetchPitch();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || "Failed to upload video");
-      setIsElevatorPitchUploaded(false);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to upload video. Please try again."
+      );
+      refetchPitch();
     },
   });
 
@@ -278,15 +300,20 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     mutationFn: deleteElevatorPitchVideo,
     onSuccess: () => {
       toast.success("Elevator pitch deleted successfully!");
-      setIsElevatorPitchUploaded(false);
       setElevatorPitchFile(null);
       setIsDeleteModalOpen(false);
-      setPitchData(null);
       queryClient.invalidateQueries({ queryKey: ["company", userId] });
+      refetchPitch();
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to delete elevator pitch.");
-      console.error("Error deleting elevator pitch:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to delete elevator pitch."
+      );
+      setIsDeleteModalOpen(false);
+      // It may already be gone — resync instead of trusting local state.
+      refetchPitch();
     },
   });
 
@@ -338,52 +365,6 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
     if (currentPage < totalPages) setCurrentPage(currentPage + 1);
   };
 
-  useEffect(() => {
-    const fetchPitchData = async () => {
-      if (!session?.user?.id) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-        const response = await fetch(
-          `${baseUrl}/elevator-pitch/all/elevator-pitches?type=company`,
-          {
-            headers: {
-              Authorization: `Bearer ${session.accessToken}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pitch data");
-        }
-
-        const apiResponse: ApiResponse = await response.json();
-
-        const userPitch = apiResponse.data.find(
-          (pitch) => pitch.userId._id === session.user?.id
-        );
-
-        if (userPitch) {
-          setPitchData(userPitch);
-          setIsElevatorPitchUploaded(true);
-        } else {
-          setError("No pitch found for current user");
-          setIsElevatorPitchUploaded(false);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-        setIsElevatorPitchUploaded(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPitchData();
-  }, [session, isProcessing]);
 
   if (isLoadingCompany) {
     return (
@@ -581,18 +562,33 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             </div>
           </CardHeader>
           <CardContent>
-            {isProcessing ? (
+            {uploadElevatorPitchMutation.isPending ? (
               <VideoProcessingCard
-                startedAt={processing?.startedAt}
-                onRetry={() => refetch()} // uses your existing react-query refetch
+                label="Uploading your video…"
+                description="Keep this tab open until the upload finishes."
                 className="w-full"
               />
-            ) : pitchData ? (
-              <VideoPlayer pitchId={pitchData._id} className="w-full mx-auto" />
-            ) : loading ? (
+            ) : isProcessing ? (
+              <VideoProcessingCard
+                startedAt={processing?.startedAt}
+                onRetry={() => refetchPitch()}
+                className="w-full"
+              />
+            ) : isFailed ? (
+              <VideoFailedCard
+                message={processing?.error}
+                onRetry={() => refetchPitch()}
+                className="w-full"
+              />
+            ) : isPlayable ? (
+              <VideoPlayer
+                key={pitchData._id}
+                pitchId={pitchData._id}
+                className="w-full mx-auto"
+                onUnavailable={() => refetchPitch()}
+              />
+            ) : loadingPitch ? (
               <div>Loading pitch...</div>
-            ) : error && error !== "No pitch found for current user" ? (
-              <div className="text-red-500">Error: {error}</div>
             ) : (
               <>
                 <ElevatorPitchUpload
@@ -636,14 +632,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
                   )}
                 </Button>
 
-                {isElevatorPitchUploaded && (
-                  <p className="mt-2 text-sm text-green-600">
-                    Elevator pitch upload finished! Processing continues in the
-                    background. Please refresh the page in a few seconds.
-                  </p>
-                )}
-
-                {!isElevatorPitchUploaded && !elevatorPitchFile && (
+                {!elevatorPitchFile && (
                   <p className="mt-2 text-sm text-gray-900">
                     No pitch available.
                   </p>

@@ -19,10 +19,7 @@ import UpdateResumeForm from "./update-resume-form";
 import EditableRecruiterAccount from "./editable-recruiter-account";
 import CreateRecruiterAccount from "./create-recruiter-account";
 import { Skeleton } from "@/components/ui/skeleton";
-
-// Processing states where the video is not watchable yet and the document is
-// still changing server-side.
-const PENDING_PITCH_STATES = ["pending", "uploaded", "queued", "processing"];
+import { PENDING_PITCH_STATES } from "@/lib/pitch-states";
 
 export default function ElevatorPitchAndResume() {
   const router = useRouter();
