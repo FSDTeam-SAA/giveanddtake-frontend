@@ -373,6 +373,12 @@ export default function PricingPlans() {
           Please view our refunds policy in our Terms and Conditions, or ask our
           Chatbot about refunds.
         </p>
+
+        {/* Yearly plans cannot be bought in the mobile app */}
+        <p className="mx-auto mt-4 inline-block rounded-full border border-[#2B7FD0]/30 bg-[#2B7FD0]/10 px-5 py-2 text-sm font-medium text-[#2B7FD0]">
+          Please note: yearly (per annum) plans are available via web purchase
+          only — they cannot be purchased in the mobile app.
+        </p>
       </div>
 
       {planBanner && (
@@ -497,30 +503,38 @@ export default function PricingPlans() {
                         {plan.description}
                       </p>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-2 text-[18px]">
-                        {plan.monthlyPriceLabel && (
-                          <p className="font-bold text-[#282828]">
-                            {plan.monthlyPriceLabel}
-                          </p>
-                        )}
+                      <>
+                        <div className="flex flex-wrap items-center gap-2 text-[18px]">
+                          {plan.monthlyPriceLabel && (
+                            <p className="font-bold text-[#282828]">
+                              {plan.monthlyPriceLabel}
+                            </p>
+                          )}
 
-                        {/* Delimiter only if both prices exist */}
-                        {plan.monthlyPriceLabel && plan.annualPriceLabel && (
-                          <span
-                            className="text-gray-400"
-                            aria-label="choose monthly or annual billing"
-                          >
-                            <span className="hidden sm:inline">/</span>
-                            <span className="inline sm:hidden">or</span>
-                          </span>
-                        )}
+                          {/* Delimiter only if both prices exist */}
+                          {plan.monthlyPriceLabel && plan.annualPriceLabel && (
+                            <span
+                              className="text-gray-400"
+                              aria-label="choose monthly or annual billing"
+                            >
+                              <span className="hidden sm:inline">/</span>
+                              <span className="inline sm:hidden">or</span>
+                            </span>
+                          )}
+
+                          {plan.annualPriceLabel && (
+                            <p className="font-bold text-[#282828]">
+                              {plan.annualPriceLabel}
+                            </p>
+                          )}
+                        </div>
 
                         {plan.annualPriceLabel && (
-                          <p className="font-bold text-[#282828]">
-                            {plan.annualPriceLabel}
+                          <p className="mt-1 text-xs font-medium text-[#8593A3]">
+                            (Yearly plan — web purchase only)
                           </p>
                         )}
-                      </div>
+                      </>
                     )}
                   </div>
                 </CardHeader>

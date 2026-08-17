@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   // don't set their own title. Child pages that DO set a title (e.g.
   // /pages/[slug]) still inherit the root "%s | Elevator Video Pitch©" template.
   title: {
-    absolute: "Elevator Video Pitch© | Get Hired With a 60-Second Video Pitch",
+    absolute: "Elevator Video Pitch© | Get Hired With a 30-Second Video Pitch",
   },
   description: "Shape Your Future with the Right Elevator Video Pitch©",
 };

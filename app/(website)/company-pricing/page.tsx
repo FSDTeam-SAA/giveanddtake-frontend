@@ -316,6 +316,12 @@ export default function PricingPage() {
             Please view our refunds policy in our Terms and Conditions, or ask
             our Chatbot about refunds.
           </p>
+
+          {/* Yearly plans cannot be bought in the mobile app */}
+          <p className="mx-auto mt-4 inline-block rounded-full border border-[#2B7FD0]/30 bg-[#2B7FD0]/10 px-5 py-2 text-sm font-medium text-[#2B7FD0]">
+            Please note: yearly (per annum) plans are available via web purchase
+            only — they cannot be purchased in the mobile app.
+          </p>
         </div>
 
         {/* Current Plan Banner */}
@@ -438,6 +444,12 @@ export default function PricingPage() {
                         </p>
                       )}
                     </div>
+
+                    {plan.annualPriceLabel && (
+                      <p className="mt-1 text-xs font-medium text-[#8593A3]">
+                        (Yearly plan — web purchase only)
+                      </p>
+                    )}
                   </div>
                 </CardHeader>
 

@@ -22,7 +22,7 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Elevator Video Pitch© | Get Hired With a 60-Second Video Pitch",
+    default: "Elevator Video Pitch© | Get Hired With a 30-Second Video Pitch",
     template: "%s | Elevator Video Pitch©",
   },
   description: SITE_DESCRIPTION,
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: "Elevator Video Pitch© | Get Hired With a 60-Second Video Pitch",
+    title: "Elevator Video Pitch© | Get Hired With a 30-Second Video Pitch",
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Elevator Video Pitch© | Get Hired With a 60-Second Video Pitch",
+    title: "Elevator Video Pitch© | Get Hired With a 30-Second Video Pitch",
     description: SITE_DESCRIPTION,
   },
   icons: {
