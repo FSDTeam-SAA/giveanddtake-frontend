@@ -14,6 +14,16 @@ export function DynamicTitle() {
     // must not be overwritten client-side.
     if (pathname.startsWith("/pages/")) return;
 
+    if (pathname === "/elevator-video-pitch") {
+      document.title = "My Profile | Elevator Video Pitch";
+      return;
+    }
+
+    if (pathname === "/alljobs") {
+      document.title = "All Jobs | Elevator Video Pitch";
+      return;
+    }
+
     // Convert "/about-us" -> "About Us"
     let routeName =
       pathname === "/"

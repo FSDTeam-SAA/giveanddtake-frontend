@@ -12,7 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
 
-import { getMyResume } from "@/lib/api-service"; // <-- adjust path
+import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
 
 interface Recruiter {
   _id: string;
@@ -243,6 +243,17 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     Array.isArray(myresume?.elevatorPitch) &&
     myresume!.elevatorPitch.length > 0;
 
+  const { data: appliedJobIdsData, isLoading: applicationStatusLoading } =
+    useQuery({
+      queryKey: ["applied-job-ids", userId],
+      queryFn: getMyAppliedJobIds,
+      enabled: isCandidate && !!userId,
+      staleTime: 60_000,
+    });
+
+  const hasApplied =
+    appliedJobIdsData?.data.jobIds.includes(jobId) ?? false;
+
   const applicationLink = jobData?.data?._id
     ? `/job-application?id=${jobData.data._id}`
     : "#";
@@ -264,7 +275,14 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const handleCandidateApply = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    if (resumeLoading || resumeFetching || isRedirecting) return;
+    if (
+      hasApplied ||
+      applicationStatusLoading ||
+      resumeLoading ||
+      resumeFetching ||
+      isRedirecting
+    )
+      return;
 
     // —— EVP is REQUIRED to apply ——
     if (!hasEVP) {
@@ -547,13 +565,25 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                   ) : (
                     // Authenticated candidate: EVP gate
                     <Button
-                      className="w-full bg-primary hover:bg-blue-700"
+                      className={
+                        hasApplied
+                          ? "w-full border border-emerald-600 bg-emerald-50 text-emerald-700 hover:bg-emerald-50"
+                          : "w-full bg-primary hover:bg-blue-700"
+                      }
                       onClick={handleCandidateApply}
                       disabled={
-                        isRedirecting || resumeLoading || resumeFetching
+                        hasApplied ||
+                        applicationStatusLoading ||
+                        isRedirecting ||
+                        resumeLoading ||
+                        resumeFetching
                       }
                     >
-                      {resumeLoading || resumeFetching
+                      {hasApplied
+                        ? "Applied"
+                        : applicationStatusLoading ||
+                          resumeLoading ||
+                          resumeFetching
                         ? "Checking…"
                         : isRedirecting
                         ? "Redirecting..."

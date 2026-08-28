@@ -712,10 +712,6 @@ export default function CreateRecruiterAccountForm() {
       return;
     }
 
-    try {
-      await deleteElevatorPitchMutation.mutateAsync(session.user.id);
-    } catch (_) {}
-
     uploadElevatorPitchMutation.mutate({
       videoFile: elevatorPitchFile,
       userId: session.user.id,

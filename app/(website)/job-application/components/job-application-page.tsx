@@ -13,6 +13,7 @@ import { useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import type { MyAppliedJobIdsResponse } from "@/lib/api-service";
 
 interface Resume {
   id: string;
@@ -226,6 +227,21 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     },
     onSuccess: () => {
       toast.success("Application submitted successfully!");
+      queryClient.setQueryData<MyAppliedJobIdsResponse>(
+        ["applied-job-ids", userId],
+        (current) => ({
+          success: true,
+          message: "Applied job IDs fetched successfully",
+          data: {
+            jobIds: Array.from(
+              new Set([...(current?.data.jobIds ?? []), jobId]),
+            ),
+          },
+        }),
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["applied-job-ids", userId],
+      });
       queryClient.invalidateQueries({ queryKey: ["job-applications", userId] });
       router.push("/alljobs");
     },

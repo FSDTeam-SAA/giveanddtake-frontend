@@ -556,12 +556,6 @@ export default function CreateCompanyPage() {
     try {
       setIsSubmitting(true);
 
-      try {
-        await deleteElevatorPitchMutation.mutateAsync(session.user.id);
-      } catch (_) {
-        // no-op
-      }
-
       await uploadElevatorPitchMutation.mutateAsync({
         videoFile: elevatorPitchFile,
         userId: session.user.id,

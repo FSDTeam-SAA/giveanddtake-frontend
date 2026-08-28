@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   useInfiniteQuery,
   useMutation,
@@ -95,6 +95,30 @@ export function ChatArea({
   const senderIdOf = (u: ChatMessage["userId"]) =>
     typeof u === "string" ? u : u?._id ?? "";
 
+  const markRoomAsRead = useCallback(async () => {
+    if (!roomId || !token) return;
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/message/rooms/${roomId}/read`,
+        {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to mark messages as read");
+      }
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  }, [roomId, token]);
+
+  useEffect(() => {
+    void markRoomAsRead();
+  }, [markRoomAsRead]);
+
   const isNearBottom = () => {
     const el = messagesContainerRef.current;
     if (!el) return false;
@@ -151,6 +175,8 @@ export function ChatArea({
 
       if (senderIdOf(newMessage.userId) === userId) return;
 
+      void markRoomAsRead();
+
       queryClient.setQueryData(
         ["messages", roomId],
         (
@@ -188,7 +214,7 @@ export function ChatArea({
     return () => {
       socket.off("newMessage", handleNewMessage);
     };
-  }, [socket, roomId, currentRoom, queryClient, userId]);
+  }, [socket, roomId, currentRoom, queryClient, userId, markRoomAsRead]);
 
   // Scroll to bottom once loaded
   useEffect(() => {

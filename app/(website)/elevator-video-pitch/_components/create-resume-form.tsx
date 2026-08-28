@@ -437,11 +437,6 @@ export default function CreateResumeForm() {
 
     try {
       setIsSubmitting(true);
-      try {
-        await deleteElevatorPitchMutation.mutateAsync(session.user.id);
-      } catch (_) {
-        // swallow — we don't care if there's nothing to delete
-      }
       await uploadElevatorPitchMutation.mutateAsync({
         videoFile: elevatorPitchFile,
         userId: session.user.id,

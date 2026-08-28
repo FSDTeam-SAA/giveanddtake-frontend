@@ -177,10 +177,22 @@ export async function getElevatorPitchVideo(userId: string) {
 
 // Delete elevator pitch video
 export async function deleteElevatorPitchVideo(userId: string) {
-  const response = await apiClient.delete(
-    `/elevator-pitch/video?userId=${userId}`
-  );
-  return response.data;
+  try {
+    const response = await apiClient.delete(
+      `/elevator-pitch/video?userId=${userId}`
+    );
+    return response.data;
+  } catch (error) {
+    // Compatibility with older API deployments: DELETE has achieved its goal
+    // when the pitch is already absent, even if that server still returns 404.
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return {
+        success: true,
+        message: "Elevator pitch deleted successfully",
+      };
+    }
+    throw error;
+  }
 }
 
 // Create Resume API
@@ -242,6 +254,18 @@ export async function getResumeDownloadUrl(resumeId: string, fileId?: string) {
 // Get candidate applied jobs
 export async function getAppliedJobs(userId: string) {
   const res = await apiClient.get(`/applied-jobs/user/${userId}`);
+  return res.data;
+}
+
+export interface MyAppliedJobIdsResponse {
+  success: boolean;
+  message: string;
+  data: { jobIds: string[] };
+}
+
+// Lightweight application state for candidate-facing job cards and details.
+export async function getMyAppliedJobIds(): Promise<MyAppliedJobIdsResponse> {
+  const res = await apiClient.get("/applied-jobs/me/job-ids");
   return res.data;
 }
 

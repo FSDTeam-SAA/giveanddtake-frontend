@@ -67,7 +67,7 @@ export function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [msg, setMsg] = useState(0);
+  const [liveMessageCount, setLiveMessageCount] = useState<number | null>(null);
   const [liveNotificationCount, setLiveNotificationCount] = useState<number | null>(null);
   const safeHeaderHeight = headerHeight || 64;
   const queryClient = useQueryClient();
@@ -85,8 +85,15 @@ export function SiteHeader() {
   useEffect(() => {
     if (!socket || !userId) return;
 
-    // Join notification room
-    socket.emit("joinNotification", userId);
+    const joinUserRoom = () => {
+      socket.emit("joinNotification", userId);
+      setLiveMessageCount(null);
+      void queryClient.invalidateQueries({
+        queryKey: ["unread-message-count", userId],
+      });
+    };
+    socket.on("connect", joinUserRoom);
+    if (socket.connected) joinUserRoom();
 
     const handleNewNotification = (payload: any) => {
       const incoming =
@@ -123,7 +130,10 @@ export function SiteHeader() {
     };
 
     const handleMsgCount = (data: any) => {
-      setMsg(data);
+      const count = typeof data === "number" ? data : data?.count;
+      if (typeof count === "number") {
+        setLiveMessageCount(Math.max(0, count));
+      }
     };
 
     socket.on("newNotification", handleNewNotification);
@@ -132,11 +142,16 @@ export function SiteHeader() {
 
     // Cleanup on unmount or dependency change
     return () => {
+      socket.off("connect", joinUserRoom);
       socket.off("newNotification", handleNewNotification);
       socket.off("notificationCountUpdated", handleCountUpdate);
       socket.off("msg_count", handleMsgCount);
     };
   }, [socket, userId, queryClient]);
+
+  useEffect(() => {
+    setLiveMessageCount(null);
+  }, [userId]);
 
 
   const getUpgradePath = () => {
@@ -194,6 +209,32 @@ export function SiteHeader() {
     (notification) => !notification.isViewed
   ).length;
   const notificationCount = liveNotificationCount ?? unreadCount;
+
+  const { data: fetchedMessageCount = 0 } = useQuery<number, Error>({
+    queryKey: ["unread-message-count", userId],
+    queryFn: async () => {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/message/unread-count`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch unread message count.");
+      }
+
+      const result = await response.json();
+      return typeof result?.data?.count === "number" ? result.data.count : 0;
+    },
+    enabled: !!userId && !!token && status === "authenticated",
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+  const messageCount = liveMessageCount ?? fetchedMessageCount;
 
   // Resume query (only if role is candidate)
   const { data: myresume, isLoading: resumeLoading } = useQuery({
@@ -682,14 +723,20 @@ export function SiteHeader() {
                 <Link href="/messages" className="hidden xl:block relative">
                   <Button
                     size="icon"
-                    className="rounded-full bg-blue-500 text-white hover:bg-primary transition-all duration-200"
-                    aria-label="Messages"
+                    className={`rounded-full transition-all duration-200 ${
+                      messageCount > 0
+                        ? "bg-red-50 text-red-600 hover:bg-red-100"
+                        : "bg-blue-500 text-white hover:bg-primary"
+                    }`}
+                    aria-label={`Messages${
+                      messageCount > 0 ? ` (${messageCount} unread)` : ""
+                    }`}
                   >
                     <MessageCircle className="h-5 w-5" />
                   </Button>
 
                   {/* Real-time unread messages badge */}
-                  {msg > 0 && (
+                  {messageCount > 0 && (
                     <motion.span
                       key="message-badge"
                       initial={{ scale: 0 }}
@@ -700,9 +747,9 @@ export function SiteHeader() {
                         stiffness: 300,
                         damping: 20,
                       }}
-                      className="absolute -top-1 -right-1 flex items-center justify-center h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-semibold"
+                      className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white"
                     >
-                      {msg}
+                      {messageCount}
                     </motion.span>
                   )}
                 </Link>
@@ -829,10 +876,19 @@ export function SiteHeader() {
                         >
                           <Button
                             size="sm"
-                            className="w-full bg-blue-500 text-white hover:bg-primary mb-5"
+                            className={`w-full mb-5 ${
+                              messageCount > 0
+                                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                : "bg-blue-500 text-white hover:bg-primary"
+                            }`}
                           >
                             <MessageCircle className="h-4 w-4 mr-2" />
                             Messages
+                            {messageCount > 0 && (
+                              <span className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-semibold leading-none text-white">
+                                {messageCount}
+                              </span>
+                            )}
                           </Button>
                         </Link>
                       </div>

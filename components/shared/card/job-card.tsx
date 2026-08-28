@@ -11,7 +11,7 @@ import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { getMyResume } from "@/lib/api-service";
+import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
 import { DescriptionClamp } from "@/components/DescriptionClamp";
 
 interface Recruiter {
@@ -149,6 +149,17 @@ export default function JobCard({
     staleTime: 60_000,
   });
 
+  const { data: appliedJobIdsData, isLoading: applicationStatusLoading } =
+    useQuery({
+      queryKey: ["applied-job-ids", userId],
+      queryFn: getMyAppliedJobIds,
+      enabled: isCandidate && !!userId,
+      staleTime: 60_000,
+    });
+
+  const hasApplied =
+    appliedJobIdsData?.data.jobIds.includes(job._id) ?? false;
+
   const TOAST_DURATION_MS = 2200;
   const REDIRECT_DELAY_MS = 2000;
 
@@ -168,7 +179,13 @@ export default function JobCard({
 
   const handleCandidateApply = (e: MouseEvent) => {
     e.stopPropagation();
-    if (resumeLoading || isRedirecting) return;
+    if (
+      hasApplied ||
+      applicationStatusLoading ||
+      resumeLoading ||
+      isRedirecting
+    )
+      return;
 
     const hasEVP =
       Array.isArray(myresume?.elevatorPitch) &&
@@ -517,15 +534,28 @@ export default function JobCard({
             handleCandidateApply(e as unknown as MouseEvent);
           }
         }}
-        disabled={resumeLoading || isRedirecting}
+        disabled={
+          hasApplied ||
+          applicationStatusLoading ||
+          resumeLoading ||
+          isRedirecting
+        }
         className={clsx(
           "text-black text-sm md:text-base font-medium border border-[#707070] px-4 py-2 rounded-lg bg-transparent",
-          (resumeLoading || isRedirecting) && "opacity-60 cursor-not-allowed"
+          hasApplied && "border-emerald-600 bg-emerald-50 text-emerald-700",
+          (hasApplied ||
+            applicationStatusLoading ||
+            resumeLoading ||
+            isRedirecting) && "cursor-not-allowed"
         )}
       >
-        <span className="sr-only">Apply to {job.title}</span>
+        <span className="sr-only">
+          {hasApplied ? `Applied to ${job.title}` : `Apply to ${job.title}`}
+        </span>
         <span aria-hidden>
-          {resumeLoading
+          {hasApplied
+            ? "Applied"
+            : applicationStatusLoading || resumeLoading
             ? "Checking…"
             : isRedirecting
             ? "Redirecting…"
