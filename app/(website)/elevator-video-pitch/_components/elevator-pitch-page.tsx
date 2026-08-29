@@ -43,7 +43,10 @@ export default function ElevatorPitchAndResume() {
     refetchInterval: (query) => {
       const state =
         (query.state.data as any)?.data?.elevatorPitch?.[0]?.processing?.state;
-      return PENDING_PITCH_STATES.includes(state) ? 5000 : false;
+      // Ready candidate pitches are revalidated periodically so a paid
+      // 60-second pitch disappears promptly when its plan expires, without
+      // waiting for a page reload or the nightly storage cleanup.
+      return PENDING_PITCH_STATES.includes(state) ? 5000 : 60_000;
     },
   });
 

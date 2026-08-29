@@ -132,7 +132,15 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
   // from local flags: a pitch is deleted and recreated on every replace, so the
   // _id changes and stale local state points at a document that no longer
   // exists (which the player reports as "no access").
-  const pitchDoc = resume?.elevatorPitch?.[0];
+  const returnedPitch = resume?.elevatorPitch?.[0];
+  // A ready deactivated pitch must never mount the player. The backend omits
+  // expired paid pitches, and this guard also protects against a stale cache
+  // entry while the entitlement refetch is completing.
+  const pitchDoc =
+    returnedPitch?.processing?.state === "ready" &&
+    returnedPitch?.status !== "active"
+      ? undefined
+      : returnedPitch;
   const processingInfo = pitchDoc?.processing;
   const pitchState: string | undefined = processingInfo?.state;
 
