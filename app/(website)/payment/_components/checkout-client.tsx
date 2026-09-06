@@ -40,6 +40,7 @@ const fetchPlans = async (): Promise<SubscriptionPlan[]> => {
 
 const billingLabel = (valid?: string) => {
   const normalized = (valid || "").toLowerCase();
+  if (normalized === "credits") return "One-time purchase · Credits never expire";
   if (normalized === "monthly") return "Billed monthly";
   if (normalized === "yearly") return "Billed yearly";
   if (normalized === "payasyougo") return "Pay as you go";

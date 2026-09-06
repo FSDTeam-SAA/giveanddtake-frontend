@@ -191,6 +191,9 @@ interface CompaniesApiResponse {
 
 type PostingUsage = {
   usage?: {
+    creditsRemaining?: number | null;
+    creditsUsed?: number;
+    creditsTotal?: number | null;
     monthlyLimit?: number;
     monthlyUsed?: number;
     monthlyRemaining?: number;
@@ -666,25 +669,25 @@ export default function RecruiterDashboard() {
             <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
               <p className="text-sm text-blue-700 font-medium">Plan</p>
               <p className="text-lg font-semibold text-blue-900">
-                {planLabel || "Current plan"}
+                {planLabel || "Job post packages"}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <p className="text-sm text-gray-600 font-medium">Posted (month)</p>
+              <p className="text-sm text-gray-600 font-medium">Job posts used</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {monthlyUsed} / {monthlyLimit ?? "auto"}
+                {postingUsage?.usage?.creditsUsed ?? monthlyUsed}
               </p>
               <p className="text-xs text-gray-500">
-                Remaining: {monthlyRemaining ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining !== undefined ? "Credits never expire" : `Remaining: ${monthlyRemaining ?? "auto"}`}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">
-              <p className="text-sm text-gray-600 font-medium">Posted (year)</p>
+              <p className="text-sm text-gray-600 font-medium">Credits remaining</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {annualUsed} / {annualLimit ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining === null ? "Unlimited" : postingUsage?.usage?.creditsRemaining ?? annualRemaining ?? "—"}
               </p>
               <p className="text-xs text-gray-500">
-                Remaining: {annualRemaining ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining !== undefined ? "Use whenever you need" : `Remaining: ${annualRemaining ?? "auto"}`}
               </p>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">

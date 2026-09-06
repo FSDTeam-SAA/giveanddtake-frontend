@@ -120,6 +120,9 @@ interface ApiResponse {
 
 type PostingUsage = {
   usage?: {
+    creditsRemaining?: number | null;
+    creditsUsed?: number;
+    creditsTotal?: number | null;
     monthlyLimit?: number;
     monthlyUsed?: number;
     monthlyRemaining?: number;
@@ -362,36 +365,36 @@ const { data: postingUsage } = useQuery({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-xl font-semibold">{planLabel || "Current plan"}</p>
+              <p className="text-xl font-semibold">{planLabel || "Job post packages"}</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">
-                Posted (month)
+                Job posts used
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold">
-                {monthlyUsed} / {monthlyLimit ?? "auto"}
+                {postingUsage?.usage?.creditsUsed ?? monthlyUsed}
               </p>
               <p className="text-xs text-muted-foreground">
-                Remaining: {monthlyRemaining ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining !== undefined ? "Credits never expire" : `Remaining: ${monthlyRemaining ?? "auto"}`}
               </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">
-                Posted (year)
+                Credits remaining
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-semibold">
-                {annualUsed} / {annualLimit ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining === null ? "Unlimited" : postingUsage?.usage?.creditsRemaining ?? annualRemaining ?? "—"}
               </p>
               <p className="text-xs text-muted-foreground">
-                Remaining: {annualRemaining ?? "auto"}
+                {postingUsage?.usage?.creditsRemaining !== undefined ? "Use whenever you need" : `Remaining: ${annualRemaining ?? "auto"}`}
               </p>
             </CardContent>
           </Card>

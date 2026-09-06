@@ -36,6 +36,7 @@ interface Payment {
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
+  refundQuote?: { eligible: boolean; deductions: number; adminFee: number; refundAmount: number };
 }
 
 interface Meta {
@@ -106,8 +107,9 @@ export function PaymentHistory() {
             transactionId: item.transactionId,
             createdAt: item.createdAt,
             updatedAt: item.updatedAt,
-            planTitle: item.planId.title,
-            planValid: item.planId.valid || "monthly",
+            planTitle: item.planId?.title || "Job package",
+            planValid: item.duration || item.planId?.valid || "monthly",
+            refundQuote: item.refundQuote,
             amount: item.amount,
             paymentMethod: item.paymentMethod,
             paymentStatus: item.paymentStatus,
@@ -154,7 +156,8 @@ export function PaymentHistory() {
       const data = await res.json();
 
       if (data.success) {
-        alert("Refund processed successfully!");
+        toast.success("Refund processed successfully!");
+        setPaymentData(prev => prev.map(p => p._id === selectedPayment._id ? { ...p, paymentStatus: "refunded" } : p));
         setIsModalOpen(false);
         router.refresh();
       } else {
@@ -191,14 +194,14 @@ export function PaymentHistory() {
       doc.text("clientsupport@evpitch.com", margin, y + 14);
       doc.text("+44 0203 954 2530", margin, y + 28);
 
-      const validTill = computeValidTill(payment.updatedAt, payment.planValid);
+      const validTill = computeValidTill(payment.createdAt, payment.planValid);
       y += 60;
       doc.text(`Transaction ID: ${payment.transactionId}`, margin, y);
       doc.text(`Plan: ${payment.planTitle} (${payment.planValid})`, margin, y + 14);
       doc.text(`Payment Method: ${payment.paymentMethod}`, margin, y + 28);
       doc.text(`Amount: $${payment.amount.toFixed(2)}`, margin, y + 42);
       doc.text(`Status: ${payment.paymentStatus}`, margin, y + 56);
-      doc.text(`Valid Till: ${format(validTill, "PPP")}`, margin, y + 70);
+      doc.text(`Valid Till: ${payment.planValid === "credits" ? "Never expires" : format(validTill, "PPP")}`, margin, y + 70);
 
       doc.save(`receipt_${payment.transactionId}.pdf`);
     } catch (e) {
@@ -248,7 +251,7 @@ export function PaymentHistory() {
                       {payment.transactionId}
                     </TableCell>
                     <TableCell className="text-xs sm:text-sm">
-                      {format(new Date(payment.updatedAt), "PPp")}
+                      {format(new Date(payment.createdAt), "PPp")}
                     </TableCell>
                     <TableCell className="text-xs sm:text-sm">
                       {payment.planTitle}
@@ -268,7 +271,7 @@ export function PaymentHistory() {
                       <Button
                         size="sm"
                         variant="destructive"
-                        disabled={payment.paymentStatus === "refunded"}
+                        disabled={payment.paymentStatus !== "complete" || payment.refundQuote?.eligible === false || (payment.planValid === "credits" && Date.now() > new Date(payment.createdAt).getTime() + 30 * 86400000)}
                         onClick={() => {
                           setSelectedPayment(payment);
                           setIsModalOpen(true);
@@ -317,6 +320,10 @@ export function PaymentHistory() {
               {selectedPayment?.transactionId}
             </span>
           </p>
+          {selectedPayment?.planValid === "credits" && <div className="rounded-lg bg-sky-50 p-4 text-sm">
+            <p>Refunds are available within 30 days of payment, less $99.99 per job posted and a 10% administration fee on the remaining balance.</p>
+            {selectedPayment.refundQuote && <p className="mt-2 font-medium">Job deductions: ${selectedPayment.refundQuote.deductions.toFixed(2)} ? Admin fee: ${selectedPayment.refundQuote.adminFee.toFixed(2)} ? Estimated refund: ${selectedPayment.refundQuote.refundAmount.toFixed(2)}</p>}
+          </div>}
           <DialogFooter className="mt-4 flex justify-end gap-3">
             <Button
               variant="outline"
