@@ -30,9 +30,10 @@ export default function JobPackagePricing({ audience }: { audience: "company" | 
   return <main className="container mx-auto px-4 py-12 md:py-20">
     <div className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-lg">
       <div className="bg-[#2B7FD0] px-6 py-8 text-white md:px-10">
-        <p className="mb-2 text-sm font-medium uppercase tracking-wider">For companies and recruiters</p>
-        <h1 className="text-3xl font-bold md:text-4xl">Job post packages</h1>
-        <p className="mt-3 text-blue-50">Buy once and post whenever you need. Your job post credits never expire.</p>
+        <p className="mb-2 text-sm font-medium uppercase tracking-wider">All job posts free until April 2027</p>
+        <h1 className="text-3xl font-bold md:text-4xl">Job post rates</h1>
+        <p className="mt-3 text-blue-50">The more job posts purchased, the more discounts gained!</p>
+        <p className="mt-1 text-blue-50">Prices apply from April 2027 until March 2028</p>
       </div>
       <div className="p-4 md:p-8">
         {isPending ? <p role="status">Loading packages…</p> : error ? <div role="alert"><p>{error.message}</p><Button onClick={() => refetch()}>Try again</Button></div> : data.length === 0 ? <p>Job packages are currently unavailable.</p> :
@@ -50,8 +51,7 @@ export default function JobPackagePricing({ audience }: { audience: "company" | 
             </tr>)}</tbody>
           </table></div>}
         <div className="mt-6 rounded-xl bg-sky-50 p-5 text-sm leading-6 text-slate-700">
-          <p className="font-semibold text-slate-900">No expiry. No monthly or yearly posting limits.</p>
-          <p className="mt-2">Refunds are available within 30 days of payment. Each job posted from the purchase is charged at $99.99. A 10% administration fee is then deducted from the remaining balance. No refund is available after 30 days or when no refundable balance remains.</p>
+          <p>Please view our generous refund policy in our Terms and Conditions or search in our Chatbot for refund information.</p>
         </div>
       </div>
     </div>
