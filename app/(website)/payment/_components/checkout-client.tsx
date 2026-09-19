@@ -38,12 +38,15 @@ const fetchPlans = async (): Promise<SubscriptionPlan[]> => {
   return Array.isArray(data?.data) ? data.data : [];
 };
 
-const billingLabel = (valid?: string) => {
-  const normalized = (valid || "").toLowerCase();
+// Web payments are one-time charges; monthly/annual only set how long access lasts.
+const billingLabel = (plan?: SubscriptionPlan) => {
+  const normalized = (plan?.valid || "").toLowerCase();
   if (normalized === "credits") return "One-time purchase · Credits never expire";
-  if (normalized === "monthly") return "Billed monthly";
-  if (normalized === "yearly") return "Billed yearly";
-  if (normalized === "payasyougo") return "Pay as you go";
+  if (normalized === "monthly") return "Monthly · 1 month access";
+  if (normalized === "yearly") return "Annual · 12 months access";
+  // Candidate pay-as-you-go plans run for one month, matching /user-pricing.
+  if (normalized === "payasyougo")
+    return plan?.for === "candidate" ? "Monthly · 1 month access" : "Pay as you go";
   return null;
 };
 
@@ -80,7 +83,7 @@ export default function CheckoutClient() {
     return Number.isFinite(parsed) ? parsed : 0;
   }, [plan?.price, amount]);
 
-  const billing = billingLabel(plan?.valid);
+  const billing = billingLabel(plan);
 
   const isMissingContext = !planId || !userId;
 
