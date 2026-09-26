@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  isValidPassword,
+  PASSWORD_REQUIREMENT_MESSAGE,
+} from "@/lib/password-policy";
 import { useChangePassword } from "@/hooks/use-change-password";
 
 interface ChangePasswordFormData {
@@ -43,8 +47,8 @@ export function ChangePassword({
       return;
     }
 
-    if (trimmedPasswords.newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+    if (!isValidPassword(trimmedPasswords.newPassword)) {
+      toast.error(PASSWORD_REQUIREMENT_MESSAGE);
       return;
     }
 

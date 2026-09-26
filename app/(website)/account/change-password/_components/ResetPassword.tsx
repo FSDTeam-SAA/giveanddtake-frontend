@@ -14,6 +14,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import {
+  isValidPassword,
+  PASSWORD_REQUIREMENT_MESSAGE,
+} from "@/lib/password-policy";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 interface ResetPasswordProps {
@@ -46,8 +50,8 @@ export function ResetPassword({
       return;
     }
 
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
+    if (!isValidPassword(newPassword)) {
+      toast.error(PASSWORD_REQUIREMENT_MESSAGE);
       return;
     }
 
