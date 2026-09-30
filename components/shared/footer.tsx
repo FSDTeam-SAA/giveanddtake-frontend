@@ -6,6 +6,7 @@ import { MapPin, Mail, Phone } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { FaApple, FaGooglePlay } from "react-icons/fa6";
 
 export function Footer() {
   const { data: session } = useSession();
@@ -177,6 +178,34 @@ export function Footer() {
             </Link>
           </nav>
         </div>
+      </div>
+      <div className="container px-4 md:px-6 mt-8 flex flex-wrap items-center justify-center gap-4">
+        <a
+          href="https://play.google.com/store/apps/details?id=com.evpitchrecruitment.careers&pli=1"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Get EVPitch on Google Play (opens in a new tab)"
+          className="inline-flex min-w-[180px] items-center gap-3 rounded-lg border border-white/30 bg-black px-4 py-2 text-white transition-colors hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+        >
+          <FaGooglePlay className="h-7 w-7 shrink-0" aria-hidden="true" />
+          <span className="text-left">
+            <span className="block text-[10px] uppercase leading-tight">Get it on</span>
+            <span className="block text-xl font-semibold leading-tight">Google Play</span>
+          </span>
+        </a>
+        <a
+          href="https://apps.apple.com/us/app/evpitch-pro-recruitment-app/id6760217689"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Download EVPitch on the App Store (opens in a new tab)"
+          className="inline-flex min-w-[180px] items-center gap-3 rounded-lg border border-white/30 bg-black px-4 py-2 text-white transition-colors hover:bg-black/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+        >
+          <FaApple className="h-7 w-7 shrink-0" aria-hidden="true" />
+          <span className="text-left">
+            <span className="block text-[10px] leading-tight">Download on the</span>
+            <span className="block text-xl font-semibold leading-tight">App Store</span>
+          </span>
+        </a>
       </div>
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
         <p className="mb-2">
