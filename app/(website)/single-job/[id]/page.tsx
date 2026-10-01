@@ -14,6 +14,7 @@ import JobDetailsPreviewEdit from "@/components/job-preview-sections/job-details
 import CustomCalendar from "@/components/CustomCalendar";
 import { Switch } from "@/components/ui/switch";
 import DOMPurify from "dompurify";
+import { getJobDescriptionCounts, getJobDescriptionError } from "@/lib/job-description-policy";
 
 interface Country {
   country: string;
@@ -408,6 +409,11 @@ export default function JobPreview() {
   );
 
   const handleSave = useCallback(() => {
+    const descriptionError = getJobDescriptionError(formData.jobDescription);
+    if (descriptionError) {
+      toast.error(descriptionError);
+      return;
+    }
     if (!userId) {
       toast.error("User not authenticated");
       return;
@@ -478,12 +484,8 @@ export default function JobPreview() {
     token,
   ]);
 
-  const descriptionCharCount = formData.jobDescription.length;
-  const descriptionWordCount = formData.jobDescription
-    .replace(/<[^>]+>/g, "")
-    .trim()
-    .split(/\s+/)
-    .filter((w) => w.length > 0).length;
+  const { characters: descriptionCharCount, words: descriptionWordCount } =
+    getJobDescriptionCounts(formData.jobDescription);
 
   if (jobLoading) {
     return (

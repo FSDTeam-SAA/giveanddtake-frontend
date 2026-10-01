@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { getJobDescriptionError } from "@/lib/job-description-policy";
+
+export const jobDescriptionSchema = z.string().superRefine((value, ctx) => {
+  const message = getJobDescriptionError(value);
+  if (message) ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+});
 
 export const jobSchema = z.object({
   jobTitle: z
@@ -66,22 +72,7 @@ export const jobSchema = z.object({
 ]).optional(),
 
 
-  jobDescription: z
-    .string()
-    .max(2000, "Description too long")
-    .min(1, "Description is required")
-    .refine(
-      (value) => {
-        const wordCount = value
-          .trim()
-          .split(/\s+/)
-          .filter((word) => word.length > 0).length;
-        return wordCount >= 20;
-      },
-      {
-        message: "Job description must have at least 20 words",
-      }
-    ),
+  jobDescription: jobDescriptionSchema,
 
   publishDate: z.string().optional(),
 
