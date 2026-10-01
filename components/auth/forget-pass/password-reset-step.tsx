@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import type { FormData } from "./forgot-password-form";
 import Link from "next/link";
+import { getPasswordRequirements, PASSWORD_MIN_LENGTH } from "@/lib/password-policy";
 
 interface PasswordResetStepProps {
   formData: FormData;
@@ -30,12 +31,13 @@ export default function PasswordResetStep({
   const [success, setSuccess] = useState(false);
 
   const validatePassword = (password: string) => {
+    const validation = getPasswordRequirements(password);
     const requirements = {
-      length: password.length >= 10,
-      number: /\d/.test(password),
-      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
-      upper: /[A-Z]/.test(password),
-      lower: /[a-z]/.test(password),
+      length: validation.minLength,
+      number: validation.hasNumber,
+      special: validation.hasSpecialChar,
+      upper: validation.hasUpperCase,
+      lower: validation.hasLowerCase,
     };
     return requirements;
   };
@@ -205,7 +207,7 @@ export default function PasswordResetStep({
           <li
             className={requirements.length ? "text-green-600" : "text-red-500"}
           >
-            A minimum of 10 characters
+            A minimum of {PASSWORD_MIN_LENGTH} characters
           </li>
           <li
             className={requirements.number ? "text-green-600" : "text-red-500"}
