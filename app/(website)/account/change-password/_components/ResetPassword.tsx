@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import {
   isValidPassword,
+  PASSWORD_MIN_LENGTH,
   PASSWORD_REQUIREMENT_MESSAGE,
 } from "@/lib/password-policy";
 import { Loader2, Eye, EyeOff } from "lucide-react";
@@ -109,7 +110,7 @@ export function ResetPassword({
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
                 required
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
               />
               <Button
                 type="button"
@@ -139,7 +140,7 @@ export function ResetPassword({
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
                 required
-                minLength={8}
+                minLength={PASSWORD_MIN_LENGTH}
               />
               <Button
                 type="button"

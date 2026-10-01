@@ -43,6 +43,7 @@ import { Eye, EyeOff, User, Mail, Lock, Building2 } from "lucide-react";
 import Link from "next/link";
 import { authAPI, type RegisterData } from "@/lib/auth-api";
 import { cn } from "@/lib/utils";
+import { getPasswordRequirements, PASSWORD_MIN_LENGTH } from "@/lib/password-policy";
 import { toast } from "sonner";
 
 // ⬇️ custom MM/YYYY input (still unused here, but left as-is if you plan to use later)
@@ -201,13 +202,7 @@ export default function RegisterPage() {
      Password Validation
   ========================= */
   const validatePassword = (password: string) => {
-    const validation = {
-      minLength: password.length >= 10,
-      hasNumber: /\d/.test(password),
-      hasSpecialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(password),
-      hasUpperCase: /[A-Z]/.test(password),
-      hasLowerCase: /[a-z]/.test(password),
-    };
+    const validation = getPasswordRequirements(password);
     setPasswordValidation(validation);
     return Object.values(validation).every(Boolean);
   };
@@ -616,7 +611,7 @@ export default function RegisterPage() {
                           : "text-red-600"
                       )}
                     >
-                      A minimum of 10 characters
+                      A minimum of {PASSWORD_MIN_LENGTH} characters
                     </p>
                     <p
                       className={cn(

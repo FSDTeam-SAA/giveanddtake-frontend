@@ -15,6 +15,7 @@ import {
 import TextEditor from "../TextEditor";
 import CustomCalendar from "../CustomCalendar";
 import type { JobFormData } from "@/types/job";
+import { getJobDescriptionCounts } from "@/lib/job-description-policy";
 
 interface JobDescriptionStepProps {
   form: UseFormReturn<JobFormData>;
@@ -49,13 +50,8 @@ export default function JobDescriptionStep({
                 name="jobDescription"
                 render={({ field }) => {
                   // Calculate word count
-                  const wordCount = field.value
-                    ? field.value
-                        .replace(/<[^>]+>/g, "")
-                        .trim()
-                        .split(/\s+/)
-                        .filter((word) => word.length > 0).length
-                    : 0;
+                  const { characters: characterCount, words: wordCount } =
+                    getJobDescriptionCounts(field.value || "");
 
                   return (
                     <FormItem>
@@ -70,7 +66,7 @@ export default function JobDescriptionStep({
                         />
                       </FormControl>
                       <div className="text-sm text-gray-600 flex items-center gap-4">
-                        <p>Character count: {field.value.length}/2000,</p>
+                        <p>Character count: {characterCount}/2000,</p>
                         <p>Word count: {wordCount}/20 minimum</p>
                       </div>
                       <FormMessage />
