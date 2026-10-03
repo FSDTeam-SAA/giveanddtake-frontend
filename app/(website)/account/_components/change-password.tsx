@@ -1,4 +1,7 @@
 "use client";
+
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
 import { useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { Button } from "@/components/ui/button";
@@ -83,6 +86,7 @@ export function ChangePassword({
           <Label htmlFor="oldPassword">Current Password</Label>
           <Input
             id="oldPassword"
+            maxLength={PASSWORD_MAX_LENGTH}
             type="password"
             value={passwords.oldPassword}
             onChange={(e) =>
@@ -99,6 +103,7 @@ export function ChangePassword({
             <Label htmlFor="newPassword">New Password</Label>
             <Input
               id="newPassword"
+              maxLength={PASSWORD_MAX_LENGTH}
               type={showNewPassword ? "text" : "password"}
               value={passwords.newPassword}
               onChange={(e) =>
@@ -128,6 +133,7 @@ export function ChangePassword({
             <Label htmlFor="confirmPassword">Confirm New Password</Label>
             <Input
               id="confirmPassword"
+              maxLength={PASSWORD_MAX_LENGTH}
               type={showConfirmPassword ? "text" : "password"}
               value={passwords.confirmPassword}
               onChange={(e) =>

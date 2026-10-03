@@ -1,5 +1,8 @@
 "use client";
 
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
+
 import type React from "react";
 import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
@@ -141,6 +144,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
+                  maxLength={PASSWORD_MAX_LENGTH}
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}

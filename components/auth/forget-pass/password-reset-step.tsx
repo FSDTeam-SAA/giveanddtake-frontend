@@ -1,5 +1,8 @@
 "use client";
 
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
+
 import type React from "react";
 
 import { useState } from "react";
@@ -140,6 +143,7 @@ export default function PasswordResetStep({
           <div className="relative">
             <Input
               id="password"
+              maxLength={PASSWORD_MAX_LENGTH}
               type={showPassword ? "text" : "password"}
               placeholder="New password"
               value={formData.password}
@@ -162,6 +166,7 @@ export default function PasswordResetStep({
           <div className="relative">
             <Input
               id="confirmPassword"
+              maxLength={PASSWORD_MAX_LENGTH}
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm new password"
               value={formData.confirmPassword}
@@ -207,7 +212,7 @@ export default function PasswordResetStep({
           <li
             className={requirements.length ? "text-green-600" : "text-red-500"}
           >
-            A minimum of {PASSWORD_MIN_LENGTH} characters
+            Between {PASSWORD_MIN_LENGTH} and {PASSWORD_MAX_LENGTH} characters
           </li>
           <li
             className={requirements.number ? "text-green-600" : "text-red-500"}

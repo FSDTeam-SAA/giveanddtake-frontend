@@ -1,5 +1,7 @@
 "use client";
 
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
 import type React from "react";
 
 import { useState } from "react";
@@ -105,6 +107,7 @@ export function ResetPassword({
             <div className="relative mt-2">
               <Input
                 id="newPassword"
+                maxLength={PASSWORD_MAX_LENGTH}
                 type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -135,6 +138,7 @@ export function ResetPassword({
             <div className="relative mt-2">
               <Input
                 id="confirmPassword"
+                maxLength={PASSWORD_MAX_LENGTH}
                 type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

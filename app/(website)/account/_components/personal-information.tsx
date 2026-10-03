@@ -1,4 +1,7 @@
 "use client";
+
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -610,6 +613,7 @@ export function PersonalInformation() {
               <div className="relative">
                 <Input
                   id="disable-password"
+                  maxLength={PASSWORD_MAX_LENGTH}
                   type={showDisablePassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={disablePassword}
@@ -619,7 +623,6 @@ export function PersonalInformation() {
                     }
                   }}
                   className="bg-gray-50 border-gray-200 pr-10"
-                  maxLength={128}
                 />
                 <button
                   type="button"
@@ -698,6 +701,7 @@ export function PersonalInformation() {
               <div className="relative">
                 <Input
                   id="delete-password"
+                  maxLength={PASSWORD_MAX_LENGTH}
                   type={showDeletePassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={deletePassword}
@@ -707,7 +711,6 @@ export function PersonalInformation() {
                     }
                   }}
                   className="bg-gray-50 border-gray-200 pr-10"
-                  maxLength={128}
                 />
                 <button
                   type="button"

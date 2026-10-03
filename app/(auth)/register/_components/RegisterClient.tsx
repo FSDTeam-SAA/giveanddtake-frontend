@@ -1,5 +1,8 @@
 "use client";
 
+import { PASSWORD_MAX_LENGTH } from "@/lib/password-policy";
+
+
 import type React from "react";
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -574,6 +577,7 @@ export default function RegisterPage() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
+                  maxLength={PASSWORD_MAX_LENGTH}
                   type={showPassword ? "text" : "password"}
                   placeholder="Create Password"
                   value={formData.password}
@@ -611,7 +615,7 @@ export default function RegisterPage() {
                           : "text-red-600"
                       )}
                     >
-                      A minimum of {PASSWORD_MIN_LENGTH} characters
+                      Between {PASSWORD_MIN_LENGTH} and {PASSWORD_MAX_LENGTH} characters
                     </p>
                     <p
                       className={cn(
@@ -661,6 +665,7 @@ export default function RegisterPage() {
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="confirmPassword"
+                  maxLength={PASSWORD_MAX_LENGTH}
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="Confirm Password"
                   value={confirmPassword}
