@@ -7,12 +7,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useCallback } from "react";
 import TextEditor from "@/components/MultiStepJobForm/TextEditor";
 import JobDetailsPreviewEdit from "@/components/job-preview-sections/job-details-preview-edit";
 import CustomCalendar from "@/components/CustomCalendar";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import DOMPurify from "dompurify";
 import { getJobDescriptionCounts, getJobDescriptionError } from "@/lib/job-description-policy";
 
@@ -47,32 +48,8 @@ interface CustomQuestion {
 }
 
 interface JobPostData {
+  [field: string]: unknown;
   userId: string | undefined;
-  companyId: string;
-  title: string;
-  description: string;
-  salaryRange: string;
-  location: string;
-  shift: string;
-  companyUrl: string;
-  responsibilities: string[];
-  educationExperience: string[];
-  benefits: string[];
-  vacancy: number;
-  experience: string;
-  deadline: string;
-  publishDate: string;
-  expiryDate?: string;
-  expirationDate?: string;
-  status: string;
-  jobCategoryId: string;
-  employement_Type: string;
-  compensation: string;
-  arcrivedJob: boolean;
-  applicationRequirement: { requirement: string; status: string }[];
-  customQuestion: { question: string }[];
-  career_Stage: string;
-  location_Type: string;
 }
 
 // STATIC APPLICATION REQUIREMENTS
@@ -101,7 +78,8 @@ async function updateJob(id: string, data: JobPostData, token?: string) {
     let errorMessage = `Failed to update job: ${response.status}`;
     try {
       const errorData = await response.json();
-      if (errorData?.message) errorMessage += ` - ${errorData.message}`;
+      const details = errorData?.errorSources?.map((source: { message?: string }) => source.message).filter(Boolean).join("; ");
+      if (details || errorData?.message) errorMessage += ` - ${details || errorData.message}`;
     } catch (_) {}
     throw new Error(errorMessage);
   }
@@ -151,6 +129,7 @@ export default function JobPreview() {
   const userId = session.data?.user?.id;
   const role = session.data?.user?.role;
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useParams();
   const token = session.data?.accessToken;
   const id = (params?.id as string) || "6896fb2b12980e468298ad0f";
@@ -159,6 +138,8 @@ export default function JobPreview() {
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [publishNow, setPublishNow] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [scheduleChanged, setScheduleChanged] = useState(false);
+  const [newExpiryDate, setNewExpiryDate] = useState("");
   const [formData, setFormData] = useState({
     jobTitle: "",
     department: "",
@@ -225,12 +206,14 @@ export default function JobPreview() {
     queryFn: fetchCurrencies,
   });
 
-  // --- LOOP FIX: split initialization into two effects and guard with refs ---
-  const initializedFromJobRef = useRef(false);
+  // Keep a snapshot so ordinary edits submit only changed fields.
+  const initialFormRef = useRef<Record<string, string | number>>({});
+  const initialRequirementsRef = useRef<string>("");
+  const initialQuestionsRef = useRef<string>("");
 
   // util inside file
   const deriveExpirationDays = (job: any) => {
-    const expirySource = job?.expiryDate || job?.deadline;
+    const expirySource = job?.deadline || job?.expiryDate;
     const publishBase = job?.publishDate || job?.createdAt;
     if (!expirySource || !publishBase) return "";
     const expiry = new Date(expirySource);
@@ -243,17 +226,18 @@ export default function JobPreview() {
     return diffDays.toString();
   };
 
-  // 1) Initialize from jobData ONCE
+  // Refresh the form when viewing a fetched job or cancelling an edit.
   useEffect(() => {
-    if (!jobData || initializedFromJobRef.current) return;
+    if (!jobData || isEditing) return;
 
     const createdAt = jobData.createdAt
       ? new Date(jobData.createdAt)
       : undefined;
     const [country, region] = jobData.location?.split(", ") || ["", ""];
 
-    setFormData((prev) => ({
-      ...prev,
+    const initialForm = {
+      category: "",
+      role: "",
       jobTitle: jobData.title || "",
       department: jobData.department || "",
       country: country || "",
@@ -261,7 +245,7 @@ export default function JobPreview() {
       employmentType: jobData.employement_Type || "",
       experience: jobData.experience || "",
       categoryId: jobData.jobCategoryId || "",
-      compensationCurrency: jobData.compensationCurrency || "",
+      compensationCurrency: jobData.compensationCurrency || jobData.compensation || "",
       compensation: jobData.salaryRange?.replace(/[^\d]/g, "") || "",
       expirationDate: deriveExpirationDays(jobData) || "",
       jobDescription: jobData.description || "",
@@ -270,11 +254,12 @@ export default function JobPreview() {
       vacancy: jobData.vacancy || 1,
       locationType: jobData.location_Type || "",
       careerStage: jobData.career_Stage || "",
-    }));
+    };
+    initialFormRef.current = initialForm;
+    setFormData(initialForm);
 
     // Initialize static application requirements from job data statuses
-    setApplicationRequirements(
-      STATIC_REQUIREMENTS.map((r, idx) => {
+    const initialRequirements = STATIC_REQUIREMENTS.map((r, idx) => {
         const existing =
           jobData.applicationRequirement?.find(
             (req: any) => req.requirement === r.label
@@ -285,15 +270,16 @@ export default function JobPreview() {
           requirement: r.label,
           status: existing?.status || "",
         };
-      })
-    );
+      });
+    setApplicationRequirements(initialRequirements);
+    initialRequirementsRef.current = JSON.stringify(initialRequirements.map(({ requirement, status }) => ({ requirement, status })));
 
-    setCustomQuestions(
-      jobData.customQuestion?.map((q: any, idx: number) => ({
+    const initialQuestions = jobData.customQuestion?.map((q: any, idx: number) => ({
         id: q._id || `q-${idx}`,
         question: q.question || "",
-      })) || []
-    );
+      })) || [];
+    setCustomQuestions(initialQuestions);
+    initialQuestionsRef.current = JSON.stringify(initialQuestions.map(({ question }: CustomQuestion) => ({ question })));
 
     if (country) setSelectedCountry(country);
     if (jobData.publishDate) {
@@ -304,19 +290,19 @@ export default function JobPreview() {
         setSelectedDate(publishDt);
       } else {
         setPublishNow(true);
-        setSelectedDate(new Date(jobData.updatedAt || jobData.publishDate));
+        setSelectedDate(publishDt);
       }
     } else {
       setPublishNow(true);
-      setSelectedDate(new Date(jobData.updatedAt || Date.now()));
+      setSelectedDate(new Date());
     }
 
-    initializedFromJobRef.current = true;
-  }, [jobData]);
+    setScheduleChanged(false);
+  }, [jobData, isEditing]);
 
   // 2) After categories load, fill category name & role ONLY if values differ
   useEffect(() => {
-    if (!jobData || !jobCategories.length) return;
+    if (!jobData || !jobCategories.length || isEditing) return;
     const found = jobCategories.find((c) => c._id === jobData.jobCategoryId);
     if (!found) return;
 
@@ -326,37 +312,26 @@ export default function JobPreview() {
       if (prev.category === nextCategory && prev.role === nextRole) return prev;
       return { ...prev, category: nextCategory, role: nextRole };
     });
-  }, [jobData, jobCategories]);
+  }, [jobData, jobCategories, isEditing]);
 
   const { mutate: updateJobMutation, isPending } = useMutation({
     mutationFn: (data: JobPostData) => updateJob(id, data, token),
-    onSuccess: () => {
+    onSuccess: async (response) => {
+      queryClient.setQueryData(["job", id], response.data);
       toast.success(
         "Job updated successfully! Admin will review and publish it soon."
       );
       setIsEditing(false);
+      setNewExpiryDate("");
+      await queryClient.invalidateQueries({
+        predicate: (query) => ["job", "jobs", "recommendedJobs"].includes(String(query.queryKey[0])),
+      });
       router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update job");
     },
   });
-
-  function computeDeadline(publishAt: string | Date, daysStr: string): string {
-    const days = Number.parseInt(daysStr || "", 10);
-    const safeDays = Number.isFinite(days) && days > 0 ? days : 30; // default 30
-
-    const base = new Date(publishAt);
-    if (Number.isNaN(base.getTime())) {
-      // fallback to now if publishAt is invalid
-      const now = new Date();
-      now.setDate(now.getDate() + safeDays);
-      return now.toISOString();
-    }
-
-    base.setDate(base.getDate() + safeDays);
-    return base.toISOString();
-  }
 
   const handleFieldChange = useCallback(
     (field: string, value: string | number) => {
@@ -397,19 +372,15 @@ export default function JobPreview() {
   const handlePublishToggle = useCallback(
     (checked: boolean) => {
       setPublishNow(checked);
-      if (checked) {
-        const fallback =
-          jobData?.updatedAt ||
-          jobData?.publishDate ||
-          new Date().toISOString();
-        setSelectedDate(new Date(fallback));
-      }
+      setScheduleChanged(true);
+      setSelectedDate(new Date());
     },
-    [jobData]
+    []
   );
 
   const handleSave = useCallback(() => {
-    const descriptionError = getJobDescriptionError(formData.jobDescription);
+    const descriptionError = formData.jobDescription !== initialFormRef.current.jobDescription
+      ? getJobDescriptionError(formData.jobDescription) : null;
     if (descriptionError) {
       toast.error(descriptionError);
       return;
@@ -423,66 +394,72 @@ export default function JobPreview() {
       return;
     }
 
-    const publishAtISO = publishNow
-      ? new Date(jobData?.updatedAt || Date.now()).toISOString()
-      : selectedDate?.toISOString() ?? new Date().toISOString();
-
-    // turn “expiration days” into a real deadline date
-    const deadlineISO = computeDeadline(
-      publishAtISO,
-      String(formData.expirationDate || "")
-    );
-
-    const postData: JobPostData = {
-      userId,
-      companyId: jobData?.companyId || "",
-      title: formData.jobTitle,
-      description: formData.jobDescription,
-      salaryRange: formData.compensation
-        ? `${formData.compensationCurrency} ${formData.compensation}`
-        : "Negotiable",
-      location: `${formData.country}, ${formData.region}`,
-      shift: formData.employmentType === "full-time" ? "Day" : "Flexible",
-      companyUrl: formData.companyUrl,
-      responsibilities: [],
-      educationExperience: [],
-      benefits: [],
-      vacancy: formData.vacancy,
-      experience: formData.experience,
-      deadline: deadlineISO,
-      expiryDate: deadlineISO,
-      expirationDate: String(formData.expirationDate || ""),
-      publishDate: publishAtISO,
-      status: jobData?.status || "active",
-      jobCategoryId: formData.categoryId,
-      employement_Type: formData.employmentType,
-      compensation: formData.compensationCurrency || "Negotiable",
-      arcrivedJob: jobData?.arcrivedJob || false,
-      applicationRequirement: applicationRequirements.map((req) => ({
-        requirement: req.requirement,
-        status: req.status,
-      })),
-      customQuestion: customQuestions.map((q) => ({ question: q.question })),
-      career_Stage: formData.careerStage,
-      location_Type: formData.locationType,
-    };
+    const postData: JobPostData = { userId };
+    const changed = (field: keyof typeof formData) => formData[field] !== initialFormRef.current[field];
+    const fields = {
+      jobTitle: "title", jobDescription: "description", companyUrl: "website_Url",
+      vacancy: "vacancy", experience: "experience", categoryId: "jobCategoryId",
+      employmentType: "employement_Type", careerStage: "career_Stage", locationType: "location_Type",
+    } as const;
+    for (const [formField, apiField] of Object.entries(fields)) {
+      const field = formField as keyof typeof fields;
+      if (changed(field)) postData[apiField] = formData[field];
+    }
+    if (changed("country") || changed("region")) postData.location = `${formData.country}, ${formData.region}`;
+    if (changed("compensation") || changed("compensationCurrency")) {
+      postData.salaryRange = formData.compensation ? `${formData.compensationCurrency} ${formData.compensation}` : "Negotiable";
+      postData.compensation = formData.compensationCurrency || "Negotiable";
+    }
+    const requirements = applicationRequirements.map(({ requirement, status }) => ({ requirement, status }));
+    const questions = customQuestions.map(({ question }) => ({ question }));
+    if (JSON.stringify(requirements) !== initialRequirementsRef.current) postData.applicationRequirement = requirements;
+    if (JSON.stringify(questions) !== initialQuestionsRef.current) postData.customQuestion = questions;
+    if (scheduleChanged) {
+      if (!publishNow && (!selectedDate || selectedDate.getTime() <= Date.now())) {
+        toast.error("Choose a future publication date.");
+        return;
+      }
+      postData.publishDate = publishNow ? new Date().toISOString() : selectedDate!.toISOString();
+    }
+    if (Object.keys(postData).length === 1) {
+      toast.info("No changes to save.");
+      return;
+    }
 
     updateJobMutation(postData);
   }, [
     userId,
-    jobData?.companyId,
-    jobData?.status,
-    jobData?.arcrivedJob,
-    jobData?.updatedAt,
-    jobData?.publishDate,
     formData,
     publishNow,
     selectedDate,
+    scheduleChanged,
     applicationRequirements,
     customQuestions,
     updateJobMutation,
     token,
   ]);
+
+  const handleExtendExpiry = () => {
+    if (!userId || !token) {
+      toast.error("Please sign in again.");
+      return;
+    }
+    const deadline = new Date(`${newExpiryDate}T23:59:59.999`);
+    const currentDeadline = jobData?.deadline || jobData?.expiryDate;
+    if (!Number.isFinite(deadline.getTime()) || deadline.getTime() <= Date.now() ||
+        (currentDeadline && deadline.getTime() <= new Date(currentDeadline).getTime())) {
+      toast.error("Choose a future expiry date later than the current expiry.");
+      return;
+    }
+    updateJobMutation({ userId, deadline: deadline.toISOString(), extendExpiry: true });
+  };
+
+  const displayStatus = jobData?.displayStatus || (
+    jobData?.arcrivedJob ? "archived" : jobData?.deadline && new Date(jobData.deadline).getTime() < Date.now() ? "expired" :
+    jobData?.jobApprove === "denied" ? "denied" : !jobData?.adminApprove || jobData?.jobApprove !== "approved" ? "pending" :
+    jobData?.publishDate && new Date(jobData.publishDate).getTime() > Date.now() ? "scheduled" : "published"
+  );
+  const statusLabel = displayStatus === "pending" ? "Pending approval" : displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1);
 
   const { characters: descriptionCharCount, words: descriptionWordCount } =
     getJobDescriptionCounts(formData.jobDescription);
@@ -532,6 +509,7 @@ export default function JobPreview() {
               variant="ghost"
               size="icon"
               onClick={() => setIsEditing(true)}
+              disabled={isPending}
             >
               <Edit className="h-5 w-5 sm:h-6 sm:w-6" />
             </Button>
@@ -568,6 +546,7 @@ export default function JobPreview() {
             {isEditing ? (
               <JobDetailsPreviewEdit
                 formData={formData}
+                hideExpiration
                 onFieldChange={handleFieldChange}
                 jobCategories={jobCategories}
                 countries={countries}
@@ -600,8 +579,8 @@ export default function JobPreview() {
                       : "N/A",
                   },
                   {
-                    label: "Expiration (Days)",
-                    value: formData.expirationDate,
+                    label: "Expiry Date",
+                    value: jobData.deadline || jobData.expiryDate ? new Date(jobData.deadline || jobData.expiryDate).toLocaleDateString() : "Not set",
                   },
                   { label: "Company Website", value: formData.companyUrl },
                 ].map((item) => (
@@ -620,6 +599,26 @@ export default function JobPreview() {
         </Card>
 
         {/* Job Description */}
+        {!isEditing && (
+          <Card className="shadow-md border-none">
+            <CardContent className="p-6 sm:p-8 space-y-4">
+              <h2 className="text-2xl font-semibold">Extend expiry</h2>
+              <p className="text-sm text-gray-600">Status: {statusLabel}. Changes require admin approval.</p>
+              <p className="text-sm text-gray-600">Current expiry: {jobData.deadline || jobData.expiryDate ? new Date(jobData.deadline || jobData.expiryDate).toLocaleDateString() : "Not set"}</p>
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                <div className="space-y-2">
+                  <label htmlFor="new-job-expiry" className="text-sm font-medium">New expiry date</label>
+                  <Input id="new-job-expiry" type="date" value={newExpiryDate}
+                    onChange={(event) => setNewExpiryDate(event.target.value)} disabled={isPending} />
+                </div>
+                <Button onClick={handleExtendExpiry} disabled={isPending || !newExpiryDate}>
+                  {isPending ? "Saving..." : "Submit extension for approval"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="shadow-md border-none">
           <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-6">
@@ -791,6 +790,7 @@ export default function JobPreview() {
                 <Switch
                   checked={publishNow}
                   onCheckedChange={handlePublishToggle}
+                  disabled={!isEditing || isPending}
                   className="data-[state=checked]:bg-[#2B7FD0]"
                 />
               </div>
@@ -801,7 +801,11 @@ export default function JobPreview() {
                   </h3>
                   <CustomCalendar
                     selectedDate={selectedDate || undefined}
-                    onDateSelect={setSelectedDate}
+                    onDateSelect={(date) => {
+                      if (!isEditing) return;
+                      setSelectedDate(date);
+                      setScheduleChanged(true);
+                    }}
                   />
                 </div>
               )}
@@ -830,7 +834,7 @@ export default function JobPreview() {
             </>
           ) : (
             <Button className="bg-[#2B7FD0] hover:bg-[#2B7FD0]/90" disabled>
-              Published
+              {statusLabel}
             </Button>
           )}
         </div>

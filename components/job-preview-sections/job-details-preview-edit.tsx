@@ -28,6 +28,7 @@ interface CurrencyApiItem {
 }
 
 interface JobDetailsPreviewEditProps {
+  hideExpiration?: boolean
   formData: any
   onFieldChange: (field: string, value: string) => void
   jobCategories: JobCategory[]
@@ -42,6 +43,7 @@ interface JobDetailsPreviewEditProps {
 }
 
 export default function JobDetailsPreviewEdit({
+  hideExpiration = false,
   formData,
   onFieldChange,
   jobCategories,
@@ -396,7 +398,7 @@ export default function JobDetailsPreviewEdit({
       </div>
 
       {/* Expiration Date */}
-      <div className="space-y-2">
+      {!hideExpiration && <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Job Posting Expiration (Days)</label>
         <Select value={formData.expirationDate} onValueChange={(value) => onFieldChange("expirationDate", value)}>
           <SelectTrigger className="h-11">
@@ -410,8 +412,7 @@ export default function JobDetailsPreviewEdit({
             <SelectItem value="90">90 days</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
+      </div>}
       {/* Company URL */}
       <div className="space-y-2">
         <label className="text-sm font-medium text-gray-700">Company Website</label>
