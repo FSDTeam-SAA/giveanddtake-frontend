@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import DOMPurify from "dompurify";
 import { getJobDescriptionCounts, getJobDescriptionError } from "@/lib/job-description-policy";
+import { jobQueryOptions } from "@/lib/job-query";
 
 interface Country {
   country: string;
@@ -176,15 +177,8 @@ export default function JobPreview() {
 
   // react-query
   const { data: jobData, isLoading: jobLoading } = useQuery({
-    queryKey: ["job", id],
-    queryFn: async () => {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${id}`
-      );
-      if (!response.ok) throw new Error("Failed to fetch job");
-      const res = await response.json();
-      return res.data;
-    },
+    ...jobQueryOptions(id),
+    select: (response) => response.data,
   });
 
   const { data: jobCategories = [] } = useQuery({
@@ -317,7 +311,7 @@ export default function JobPreview() {
   const { mutate: updateJobMutation, isPending } = useMutation({
     mutationFn: (data: JobPostData) => updateJob(id, data, token),
     onSuccess: async (response) => {
-      queryClient.setQueryData(["job", id], response.data);
+      queryClient.setQueryData(["job", id], response);
       toast.success(
         "Job updated successfully! Admin will review and publish it soon."
       );

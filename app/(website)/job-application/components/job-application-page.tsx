@@ -14,6 +14,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { MyAppliedJobIdsResponse } from "@/lib/api-service";
+import { jobQueryOptions } from "@/lib/job-query";
 
 interface Resume {
   id: string;
@@ -110,20 +111,9 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
   // Fetch job data
   const { data: jobData, isLoading: isJobLoading } =
-    useQuery<JobDetailsResponse>({
-      queryKey: ["job", jobId],
-      queryFn: async () => {
-        if (!jobId || jobId === "undefined") throw new Error("Invalid job ID");
-        const response = await fetch(`${baseUrl}/jobs/${jobId}`);
-        if (!response.ok)
-          throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        if (!data.success)
-          throw new Error(data.message || "Failed to fetch job details");
-        return data as JobDetailsResponse;
-      },
-      enabled: Boolean(jobId && jobId !== "undefined"),
-    });
+    useQuery(
+      jobQueryOptions<JobDetailsResponse["data"]>(jobId, baseUrl),
+    );
 
   const isResumeRequired = jobData?.data.applicationRequirement?.some(
     (req) => req.requirement === "Resume" && req.status === "Required",

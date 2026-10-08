@@ -13,6 +13,7 @@ import Image from "next/image";
 import * as React from "react";
 
 import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
+import { jobQueryOptions } from "@/lib/job-query";
 
 interface Recruiter {
   _id: string;
@@ -67,12 +68,6 @@ interface JobDetailsData {
   createdAt: string;
 }
 
-interface JobDetailsResponse {
-  success: boolean;
-  message: string;
-  data: JobDetailsData;
-}
-
 interface Bookmark {
   _id?: string;
   userId?: string;
@@ -118,22 +113,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     data: jobData,
     isLoading,
     error,
-  } = useQuery<JobDetailsResponse>({
-    queryKey: ["job", jobId],
-    queryFn: async () => {
-      if (!jobId || jobId === "undefined") throw new Error("Invalid job ID");
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/jobs/${jobId}`
-      );
-      if (!response.ok)
-        throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      if (!data.success)
-        throw new Error(data.message || "Failed to fetch job details");
-      return data as JobDetailsResponse;
-    },
-    enabled: Boolean(jobId && jobId !== "undefined"),
-  });
+  } = useQuery(jobQueryOptions<JobDetailsData>(jobId));
 
   // ===== Fetch user's bookmarks (if logged in) =====
   const { data: bookmarkData, isLoading: isBookmarkLoading } =
