@@ -12,7 +12,7 @@ export function DynamicTitle() {
 
     // Routes that set their own SEO <title> server-side (generateMetadata)
     // must not be overwritten client-side.
-    if (pathname.startsWith("/pages/")) return;
+    if (pathname.startsWith("/pages/") || pathname.startsWith("/alljobs/")) return;
 
     if (pathname === "/elevator-video-pitch") {
       document.title = "My Profile | Elevator Video Pitch";

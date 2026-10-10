@@ -1,4 +1,5 @@
 import JobDetails from "../_components/job-details";
+import { getJobMetadata } from "@/lib/job-metadata";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,6 +11,11 @@ import {
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps) {
+  const { id } = await params;
+  return getJobMetadata(id);
 }
 
 export default async function Page({ params }: PageProps) {
