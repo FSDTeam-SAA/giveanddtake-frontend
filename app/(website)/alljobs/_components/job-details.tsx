@@ -14,6 +14,9 @@ import * as React from "react";
 
 import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
 import { jobQueryOptions } from "@/lib/job-query";
+import { getJobAvailability, type JobAvailabilityInput } from "@/lib/job-availability";
+import { useJobAvailability } from "@/hooks/use-job-availability";
+import JobShareButton from "@/components/shared/job-share-button";
 
 interface Recruiter {
   _id: string;
@@ -33,7 +36,7 @@ interface CompanyData {
   cname?: string;
 }
 
-interface JobDetailsData {
+interface JobDetailsData extends JobAvailabilityInput {
   _id: string;
   userId: string;
   title: string;
@@ -114,6 +117,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
     isLoading,
     error,
   } = useQuery(jobQueryOptions<JobDetailsData>(jobId));
+  const availability = useJobAvailability(jobData?.data);
 
   // ===== Fetch user's bookmarks (if logged in) =====
   const { data: bookmarkData, isLoading: isBookmarkLoading } =
@@ -240,6 +244,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const handleUnauthedApply = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    if (!getJobAvailability(jobData?.data).canApply) return;
     if (isRedirecting) return;
     setIsRedirecting(true);
 
@@ -255,6 +260,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
 
   const handleCandidateApply = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    if (!getJobAvailability(jobData?.data).canApply) return;
     if (
       hasApplied ||
       applicationStatusLoading ||
@@ -396,7 +402,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8">
       {/* Top actions */}
-      <div className="mb-4 sm:mb-6">
+      <div className="mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-2">
         <Button asChild variant="ghost" className="mb-2 sm:mb-0">
           <Link
             href="/alljobs"
@@ -406,7 +412,15 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to jobs
           </Link>
         </Button>
+        <JobShareButton jobId={job._id} title={job.title} />
       </div>
+
+      {!availability.canApply && (
+        <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <p className="font-semibold">{availability.label === "Expired" ? "Job expired" : availability.label}</p>
+          <p>{availability.message}</p>
+        </div>
+      )}
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-9 gap-6 lg:gap-8">
@@ -538,9 +552,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     <Button
                       className="w-full bg-primary hover:bg-blue-700"
                       onClick={handleUnauthedApply}
-                      disabled={isRedirecting}
+                      disabled={isRedirecting || !availability.canApply}
                     >
-                      {isRedirecting ? "Redirecting..." : "Apply Now"}
+                      {!availability.canApply ? (availability.status === "expired" ? "Expired" : "Applications closed") : isRedirecting ? "Redirecting..." : "Apply Now"}
                     </Button>
                   ) : (
                     // Authenticated candidate: EVP gate
@@ -552,6 +566,7 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                       }
                       onClick={handleCandidateApply}
                       disabled={
+                        !availability.canApply ||
                         hasApplied ||
                         applicationStatusLoading ||
                         isRedirecting ||
@@ -561,6 +576,8 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                     >
                       {hasApplied
                         ? "Applied"
+                        : !availability.canApply
+                        ? (availability.status === "expired" ? "Expired" : "Applications closed")
                         : applicationStatusLoading ||
                           resumeLoading ||
                           resumeFetching
@@ -650,15 +667,15 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Published</span>
                   <span className="font-medium">
-                    {formatDate(job.updatedAt)}
+                    {formatDate(job.publishDate || job.createdAt)}
                   </span>
                 </div>
-                {/* <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
+                {(job.deadline || job.expiryDate) && <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Application Deadline</span>
                   <span className="font-medium">
-                    {formatDate(job.deadline)}
+                    {formatDate((job.deadline || job.expiryDate)!)}
                   </span>
-                </div> */}
+                </div>}
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Location Type</span>
                   <span className="font-medium">
@@ -671,9 +688,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
                 <div className="flex items-center justify-between gap-4 text-sm sm:text-base">
                   <span className="text-gray-600">Status</span>
                   <Badge
-                    variant={job.status === "active" ? "default" : "secondary"}
+                    variant={availability.canApply ? "default" : "secondary"}
                   >
-                    {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                    {availability.label}
                   </Badge>
                 </div>
               </CardContent>

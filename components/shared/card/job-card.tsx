@@ -13,6 +13,9 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
 import { DescriptionClamp } from "@/components/DescriptionClamp";
+import { getJobAvailability, type JobAvailabilityInput } from "@/lib/job-availability";
+import { useJobAvailability } from "@/hooks/use-job-availability";
+import JobShareButton from "@/components/shared/job-share-button";
 
 interface Recruiter {
   _id: string;
@@ -29,7 +32,7 @@ interface CompanyId {
   clogo?: string;
   userId?: string;
 }
-interface Job {
+interface Job extends JobAvailabilityInput {
   _id: string;
   title?: string;
   description?: string;
@@ -110,6 +113,7 @@ export default function JobCard({
   const [jobFitLoading, setJobFitLoading] = useState(false);
   const [jobFitError, setJobFitError] = useState<string | null>(null);
   const router = useRouter();
+  const availability = useJobAvailability(job);
 
   const role = (session?.user as any)?.role as string | undefined;
   const userId = (session?.user as any)?.id as string | undefined;
@@ -166,6 +170,7 @@ export default function JobCard({
   // ===== Apply =====
   const handleUnauthedApply = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
+    if (!getJobAvailability(job).canApply) return;
     if (isRedirecting) return;
     setIsRedirecting(true);
     toast("Please log in as a candidate to apply", {
@@ -179,6 +184,7 @@ export default function JobCard({
 
   const handleCandidateApply = (e: MouseEvent) => {
     e.stopPropagation();
+    if (!getJobAvailability(job).canApply) return;
     if (
       hasApplied ||
       applicationStatusLoading ||
@@ -511,6 +517,9 @@ export default function JobCard({
 
   const ApplyButton = () => {
     if (!canSeeApply || isRecruiterOrCompany) return null;
+    if (!availability.canApply && !hasApplied) {
+      return <Button type="button" variant="outline" disabled>{availability.status === "expired" ? "Expired" : "Applications closed"}</Button>;
+    }
     if (isUnauthed) {
       return (
         <Button
@@ -535,6 +544,7 @@ export default function JobCard({
           }
         }}
         disabled={
+          !availability.canApply ||
           hasApplied ||
           applicationStatusLoading ||
           resumeLoading ||
@@ -597,10 +607,10 @@ export default function JobCard({
             </span>
           </button>
 
-          {/* Right controls: stack on mobile (Apply top, View details below), inline on sm+ */}
-          <div className="flex flex-col sm:flex-row-reverse sm:items-center gap-2 shrink-0">
+          <div className="flex flex-col sm:flex-row-reverse sm:flex-wrap sm:items-center gap-2 shrink-0">
 
             <ApplyButton />
+            <JobShareButton jobId={job._id} title={job.title || "Job opportunity"} />
             <button
               type="button"
               onClick={() => router.push(detailsLink)}

@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { MyAppliedJobIdsResponse } from "@/lib/api-service";
 import { jobQueryOptions } from "@/lib/job-query";
+import { getJobAvailability, type JobAvailabilityInput } from "@/lib/job-availability";
+import { useJobAvailability } from "@/hooks/use-job-availability";
 
 interface Resume {
   id: string;
@@ -63,7 +65,7 @@ interface ApplicationRequirement {
 interface JobDetailsResponse {
   success: boolean;
   message: string;
-  data: {
+  data: JobAvailabilityInput & {
     _id: string;
     title: string;
     customQuestion: CustomQuestion[];
@@ -114,6 +116,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     useQuery(
       jobQueryOptions<JobDetailsResponse["data"]>(jobId, baseUrl),
     );
+  const availability = useJobAvailability(jobData?.data);
 
   const isResumeRequired = jobData?.data.applicationRequirement?.some(
     (req) => req.requirement === "Resume" && req.status === "Required",
@@ -197,6 +200,8 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       hasValidVisa?: boolean;
     }) => {
       if (!token || !baseUrl) throw new Error("Missing token or base URL");
+      const current = getJobAvailability(jobData?.data);
+      if (!current.canApply) throw new Error(current.message || "Applications closed");
       const body: any = { jobId, userId, answer };
       if (resumeId) body.resumeId = resumeId;
       if (typeof hasValidVisa === "boolean") body.hasValidVisa = hasValidVisa;
@@ -235,7 +240,10 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       queryClient.invalidateQueries({ queryKey: ["job-applications", userId] });
       router.push("/alljobs");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      toast.error(error.message);
+      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
+    },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,6 +263,8 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     e.preventDefault();
     if (sessionStatus === "loading") return;
     if (!userId) return toast.error("Please log in to apply.");
+    const current = getJobAvailability(jobData?.data);
+    if (!current.canApply) return toast.error(current.message);
     if (!agreedToShareCV) return toast.error("Please agree to share your EVP.");
 
     const selectedResume = resumes.find((r) => r.selected);
@@ -352,6 +362,13 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       <h1 className="text-2xl sm:text-3xl md:text-4xl text-center font-bold mb-8">
         Job Application
       </h1>
+
+      {!isJobLoading && !availability.canApply && (
+        <div role="status" className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900">
+          <p>{jobData ? availability.message : "Unable to check job availability. Please reopen the job details and try again."}</p>
+          <Link href={`/alljobs/${jobId}`} className="underline">View job details</Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-8 gap-6">
         {/* Left column */}
@@ -573,11 +590,13 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
               type="submit"
               className="w-full bg-primary hover:bg-blue-700 py-6 text-lg"
               disabled={
-                applyJobMutation.isPending || sessionStatus === "loading"
+                applyJobMutation.isPending || sessionStatus === "loading" || !availability.canApply
               }
             >
               {applyJobMutation.isPending
                 ? "Submitting..."
+                : !availability.canApply
+                ? (isJobLoading ? "Checking job..." : "Applications closed")
                 : "Submit Application"}
             </Button>
           </form>
