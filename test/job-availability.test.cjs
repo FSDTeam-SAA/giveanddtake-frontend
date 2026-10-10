@@ -101,6 +101,8 @@ test('expired details stay readable for guests and candidates with Share, deadli
     assert.match(html, /May 19, 2026/);
     assert.doesNotMatch(html, /October 9, 2026/);
     assert.match(html, /aria-label="Share job: OSP Supervisor"/);
+    assert.ok(html.indexOf('aria-label="Share job: OSP Supervisor"') > html.indexOf('Application Deadline'), 'Share belongs below the job content');
+    assert.equal((html.match(/aria-label="Share job:/g) || []).length, 1);
     assert.match(html, /<button[^>]*disabled[^>]*>Expired<\/button>/);
     assert.doesNotMatch(html, />Active</);
   }

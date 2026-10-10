@@ -412,7 +412,6 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             <ArrowLeft className="h-4 w-4 mr-2" /> Back to jobs
           </Link>
         </Button>
-        <JobShareButton jobId={job._id} title={job.title} />
       </div>
 
       {!availability.canApply && (
@@ -721,6 +720,9 @@ export default function JobDetails({ jobId, onBack }: JobDetailsProps) {
             )}
           </div>
         </div>
+      </div>
+      <div className="mt-6 flex justify-end border-t border-gray-200 pt-4 sm:mt-8">
+        <JobShareButton jobId={job._id} title={job.title} />
       </div>
     </div>
   );
