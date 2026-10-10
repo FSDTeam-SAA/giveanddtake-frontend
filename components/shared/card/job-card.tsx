@@ -15,7 +15,6 @@ import { getMyAppliedJobIds, getMyResume } from "@/lib/api-service";
 import { DescriptionClamp } from "@/components/DescriptionClamp";
 import { getJobAvailability, type JobAvailabilityInput } from "@/lib/job-availability";
 import { useJobAvailability } from "@/hooks/use-job-availability";
-import JobShareButton from "@/components/shared/job-share-button";
 
 interface Recruiter {
   _id: string;
@@ -610,7 +609,6 @@ export default function JobCard({
           <div className="flex flex-col sm:flex-row-reverse sm:flex-wrap sm:items-center gap-2 shrink-0">
 
             <ApplyButton />
-            <JobShareButton jobId={job._id} title={job.title || "Job opportunity"} />
             <button
               type="button"
               onClick={() => router.push(detailsLink)}

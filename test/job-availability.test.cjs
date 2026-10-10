@@ -74,7 +74,7 @@ test('sharing uses the public job link with safely encoded social URLs', () => {
   const links = Object.fromEntries(jobShareLinks(live._id, title).map(link => [link.name, new URL(link.url)]));
   assert.equal(links.LinkedIn.searchParams.get('url'), url);
   assert.equal(links.Facebook.searchParams.get('u'), url);
-  assert.equal(links.WhatsApp.searchParams.get('text'), `${title}\n${url}`);
+  assert.equal(links.WhatsApp, undefined);
   assert.equal(links.X.searchParams.get('text'), title);
   assert.equal(links.X.searchParams.get('url'), url);
   assert.equal(links.Telegram.searchParams.get('url'), url);
@@ -106,12 +106,14 @@ test('expired details stay readable for guests and candidates with Share, deadli
   }
 });
 
-test('public job cards include sharing and block expired Apply without hiding details', () => {
+test('public job cards keep sharing in details and block expired Apply without hiding details', () => {
   const job = { ...live, deadline: '2026-06-18', canApply: false };
-  const html = renderJob('components/shared/card/job-card.tsx', { job, variant: 'list' }, job);
-  assert.match(html, /aria-label="Share job: OSP Supervisor"/);
-  assert.match(html, /View details/);
-  assert.match(html, /<button[^>]*disabled[^>]*>Expired<\/button>/);
+  for (const variant of ['list', 'suggested']) {
+    const html = renderJob('components/shared/card/job-card.tsx', { job, variant }, job);
+    assert.doesNotMatch(html, /aria-label="Share job:/);
+    assert.match(html, /View details/);
+    assert.match(html, /<button[^>]*disabled[^>]*>Expired<\/button>/);
+  }
 });
 
 test('direct application pages block submission for expired jobs', () => {

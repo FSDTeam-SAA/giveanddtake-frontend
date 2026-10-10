@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { FacebookIcon, LinkedinIcon, TelegramIcon, WhatsappIcon } from "next-share";
+import { FacebookIcon, LinkedinIcon, TelegramIcon } from "next-share";
 import { FaXTwitter } from "react-icons/fa6";
 import { RiShareForwardLine } from "react-icons/ri";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ const socialIcons: Record<string, ReactNode> = {
   X: <span className="flex h-8 w-8 items-center justify-center rounded-full bg-black text-white"><FaXTwitter className="h-4 w-4" /></span>,
   LinkedIn: <LinkedinIcon size={32} round />,
   Telegram: <TelegramIcon size={32} round />,
-  WhatsApp: <WhatsappIcon size={32} round />,
 };
 
 export default function JobShareButton({ jobId, title }: { jobId: string; title: string }) {
