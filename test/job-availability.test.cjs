@@ -77,6 +77,8 @@ test('sharing uses the public job link with safely encoded social URLs', () => {
   assert.equal(links.WhatsApp.searchParams.get('text'), `${title}\n${url}`);
   assert.equal(links.X.searchParams.get('text'), title);
   assert.equal(links.X.searchParams.get('url'), url);
+  assert.equal(links.Telegram.searchParams.get('url'), url);
+  assert.equal(links.Telegram.searchParams.get('text'), title);
 });
 
 function renderJob(file, props, job, userRole) {
