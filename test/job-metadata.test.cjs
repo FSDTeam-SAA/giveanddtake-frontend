@@ -39,7 +39,7 @@ function serve(data = job) {
   global.fetch = async () => new Response(JSON.stringify({ success: true, data }));
 }
 
-test('a copied job URL has its own title, canonical, social metadata and public image', async () => {
+test('a copied job URL has job-specific text metadata without an attached logo', async () => {
   serve();
   const result = await getJobMetadata(id, api);
   assert.deepEqual(result.title, { absolute: `${job.title} | EVPitch` });
@@ -50,8 +50,9 @@ test('a copied job URL has its own title, canonical, social metadata and public 
   assert.equal(result.description, 'Elevator Video Pitch - Nigeria Create & publish social media content.');
   assert.equal(result.openGraph.description, result.description);
   assert.equal(result.twitter.description, result.description);
-  assert.equal(result.openGraph.images[0].url, 'https://evpitch.com/assets/evp-logo.jpg');
-  assert.equal(result.twitter.images[0], result.openGraph.images[0].url);
+  assert.deepEqual(result.openGraph.images, []);
+  assert.deepEqual(result.twitter.images, []);
+  assert.equal(result.twitter.card, 'summary');
 });
 
 test('an approved title update is read afresh without authentication', async () => {

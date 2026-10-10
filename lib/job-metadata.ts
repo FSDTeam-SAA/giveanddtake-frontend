@@ -75,12 +75,6 @@ export async function getJobMetadata(
     ].filter(Boolean).join(" "), 200);
   }
 
-  const image = {
-    url: "https://evpitch.com/assets/evp-logo.jpg",
-    width: 1106,
-    height: 426,
-    alt: "Elevator Video Pitch",
-  };
   return {
     title: { absolute: `${title} | EVPitch` },
     description,
@@ -93,13 +87,14 @@ export async function getJobMetadata(
       siteName: "Elevator Video Pitch",
       type: "website",
       locale: "en_GB",
-      images: [image],
+      // Job link previews use text only; do not attach the site logo.
+      images: [],
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title,
       description,
-      images: [image.url],
+      images: [],
     },
   };
 }
