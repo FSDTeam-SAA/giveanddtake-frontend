@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { DynamicTitle } from "@/components/DynamicTitle";
 import TopLoader from "./TopLoader";
 import { Suspense } from "react";
+import { SITE_URL, SITE_NAME } from "@/lib/seo";
 
 const roboto = Roboto({
   weight: ["100", "300", "400", "500", "700", "900"],
@@ -14,8 +15,6 @@ const roboto = Roboto({
   display: "swap",
 });
 
-const SITE_URL = "https://evpitch.com";
-const SITE_NAME = "Elevator Video Pitch©";
 const SITE_DESCRIPTION =
   "Elevator Video Pitch© (EVP) connects candidates, recruiters and companies through 60-second video pitches. Get hired, find talent and post jobs faster with your Elevator Video Pitch.";
 
@@ -45,9 +44,6 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   category: "Business",
-  alternates: {
-    canonical: "/",
-  },
   robots: {
     index: true,
     follow: true,
@@ -62,7 +58,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Elevator Video Pitch© | Get Hired With a 30-Second Video Pitch",
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",
     locale: "en_GB",
@@ -109,14 +104,6 @@ const websiteJsonLd = {
   name: SITE_NAME,
   url: SITE_URL,
   description: SITE_DESCRIPTION,
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE_URL}/all-users?s={search_term_string}`,
-    },
-    "query-input": "required name=search_term_string",
-  },
 };
 
 export default function RootLayout({

@@ -76,11 +76,6 @@ const fetchAboutContent = async () => {
   return data;
 };
 
-const metadata = {
-  title: "About | Elevator Video Pitch©",
-  description: "Learn more about Elevator Video Pitch©",
-};
-
 export default function AboutUsPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["content", "about"],

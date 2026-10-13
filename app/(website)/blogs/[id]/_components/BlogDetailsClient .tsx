@@ -134,10 +134,12 @@ export function BlogDetailsClient({ slugOrId }: { slugOrId: string }) {
             </BreadcrumbItem>
             <BreadcrumbSeparator className="" />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="">
+              <BreadcrumbLink href="/blogs" className="">
                 Blogs
               </BreadcrumbLink>
-              <BreadcrumbSeparator className="" />
+            </BreadcrumbItem>
+            <BreadcrumbSeparator className="" />
+            <BreadcrumbItem>
               <BreadcrumbPage className="">Blog Details</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>

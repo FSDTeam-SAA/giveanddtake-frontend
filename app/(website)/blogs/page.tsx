@@ -154,13 +154,12 @@ export default function BlogListingPage() {
                     />
                   </CardContent>
                   <CardFooter className="py-4 pt-0 px-0">
-                    <Link
-                      href={`/blogs/${blogSlug}`}
+                    <span
                       className="inline-flex items-center text-sm font-medium text-[#9EC7DC]"
                     >
                       Read More
                       <ArrowRight className="h-4 w-4" />
-                    </Link>
+                    </span>
                   </CardFooter>
                 </Card>
               </Link>

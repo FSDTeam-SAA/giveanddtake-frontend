@@ -34,7 +34,6 @@ const toSitemapItem = (
   options: Omit<SitemapItem, "url"> = {}
 ): SitemapItem => ({
   url: `${siteUrl}${path}`,
-  lastModified: new Date(),
   ...options,
 });
 
@@ -62,7 +61,7 @@ const getDynamicJobUrls = async (): Promise<SitemapItem[]> => {
     .filter((job) => job._id)
     .map((job) =>
       toSitemapItem(`/alljobs/${job._id}`, {
-        lastModified: job.updatedAt || job.createdAt || new Date(),
+        lastModified: job.updatedAt || job.createdAt || undefined,
         changeFrequency: "daily",
         priority: 0.8,
       })
@@ -91,7 +90,7 @@ const getDynamicBlogUrls = async (): Promise<SitemapItem[]> => {
     .filter((blog) => blog.id)
     .map((blog) =>
       toSitemapItem(`/blogs/${blog.id}`, {
-        lastModified: blog.updatedAt || blog.createdAt || new Date(),
+        lastModified: blog.updatedAt || blog.createdAt || undefined,
         changeFrequency: "weekly",
         priority: 0.7,
       })
@@ -113,7 +112,7 @@ const getDynamicPageUrls = async (): Promise<SitemapItem[]> => {
     .filter((page) => isCustomPage(page))
     .map((page) =>
       toSitemapItem(`/pages/${page.type}`, {
-        lastModified: page.updatedAt || page.createdAt || new Date(),
+        lastModified: page.updatedAt || page.createdAt || undefined,
         changeFrequency: "monthly",
         priority: 0.5,
       })

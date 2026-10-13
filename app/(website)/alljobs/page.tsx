@@ -1,5 +1,5 @@
 import React, { Suspense } from "react";
-import { Metadata } from "next";
+import { getPublicPageMetadata } from "@/lib/seo";
 import JobsListing from "./_components/jobs-listing";
 import {
   Breadcrumb,
@@ -10,11 +10,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-export const metadata: Metadata = {
-  title: { absolute: "All Jobs | Elevator Video Pitch" },
-  description:
-    "Browse curated job openings across industries and locations. Use smart filters to find roles that match your skills, experience, and career goals.",
-};
+export const metadata = getPublicPageMetadata("/alljobs");
 
 function Page() {
   return (

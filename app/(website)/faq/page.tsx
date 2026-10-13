@@ -1,12 +1,8 @@
-import { Metadata } from "next";
+import { getPublicPageMetadata } from "@/lib/seo";
 import { FaqSection } from "@/components/FaqSection";
 import PageHeaders from "@/components/shared/PageHeaders";
 
-export const metadata: Metadata = {
-  title: "FAQ | Elevator Pitch",
-  description:
-    "Find answers to frequently asked questions about Elevator Pitch.",
-};
+export const metadata = getPublicPageMetadata("/faq");
 
 export default function FaqPage() {
   return (

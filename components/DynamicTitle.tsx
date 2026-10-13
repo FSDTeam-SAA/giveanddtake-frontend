@@ -3,6 +3,7 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { hasServerPageTitle } from "@/lib/seo";
 
 export function DynamicTitle() {
   const pathname = usePathname();
@@ -12,7 +13,7 @@ export function DynamicTitle() {
 
     // Routes that set their own SEO <title> server-side (generateMetadata)
     // must not be overwritten client-side.
-    if (pathname.startsWith("/pages/") || pathname.startsWith("/alljobs/")) return;
+    if (hasServerPageTitle(pathname)) return;
 
     if (pathname === "/elevator-video-pitch") {
       document.title = "My Profile | Elevator Video Pitch";

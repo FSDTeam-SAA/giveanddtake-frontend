@@ -128,7 +128,7 @@ test('unapproved edits are not advertised by public previews', async () => {
   }
 });
 
-test('client navigation preserves server job titles and still names the jobs list', () => {
+test('client navigation preserves server job titles and server metadata for the jobs list', () => {
   let pathname;
   const originalDocument = global.document;
   global.document = { title: `${job.title} | EVPitch` };
@@ -141,8 +141,12 @@ test('client navigation preserves server job titles and still names the jobs lis
     DynamicTitle();
     assert.equal(document.title, `${job.title} | EVPitch`);
     pathname = '/alljobs';
+    // Next.js installs destination metadata during navigation; the fallback
+    // component must leave that title intact instead of replacing it.
+    const { getPublicPageMetadata } = load('lib/seo.ts');
+    document.title = getPublicPageMetadata('/alljobs').title.absolute;
     DynamicTitle();
-    assert.equal(document.title, 'All Jobs | Elevator Video Pitch');
+    assert.equal(document.title, getPublicPageMetadata('/alljobs').title.absolute);
   } finally {
     global.document = originalDocument;
   }

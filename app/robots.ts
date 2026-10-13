@@ -13,21 +13,11 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         disallow: [
-          "/account/",
           "/admin/",
           "/api/",
-          "/applied-jobs/",
-          "/archived-jobs/",
-          "/bookmarks/",
-          "/candidate-list/",
-          "/elevator-video-pitch/",
-          "/internal-recruiter-list/",
-          "/job-application/",
-          "/messages/",
-          "/notifications/",
-          "/payment/",
-          "/success/",
         ],
+        // Internal website pages declare noindex in server metadata. Allow
+        // crawlers to read that directive; robots.txt is not access control.
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,
