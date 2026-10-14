@@ -35,7 +35,7 @@ export default function EmailStep({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
 
       if (response.ok) {

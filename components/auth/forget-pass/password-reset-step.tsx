@@ -75,7 +75,7 @@ export default function PasswordResetStep({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.email,
+          email: formData.email.trim().toLowerCase(),
           password: formData.password,
           otp: formData.otp,
         }),

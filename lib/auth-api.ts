@@ -58,7 +58,7 @@ export const authAPI = {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, email: data.email.trim().toLowerCase() }),
     });
 
     if (!response.ok) {
@@ -80,7 +80,7 @@ export const authAPI = {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, email: data.email.trim().toLowerCase() }),
     });
 
     if (!response.ok) {
@@ -107,7 +107,7 @@ export const authAPI = {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, email: data.email.trim().toLowerCase() }),
     });
 
     if (!response.ok) {

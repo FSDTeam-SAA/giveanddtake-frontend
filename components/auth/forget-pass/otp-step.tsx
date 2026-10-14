@@ -133,7 +133,7 @@ export default function OtpStep({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
       });
       if (!res.ok) {
         throw new Error("Resend failed");
