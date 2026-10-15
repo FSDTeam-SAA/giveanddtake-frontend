@@ -15,7 +15,8 @@ export default withAuth(
   {
     callbacks: {
       // This ensures only authenticated users can access the matcher routes
-      authorized: ({ token }) => !!token,
+      authorized: ({ token }) => !!token && token.error !== 'SessionExpired' &&
+        (!token.sessionExpiresAt || Date.now() < Number(token.sessionExpiresAt)),
     },
   }
 );

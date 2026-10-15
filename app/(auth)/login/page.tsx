@@ -37,16 +37,20 @@ export default function LoginPage() {
 
   // Load saved credentials on component mount
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('message') === 'session-expired') {
+      setError('Your session expired. Sign in to continue where you left off.');
+    }
     const loadSavedCredentials = () => {
       try {
-        const savedCredentials = localStorage.getItem("rememberedCredentials");
+        // Migrate older installations without retaining the saved password.
+        const savedCredentials = localStorage.getItem('rememberedEmail') || localStorage.getItem("rememberedCredentials");
         if (savedCredentials) {
-          const { email: savedEmail, password: savedPassword } =
+          const { email: savedEmail } =
             JSON.parse(savedCredentials);
           setEmail(savedEmail);
-          setPassword(savedPassword);
           setRememberMe(true);
         }
+        localStorage.removeItem('rememberedCredentials');
       } catch (error) {
         console.error("Error loading saved credentials:", error);
         // Clear corrupted data
@@ -66,6 +70,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email,
         password,
+        rememberMe: String(rememberMe),
         redirect: false,
       });
 
@@ -84,19 +89,24 @@ export default function LoginPage() {
         // Save or clear credentials based on rememberMe
         try {
           if (rememberMe) {
-            const credentials = { email, password };
+            const credentials = { email: email.trim().toLowerCase() };
             localStorage.setItem(
-              "rememberedCredentials",
+              "rememberedEmail",
               JSON.stringify(credentials)
             );
           } else {
-            localStorage.removeItem("rememberedCredentials");
+            localStorage.removeItem("rememberedEmail");
           }
         } catch (storageError) {
           console.error("Error accessing localStorage:", storageError);
         }
 
-        window.location.href = "/elevator-video-pitch";
+        const callback = new URLSearchParams(window.location.search).get('callbackUrl');
+        const destination = callback ? new URL(callback, window.location.origin) : null;
+        window.location.href = destination?.origin === window.location.origin &&
+          !['/login', '/signup'].includes(destination.pathname)
+          ? destination.pathname + destination.search + destination.hash
+          : '/elevator-video-pitch';
       }
     } catch (error) {
       const message =
@@ -115,6 +125,7 @@ export default function LoginPage() {
     if (rememberMe) {
       setRememberMe(false);
       localStorage.removeItem("rememberedCredentials");
+      localStorage.removeItem('rememberedEmail');
     }
   };
 
@@ -185,9 +196,10 @@ export default function LoginPage() {
               </Link>
             </div>
 
-            {email && password && rememberMe && (
+            <p className="text-xs text-gray-500">Stay signed in for 12 hours, or 30 days with Remember me.</p>
+            {email && rememberMe && (
               <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                <p>Your credentials will be saved for automatic login.</p>
+                <p>You will stay signed in for 30 days. Your email is remembered.</p>
                 <button
                   type="button"
                   onClick={handleClearSaved}

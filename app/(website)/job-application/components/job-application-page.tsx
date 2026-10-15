@@ -1,6 +1,9 @@
 "use client";
 import type React from "react";
 import { useState, useRef } from "react";
+import { useSessionDraft } from '@/hooks/use-session-draft';
+import { apiClient } from '@/lib/api-service';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -90,6 +93,15 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [hasValidVisa, setHasValidVisa] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [completionPrompt, setCompletionPrompt] = useState<string | null>(null);
+  const [checkingRequirements, setCheckingRequirements] = useState(false);
+  const clearDraft = useSessionDraft(`application:${jobId}`,
+    { resumes, agreedToShareCV, answers, hasValidVisa }, saved => {
+      setResumes(saved.resumes);
+      setAgreedToShareCV(saved.agreedToShareCV);
+      setAnswers(saved.answers);
+      setHasValidVisa(saved.hasValidVisa);
+    });
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
   if (!baseUrl) {
@@ -221,6 +233,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
       return response.json();
     },
     onSuccess: () => {
+      clearDraft();
       toast.success("Application submitted successfully!");
       queryClient.setQueryData<MyAppliedJobIdsResponse>(
         ["applied-job-ids", userId],
@@ -259,12 +272,29 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
   const handleAnswerChange = (questionId: string, answer: string) =>
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (sessionStatus === "loading") return;
-    if (!userId) return toast.error("Please log in to apply.");
+    if (!userId) {
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+    if (checkingRequirements || applyJobMutation.isPending) return;
     const current = getJobAvailability(jobData?.data);
     if (!current.canApply) return toast.error(current.message);
+    setCheckingRequirements(true);
+    try {
+      const { data } = await apiClient.get('/applied-jobs/me/requirements');
+      if (!data.data.profileComplete || !data.data.pitchReady) {
+        setCompletionPrompt(!data.data.profileComplete
+          ? 'Complete your candidate profile before applying.'
+          : 'Upload a video pitch and wait for processing to finish before applying.');
+        return;
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to check your profile. Please try again.');
+      return;
+    } finally { setCheckingRequirements(false); }
     if (!agreedToShareCV) return toast.error("Please agree to share your EVP.");
 
     const selectedResume = resumes.find((r) => r.selected);
@@ -303,6 +333,17 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
     });
   };
 
+  const completionDialog = (
+    <Dialog open={!!completionPrompt} onOpenChange={open => { if (!open) setCompletionPrompt(null); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Complete your profile and pitch</DialogTitle>
+          <DialogDescription>{completionPrompt} Your application answers are saved in this tab.</DialogDescription>
+        </DialogHeader>
+        <Button onClick={() => router.push(`/elevator-video-pitch?returnTo=${encodeURIComponent(window.location.pathname + window.location.search)}`)}>Complete profile and pitch</Button>
+      </DialogContent>
+    </Dialog>
+  );
   const userData: UserData = data?.data || {};
   const visaQuestionSection = shouldAskVisaStatus ? (
     <div className="space-y-3">
@@ -339,6 +380,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
 
   return (
     <div className="container mx-auto px-4 sm:px-6">
+      {completionDialog}
       {/* Breadcrumb */}
       <div className="hidden md:block">
         <div className="flex items-center text-sm sm:text-base text-gray-500 my-6">

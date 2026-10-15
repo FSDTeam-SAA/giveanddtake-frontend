@@ -79,6 +79,7 @@ interface Application {
     | "unsuccessful";
   createdAt: string;
   updatedAt: string;
+  __v?: number;
   experience?: string;
   answer?: Answer[];
   hasValidVisa?: boolean | null;
@@ -163,13 +164,15 @@ export default function JobApplicantsPage() {
   useEffect(() => {
     fetchApplications();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId, currentPage]);
+  }, [jobId, currentPage, token]);
 
   const fetchApplications = async () => {
+    if (!token) return;
     try {
       setLoading(true);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}?page=${currentPage}`
+        `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/job/${jobId}?page=${currentPage}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (!response.ok) throw new Error("Failed to fetch applications");
@@ -203,21 +206,26 @@ export default function JobApplicantsPage() {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ status: newStatus,
+            expectedVersion: applications.find(app => app._id === applicationId)?.__v ?? 0 }),
         }
       );
 
-      if (!response.ok) throw new Error("Failed to update status");
+      const result = await response.json();
+      if (!response.ok) {
+        if (response.status === 409) await fetchApplications();
+        throw new Error(result.message || "Failed to update status");
+      }
 
       setApplications((prev) =>
         prev.map((app) =>
-          app._id === applicationId ? { ...app, status: newStatus } : app
+          app._id === applicationId ? { ...app, status: result.data.status, __v: result.data.__v } : app
         )
       );
       toast.success("Status updated successfully");
     } catch (error) {
       console.error("Failed to update status:", error);
-      toast.error("Could not update status. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Could not update status. Please try again.");
     }
   };
 

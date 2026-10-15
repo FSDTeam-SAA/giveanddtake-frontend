@@ -2,6 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
+import { useFormDraft } from '@/hooks/use-session-draft';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
@@ -440,6 +441,11 @@ export default function UpdateResumeForm({
     },
   });
 
+  const clearDraft = useFormDraft('candidate-profile-edit', form, saved => {
+    setSelectedCountry(saved.country || '');
+    setSelectedSkills(saved.skills || []);
+  });
+
   useEffect(() => {
     const experiences = form.watch("experiences") || [];
 
@@ -645,6 +651,7 @@ export default function UpdateResumeForm({
       }
 
       await onUpdate(formData);
+      clearDraft();
       toast.success("Elevator Pitch updated successfully");
     } catch (error) {
       console.error("Error in form submission:", error);

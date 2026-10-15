@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getSession } from "next-auth/react";
+import { expireSession, renewedToken } from './session-recovery';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -24,8 +25,18 @@ apiClient.interceptors.request.use(
 // Response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
-    console.error("API Error:", error);
+  async (error) => {
+    const config = error.config;
+    if (error.response?.status === 401 && config?.headers?.Authorization) {
+      if (!config._sessionRetried) {
+        const token = await renewedToken(String(config.headers.Authorization));
+        if (token) {
+          config._sessionRetried = true;
+          config.headers.Authorization = `Bearer ${token}`;
+          return apiClient(config);
+        }
+      } else expireSession();
+    }
     return Promise.reject(error);
   }
 );

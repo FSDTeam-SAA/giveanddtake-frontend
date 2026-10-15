@@ -25,6 +25,7 @@ import {
   createResume,
 } from "@/lib/api-service";
 import { useSession } from "next-auth/react";
+import { useFormDraft } from '@/hooks/use-session-draft';
 
 const MAX_URL_LEN = 2048;
 
@@ -319,6 +320,8 @@ export default function CreateResumeForm() {
     },
   });
 
+  const clearDraft = useFormDraft('candidate-profile-create', form, saved => setSelectedSkills(saved.skills || []));
+
   useEffect(() => {
     form.setValue("skills", selectedSkills);
   }, [selectedSkills, form]);
@@ -353,6 +356,7 @@ export default function CreateResumeForm() {
   const createResumeMutation = useMutation({
     mutationFn: createResume,
     onSuccess: (data: any) => {
+      clearDraft();
       toast.success(data?.message || "Resume created successfully!");
       window.location.reload();
     },

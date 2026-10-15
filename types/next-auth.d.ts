@@ -18,6 +18,8 @@ declare module "next-auth" {
   }
 
   interface Session {
+    error?: string;
+    sessionExpiresAt?: number;
     accessToken?: string;
     user: {
       image: string; // you mentioned you require this elsewhere
@@ -43,6 +45,10 @@ declare module "next-auth" {
 
 declare module "next-auth/jwt" {
   interface JWT {
+    error?: string;
+    refreshToken?: string;
+    sessionExpiresAt?: number;
+    accessExpiresAt?: number;
     accessToken?: string;
     role?: string;
     userId?: string;

@@ -59,10 +59,12 @@ interface JobHistoryResponse {
 
 const fetchJobHistory = async (
   userId: string,
-  page: number
+  page: number,
+  token: string
 ): Promise<JobHistoryResponse> => {
   const response = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/user/${userId}?page=${page}`
+    `${process.env.NEXT_PUBLIC_BASE_URL}/applied-jobs/user/${userId}?page=${page}`,
+    { headers: { Authorization: `Bearer ${token}` } }
   );
   if (!response.ok) {
     throw new Error("Failed to fetch job history");
@@ -80,8 +82,8 @@ export default function JobHistory() {
 
   const { data, isLoading, isError } = useQuery<JobHistoryResponse, Error>({
     queryKey: ["jobHistory", userId, currentPage],
-    queryFn: () => fetchJobHistory(userId as string, currentPage),
-    enabled: !!userId, // Only fetch if userId is available
+    queryFn: () => fetchJobHistory(userId as string, currentPage, session!.accessToken!),
+    enabled: !!userId && !!session?.accessToken,
   });
 
   if (status === "loading" || isLoading) {

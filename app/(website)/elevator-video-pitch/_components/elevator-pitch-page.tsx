@@ -20,22 +20,33 @@ import EditableRecruiterAccount from "./editable-recruiter-account";
 import CreateRecruiterAccount from "./create-recruiter-account";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PENDING_PITCH_STATES } from "@/lib/pitch-states";
+import { draftKey } from '@/hooks/use-session-draft';
+import Link from 'next/link';
 
 export default function ElevatorPitchAndResume() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [isEditing, setIsEditing] = useState(false);
+  const [returnTo, setReturnTo] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const role = session?.user?.role;
   const userId = session?.user?.id;
+  useEffect(() => {
+    const destination = new URLSearchParams(window.location.search).get('returnTo');
+    if (destination?.startsWith('/') && !destination.startsWith('//')) setReturnTo(destination);
+    if (userId) {
+      try { if (sessionStorage.getItem(draftKey(userId, 'candidate-profile-edit'))) setIsEditing(true); }
+      catch { /* Storage may be disabled. */ }
+    }
+  }, [userId]);
 
   // Resume query (only if role is candidate).
   // While a pitch is still encoding, poll so the player swaps in on its own —
   // the pitch _id changes on every re-upload, so a stale cache points at a
   // document that no longer exists.
   const { data: myresume, isLoading: resumeLoading } = useQuery({
-    queryKey: ["my-resume"],
+    queryKey: ["my-resume", userId],
     queryFn: getMyResume,
     select: (data) => data?.data,
     enabled: role === "candidate" && !!userId,
@@ -73,12 +84,13 @@ export default function ElevatorPitchAndResume() {
       setIsEditing(false);
     } catch (error) {
       console.error("Failed to update resume:", error);
+      throw error;
     }
   };
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push(`/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
     }
   }, [router, status]);
 
@@ -92,12 +104,19 @@ export default function ElevatorPitchAndResume() {
   return (
     <section className="">
       <div className="lg:container lg:mx-auto lg:px-6">
+        {returnTo && <div className="my-4 rounded-lg border p-4">
+          <p className="mb-2">Complete your profile and video pitch, then return to your application. Your answers are saved in this tab.</p>
+          <Link className="text-blue-600 underline" href={returnTo}>Return to application</Link>
+        </div>}
         {role === "candidate" ? (
           myresume?.resume ? (
             isEditing ? (
               <UpdateResumeForm
                 resume={myresume}
-                onCancel={() => setIsEditing(false)}
+                onCancel={() => {
+                  if (userId) { try { sessionStorage.removeItem(draftKey(userId, 'candidate-profile-edit')); } catch {} }
+                  setIsEditing(false);
+                }}
                 onUpdate={handleUpdate}
               />
             ) : (
