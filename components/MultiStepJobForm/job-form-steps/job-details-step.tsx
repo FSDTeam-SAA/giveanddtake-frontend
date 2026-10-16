@@ -564,9 +564,9 @@ export default function JobDetailsStep({
                     type="number"
                     inputMode="numeric"
                     min={1}
-                    max={50}
+                    max={100}
                     step={1}
-                    placeholder="Enter number of vacancies (1–50)"
+                    placeholder="Enter number of vacancies (1–100)"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     value={field.value && field.value > 0 ? field.value : ""}
                     onChange={(e) => {
@@ -575,16 +575,16 @@ export default function JobDetailsStep({
                         field.onChange(undefined);
                         return;
                       }
-                      const n = clamp(Number(raw), 1, 50);
+                      const n = clamp(Number(raw), 1, 100);
                       field.onChange(Number.isNaN(n) ? undefined : n);
                     }}
                     onBlur={(e) => {
-                      const n = clamp(Number(e.target.value || 1), 1, 50);
+                      const n = clamp(Number(e.target.value || 1), 1, 100);
                       field.onChange(n);
                     }}
                   />
                 </FormControl>
-                <p className="text-xs text-muted-foreground">Maximum 50</p>
+                <p className="text-xs text-muted-foreground">Maximum 100</p>
                 <FormMessage />
               </FormItem>
             )}
@@ -949,7 +949,7 @@ export default function JobDetailsStep({
             onClick={() => {
               const v = form.getValues("vacancy") as number | undefined;
               if (typeof v === "number") {
-                form.setValue("vacancy", clamp(v, 1, 50) as any, {
+                form.setValue("vacancy", clamp(v, 1, 100) as any, {
                   shouldValidate: true,
                 });
               }

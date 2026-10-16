@@ -277,7 +277,7 @@ export default function JobDetailsPreviewEdit({
           value={formData.vacancy || 1}
           onChange={(e) => onFieldChange("vacancy", e.target.value)}
           min="1"
-          max="50"
+          max="100"
           className="h-11"
         />
       </div>
