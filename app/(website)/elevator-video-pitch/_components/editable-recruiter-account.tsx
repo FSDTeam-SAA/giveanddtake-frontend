@@ -663,7 +663,7 @@ export default function EditableRecruiterAccount({
                         name="firstName"
                         render={({ field }) => (
                           <FormItem>
-                            <Label htmlFor="firstName">First Name</Label>
+                            <Label htmlFor="firstName">First Name *</Label>
                             <FormControl>
                               <Input id="firstName" {...field} />
                             </FormControl>
@@ -691,7 +691,7 @@ export default function EditableRecruiterAccount({
                       name="title"
                       render={({ field }) => (
                         <FormItem>
-                          <Label htmlFor="title">Title</Label>
+                          <Label htmlFor="title">Title *</Label>
                           <FormControl>
                             <Input id="title" {...field} />
                           </FormControl>
@@ -717,7 +717,7 @@ export default function EditableRecruiterAccount({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="flex flex-col space-y-2">
-                        <Label htmlFor="country">Country</Label>
+                        <Label htmlFor="country">Country *</Label>
                         <Popover
                           open={countryOpen}
                           onOpenChange={setCountryOpen}

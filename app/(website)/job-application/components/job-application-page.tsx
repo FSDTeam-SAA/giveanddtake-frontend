@@ -518,7 +518,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
           <form onSubmit={handleSubmit} className="space-y-8">
             {visaQuestionSection}
             <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold mb-4 border-b pb-4">
-              Resume {isResumeRequired ? "(Required)" : "(Optional)"}
+              Resume {isResumeRequired ? "(Required) *" : "(Optional)"}
             </h2>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-8 text-center bg-gray-50">
               <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
@@ -588,7 +588,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                 htmlFor="agree-cv"
                 className="text-sm sm:text-base text-gray-700"
               >
-                I agree with my video pitch being shared with the recruiter
+                I agree with my video pitch being shared with the recruiter *
               </Label>
             </div>
 
@@ -623,7 +623,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                 />
                 <Label htmlFor="agree-cv" className="text-sm text-gray-700">
                   I agree to my Elevator Video Pitch© being shared with the
-                  Recruiter for the role I am applying for
+                  Recruiter for the role I am applying for *
                 </Label>
               </div>
             </div>

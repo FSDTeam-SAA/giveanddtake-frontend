@@ -102,7 +102,7 @@ export function ResetPassword({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="newPassword" className="text-sm font-medium">
-              New password
+              New password *
             </Label>
             <div className="relative mt-2">
               <Input
@@ -133,7 +133,7 @@ export function ResetPassword({
 
           <div>
             <Label htmlFor="confirmPassword" className="text-sm font-medium">
-              Confirm new password
+              Confirm new password *
             </Label>
             <div className="relative mt-2">
               <Input

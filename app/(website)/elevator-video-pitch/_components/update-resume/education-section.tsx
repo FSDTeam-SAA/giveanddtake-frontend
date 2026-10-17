@@ -1,7 +1,8 @@
 "use client";
 
+import { useResumeEntryCities } from "@/hooks/use-resume-entry-cities";
 import type { UseFormReturn } from "react-hook-form";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,15 +51,11 @@ interface EducationSectionProps {
 
 export const EducationSection = ({ form }: EducationSectionProps) => {
   const educationList = form.watch("educationList") || [];
-  const [selectedEducationCountries, setSelectedEducationCountries] = useState<
-    string[]
-  >([]);
-  const [educationCitiesData, setEducationCitiesData] = useState<string[][]>(
-    []
-  );
-  const [loadingEducationCities, setLoadingEducationCities] = useState<
-    boolean[]
-  >([]);
+  const {
+    selectedCountries: selectedEducationCountries,
+    citiesData: educationCitiesData,
+    loadingCities: loadingEducationCities,
+  } = useResumeEntryCities(form, "educationList");
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -74,60 +71,6 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
       return data.data as Country[];
     },
   });
-
-  const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
-    if (!country) return [];
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country }),
-        }
-      );
-      const data = await response.json();
-      if (data.error) throw new Error("Failed to fetch cities");
-      return data.data as string[];
-    } catch (error) {
-      console.error("Error fetching cities:", error);
-      return [];
-    }
-  };
-
-  // Sync education countries state with form data
-  useEffect(() => {
-    const initialCountries = educationList.map((edu: any) => edu.country || "");
-    setSelectedEducationCountries(initialCountries);
-  }, [educationList.length]);
-
-  // Fetch cities for all education entries when countries change
-  useEffect(() => {
-    const fetchEducationCities = async () => {
-      const newCitiesData: string[][] = [];
-      const newLoadingStates: boolean[] = [];
-
-      for (let index = 0; index < educationList.length; index++) {
-        const country = selectedEducationCountries[index] || "";
-        newLoadingStates[index] = !!country;
-
-        if (country) {
-          const cities = await fetchCitiesForCountry(country);
-          newCitiesData[index] = cities;
-        } else {
-          newCitiesData[index] = [];
-        }
-        newLoadingStates[index] = false;
-      }
-
-      setEducationCitiesData(newCitiesData);
-      setLoadingEducationCities(newLoadingStates);
-    };
-
-    if (educationList.length > 0) {
-      fetchEducationCities();
-    }
-  }, [educationList.length, selectedEducationCountries]);
 
   // Validate dates whenever startDate or graduationDate changes
   useEffect(() => {
@@ -269,10 +212,9 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                           value={field.value || ""}
                           onChange={(value) => {
                             field.onChange(value);
-                            setSelectedEducationCountries((prev) => {
-                              const newCountries = [...prev];
-                              newCountries[index] = value;
-                              return newCountries;
+                            form.setValue(`educationList.${index}.city`, "", {
+                              shouldDirty: true,
+                              shouldValidate: true,
                             });
                           }}
                           placeholder={
@@ -368,7 +310,14 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                     name={`educationList.${index}.graduationDate`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Graduation Date</FormLabel>
+                        <FormLabel>
+                          Graduation Date
+                          {form.watch(`educationList.${index}.instituteName`) &&
+                          form.watch(`educationList.${index}.startDate`) &&
+                          !form.watch(`educationList.${index}.currentlyStudying`)
+                            ? " *"
+                            : ""}
+                        </FormLabel>
                         <FormControl>
                           <CustomDateInput
                             value={field.value || ""}

@@ -139,7 +139,7 @@ export default function PasswordResetStep({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">New password</Label>
+          <Label htmlFor="password">New password *</Label>
           <div className="relative">
             <Input
               id="password"
@@ -162,7 +162,7 @@ export default function PasswordResetStep({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm new password</Label>
+          <Label htmlFor="confirmPassword">Confirm new password *</Label>
           <div className="relative">
             <Input
               id="confirmPassword"

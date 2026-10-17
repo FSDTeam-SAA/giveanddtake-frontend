@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, Globe } from "lucide-react";
 import PageHeaders from "@/components/shared/PageHeaders";
 import { toast } from "sonner";
+import {
+  CONTACT_MESSAGE_WORD_LIMIT,
+  countContactMessageWords,
+  getContactMessageError,
+} from "@/lib/contact-message-policy";
 
 // Define interface for form data
 interface ContactFormData {
@@ -71,9 +76,8 @@ const validateForm = (data: ContactFormData): string[] => {
     errors.push("Subject must be at least 3 characters.");
   }
 
-  if (!data.message.trim() || data.message.trim().length < 10) {
-    errors.push("Message must be at least 10 characters.");
-  }
+  const messageError = getContactMessageError(data.message);
+  if (messageError) errors.push(messageError);
 
   return errors;
 };
@@ -137,6 +141,12 @@ export default function ContactForm() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { id, value } = e.target;
+    if (
+      id === "message" &&
+      countContactMessageWords(value) > CONTACT_MESSAGE_WORD_LIMIT
+    ) {
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -159,7 +169,7 @@ export default function ContactForm() {
                   className="text-[#2A2A2A] text-[16px] font-medium"
                   htmlFor="firstName"
                 >
-                  First Name
+                  First Name *
                 </Label>
                 <Input
                   id="firstName"
@@ -174,7 +184,7 @@ export default function ContactForm() {
                   className="text-[#2A2A2A] text-[16px] font-medium"
                   htmlFor="lastName"
                 >
-                  Last Name
+                  Last Name *
                 </Label>
                 <Input
                   id="lastName"
@@ -190,13 +200,13 @@ export default function ContactForm() {
                 className="text-[#2A2A2A] text-[16px] font-medium"
                 htmlFor="address"
               >
-                Email
+                Email *
               </Label>
               <div className="relative">
                 <Input
                   id="address"
                   type="email"
-                  placeholder="Enter Your email"
+                  placeholder="Enter Your Email"
                   value={formData.address}
                   onChange={handleInputChange}
                   required
@@ -208,7 +218,7 @@ export default function ContactForm() {
                 className="text-[#2A2A2A] text-[16px] font-medium"
                 htmlFor="subject"
               >
-                Subject
+                Subject *
               </Label>
               <Input
                 id="subject"
@@ -223,7 +233,7 @@ export default function ContactForm() {
                 className="text-[#2A2A2A] text-[16px] font-medium"
                 htmlFor="message"
               >
-                Your Message
+                Your Message (50 words max) *
               </Label>
               <Textarea
                 id="message"
@@ -231,8 +241,17 @@ export default function ContactForm() {
                 className="min-h-[120px]"
                 value={formData.message}
                 onChange={handleInputChange}
+                aria-describedby="message-word-count"
                 required
               />
+              <p
+                id="message-word-count"
+                className="text-sm text-gray-600"
+                aria-live="polite"
+              >
+                {countContactMessageWords(formData.message)}/
+                {CONTACT_MESSAGE_WORD_LIMIT} words
+              </p>
             </div>
             <Button
               type="submit"
@@ -267,7 +286,7 @@ export default function ContactForm() {
                   <Phone className="w-5 h-5" />
                 </div>
                 <a
-                  href="tel:+14065550120"
+                  href="tel:+442039542530"
                   className="text-gray-700 hover:underline"
                 >
                   +44 0203 954 2530
@@ -280,6 +299,17 @@ export default function ContactForm() {
                 <address className="text-gray-700 not-italic">
                   124 City Road, London EC1V 2NX
                 </address>
+              </div>
+              <div className="flex items-center gap-16">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <a
+                  href="https://evpitch.com"
+                  className="text-gray-700 hover:underline"
+                >
+                  evpitch.com
+                </a>
               </div>
               <div className="flex items-center gap-16">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600">

@@ -647,7 +647,7 @@ export default function CreateResumeForm() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Skills</CardTitle>
+              <CardTitle>Skills *</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Showcase your strengths and what sets you apart.
               </p>

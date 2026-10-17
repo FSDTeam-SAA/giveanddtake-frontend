@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useResumeEntryCities } from "@/hooks/use-resume-entry-cities";
+import { useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,14 +70,11 @@ export function ExperienceSection({
   appendExperience,
   removeExperience,
 }: ExperienceSectionProps) {
-  const [selectedExperienceCountries, setSelectedExperienceCountries] =
-    useState<string[]>([]);
-  const [experienceCitiesData, setExperienceCitiesData] = useState<string[][]>(
-    []
-  );
-  const [loadingExperienceCities, setLoadingExperienceCities] = useState<
-    boolean[]
-  >([]);
+  const {
+    selectedCountries: selectedExperienceCountries,
+    citiesData: experienceCitiesData,
+    loadingCities: loadingExperienceCities,
+  } = useResumeEntryCities(form, "experiences");
 
   // Fetch countries
   const { data: countriesData, isLoading: isLoadingCountries } = useQuery<
@@ -92,60 +90,6 @@ export function ExperienceSection({
       return data.data as Country[];
     },
   });
-
-  const fetchCitiesForCountry = async (country: string): Promise<string[]> => {
-    if (!country) return [];
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/countries/cities`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country }),
-        }
-      );
-      const data = await response.json();
-      if (data.error) throw new Error("Failed to fetch cities");
-      return data.data as string[];
-    } catch (error) {
-      console.error("Error fetching cities:", error);
-      return [];
-    }
-  };
-
-  useEffect(() => {
-    const fetchExperienceCities = async () => {
-      const newCitiesData: string[][] = [];
-      const newLoadingStates: boolean[] = [];
-
-      for (let index = 0; index < experienceFields.length; index++) {
-        const country = selectedExperienceCountries[index] || "";
-        newLoadingStates[index] = !!country;
-
-        if (country) {
-          const cities = await fetchCitiesForCountry(country);
-          newCitiesData[index] = cities;
-        } else {
-          newCitiesData[index] = [];
-        }
-        newLoadingStates[index] = false;
-      }
-
-      setExperienceCitiesData(newCitiesData);
-      setLoadingExperienceCities(newLoadingStates);
-    };
-
-    fetchExperienceCities();
-  }, [experienceFields.length, selectedExperienceCountries]);
-
-  // Sync experience countries state with form data
-  useEffect(() => {
-    setSelectedExperienceCountries(
-      experienceFields.map(
-        (field, idx) => form.getValues(`experiences.${idx}.country`) || ""
-      )
-    );
-  }, [experienceFields]);
 
   // Validate dates whenever startDate or endDate changes
   useEffect(() => {
@@ -233,10 +177,9 @@ export function ExperienceSection({
                         value={field.value || ""}
                         onChange={(value) => {
                           field.onChange(value);
-                          setSelectedExperienceCountries((prev) => {
-                            const newCountries = [...prev];
-                            newCountries[index] = value;
-                            return newCountries;
+                          form.setValue(`experiences.${index}.city`, "", {
+                            shouldDirty: true,
+                            shouldValidate: true,
                           });
                         }}
                         placeholder={
@@ -355,7 +298,14 @@ export function ExperienceSection({
                   name={`experiences.${index}.endDate`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>End Date</FormLabel>
+                      <FormLabel>
+                        End Date
+                        {form.watch(`experiences.${index}.company`) &&
+                        form.watch(`experiences.${index}.position`) &&
+                        !form.watch(`experiences.${index}.currentlyWorking`)
+                          ? " *"
+                          : ""}
+                      </FormLabel>
                       <FormControl>
                         <CustomDateInput
                           value={field.value}

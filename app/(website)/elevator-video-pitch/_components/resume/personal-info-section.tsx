@@ -269,7 +269,7 @@ export function PersonalInfoSection({
             <div className="col-span-6 flex-1">
               <div className="flex items-center justify-between mb-2">
                 <FormLabel className="text-blue-600 font-medium">
-                  About Me
+                  About Me *
                 </FormLabel>
               </div>
               <FormField

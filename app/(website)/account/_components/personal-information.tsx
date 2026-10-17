@@ -434,7 +434,7 @@ export function PersonalInformation() {
             htmlFor="firstName"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            First name
+            First name *
           </Label>
           <Input
             id="firstName"
@@ -456,7 +456,7 @@ export function PersonalInformation() {
             htmlFor="surname"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            Surname
+            Surname *
           </Label>
           <Input
             id="surname"
@@ -477,7 +477,7 @@ export function PersonalInformation() {
     htmlFor="email"
     className="text-sm font-medium text-gray-700 mb-2 block"
   >
-    Email Address
+    Email Address *
   </Label>
   <Input
     id="email"
@@ -507,7 +507,7 @@ export function PersonalInformation() {
             htmlFor="country"
             className="text-sm font-medium text-gray-700 mb-2 block"
           >
-            Country
+            Country *
           </Label>
           <Input
             id="country"
@@ -608,7 +608,7 @@ export function PersonalInformation() {
                 htmlFor="disable-password"
                 className="text-sm font-medium text-gray-700 mb-2 block"
               >
-                Password
+                Password *
               </Label>
               <div className="relative">
                 <Input
@@ -696,7 +696,7 @@ export function PersonalInformation() {
                 htmlFor="delete-password"
                 className="text-sm font-medium text-gray-700 mb-2 block"
               >
-                Password
+                Password *
               </Label>
               <div className="relative">
                 <Input

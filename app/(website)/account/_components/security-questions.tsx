@@ -184,7 +184,7 @@ export function SecurityQuestions({
                 htmlFor={`question-${index}`}
                 className="text-sm font-medium text-blue-600"
               >
-                {questionObj.question}
+                {questionObj.question} *
               </Label>
               <Input
                 id={`question-${index}`}

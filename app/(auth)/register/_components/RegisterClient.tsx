@@ -409,7 +409,7 @@ export default function RegisterPage() {
             {/* First name OR Company name */}
             <div className="space-y-2">
               <Label htmlFor="firstName">
-                {isCompany ? "Company Name" : "First Name"}
+                {isCompany ? "Company Name *" : "First Name *"}
               </Label>
               <div className="relative">
                 {isCompany ? (
@@ -444,7 +444,7 @@ export default function RegisterPage() {
             {/* Surname OR Company suffix (optional) */}
             <div className="space-y-2">
               <Label htmlFor="surname">
-                {isCompany ? "Company Suffix (optional)" : "Surname"}
+                {isCompany ? "Company Suffix (optional)" : "Surname *"}
               </Label>
               <div className="relative">
                 {isCompany ? (
@@ -482,10 +482,10 @@ export default function RegisterPage() {
             <div className="space-y-2">
               <Label htmlFor="email">
                 {selectedRole === "recruiter"
-                  ? "Recruiter Email"
+                  ? "Recruiter Email *"
                   : selectedRole === "company"
-                  ? "Company Email"
-                  : "Personal Email"}
+                  ? "Company Email *"
+                  : "Personal Email *"}
               </Label>
 
               <div className="relative">
@@ -516,7 +516,7 @@ export default function RegisterPage() {
 
             {/* Country (with Combobox) */}
             <div className="space-y-2">
-              <Label htmlFor="address">Country</Label>
+              <Label htmlFor="address">Country *</Label>
               <Popover
                 open={openCountryPopover}
                 onOpenChange={setOpenCountryPopover}
@@ -572,7 +572,7 @@ export default function RegisterPage() {
 
             {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password *</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -660,7 +660,7 @@ export default function RegisterPage() {
 
             {/* Confirm password */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword">Confirm Password *</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -711,7 +711,7 @@ export default function RegisterPage() {
                   }}
                 />
                 <Label htmlFor="ageVerification" className="text-sm">
-                  I confirm I am 16 years of age or older
+                  I confirm I am 16 years of age or older *
                 </Label>
               </div>
             </div>
@@ -730,7 +730,7 @@ export default function RegisterPage() {
                   target="_blank"
                   className="text-primary underline-offset-4 hover:underline"
                 >
-                  Terms &amp; Conditions
+                  Terms &amp; Conditions *
                 </Link>
               </Label>
             </div>

@@ -83,7 +83,7 @@ export function ChangePassword({
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <Label htmlFor="oldPassword">Current Password</Label>
+          <Label htmlFor="oldPassword">Current Password *</Label>
           <Input
             id="oldPassword"
             maxLength={PASSWORD_MAX_LENGTH}
@@ -100,7 +100,7 @@ export function ChangePassword({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
-            <Label htmlFor="newPassword">New Password</Label>
+            <Label htmlFor="newPassword">New Password *</Label>
             <Input
               id="newPassword"
               maxLength={PASSWORD_MAX_LENGTH}
@@ -130,7 +130,7 @@ export function ChangePassword({
             </button>
           </div>
           <div className="relative">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <Label htmlFor="confirmPassword">Confirm New Password *</Label>
             <Input
               id="confirmPassword"
               maxLength={PASSWORD_MAX_LENGTH}

@@ -65,7 +65,7 @@ export default function EmailStep({
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email Address</Label>
+          <Label htmlFor="email">Email Address *</Label>
           <Input
             id="email"
             type="email"

@@ -138,9 +138,11 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="login-email">Email *</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
+                  id="login-email"
                   type="email"
                   placeholder="Email"
                   value={email}
@@ -152,9 +154,11 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="login-password">Password *</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
+                  id="login-password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"

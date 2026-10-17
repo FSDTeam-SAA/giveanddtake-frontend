@@ -147,7 +147,7 @@ export function ChangeEmailModal({
                   htmlFor="new-email"
                   className="text-sm font-medium text-gray-700 mb-2 block"
                 >
-                  New Email
+                  New Email *
                 </Label>
                 <Input
                   id="new-email"
