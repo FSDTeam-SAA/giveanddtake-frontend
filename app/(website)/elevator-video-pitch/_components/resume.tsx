@@ -1,4 +1,5 @@
 "use client";
+import { useQualifications } from "@/hooks/use-qualifications";
 
 import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
 
@@ -124,6 +125,7 @@ interface MyResumeProps {
 }
 
 export default function MyResume({ resume, onEdit }: MyResumeProps) {
+  const qualifications = useQualifications();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const token = session?.accessToken;
@@ -617,7 +619,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                            {edu.degree}
+                            {qualifications.label(edu.degree)}
                             {edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}
                           </h4>
                           <p className="text-sm">{edu.instituteName}</p>

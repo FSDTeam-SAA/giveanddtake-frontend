@@ -1,4 +1,5 @@
 "use client";
+import { useQualifications } from "@/hooks/use-qualifications";
 
 import { useResumeEntryCities } from "@/hooks/use-resume-entry-cities";
 import type { UseFormReturn } from "react-hook-form";
@@ -50,6 +51,7 @@ interface EducationSectionProps {
 }
 
 export const EducationSection = ({ form }: EducationSectionProps) => {
+  const qualifications = useQualifications();
   const educationList = form.watch("educationList") || [];
   const {
     selectedCountries: selectedEducationCountries,
@@ -155,26 +157,9 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                             <SelectValue placeholder="Select a qualification" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="BSc">BSc</SelectItem>
-                            <SelectItem value="B.Tech">B.Tech</SelectItem>
-                            <SelectItem value="B.A">B.A</SelectItem>
-                            <SelectItem value="B.Ed">B.Ed</SelectItem>
-                            <SelectItem value="B.Eng">B.Eng</SelectItem>
-                            <SelectItem value="LLB">LLB</SelectItem>
-                            <SelectItem value="LLM">LLM</SelectItem>
-                            <SelectItem value="M.B.A">M.B.A</SelectItem>
-                            <SelectItem value="MSc">MSc</SelectItem>
-                            <SelectItem value="M.Phil">M.Phil</SelectItem>
-                            <SelectItem value="M.Eng">M.Eng</SelectItem>
-
-                            <SelectItem value="Ph.D">Ph.D</SelectItem>
-                            <SelectItem value="High School">
-                              High School
-                            </SelectItem>
-                            <SelectItem value="College">College</SelectItem>
-                            <SelectItem value="Sixth Form">
-                              Sixth Form
-                            </SelectItem>
+                            {qualifications.options(field.value).map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                          ))}
                           </SelectContent>
                         </Select>
                       </FormControl>

@@ -1,4 +1,5 @@
 "use client";
+import { useQualifications } from "@/hooks/use-qualifications";
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -215,6 +216,7 @@ const DeactivatedProfile: React.FC = () => (
 
 // ---------- main ----------
 const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
+  const qualifications = useQualifications();
   const { data: session } = useSession(); // keep if you’ll need token later
 
   // --- data fetch (hook always called) ---
@@ -461,7 +463,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
             {sortedEducation.length > 0 ? (
               <ul className="space-y-6">
                 {sortedEducation.map((edu) => {
-                  const degree = titleCase(edu.degree) || "Degree";
+                  const degree = qualifications.label(edu.degree) || "Degree";
                   const field =
                     typeof edu.fieldOfStudy === "string" &&
                     edu.fieldOfStudy.trim().length

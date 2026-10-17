@@ -1,4 +1,5 @@
 "use client";
+import { useQualifications } from "@/hooks/use-qualifications";
 
 import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
 
@@ -25,6 +26,7 @@ export default function ApplicantDetails({
 }: {
   applicantId: string;
 }) {
+  const qualifications = useQualifications();
   const {
     data: applicantResume,
     isLoading,
@@ -287,7 +289,7 @@ export default function ApplicantDetails({
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                    {edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
+                    {qualifications.label(edu.degree)} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
                   </h4>
                   <p className="text-sm">{isCurrentEducation(edu) ? "Present" : formatProfileDate(edu.graduationDate)}</p>
                   <p className="text-sm">{edu.instituteName}</p>

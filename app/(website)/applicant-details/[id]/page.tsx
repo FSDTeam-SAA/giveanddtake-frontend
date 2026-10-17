@@ -123,17 +123,6 @@ interface ApiResponse {
   data: ApplicantData;
 }
 
-const degreeLabels: Record<string, string> = {
-  bsc: "BSc.",
-  btech: "B.Tech.",
-  ba: "B.A",
-  bed: "B.Ed.",
-  mba: "M.B.A.",
-  msc: "MSc.",
-  mphil: "M.Phil.",
-  phd: "Ph.D",
-};
-
 // Helper function to validate URLs
 const isValidUrl = (urlString: string): boolean => {
   try {
