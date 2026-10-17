@@ -1,5 +1,7 @@
 "use client";
 
+import { sortAwards } from "@/lib/profile-history";
+
 import { useParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -545,7 +547,7 @@ export default function CompanyProfilePage() {
                 Awards and Honors
               </h2>
               <div className="space-y-4">
-                {honors.map((honor: Honor) => (
+                {sortAwards(honors).map((honor: Honor) => (
                   <Card key={honor._id}>
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-gray-900">

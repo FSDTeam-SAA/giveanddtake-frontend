@@ -1,5 +1,7 @@
 "use client";
 
+import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
+
 import type React from "react";
 import { useState } from "react";
 import { useSession } from "next-auth/react";
@@ -239,13 +241,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
     );
   }
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "Present";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-    });
-  };
+  const formatDate = formatProfileDate;
 
   return (
     <main className="min-h-screen">
@@ -565,7 +561,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     Experience
                   </h3>
                   <div className="space-y-6">
-                    {resume.experiences.map((exp) => (
+                    {sortExperiences(resume.experiences).map((exp) => (
                       <div
                         key={exp._id}
                         className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
@@ -580,7 +576,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                           <p className="text-sm">{exp.company}</p>
                           <p className="text-gray-500 text-sm">
                             {formatDate(exp.startDate)} -{" "}
-                            {formatDate(exp.endDate)}
+                            {isCurrentExperience(exp) ? "Present" : formatDate(exp.endDate)}
                           </p>
                           {exp.jobDescription && (
                             <p className="text-gray-600 text-sm">
@@ -611,7 +607,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     Education
                   </h3>
                   <div className="space-y-6">
-                    {resume.education?.map((edu) => (
+                    {sortEducation(resume.education).map((edu) => (
                       <div
                         key={edu._id}
                         className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
@@ -627,7 +623,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                           <p className="text-sm">{edu.instituteName}</p>
                           <p className="text-gray-500 text-sm">
                             {formatDate(edu.startDate)} -{" "}
-                            {formatDate(edu.graduationDate)}
+                            {isCurrentEducation(edu) ? "Present" : formatDate(edu.graduationDate)}
                           </p>
                         </div>
 
@@ -652,7 +648,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     Awards & Honours
                   </h3>
                   <div className="space-y-6">
-                    {resume.awardsAndHonors?.map((award) => (
+                    {sortAwards(resume.awardsAndHonors).map((award) => (
                       <div
                         key={award._id}
                         className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"

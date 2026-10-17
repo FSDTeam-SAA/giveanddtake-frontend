@@ -1,5 +1,7 @@
 "use client";
 
+import { sortAwards } from "@/lib/profile-history";
+
 import type React from "react";
 
 import { useState } from "react";
@@ -580,7 +582,7 @@ export default function EditableCompanyProfile({
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map(
+            {sortAwards(honors).map(
               (honor: {
                 _id: string;
                 userId: string;

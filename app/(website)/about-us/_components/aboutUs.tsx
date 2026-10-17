@@ -4,6 +4,7 @@ import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
+import PageHeaders from "@/components/shared/PageHeaders";
 
 // 🫧 Bubble animation variants
 const bubbleVariants: Variants = {
@@ -99,9 +100,9 @@ export default function AboutUsPage() {
 
           {data && (
             <>
-              <h1 className="text-[#131313] text-2xl md:text-3xl lg:text-5xl font-bold mt-6 mb-12 text-center" style={{ color: "rgb(43, 127, 208)" }}>
-                {data.title || "About Us"}
-              </h1>
+              <div className="mt-6">
+                <PageHeaders title={data.title || "About Us"} />
+              </div>
 
               {/* Render Quill HTML safely */}
               <div

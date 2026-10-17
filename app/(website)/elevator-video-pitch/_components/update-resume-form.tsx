@@ -1,5 +1,7 @@
 "use client";
 
+import { sortExperiences, sortEducation, sortAwards } from "@/lib/profile-history";
+
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useFormDraft } from '@/hooks/use-session-draft';
@@ -316,7 +318,7 @@ export default function UpdateResumeForm({
           Array.isArray(resume.experiences) &&
           resume.experiences.length > 0
         ) {
-          return resume.experiences.map((exp: any) => ({
+          return sortExperiences(resume.experiences).map((exp: any) => ({
             _id: exp._id || undefined,
             type: exp._id ? "update" : "create",
             company: exp.company || "",
@@ -366,7 +368,7 @@ export default function UpdateResumeForm({
       })(),
       educationList: (() => {
         if (Array.isArray(resume.education) && resume.education.length > 0) {
-          return resume.education.map((edu: any) => ({
+          return sortEducation(resume.education).map((edu: any) => ({
             _id: edu._id || undefined,
             type: edu._id ? "update" : "create",
             instituteName: edu.instituteName || edu.university || "",
@@ -413,7 +415,7 @@ export default function UpdateResumeForm({
           Array.isArray(resume.awardsAndHonors) &&
           resume.awardsAndHonors.length > 0
         ) {
-          return resume.awardsAndHonors.map((award: any) => ({
+          return sortAwards(resume.awardsAndHonors).map((award: any) => ({
             _id: award._id || undefined,
             type: award._id ? "update" : "create",
             title: award.title || "",

@@ -1,5 +1,7 @@
 "use client";
 
+import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -216,7 +218,7 @@ export default function ApplicantDetails({
           Experience
         </h3>
         <div className="space-y-6">
-          {applicantResume?.experience.map(
+          {sortExperiences(applicantResume?.experience).map(
             (exp: {
               _id: string;
               jobTitle: string;
@@ -247,7 +249,7 @@ export default function ApplicantDetails({
                       </span>
                     </p>
                     <p className="text-gray-500 text-sm">
-                      {formatDate(exp.endDate)} - {formatDate(exp.startDate)}
+                      {formatProfileDate(exp.startDate)} - {isCurrentExperience(exp) ? "Present" : formatProfileDate(exp.endDate)}
                     </p>
                   </div>
                 </div>
@@ -266,7 +268,7 @@ export default function ApplicantDetails({
           Education
         </h3>
         <div className="space-y-6">
-          {applicantResume?.education.map(
+          {sortEducation(applicantResume?.education).map(
             (edu: {
               _id: string;
               degree: string;
@@ -287,7 +289,7 @@ export default function ApplicantDetails({
                   <h4 className="font-semibold text-gray-800 capitalize text-lg">
                     {edu.degree} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
                   </h4>
-                  <p className="text-sm">{formatDate(edu.graduationDate)}</p>
+                  <p className="text-sm">{isCurrentEducation(edu) ? "Present" : formatProfileDate(edu.graduationDate)}</p>
                   <p className="text-sm">{edu.instituteName}</p>
                 </div>
                 <p className="text-gray-600 text-sm flex items-center gap-2">
@@ -327,11 +329,12 @@ export default function ApplicantDetails({
           Awards & Honours
         </h3>
         <div className="space-y-6">
-          {applicantResume?.awardsAndHonor?.map(
+          {sortAwards(applicantResume?.awardsAndHonor).map(
             (award: {
               _id: string;
               title: string;
               createdAt: string;
+              programeDate?: string;
               description: string;
             }) => (
               <div
@@ -346,7 +349,7 @@ export default function ApplicantDetails({
                     {award.title}
                   </h4>
                   <p className="text-gray-500 text-sm">
-                    {formatDate(award.createdAt)}
+                    {formatProfileDate(award.programeDate)}
                   </p>
                   {award.description && (
                     <p className="text-gray-600 text-sm">{award.description}</p>

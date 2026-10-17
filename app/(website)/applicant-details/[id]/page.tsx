@@ -1,5 +1,7 @@
 "use client";
 
+import { sortExperiences, sortAwards, isCurrentExperience } from "@/lib/profile-history";
+
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
@@ -611,7 +613,7 @@ export default function ApplicantDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {experiences.map((exp) => (
+                {sortExperiences(experiences).map((exp) => (
                   <div
                     key={exp._id}
                     className="border-l-2 pl-4 border-gray-200"
@@ -626,7 +628,7 @@ export default function ApplicantDetailsPage() {
                         </p> */}
                       </div>
                       <div className="text-gray-500 text-sm">
-                        {formatDate(exp.startDate)} - {formatDate(exp.endDate)}
+                        {formatDate(exp.startDate)} - {isCurrentExperience(exp) ? "Present" : formatDate(exp.endDate)}
                       </div>
                     </div>
                     <div>
@@ -679,7 +681,7 @@ export default function ApplicantDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {awardsAndHonors.map((award) => (
+                {sortAwards(awardsAndHonors).map((award) => (
                   <div key={award._id}>
                     <h3 className="font-semibold">{award.title}</h3>
                     {award.description && (

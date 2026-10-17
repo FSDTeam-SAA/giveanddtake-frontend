@@ -33,7 +33,7 @@ const TermsPage = () => {
 
       {data && (
         <div
-          className="prose max-w-none mt-8 list-item list-none"
+          className="terms-content max-w-none mt-8 list-item list-none"
           dangerouslySetInnerHTML={{ __html: data?.data?.description || "" }}
         />
       )}

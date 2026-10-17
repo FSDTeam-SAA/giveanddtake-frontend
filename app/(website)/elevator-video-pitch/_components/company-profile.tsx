@@ -1,5 +1,7 @@
 "use client";
 
+import { sortAwards } from "@/lib/profile-history";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -817,7 +819,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             Awards and Honors
           </h2>
           <div className="space-y-4">
-            {honors.map(
+            {sortAwards(honors).map(
               (honor: {
                 _id: string;
                 title: string;

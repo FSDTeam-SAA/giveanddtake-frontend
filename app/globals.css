@@ -288,6 +288,26 @@
   }
 }
 
+/* Keep the saved Terms text intact; normalize only its reading layout. */
+.terms-content {
+  font-size: 1rem;
+  line-height: 1.75;
+}
+.terms-content p {
+  margin-block: 0 1em !important;
+  line-height: 1.75 !important;
+}
+.terms-content p span,
+.terms-content li span {
+  line-height: inherit !important;
+}
+.terms-content li {
+  line-height: 1.75 !important;
+}
+.terms-content > :last-child {
+  margin-bottom: 0 !important;
+}
+
 
 
 
