@@ -380,7 +380,7 @@ export default function ApplicantDetails({
             Reviewing
           </Button>
           <Button className="bg-[#ED1C24] hover:bg-[#ED1C24]/90 text-white">
-            Not Shortlisted
+            Unsuccessful
           </Button>
         </div>
       </section>

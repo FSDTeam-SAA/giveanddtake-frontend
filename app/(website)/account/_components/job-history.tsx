@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { applicationStatusLabel } from "@/lib/application-status";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination } from "@/components/shared/pagination";
 
@@ -238,15 +239,11 @@ export default function JobHistory() {
                         className={cn(
                           "font-medium",
                           application.status === "pending" && "text-blue-600", // Assuming "pending" maps to "Reviewing"
-                          application.status === "rejected" && "text-red-600" // Assuming "rejected" maps to "Not Shortlisted"
+                          applicationStatusLabel(application.status) === "Unsuccessful" && "text-red-600"
                           // Add more status mappings if needed
                         )}
                       >
-                        {{
-                          pending: "Reviewing",
-                          rejected: "Not Shortlisted",
-                          shortlisted: "Shortlisted",
-                        }[application.status] || application.status}
+                        {applicationStatusLabel(application.status, "Reviewing")}
                       </TableCell>
                     </TableRow>
                   ))}

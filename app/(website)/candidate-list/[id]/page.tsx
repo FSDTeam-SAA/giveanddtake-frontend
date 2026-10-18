@@ -496,7 +496,7 @@ export default function JobApplicantsPage() {
           </DialogHeader>
           <p className="text-gray-600">
             Are you sure you want to change the applicant's status to{" "}
-            <strong>{confirmDialog.newStatus}</strong>?
+            <strong>{STATUS_OPTIONS.find(option => option.value === confirmDialog.newStatus)?.label}</strong>?
           </p>
           <DialogFooter className="mt-4">
             <Button
