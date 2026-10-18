@@ -61,7 +61,9 @@ export function Combobox({
           className="w-full justify-between bg-transparent"
           disabled={disabled}
         >
-          {value ? options.find((o) => o.value === value)?.label : placeholder}
+          {value
+            ? options.find((o) => o.value === value)?.label ?? placeholder
+            : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
