@@ -278,7 +278,7 @@ export function PersonalInfoSection({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea
+                      <Textarea placeholder="About Me"
                         value={field.value}
                         onChange={field.onChange}
                       />
@@ -310,7 +310,7 @@ export function PersonalInfoSection({
                 <FormItem>
                   <FormLabel>First Name*</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter Your First Name" {...field} />
+                    <Input placeholder="First Name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -323,7 +323,7 @@ export function PersonalInfoSection({
                 <FormItem>
                   <FormLabel>Surname*</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter Your Last Name" {...field} />
+                    <Input placeholder="Surname" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -346,7 +346,7 @@ export function PersonalInfoSection({
                       placeholder={
                         isLoadingCountries
                           ? "Loading countries..."
-                          : "Select Country"
+                          : "Country"
                       }
                       minSearchLength={0}
                       disabled={isLoadingCountries}
@@ -372,7 +372,7 @@ export function PersonalInfoSection({
                           ? "Select country first"
                           : isLoadingCities
                           ? "Loading cities..."
-                          : "Select City"
+                          : "City"
                       }
                       minSearchLength={2}
                       disabled={isLoadingCities || !selectedCountry}
@@ -391,7 +391,7 @@ export function PersonalInfoSection({
                   <FormControl>
                     <Input
                       type="email"
-                      placeholder="Enter Your Email Address"
+                      placeholder="Email Address"
                       disabled
                       {...field}
                     />

@@ -122,7 +122,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                     <FormItem>
                       <FormLabel>Company Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="" {...field} />
+                        <Input placeholder="Company Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -137,7 +137,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                       <FormLabel>Job Title</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g. Software Engineer"
+                          placeholder="Job Title"
                           {...field}
                         />
                       </FormControl>
@@ -167,7 +167,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                           placeholder={
                             isLoadingCountries
                               ? "Loading countries..."
-                              : "Select Country"
+                              : "Country"
                           }
                           minSearchLength={0}
                           disabled={isLoadingCountries}
@@ -195,7 +195,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                               ? "Select country first"
                               : loadingExperienceCities[index]
                               ? "Loading cities..."
-                              : "Select City"
+                              : "City"
                           }
                           minSearchLength={2}
                           disabled={
@@ -334,7 +334,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                     <FormLabel>Job Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe your responsibilities and achievements"
+                        placeholder="Job Description"
                         {...field}
                       />
                     </FormControl>

@@ -73,7 +73,7 @@ export function CertificationsSection({ form }: CertificationsSectionProps) {
                 <FormControl>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="e.g. AWS Certified Solutions Architect"
+                      placeholder="Add Certification"
                       value={certificationInput}
                       onChange={(e) => setCertificationInput(e.target.value)}
                       onKeyPress={handleCertificationKeyPress}

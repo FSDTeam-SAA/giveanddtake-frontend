@@ -161,7 +161,7 @@ export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
                       <FormLabel>Award Title</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g. Employee of the Year"
+                          placeholder="Award Title"
                           {...field}
                         />
                       </FormControl>
@@ -177,7 +177,7 @@ export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
                     <FormItem>
                       <FormLabel>Program Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Company Name" {...field} />
+                        <Input placeholder="Program Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -213,7 +213,7 @@ export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe the award and its significance"
+                        placeholder="Description"
                         {...field}
                       />
                     </FormControl>

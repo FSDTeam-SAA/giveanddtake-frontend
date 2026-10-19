@@ -101,7 +101,7 @@ export default function JobDetailsPreviewEdit({
           <Popover open={openCategory} onOpenChange={setOpenCategory}>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="h-11 justify-between w-full bg-transparent">
-                {formData.category || "Select category"}
+                {formData.category || "Job Category"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -138,7 +138,7 @@ export default function JobDetailsPreviewEdit({
                 className="h-11 justify-between w-full bg-transparent"
                 disabled={!selectedCategoryRoles.length}
               >
-                {formData.role || "Select role"}
+                {formData.role || "Role"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -174,7 +174,7 @@ export default function JobDetailsPreviewEdit({
           <Input
             value={formData.jobTitle}
             onChange={(e) => onFieldChange("jobTitle", e.target.value)}
-            placeholder="Enter job title"
+            placeholder="Job Title"
             className="h-11"
           />
         </div>
@@ -186,7 +186,7 @@ export default function JobDetailsPreviewEdit({
         <Input
           value={formData.department}
           onChange={(e) => onFieldChange("department", e.target.value)}
-          placeholder="Enter department"
+          placeholder="Department"
           className="h-11"
         />
       </div>
@@ -198,7 +198,7 @@ export default function JobDetailsPreviewEdit({
           <Popover open={openCountry} onOpenChange={setOpenCountry}>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="h-11 justify-between w-full bg-transparent">
-                {formData.country || "Select country"}
+                {formData.country || "Country"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -239,7 +239,7 @@ export default function JobDetailsPreviewEdit({
                 className="h-11 justify-between w-full bg-transparent"
                 disabled={!selectedCountry || isLoadingCities}
               >
-                {formData.region || (isLoadingCities ? "Loading..." : "Select city")}
+                {formData.region || (isLoadingCities ? "Loading..." : "City")}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -274,7 +274,8 @@ export default function JobDetailsPreviewEdit({
         <label className="text-sm font-medium text-gray-700">Number of Vacancies</label>
         <Input
           type="number"
-          value={formData.vacancy || 1}
+          placeholder="Number of Vacancies"
+              value={formData.vacancy || 1}
           onChange={(e) => onFieldChange("vacancy", e.target.value)}
           min="1"
           max="100"
@@ -288,7 +289,7 @@ export default function JobDetailsPreviewEdit({
           <label className="text-sm font-medium text-gray-700">Employment Type</label>
           <Select value={formData.employmentType} onValueChange={(value) => onFieldChange("employmentType", value)}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select employment type" />
+              <SelectValue placeholder="Employment Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="full-time">Full-time</SelectItem>
@@ -306,7 +307,7 @@ export default function JobDetailsPreviewEdit({
           <label className="text-sm font-medium text-gray-700">Experience Level</label>
           <Select value={formData.experience} onValueChange={(value) => onFieldChange("experience", value)}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select experience level" />
+              <SelectValue placeholder="Experience Level" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="entry">Entry Level</SelectItem>
@@ -324,7 +325,7 @@ export default function JobDetailsPreviewEdit({
           <label className="text-sm font-medium text-gray-700">Location Type</label>
           <Select value={formData.locationType} onValueChange={(value) => onFieldChange("locationType", value)}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select location type" />
+              <SelectValue placeholder="Location Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="onsite">On-site</SelectItem>
@@ -338,7 +339,7 @@ export default function JobDetailsPreviewEdit({
           <label className="text-sm font-medium text-gray-700">Career Stage</label>
           <Select value={formData.careerStage} onValueChange={(value) => onFieldChange("careerStage", value)}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select career stage" />
+              <SelectValue placeholder="Career Stage" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="New Entry">New Entry</SelectItem>
@@ -356,7 +357,7 @@ export default function JobDetailsPreviewEdit({
           <Popover open={openCurrency} onOpenChange={setOpenCurrency}>
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="h-11 justify-between w-full bg-transparent">
-                {formData.compensationCurrency || "Select currency"}
+                {formData.compensationCurrency || "Currency"}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
@@ -391,7 +392,7 @@ export default function JobDetailsPreviewEdit({
             type="number"
             value={formData.compensation || ""}
             onChange={(e) => onFieldChange("compensation", e.target.value)}
-            placeholder="e.g., 50000"
+            placeholder="Compensation Amount"
             className="h-11"
           />
         </div>
@@ -402,7 +403,7 @@ export default function JobDetailsPreviewEdit({
         <label className="text-sm font-medium text-gray-700">Job Posting Expiration (Days)</label>
         <Select value={formData.expirationDate} onValueChange={(value) => onFieldChange("expirationDate", value)}>
           <SelectTrigger className="h-11">
-            <SelectValue placeholder="Select expiration period" />
+            <SelectValue placeholder="Job Posting Expiration (Days)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="7">7 days</SelectItem>
@@ -419,7 +420,7 @@ export default function JobDetailsPreviewEdit({
         <Input
           value={formData.companyUrl}
           onChange={(e) => onFieldChange("companyUrl", e.target.value)}
-          placeholder="https://example.com"
+          placeholder="Company Website"
           className="h-11"
         />
       </div>

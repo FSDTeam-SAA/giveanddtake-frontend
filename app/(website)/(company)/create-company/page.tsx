@@ -252,7 +252,7 @@ export default function CreateCompanyPage() {
                     <FormControl>
                       <Textarea
                         {...field}
-                        placeholder="Write your description here (400 words)"
+                        placeholder="About Us"
                         className="min-h-[140px] resize-none"
                       />
                     </FormControl>
@@ -274,7 +274,7 @@ export default function CreateCompanyPage() {
                     Company Name*
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Your Company Name" />
+                    <Input {...field} placeholder="Company Name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -296,7 +296,7 @@ export default function CreateCompanyPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Country" />
+                          <SelectValue placeholder="Country" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -326,7 +326,7 @@ export default function CreateCompanyPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Country" />
+                          <SelectValue placeholder="City" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -355,7 +355,7 @@ export default function CreateCompanyPage() {
                       <Input
                         {...field}
                         type="email"
-                        placeholder="Enter Your Email Address"
+                        placeholder="Email Address"
                       />
                     </FormControl>
                     <FormMessage />
@@ -370,7 +370,7 @@ export default function CreateCompanyPage() {
           {/* Website Links */}
           <DynamicInputList
             label="Website"
-            placeholder="Enter Your Website Url"
+            placeholder="Website"
             values={websites}
             onChange={setWebsites}
             buttonText="Add More"
@@ -388,7 +388,7 @@ export default function CreateCompanyPage() {
                       LinkedIn
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
+                      <Input {...field} placeholder="LinkedIn" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -404,7 +404,7 @@ export default function CreateCompanyPage() {
                       Twitter
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
+                      <Input {...field} placeholder="Twitter" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -420,7 +420,7 @@ export default function CreateCompanyPage() {
                       Upwork
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter Your Website Url" />
+                      <Input {...field} placeholder="Upwork" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -437,7 +437,7 @@ export default function CreateCompanyPage() {
                     Other Business
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter Your Website Url" />
+                    <Input {...field} placeholder="Other Business" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -456,7 +456,7 @@ export default function CreateCompanyPage() {
                     <FormControl>
                       <Input
                         {...field}
-                        placeholder="Enter Your Website Address"
+                        placeholder="Other Professional Website"
                       />
                     </FormControl>
                     <FormMessage />
@@ -478,7 +478,7 @@ export default function CreateCompanyPage() {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select Industry" />
+                          <SelectValue placeholder="Industry" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -499,7 +499,7 @@ export default function CreateCompanyPage() {
           {/* Services */}
           <DynamicInputList
             label="Services*"
-            placeholder="Add Here"
+            placeholder="Services"
             values={services}
             onChange={setServices}
           />
@@ -564,7 +564,7 @@ export default function CreateCompanyPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Add a Month & Year" />
+                      <SelectValue placeholder="Month & Year" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="2024-01">January 2024</SelectItem>

@@ -20,7 +20,7 @@ for (const folder of ['resume', 'update-resume']) {
     { name: 'saved city loading', country: 'Nigeria', city: 'Abuja', cities: [], loading: true, label: 'Loading cities...', disabled: true },
     { name: 'saved city without a country', country: '', city: 'Abuja', cities: [], loading: false, label: 'Select country first', disabled: true },
     { name: 'saved city loaded', country: 'Nigeria', city: 'Abuja', cities: ['Abuja'], loading: false, label: 'Abuja', disabled: false },
-    { name: 'city missing from catalog', country: 'Nigeria', city: 'Abuja', cities: ['Lagos'], loading: false, label: 'Select City', disabled: false },
+    { name: 'city missing from catalog', country: 'Nigeria', city: 'Abuja', cities: ['Lagos'], loading: false, label: 'City', disabled: false },
   ]) {
     test(`${folder}/education: ${scenario.name} keeps City text visible`, () => {
       const rows = [{ country: scenario.country, city: scenario.city }];

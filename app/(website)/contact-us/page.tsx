@@ -11,8 +11,10 @@ import PageHeaders from "@/components/shared/PageHeaders";
 import { toast } from "sonner";
 import {
   CONTACT_MESSAGE_WORD_LIMIT,
+  CONTACT_SUBJECT_WORD_LIMIT,
   countContactMessageWords,
   getContactMessageError,
+  getContactSubjectError,
 } from "@/lib/contact-message-policy";
 
 // Define interface for form data
@@ -72,9 +74,8 @@ const validateForm = (data: ContactFormData): string[] => {
     errors.push("Please enter a valid email address.");
   }
 
-  if (!data.subject.trim() || data.subject.trim().length < 3) {
-    errors.push("Subject must be at least 3 characters.");
-  }
+  const subjectError = getContactSubjectError(data.subject);
+  if (subjectError) errors.push(subjectError);
 
   const messageError = getContactMessageError(data.message);
   if (messageError) errors.push(messageError);
@@ -142,8 +143,10 @@ export default function ContactForm() {
   ) => {
     const { id, value } = e.target;
     if (
-      id === "message" &&
-      countContactMessageWords(value) > CONTACT_MESSAGE_WORD_LIMIT
+      (id === "message" &&
+        countContactMessageWords(value) > CONTACT_MESSAGE_WORD_LIMIT) ||
+      (id === "subject" &&
+        countContactMessageWords(value) > CONTACT_SUBJECT_WORD_LIMIT)
     ) {
       return;
     }
@@ -173,7 +176,7 @@ export default function ContactForm() {
                 </Label>
                 <Input
                   id="firstName"
-                  placeholder="Enter Your First Name"
+                  placeholder="First Name"
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
@@ -188,7 +191,7 @@ export default function ContactForm() {
                 </Label>
                 <Input
                   id="lastName"
-                  placeholder="Enter Your Last Name"
+                  placeholder="Last Name"
                   value={formData.lastName}
                   onChange={handleInputChange}
                   required
@@ -206,7 +209,7 @@ export default function ContactForm() {
                 <Input
                   id="address"
                   type="email"
-                  placeholder="Enter Your Email"
+                  placeholder="Email"
                   value={formData.address}
                   onChange={handleInputChange}
                   required
@@ -222,11 +225,19 @@ export default function ContactForm() {
               </Label>
               <Input
                 id="subject"
-                placeholder="What is this regarding?"
+                placeholder="Subject"
                 value={formData.subject}
                 onChange={handleInputChange}
+                aria-describedby="subject-limit subject-word-count"
                 required
               />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span id="subject-limit">6 words max</span>
+                <span id="subject-word-count" aria-live="polite">
+                  {countContactMessageWords(formData.subject)}/
+                  {CONTACT_SUBJECT_WORD_LIMIT} words
+                </span>
+              </div>
             </div>
             <div className="space-y-2">
               <Label
@@ -237,7 +248,7 @@ export default function ContactForm() {
               </Label>
               <Textarea
                 id="message"
-                placeholder="Tell us how we can help you"
+                placeholder="Your Message"
                 className="min-h-[120px]"
                 value={formData.message}
                 onChange={handleInputChange}

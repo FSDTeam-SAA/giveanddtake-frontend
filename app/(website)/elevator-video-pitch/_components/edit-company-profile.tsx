@@ -595,7 +595,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                           <Textarea
                             value={field.value || ""}
                             onChange={field.onChange}
-                            placeholder="Write about your company..."
+                            placeholder="About Us"
                           />
                         </FormControl>
                         <FormMessage />
@@ -615,7 +615,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         Company Name*
                       </FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Your Company Name" />
+                        <Input {...field} placeholder="Company Name" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -646,7 +646,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
-                                {field.value || "Select a country"}
+                                {field.value || "Country"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -714,7 +714,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
-                                {field.value || "Select a city"}
+                                {field.value || "City"}
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </FormControl>
@@ -774,7 +774,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                             disabled
                             {...field}
                             type="email"
-                            placeholder="Enter Your Email Address"
+                            placeholder="Email Address"
                           />
                         </FormControl>
                         <FormMessage />
@@ -806,7 +806,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                 !field.value && "text-muted-foreground"
                               )}
                             >
-                              {field.value || "Select industry"}
+                              {field.value || "Industry"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </FormControl>
@@ -863,7 +863,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                         <Input
                           value={service}
                           onChange={(e) => updateService(index, e.target.value)}
-                          placeholder={`Service ${index + 1}`}
+                          placeholder="Services"
                         />
                       </div>
                       {services.length > 1 && (
@@ -960,7 +960,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                               onChange={(e) =>
                                 updateHonor(honor.id, "title", e.target.value)
                               }
-                              placeholder="Award/Honor Title"
+                              placeholder="Award Title"
                             />
                           </div>
 
@@ -978,7 +978,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                     e.target.value
                                   )
                                 }
-                                placeholder="Award/Honor Issuer"
+                                placeholder="Award Issuer"
                               />
                             </div>
                             <div className="space-y-2">
@@ -1008,7 +1008,7 @@ function EditCompanyPage({ companyId }: EditCompanyPageProps) {
                                   e.target.value
                                 )
                               }
-                              placeholder="Description of the award/honor"
+                              placeholder="Award Short Description"
                               className="min-h-[80px]"
                             />
                           </div>

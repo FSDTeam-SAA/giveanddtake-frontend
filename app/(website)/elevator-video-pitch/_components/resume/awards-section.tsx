@@ -33,7 +33,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
                   <FormItem>
                     <FormLabel>Award Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Employee of the Year" {...field} />
+                      <Input placeholder="Award Title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -47,7 +47,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
                     <FormItem>
                       <FormLabel>Program Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g. Company Recognition Program" {...field} />
+                        <Input placeholder="Program Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -74,7 +74,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
                   <FormItem>
                     <FormLabel>Award Short Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Briefly describe the award and what you achieved" {...field} />
+                      <Textarea placeholder="Award Short Description" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

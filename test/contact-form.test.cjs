@@ -18,6 +18,16 @@ function load(file, imports = {}) {
 const policy = load('lib/contact-message-policy.ts');
 const words = count => Array(count).fill('word').join(' ');
 
+test('subject validation accepts six words and rejects overflow across whitespace', () => {
+  assert.equal(policy.getContactSubjectError(words(6)), null);
+  assert.equal(policy.getContactSubjectError(' one\ttwo\nthree\u00a0four  five six '), null);
+  assert.equal(policy.getContactSubjectError(words(7)), 'Subject cannot exceed 6 words.');
+  assert.equal(policy.getContactSubjectError(words(7).replaceAll(' ', '\n\t\u00a0')), 'Subject cannot exceed 6 words.');
+  for (const subject of ['', ' \t ', 'ab']) {
+    assert.equal(policy.getContactSubjectError(subject), 'Subject must be at least 3 characters.');
+  }
+});
+
 test('message validation accepts 50 words and rejects 51 across whitespace', () => {
   assert.equal(policy.getContactMessageError(words(50)), null);
   assert.equal(policy.getContactMessageError(words(51)), 'Message cannot exceed 50 words.');
@@ -71,4 +81,27 @@ test('contact page blocks over-limit typing, paste and submit, allowing edits at
   submit();
   assert.equal(submitted.length, 1);
   assert.equal(errors.length, 1);
+
+  state = { ...state, subject: words(6), message: words(50) };
+  const subject = () => find(ContactForm(), element => element.props?.id === 'subject');
+  const changeSubject = value => subject().props.onChange({ target: { id: 'subject', value } });
+  assert.equal(subject().props.placeholder, 'Subject');
+  assert.equal(message().props.placeholder, 'Your Message');
+  assert.equal(subject().props['aria-describedby'], 'subject-limit subject-word-count');
+  for (const overflow of [words(7), words(100), words(7).replaceAll(' ', '\t\u00a0')]) {
+    changeSubject(overflow);
+    assert.equal(state.subject, words(6));
+  }
+  changeSubject(`${words(5)} replacement`);
+  assert.equal(state.subject, `${words(5)} replacement`);
+  changeSubject(words(5));
+  assert.equal(state.subject, words(5));
+  changeSubject(words(6));
+  submit();
+  assert.equal(submitted.length, 2);
+  assert.equal(submitted[1].subject, words(6));
+  state = { ...state, subject: words(7) };
+  submit();
+  assert.equal(submitted.length, 2);
+  assert.equal(errors.length, 2);
 });

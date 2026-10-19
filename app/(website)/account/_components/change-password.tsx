@@ -92,7 +92,7 @@ export function ChangePassword({
             onChange={(e) =>
               setPasswords((prev) => ({ ...prev, oldPassword: e.target.value }))
             }
-            placeholder="Your current password"
+            placeholder="Current Password"
             className="mt-2"
             required
           />
@@ -142,7 +142,7 @@ export function ChangePassword({
                   confirmPassword: e.target.value,
                 }))
               }
-              placeholder="Confirm Password"
+              placeholder="Confirm New Password"
               className="mt-2 pr-10"
               required
             />

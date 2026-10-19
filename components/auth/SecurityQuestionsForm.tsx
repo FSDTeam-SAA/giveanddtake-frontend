@@ -115,7 +115,7 @@ export function SecurityQuestionsForm() {
                 onValueChange={(value) => handleQuestionChange(index, value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a security question" />
+                  <SelectValue placeholder="Security Question" />
                 </SelectTrigger>
                 <SelectContent>
                   {questions.map((question: string, qIndex: number) => (
@@ -135,7 +135,7 @@ export function SecurityQuestionsForm() {
 
               {selectedQuestions[index] && (
                 <Input
-                  placeholder="Write here (text only, max 50 characters)"
+                  placeholder="Answer"
                   value={answers[index]}
                   onChange={(e) => {
                     // Remove numbers and limit to 50 characters

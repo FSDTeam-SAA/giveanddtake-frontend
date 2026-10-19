@@ -111,7 +111,7 @@ export function ResetPassword({
                 type={showNewPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                placeholder="New password"
                 required
                 minLength={PASSWORD_MIN_LENGTH}
               />

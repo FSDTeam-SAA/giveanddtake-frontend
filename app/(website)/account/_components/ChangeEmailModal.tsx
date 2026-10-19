@@ -134,7 +134,7 @@ export function ChangeEmailModal({
                   Current Email
                 </Label>
                 <Input
-                  id="current-email"
+                  id="current-email" placeholder="Current Email"
                   type="email"
                   value={currentEmail}
                   disabled
@@ -152,7 +152,7 @@ export function ChangeEmailModal({
                 <Input
                   id="new-email"
                   type="email"
-                  placeholder="Enter your new email"
+                  placeholder="New Email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   maxLength={254}

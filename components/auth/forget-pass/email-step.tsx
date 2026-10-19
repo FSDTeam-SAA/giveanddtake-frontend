@@ -69,7 +69,7 @@ export default function EmailStep({
           <Input
             id="email"
             type="email"
-            placeholder="Enter your email"
+            placeholder="Email Address"
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
             required

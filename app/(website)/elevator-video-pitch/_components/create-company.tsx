@@ -756,7 +756,7 @@ export default function CreateCompanyPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea value={field.value} onChange={field.onChange} />
+                      <Textarea placeholder="About Us" value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
                       Word count: {field.value.trim().split(/\s+/).length}
@@ -779,7 +779,7 @@ export default function CreateCompanyPage() {
                     Company Name*
                   </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Your Company Name" />
+                    <Input {...field} placeholder="Company Name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -804,7 +804,7 @@ export default function CreateCompanyPage() {
                         placeholder={
                           isLoadingCountries
                             ? "Loading countries..."
-                            : "Select Country"
+                            : "Country"
                         }
                         disabled={isLoadingCountries}
                       />
@@ -830,7 +830,7 @@ export default function CreateCompanyPage() {
                             ? "Select country first"
                             : isLoadingCities
                             ? "Loading cities..."
-                            : "Select City"
+                            : "City"
                         }
                         minSearchLength={2}
                         disabled={isLoadingCities || !form.getValues("country")}
@@ -850,7 +850,7 @@ export default function CreateCompanyPage() {
                       Zip / Postal Code*
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Enter Zip/Postal Code" />
+                      <Input {...field} placeholder="Zip / Postal Code" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -871,7 +871,7 @@ export default function CreateCompanyPage() {
                       <Input
                         {...field}
                         type="email"
-                        placeholder="Enter Your Email Address"
+                        placeholder="Email Address"
                         disabled
                       />
                     </FormControl>
@@ -901,7 +901,7 @@ export default function CreateCompanyPage() {
                       placeholder={
                         isLoadingIndustries
                           ? "Loading industries..."
-                          : "Select Industry"
+                          : "Industry"
                       }
                       disabled={isLoadingIndustries}
                     />
@@ -912,7 +912,7 @@ export default function CreateCompanyPage() {
             />
             <DynamicInputList
               label="Services*"
-              placeholder="Add Here"
+              placeholder="Services"
               values={services}
               onChange={setServices}
             />

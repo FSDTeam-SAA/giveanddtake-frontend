@@ -420,7 +420,7 @@ export default function RegisterPage() {
                 <Input
                   id="firstName"
                   placeholder={
-                    isCompany ? "Enter Company Name" : "Enter First Name"
+                    isCompany ? "Company Name" : "First Name"
                   }
                   value={firstName}
                   onChange={(e) => {
@@ -456,8 +456,8 @@ export default function RegisterPage() {
                   id="surname"
                   placeholder={
                     isCompany
-                      ? "e.g., Ltd, Inc, GmbH (optional)"
-                      : "Enter Surname"
+                      ? "Company Suffix"
+                      : "Surname"
                   }
                   value={surname}
                   onChange={(e) => {
@@ -495,10 +495,10 @@ export default function RegisterPage() {
                   type="email"
                   placeholder={
                     selectedRole === "recruiter"
-                      ? "Enter your recruiter email"
+                      ? "Recruiter Email"
                       : selectedRole === "company"
-                      ? "Enter your company email"
-                      : "Enter your personal email"
+                      ? "Company Email"
+                      : "Personal Email"
                   }
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
@@ -533,7 +533,7 @@ export default function RegisterPage() {
                   >
                     {isLoadingCountries
                       ? "Loading countries..."
-                      : selectedCountry || "Select country"}
+                      : selectedCountry || "Country"}
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
                 </PopoverTrigger>
@@ -579,7 +579,7 @@ export default function RegisterPage() {
                   id="password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create Password"
+                  placeholder="Password"
                   value={formData.password}
                   onChange={(e) =>
                     handleInputChange("password", e.target.value)

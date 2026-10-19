@@ -371,7 +371,7 @@ export function EducationSection({
                       <UniversitySelector
                         value={field.value || ""}
                         onChange={field.onChange}
-                        placeholder="Type your University/College/High School"
+                        placeholder="Institution Name"
                       />
                     </FormControl>
                     <FormMessage />
@@ -390,7 +390,7 @@ export function EducationSection({
                         value={field.value || ""} // Ensure value is empty string if undefined
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select a qualification" />
+                          <SelectValue placeholder="Qualification" />
                         </SelectTrigger>
                         <SelectContent>
                           {qualifications.options(field.value).map(option => (
@@ -412,7 +412,7 @@ export function EducationSection({
                     <FormLabel>Field Of Study</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g. Computer Science/Medicine/Civil Engineering"
+                        placeholder="Field Of Study"
                         {...field}
                       />
                     </FormControl>
@@ -440,7 +440,7 @@ export function EducationSection({
                         placeholder={
                           isLoadingCountries
                             ? "Loading countries..."
-                            : "Select Country"
+                            : "Country"
                         }
                         minSearchLength={0}
                         disabled={isLoadingCountries}
@@ -466,7 +466,7 @@ export function EducationSection({
                             ? "Select country first"
                             : loadingEducationCities[index]
                             ? "Loading cities..."
-                            : "Select City"
+                            : "City"
                         }
                         minSearchLength={2}
                         disabled={

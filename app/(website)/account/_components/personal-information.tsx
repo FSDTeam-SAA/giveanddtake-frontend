@@ -437,7 +437,7 @@ export function PersonalInformation() {
             First name *
           </Label>
           <Input
-            id="firstName"
+            id="firstName" placeholder="First name"
             value={formData.firstName}
             onChange={(e) => {
               if (e.target.value.length <= 50) {
@@ -459,7 +459,7 @@ export function PersonalInformation() {
             Surname *
           </Label>
           <Input
-            id="surname"
+            id="surname" placeholder="Surname"
             value={formData.surname}
             onChange={(e) => {
               if (e.target.value.length <= 50) {
@@ -480,7 +480,7 @@ export function PersonalInformation() {
     Email Address *
   </Label>
   <Input
-    id="email"
+    id="email" placeholder="Email Address"
     type="email"
     value={formData.email}
     disabled
@@ -510,7 +510,7 @@ export function PersonalInformation() {
             Country *
           </Label>
           <Input
-            id="country"
+            id="country" placeholder="Country"
             value={formData.country}
             onChange={(e) => {
               if (e.target.value.length <= 56) {
@@ -595,7 +595,7 @@ export function PersonalInformation() {
                 Email
               </Label>
               <Input
-                id="disable-email"
+                id="disable-email" placeholder="Email"
                 type="email"
                 value={email}
                 disabled
@@ -615,7 +615,7 @@ export function PersonalInformation() {
                   id="disable-password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   type={showDisablePassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Password"
                   value={disablePassword}
                   onChange={(e) => {
                     if (e.target.value.length <= 128) {
@@ -683,7 +683,7 @@ export function PersonalInformation() {
                 Email
               </Label>
               <Input
-                id="delete-email"
+                id="delete-email" placeholder="Email"
                 type="email"
                 value={email}
                 disabled
@@ -703,7 +703,7 @@ export function PersonalInformation() {
                   id="delete-password"
                   maxLength={PASSWORD_MAX_LENGTH}
                   type={showDeletePassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Password"
                   value={deletePassword}
                   onChange={(e) => {
                     if (e.target.value.length <= 128) {

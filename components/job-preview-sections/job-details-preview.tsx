@@ -53,6 +53,7 @@ export default function JobDetailsPreview({
             {isEditing ? (
               <input
                 type="text"
+                placeholder={field.label}
                 value={field.value}
                 onChange={(e) => onFieldChange(field.key, e.target.value)}
                 className="p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 w-full"

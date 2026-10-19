@@ -744,7 +744,7 @@ export default function JobPreview() {
                               handleUpdateQuestion(q.id, e.target.value)
                             }
                             className="w-full h-11 px-3 border border-gray-300 rounded-lg"
-                            placeholder="Enter question"
+                            placeholder="Question"
                           />
                         </div>
                         <Button

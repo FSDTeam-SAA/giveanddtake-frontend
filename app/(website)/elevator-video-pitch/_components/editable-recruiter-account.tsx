@@ -665,7 +665,7 @@ export default function EditableRecruiterAccount({
                           <FormItem>
                             <Label htmlFor="firstName">First Name *</Label>
                             <FormControl>
-                              <Input id="firstName" {...field} />
+                              <Input id="firstName" placeholder="First Name" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -678,7 +678,7 @@ export default function EditableRecruiterAccount({
                           <FormItem>
                             <Label htmlFor="sureName">Surname</Label>
                             <FormControl>
-                              <Input id="sureName" {...field} />
+                              <Input id="sureName" placeholder="Surname" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -693,7 +693,7 @@ export default function EditableRecruiterAccount({
                         <FormItem>
                           <Label htmlFor="title">Title *</Label>
                           <FormControl>
-                            <Input id="title" {...field} />
+                            <Input id="title" placeholder="Title" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -727,14 +727,14 @@ export default function EditableRecruiterAccount({
                               variant="outline"
                               role="combobox"
                               aria-expanded={countryOpen}
-                              aria-label="Select country"
+                              aria-label="Country"
                               className={cn(
                                 "w-full justify-between font-normal",
                                 !form.getValues().country &&
                                   "text-muted-foreground"
                               )}
                             >
-                              {form.getValues().country || "Select a country"}
+                              {form.getValues().country || "Country"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -802,7 +802,7 @@ export default function EditableRecruiterAccount({
                               variant="outline"
                               role="combobox"
                               aria-expanded={cityOpen}
-                              aria-label="Select city"
+                              aria-label="City"
                               disabled={!selectedCountry}
                               className={cn(
                                 "w-full justify-between font-normal",
@@ -810,7 +810,7 @@ export default function EditableRecruiterAccount({
                                   "text-muted-foreground"
                               )}
                             >
-                              {form.getValues().city || "Select a city"}
+                              {form.getValues().city || "City"}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
@@ -878,7 +878,7 @@ export default function EditableRecruiterAccount({
                             About me
                           </Label>
                           <FormControl>
-                            <Textarea
+                            <Textarea placeholder="About me"
                               value={field.value || ""}
                               onChange={(value) => field.onChange(value)}
                             />

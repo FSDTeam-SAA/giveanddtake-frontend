@@ -191,7 +191,7 @@ export function SecurityQuestions({
                 type="text"
                 value={answers[index]}
                 onChange={(e) => handleAnswerChange(index, e.target.value)}
-                placeholder="Enter your answer"
+                placeholder={questionObj.question}
                 className="mt-2"
                 required
               />

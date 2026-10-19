@@ -44,7 +44,7 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
                   <FormLabel className="text-blue-600 font-medium">About Me</FormLabel>
                   <FormControl>
                     <div className="mt-2">
-                      <Textarea value={field.value ?? ""} onChange={field.onChange} />
+                      <Textarea placeholder="About Me" value={field.value ?? ""} onChange={field.onChange} />
                     </div>
                   </FormControl>
                   <p className="text-sm text-muted-foreground">

@@ -135,7 +135,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                         <UniversitySelector
                           value={field.value || ""}
                           onChange={field.onChange}
-                          placeholder="Type your University/College/High School"
+                          placeholder="Institute Name"
                         />
                       </FormControl>
                       <FormMessage />
@@ -154,7 +154,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                           value={field.value}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a qualification" />
+                            <SelectValue placeholder="Qualification" />
                           </SelectTrigger>
                           <SelectContent>
                             {qualifications.options(field.value).map(option => (
@@ -175,7 +175,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                       <FormLabel>Field Of Study</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g. Computer Science/Medicine/Civil Engineering"
+                          placeholder="Field Of Study"
                           {...field}
                         />
                       </FormControl>
@@ -205,7 +205,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                           placeholder={
                             isLoadingCountries
                               ? "Loading countries..."
-                              : "Select Country"
+                              : "Country"
                           }
                           minSearchLength={0}
                           disabled={isLoadingCountries}
@@ -233,7 +233,7 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                               ? "Select country first"
                               : loadingEducationCities[index]
                               ? "Loading cities..."
-                              : "Select City"
+                              : "City"
                           }
                           minSearchLength={2}
                           disabled={

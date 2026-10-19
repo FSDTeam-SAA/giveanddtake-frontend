@@ -65,7 +65,7 @@ export const PersonalInfoSection = ({
               <FormItem>
                 <FormLabel>First Name*</FormLabel>
                 <FormControl>
-                  <Input placeholder="John" {...field} />
+                  <Input placeholder="First Name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -78,7 +78,7 @@ export const PersonalInfoSection = ({
               <FormItem>
                 <FormLabel>Surname*</FormLabel>
                 <FormControl>
-                  <Input placeholder="Doe" {...field} />
+                  <Input placeholder="Surname" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -93,7 +93,7 @@ export const PersonalInfoSection = ({
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder="john.doe@example.com"
+                    placeholder="Email"
                     {...field}
                     disabled
                   />
@@ -110,7 +110,7 @@ export const PersonalInfoSection = ({
               <FormItem>
                 <FormLabel>Title</FormLabel>
                 <FormControl>
-                  <Input placeholder="Software Engineer" {...field} />
+                  <Input placeholder="Title" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -134,7 +134,7 @@ export const PersonalInfoSection = ({
                           !field.value && "text-muted-foreground"
                         )}
                       >
-                        {field.value || "Select a country"}
+                        {field.value || "Country"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>
@@ -198,7 +198,7 @@ export const PersonalInfoSection = ({
                           !field.value && "text-muted-foreground"
                         )}
                       >
-                        {field.value || "Select a city"}
+                        {field.value || "City"}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </FormControl>

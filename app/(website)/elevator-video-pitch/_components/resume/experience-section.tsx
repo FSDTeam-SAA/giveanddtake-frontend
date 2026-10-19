@@ -142,7 +142,7 @@ export function ExperienceSection({
                   <FormItem>
                     <FormLabel>Job Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Software Engineer" {...field} />
+                      <Input placeholder="Job Title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -157,7 +157,7 @@ export function ExperienceSection({
                   <FormItem>
                     <FormLabel>Company Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="" {...field} />
+                      <Input placeholder="Company Name" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -185,7 +185,7 @@ export function ExperienceSection({
                         placeholder={
                           isLoadingCountries
                             ? "Loading countries..."
-                            : "Select Country"
+                            : "Country"
                         }
                         minSearchLength={0}
                         disabled={isLoadingCountries}
@@ -213,7 +213,7 @@ export function ExperienceSection({
                             ? "Select country first"
                             : loadingExperienceCities[index]
                             ? "Loading cities..."
-                            : "Select City"
+                            : "City"
                         }
                         minSearchLength={2}
                         disabled={
@@ -354,7 +354,7 @@ export function ExperienceSection({
                   <FormLabel>Job Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe your responsibilities and achievements"
+                      placeholder="Job Description"
                       {...field}
                     />
                   </FormControl>

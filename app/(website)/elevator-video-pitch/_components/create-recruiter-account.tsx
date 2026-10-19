@@ -898,7 +898,7 @@ export default function CreateRecruiterAccountForm() {
                           About me
                         </FormLabel>
                         <FormControl>
-                          <Textarea
+                          <Textarea placeholder="About me"
                             value={field.value ?? ""}
                             onChange={field.onChange}
                           />
@@ -924,7 +924,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>First Name*</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter first name" {...field} />
+                        <Input placeholder="First Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -937,7 +937,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Surname (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter surname" {...field} />
+                        <Input placeholder="Surname" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -956,7 +956,7 @@ export default function CreateRecruiterAccountForm() {
                         <Input
                           disabled
                           type="email"
-                          placeholder="Enter email address"
+                          placeholder="Email Address"
                           {...field}
                         />
                       </FormControl>
@@ -975,7 +975,7 @@ export default function CreateRecruiterAccountForm() {
                       <FormLabel>Current Position*</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter current position"
+                          placeholder="Current Position"
                           {...field}
                         />
                       </FormControl>
@@ -1004,7 +1004,7 @@ export default function CreateRecruiterAccountForm() {
                             setSelectedCountry(value);
                           }}
                           placeholder={
-                            isLoadingCountries ? "Loading..." : "Select Country"
+                            isLoadingCountries ? "Loading..." : "Country"
                           }
                           minSearchLength={0}
                           disabled={isLoadingCountries}
@@ -1033,7 +1033,7 @@ export default function CreateRecruiterAccountForm() {
                               ? "Select country first"
                               : isLoadingCities
                               ? "Loading..."
-                              : "Select City"
+                              : "City"
                           }
                           minSearchLength={2}
                           disabled={isLoadingCities || !selectedCountry}
@@ -1050,7 +1050,7 @@ export default function CreateRecruiterAccountForm() {
                     <FormItem>
                       <FormLabel>Zip/Postal Code (Optional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter Zip/Postal Code" {...field} />
+                        <Input placeholder="Zip/Postal Code" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

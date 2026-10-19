@@ -268,7 +268,7 @@ export default function JobDetailsStep({
                             ? jobCategories?.data?.category?.find(
                                 (c) => c._id === field.value
                               )?.name
-                            : "Select category"}
+                            : "Job Category"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -347,7 +347,7 @@ export default function JobDetailsStep({
                           )}
                           disabled={!selectedCategoryRoles.length}
                         >
-                          {field.value || "Select role"}
+                          {field.value || "Role"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -405,7 +405,7 @@ export default function JobDetailsStep({
                 </div>
                 <FormControl>
                   <Input
-                    placeholder="Enter job title"
+                    placeholder="Job Title"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     value={field.value}
                     onChange={(e) => handleJobTitleChange(e.target.value)}
@@ -446,7 +446,7 @@ export default function JobDetailsStep({
                           {field.value
                             ? countries.find((c) => c.country === field.value)
                                 ?.country
-                            : "Select country"}
+                            : "Country"}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -513,7 +513,7 @@ export default function JobDetailsStep({
                           {field.value ||
                             (isLoadingCities
                               ? "Loading cities..."
-                              : "Select city")}
+                              : "City")}
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
@@ -566,7 +566,7 @@ export default function JobDetailsStep({
                     min={1}
                     max={100}
                     step={1}
-                    placeholder="Enter number of vacancies (1–100)"
+                    placeholder="Number of Vacancies"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     value={field.value && field.value > 0 ? field.value : ""}
                     onChange={(e) => {
@@ -606,7 +606,7 @@ export default function JobDetailsStep({
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
-                        <SelectValue placeholder="Select employment type" />
+                        <SelectValue placeholder="Employment Type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -638,7 +638,7 @@ export default function JobDetailsStep({
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus-border-[#2B7FD0] focus:border-[#2B7FD0]">
-                        <SelectValue placeholder="Select experience level" />
+                        <SelectValue placeholder="Experience Level" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -670,7 +670,7 @@ export default function JobDetailsStep({
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
-                        <SelectValue placeholder="Select location type" />
+                        <SelectValue placeholder="Location Type" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -698,7 +698,7 @@ export default function JobDetailsStep({
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
-                        <SelectValue placeholder="Select career stage" />
+                        <SelectValue placeholder="Career Stage" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -729,7 +729,7 @@ export default function JobDetailsStep({
                   ? `${current.currencyName} (${current.code}) ${
                       current.symbol || ""
                     }`
-                  : "Select currency";
+                  : "Currency";
                 return (
                   <FormItem className="flex flex-col">
                     <div className="flex items-center justify-between">
@@ -844,7 +844,7 @@ export default function JobDetailsStep({
                     </span>
                     <Input
                       inputMode="decimal"
-                      placeholder="e.g., 50,000"
+                      placeholder="Compensation"
                       className="h-11 pl-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                       value={compensationDisplay}
                       onChange={(e) => {
@@ -896,7 +896,7 @@ export default function JobDetailsStep({
                 >
                   <FormControl>
                     <SelectTrigger className="h-11 border-gray-300 focus:border-[#2B7FD0]">
-                      <SelectValue placeholder="Select expiration period" />
+                      <SelectValue placeholder="Job Posting Expiration (Days)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -923,7 +923,7 @@ export default function JobDetailsStep({
                 </FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="https://example.com"
+                    placeholder="Company Website"
                     className="h-11 border-gray-300 focus:border-[#2B7FD0] focus:ring-[#2B7FD0]"
                     {...field}
                   />

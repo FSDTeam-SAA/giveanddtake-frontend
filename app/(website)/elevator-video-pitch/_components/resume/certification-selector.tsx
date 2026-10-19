@@ -46,7 +46,7 @@ export function CertificationSelector({
         <div className="relative flex-1">
           <Input
             type="text"
-            placeholder="Enter certification name..."
+            placeholder="Certification"
             value={certificationInput}
             onChange={(e) => setCertificationInput(e.target.value)}
             onKeyPress={handleKeyPress}

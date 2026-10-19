@@ -37,20 +37,6 @@ type BasePlatform = (typeof BASE_PLATFORMS)[number];
 const NORMALIZED_OTHER_LABEL = "Others" as const;
 type StorageKey = BasePlatform | typeof NORMALIZED_OTHER_LABEL | "Other";
 
-// For placeholders
-const PLATFORM_PLACEHOLDER: Record<string, string> = {
-  LinkedIn: "https://www.linkedin.com/your-profile",
-  Twitter: "https://www.twitter.com/your-profile",
-  Facebook: "https://facebook.com/your-profile",
-  TikTok: "https://www.tiktok.com/@your-handle",
-  Instagram: "https://www.instagram.com/your-profile",
-  Upwork: "https://www.upwork.com/your-profile",
-  Fiverr: "https://www.fiverr.com/your-username",
-  "Company Website": "https://your-website.com",
-  "Portfolio Website": "https://your-website.com",
-  Other: "https://your-website.com",
-};
-
 export function SocialLinksSection({ form }: SocialLinksSectionProps) {
   const session = useSession();
   const role = session.data?.user?.role;
@@ -193,10 +179,7 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
                     <FormLabel>{uiLabel} URL</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder={
-                          PLATFORM_PLACEHOLDER[uiLabel] ??
-                          "https://your-website.com"
-                        }
+                        placeholder={`${uiLabel} URL`}
                         {...field}
                       />
                     </FormControl>

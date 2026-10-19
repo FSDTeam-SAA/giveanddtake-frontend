@@ -54,6 +54,7 @@ const TextEditor = ({ value, onChange, id }: QuillEditorProps) => {
   return (
     <div className="quill-editor-wrapper">
       <ReactQuill
+        placeholder="Job Description"
         id={id}
         value={value}
         onChange={(content) => {

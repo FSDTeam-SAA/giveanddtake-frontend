@@ -205,7 +205,7 @@ export default function EditableCompanyProfile({
                 <div>
                   <Label htmlFor="cname">Company Name</Label>
                   <Input
-                    id="cname"
+                    id="cname" placeholder="Company Name"
                     value={editedCompany?.cname || ""}
                     onChange={(e) =>
                       updateCompanyField("cname", e.target.value)
@@ -216,7 +216,7 @@ export default function EditableCompanyProfile({
                 <div>
                   <Label htmlFor="industry">Industry</Label>
                   <Input
-                    id="industry"
+                    id="industry" placeholder="Industry"
                     value={editedCompany?.industry || ""}
                     onChange={(e) =>
                       updateCompanyField("industry", e.target.value)
@@ -227,7 +227,7 @@ export default function EditableCompanyProfile({
                   <div>
                     <Label htmlFor="city">City</Label>
                     <Input
-                      id="city"
+                      id="city" placeholder="City"
                       value={editedCompany?.city || ""}
                       onChange={(e) =>
                         updateCompanyField("city", e.target.value)
@@ -237,7 +237,7 @@ export default function EditableCompanyProfile({
                   <div>
                     <Label htmlFor="country">Country</Label>
                     <Input
-                      id="country"
+                      id="country" placeholder="Country"
                       value={editedCompany?.country || ""}
                       onChange={(e) =>
                         updateCompanyField("country", e.target.value)
@@ -248,7 +248,7 @@ export default function EditableCompanyProfile({
                 <div>
                   <Label htmlFor="links">Website Links (comma separated)</Label>
                   <Input
-                    id="links"
+                    id="links" placeholder="Website Links"
                     value={editedCompany?.links?.join(", ") || ""}
                     onChange={(e) =>
                       updateCompanyField(
@@ -261,7 +261,7 @@ export default function EditableCompanyProfile({
                 <div>
                   <Label htmlFor="services">Services (comma separated)</Label>
                   <Input
-                    id="services"
+                    id="services" placeholder="Services"
                     value={editedCompany?.service?.join(", ") || ""}
                     onChange={(e) =>
                       updateCompanyField(
@@ -448,7 +448,7 @@ export default function EditableCompanyProfile({
           <div>
             <Label htmlFor="aboutUs">About Us</Label>
             <Textarea
-              id="aboutUs"
+              id="aboutUs" placeholder="About Us"
               value={editedCompany?.aboutUs || ""}
               onChange={(e) => updateCompanyField("aboutUs", e.target.value)}
               rows={6}
