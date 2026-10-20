@@ -14,6 +14,7 @@ interface Skill {
 interface SkillsSelectorProps {
   selectedSkills: string[];
   onSkillsChange: (skills: string[]) => void;
+  showLabel?: boolean;
   error?: string; // 👈 NEW
 }
 
@@ -21,11 +22,15 @@ export function SkillsSelector({
   selectedSkills,
   onSkillsChange,
   error,
+  showLabel = true,
 }: SkillsSelectorProps) {
   const [skillSearch, setSkillSearch] = useState("");
   const [filteredSkills, setFilteredSkills] = useState<Skill[]>([]);
   const [allSkills, setAllSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [loadError, setLoadError] = useState(false);
+  const [selectionError, setSelectionError] = useState("");
 
   // Fetch skills
   useEffect(() => {
@@ -34,9 +39,10 @@ export function SkillsSelector({
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/skill`);
         const data = await response.json();
-        if (data.success) setAllSkills(data.data);
+        if (!response.ok || !data.success || !Array.isArray(data.data)) throw new Error("Unable to load skills");
+        setAllSkills(data.data.filter((skill: Skill) => typeof skill?.name === "string" && skill.name.trim().length > 0));
       } catch (err) {
-        console.error("Error fetching skills:", err);
+        setLoadError(true);
       } finally {
         setIsLoading(false);
       }
@@ -59,6 +65,9 @@ export function SkillsSelector({
   }, [skillSearch, allSkills, selectedSkills]);
 
   const addSkill = (skillName: string) => {
+    if (selectedSkills.length >= 30) { setSelectionError("You can select at most 30 skills."); return; }
+    if (skillName.length > 100) { setSelectionError("Each skill can be at most 100 characters."); return; }
+    setSelectionError("");
     if (!selectedSkills.includes(skillName)) {
       onSkillsChange([...selectedSkills, skillName]);
     }
@@ -71,13 +80,21 @@ export function SkillsSelector({
 
   return (
     <div className="space-y-2">
-      <FormLabel>Skills*</FormLabel>
+      {showLabel && <FormLabel>Skills*</FormLabel>}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search and add skills (e.g., Java, PHP, React...)"
+          aria-label="Search Skills"
           value={skillSearch}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            const match = allSkills.find(skill => skill.name.toLowerCase() === skillSearch.trim().toLowerCase());
+            if (match) addSkill(match.name);
+            else setSelectionError("Please select a skill from the list.");
+          }}
           onChange={(e) => setSkillSearch(e.target.value)}
           className={`pl-10 ${error ? "border-red-500 focus-visible:ring-red-500" : ""}`}
         />
@@ -105,6 +122,10 @@ export function SkillsSelector({
           </div>
         )}
       </div>
+
+      {loadError && <p role="alert" className="text-sm text-red-600">Skills could not be loaded. Please refresh and try again.</p>}
+      {!isLoading && !loadError && skillSearch.trim() && !filteredSkills.length && <p className="text-sm text-gray-600">No matching skills. Please select a skill from the list.</p>}
+      {selectionError && <p role="alert" className="text-sm text-red-600">{selectionError}</p>}
 
       {/* Selected Skills */}
       <div className="flex flex-wrap gap-2">

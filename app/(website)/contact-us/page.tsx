@@ -59,6 +59,8 @@ const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const validateForm = (data: ContactFormData): string[] => {
   const errors: string[] = [];
+  if (data.firstName.length > 20) errors.push("First Name can be at most 20 characters.");
+  if (data.lastName.length > 40) errors.push("Last Name can be at most 40 characters.");
 
   if (!data.firstName.trim() || data.firstName.trim().length < 2) {
     errors.push("First name must be at least 2 characters.");

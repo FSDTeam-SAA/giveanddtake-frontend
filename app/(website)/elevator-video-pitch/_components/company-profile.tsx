@@ -416,7 +416,7 @@ export default function CompanyProfilePage({ userId }: { userId?: string }) {
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold mb-2 text-gray-900">
               {company.cname}
             </h1>

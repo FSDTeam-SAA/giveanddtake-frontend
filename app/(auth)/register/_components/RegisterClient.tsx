@@ -289,6 +289,10 @@ export default function RegisterPage() {
      Submit Validations (role-aware)
   ========================= */
   const validateBeforeSubmit = () => {
+    if (selectedRole === "company" ? `${firstName} ${surname}`.trim().length > 160 : firstName.length > 20 || surname.length > 40) {
+      toast.error(selectedRole === "company" ? "Company Name can be at most 160 characters including its suffix." : "First Name allows 20 characters and Surname allows 40 characters.");
+      return false;
+    }
     if (selectedRole === "company") {
       if (!firstName.trim() || !companyNameRegex.test(firstName)) {
         toast.error("Please enter a valid company name.");
@@ -346,6 +350,7 @@ export default function RegisterPage() {
   const actuallySubmit = (data: RegisterData) => {
     const payload = {
       ...data,
+      ...(selectedRole !== "company" ? { firstName: firstName.trim(), lastName: surname.trim() } : {}),
       dateOfbirth: dob
         ? new Date(Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate()))
             .toISOString()
@@ -419,6 +424,7 @@ export default function RegisterPage() {
                 )}
                 <Input
                   id="firstName"
+                  maxLength={isCompany ? Math.max(0, 160 - (surname.trim() ? surname.trim().length + 1 : 0)) : 20}
                   placeholder={
                     isCompany ? "Company Name" : "First Name"
                   }
@@ -454,6 +460,7 @@ export default function RegisterPage() {
                 )}
                 <Input
                   id="surname"
+                  maxLength={isCompany ? Math.max(0, 160 - firstName.trim().length - 1) : 40}
                   placeholder={
                     isCompany
                       ? "Company Suffix"

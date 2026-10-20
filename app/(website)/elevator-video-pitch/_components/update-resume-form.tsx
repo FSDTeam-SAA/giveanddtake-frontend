@@ -46,10 +46,10 @@ const getWordCount = (value: string) => {
 };
 
 export const resumeFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string().min(1, "First name is required").max(20, "First Name can be at most 20 characters"),
+  lastName: z.string().min(1, "Last name is required").max(40, "Last Name can be at most 40 characters"),
   email: z.string().email("Invalid email address"),
-  title: z.string().optional(),
+  title: z.string().max(100, "Title can be at most 100 characters").optional(),
   city: z.string().optional(),
   zipCode: z.string().optional(),
   country: z.string().optional(),
@@ -60,7 +60,7 @@ export const resumeFormSchema = z.object({
       message: "About section cannot exceed 200 words",
     }),
   banner: z.string().optional(),
-  skills: z.array(z.string()).optional(),
+  skills: z.array(z.string().trim().min(1, "Please select a skill from the list").max(100, "Each skill can be at most 100 characters")).max(30, "You can select at most 30 skills").optional(),
   languages: z.array(z.string()).optional(),
   immediatelyAvailable: z.boolean().optional(),
   certifications: z.array(z.string()).optional(),
@@ -84,9 +84,9 @@ export const resumeFormSchema = z.object({
         .object({
           _id: z.string().optional(),
           type: z.enum(["create", "update", "delete"]).optional(),
-          company: z.string().optional(),
-          jobTitle: z.string().optional(),
-          position: z.string().optional(),
+          company: z.string().max(160, "Company Name can be at most 160 characters").optional(),
+          jobTitle: z.string().max(100, "Job Title can be at most 100 characters").optional(),
+          position: z.string().max(100, "Job Title can be at most 100 characters").optional(),
           duration: z.string().optional(),
           startDate: z.string().optional(),
           endDate: z.string().optional(),
@@ -94,7 +94,7 @@ export const resumeFormSchema = z.object({
           country: z.string().optional(),
           city: z.string().optional(),
           zip: z.string().optional(),
-          jobDescription: z.string().optional(),
+          jobDescription: z.string().max(2000, "Job Description can be at most 2000 characters").optional(),
           jobCategory: z.string().optional(),
         })
         .refine(
@@ -186,7 +186,7 @@ export const resumeFormSchema = z.object({
       z.object({
         _id: z.string().optional(),
         type: z.enum(["create", "update", "delete"]).optional(),
-        title: z.string().optional(),
+        title: z.string().max(100, "Title can be at most 100 characters").optional(),
         programeName: z.string().optional(),
         year: z.string().optional(),
         programeDate: z.string().optional(),

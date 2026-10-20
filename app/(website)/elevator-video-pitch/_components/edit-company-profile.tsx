@@ -73,7 +73,7 @@ const PLATFORMS_IN_STORAGE = [
 
 // Form schema with sLink
 const formSchema = z.object({
-  cname: z.string().min(1, "Company name is required"),
+  cname: z.string().min(1, "Company name is required").max(160, "Company Name can be at most 160 characters"),
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   zipcode: z.string(),

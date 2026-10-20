@@ -432,7 +432,7 @@ export default function ApplicantDetailsPage() {
             <CardContent className="p-6">
               <div className="flex items-start gap-6">
                 <Skeleton className="h-24 w-24 rounded-full" />
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <Skeleton className="h-8 w-64 mb-2" />
                   <Skeleton className="h-4 w-48 mb-4" />
                   <div className="grid grid-cols-2 gap-4">
@@ -531,7 +531,7 @@ export default function ApplicantDetailsPage() {
                 />
               </div>
 
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <div className="md:flex items-start justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">

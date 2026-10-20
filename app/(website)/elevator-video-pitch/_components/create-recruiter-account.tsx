@@ -348,10 +348,10 @@ const urlOptional = z
   .pipe(z.string().url("Invalid URL").optional());
 
 const recruiterSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  sureName: z.string().optional(),
+  firstName: z.string().min(1, "First name is required").max(20, "First Name can be at most 20 characters"),
+  sureName: z.string().max(40, "Surname can be at most 40 characters").optional(),
   emailAddress: z.string().email("Invalid email address"),
-  title: z.string().min(1, "Current position is required"),
+  title: z.string().min(1, "Current position is required").max(100, "Current Position can be at most 100 characters"),
   bio: z.string().optional(),
   country: z.string().min(1, "Country is required"),
   city: z.string().optional(),

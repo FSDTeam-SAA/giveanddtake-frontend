@@ -345,3 +345,8 @@ p {
 small {
   @apply text-sm ;
 } */
+
+/* Long user text must wrap in cards, dialogs and rich text, including legacy data. */
+body { overflow-wrap: anywhere; }
+input, textarea, select { min-width: 0; }
+[role="dialog"], [role="alertdialog"] { min-width: 0; }

@@ -12,6 +12,8 @@ import {
   useFormContext,
 } from "react-hook-form"
 
+import { fieldErrorMessage } from "@/lib/field-policy"
+
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 
@@ -147,7 +149,7 @@ const FormMessage = React.forwardRef<
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField()
-  const body = error ? String(error?.message) : children
+  const body = fieldErrorMessage(error) ?? children
 
   if (!body) {
     return null

@@ -34,12 +34,12 @@ export const resumeSchema = z.object({
     .string()
     .trim()
     .min(1, "First name is required")
-    .max(50, "First name can be at most 50 characters"),
+    .max(20, "First name can be at most 20 characters"),
   lastName: z
     .string()
     .trim()
     .min(1, "Last name is required")
-    .max(50, "Last name can be at most 50 characters"),
+    .max(40, "Last name can be at most 40 characters"),
   email: z
     .string()
     .trim()
@@ -78,7 +78,7 @@ export const resumeSchema = z.object({
         .string()
         .trim()
         .min(1)
-        .max(50, "Each skill can be at most 50 characters")
+        .max(100, "Each skill can be at most 100 characters")
     )
     .min(1, "At least one skill is required")
     .max(30, "You can list at most 30 skills"),
@@ -107,7 +107,7 @@ export const resumeSchema = z.object({
           company: z
             .string()
             .trim()
-            .max(100, "Company can be at most 100 characters")
+            .max(160, "Company can be at most 160 characters")
             .optional(),
           position: z
             .string()

@@ -1,5 +1,7 @@
 "use client"
 import Link from "next/link"
+import { Input } from "@/components/ui/input"
+import { fieldCharacterLimit, fieldLabel } from "@/lib/field-policy"
 
 interface JobDetailsPreviewProps {
   jobTitle: string
@@ -49,10 +51,11 @@ export default function JobDetailsPreview({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {fields.map((field) => (
           <div key={field.key} className="space-y-2">
-            <p className="text-sm font-medium text-gray-700">{field.label}</p>
+            <p className="text-sm font-medium text-gray-700">{isEditing ? fieldLabel(field.label) : field.label}</p>
             {isEditing ? (
-              <input
+              <Input
                 type="text"
+                maxLength={fieldCharacterLimit(field.key)}
                 placeholder={field.label}
                 value={field.value}
                 onChange={(e) => onFieldChange(field.key, e.target.value)}

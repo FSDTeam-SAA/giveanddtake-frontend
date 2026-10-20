@@ -170,7 +170,7 @@ export default function JobDetailsPreviewEdit({
       {/* Job Title — only show after role is selected */}
       {formData.role && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Job Title</label>
+          <label className="text-sm font-medium text-gray-700">Job Title (100 characters max)</label>
           <Input
             value={formData.jobTitle}
             onChange={(e) => onFieldChange("jobTitle", e.target.value)}

@@ -58,7 +58,7 @@ const formSchema = z.object({
   cname: z
     .string()
     .min(1, "Company name is required")
-    .max(100, "Company name is too long"),
+    .max(160, "Company Name can be at most 160 characters"),
   country: z
     .string()
     .min(1, "Country is required")

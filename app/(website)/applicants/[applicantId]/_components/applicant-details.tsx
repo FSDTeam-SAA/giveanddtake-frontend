@@ -287,7 +287,7 @@ export default function ApplicantDetails({
                 <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <GraduationCap className="w-8 h-8 text-blue-600" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-gray-800 capitalize text-lg">
                     {qualifications.label(edu.degree)} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
                   </h4>
@@ -346,7 +346,7 @@ export default function ApplicantDetails({
                 <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <AwardIcon className="w-8 h-8 text-blue-600" />
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <h4 className="font-semibold text-gray-800 text-lg">
                     {award.title}
                   </h4>

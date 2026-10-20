@@ -440,13 +440,13 @@ export function PersonalInformation() {
             id="firstName" placeholder="First name"
             value={formData.firstName}
             onChange={(e) => {
-              if (e.target.value.length <= 50) {
+              if (e.target.value.length <= 20) {
                 handleInputChange("firstName", e.target.value);
               }
             }}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
-            maxLength={50}
+            maxLength={20}
           />
         </div>
 
@@ -462,13 +462,13 @@ export function PersonalInformation() {
             id="surname" placeholder="Surname"
             value={formData.surname}
             onChange={(e) => {
-              if (e.target.value.length <= 50) {
+              if (e.target.value.length <= 40) {
                 handleInputChange("surname", e.target.value);
               }
             }}
             disabled={!isEditing}
             className="bg-gray-50 border-gray-200"
-            maxLength={50}
+            maxLength={40}
           />
         </div>
 
