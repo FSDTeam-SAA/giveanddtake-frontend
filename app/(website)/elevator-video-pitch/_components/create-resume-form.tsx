@@ -1,5 +1,7 @@
 "use client";
 
+import { candidateSocialUrlError, educationInstitutionError, hasEducationContent } from "@/lib/candidate-profile-policy";
+
 import type React from "react";
 import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -27,7 +29,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useFormDraft } from '@/hooks/use-session-draft';
 
-const MAX_URL_LEN = 2048;
+const MAX_URL_LEN = 160;
 
 export const resumeSchema = z.object({
   firstName: z
@@ -96,6 +98,10 @@ export const resumeSchema = z.object({
           .url("Invalid URL format")
           .max(MAX_URL_LEN, `URL can be at most ${MAX_URL_LEN} characters`)
           .or(z.string().length(0)),
+      }).superRefine((link, ctx) => {
+        if ("type" in link && link.type === "delete") return;
+        const error = candidateSocialUrlError(link.url, link.label);
+        if (error) ctx.addIssue({ code: z.ZodIssueCode.custom, message: error, path: ["url"] });
       })
     )
     .max(20, "You can add at most 20 social links")
@@ -210,6 +216,9 @@ export const resumeSchema = z.object({
             .trim()
             .max(100, "Country can be at most 100 characters")
             .optional(),
+        })
+        .refine((data) => !educationInstitutionError(data), {
+          message: "Institution name is required", path: ["instituteName"],
         })
         .refine(
           (data) =>
@@ -481,7 +490,7 @@ export default function CreateResumeForm() {
         endDate: exp.currentlyWorking ? "" : formatDateToISO(exp.endDate || ""),
       }));
 
-      const processedEducation = data.educationList?.map((edu) => ({
+      const processedEducation = data.educationList?.filter(hasEducationContent).map((edu) => ({
         ...edu,
         startDate: formatDateToISO(edu.startDate || ""),
         graduationDate: edu.currentlyStudying

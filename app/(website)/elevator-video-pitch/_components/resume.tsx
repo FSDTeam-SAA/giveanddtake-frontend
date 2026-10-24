@@ -602,14 +602,13 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </section>
               )}
 
-            {resume.education[0]?.instituteName &&
-              resume.education[0].startDate && (
+            {resume.education?.some((edu) => edu.instituteName?.trim()) && (
                 <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
                   <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
                     Education
                   </h3>
                   <div className="space-y-6">
-                    {sortEducation(resume.education).map((edu) => (
+                    {sortEducation(resume.education.filter((edu) => edu.instituteName?.trim())).map((edu) => (
                       <div
                         key={edu._id}
                         className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"

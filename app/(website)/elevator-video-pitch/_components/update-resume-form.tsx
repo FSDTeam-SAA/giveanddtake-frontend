@@ -1,5 +1,7 @@
 "use client";
 
+import { candidateSocialUrlError, educationInstitutionError, hasEducationContent } from "@/lib/candidate-profile-policy";
+
 import { sortExperiences, sortEducation, sortAwards } from "@/lib/profile-history";
 
 import type React from "react";
@@ -60,7 +62,7 @@ export const resumeFormSchema = z.object({
       message: "About section cannot exceed 200 words",
     }),
   banner: z.string().optional(),
-  skills: z.array(z.string().trim().min(1, "Please select a skill from the list").max(100, "Each skill can be at most 100 characters")).max(30, "You can select at most 30 skills").optional(),
+  skills: z.array(z.string().trim().min(1, "Please select a skill from the list").max(100, "Each skill can be at most 100 characters")).min(1, "At least one skill is required").max(30, "You can select at most 30 skills"),
   languages: z.array(z.string()).optional(),
   immediatelyAvailable: z.boolean().optional(),
   certifications: z.array(z.string()).optional(),
@@ -75,6 +77,10 @@ export const resumeFormSchema = z.object({
           .optional()
           .transform((v) => v ?? "")
           .pipe(z.string().url("Please enter a valid URL").or(z.literal(""))),
+      }).superRefine((link, ctx) => {
+        if ("type" in link && link.type === "delete") return;
+        const error = candidateSocialUrlError(link.url, link.label);
+        if (error) ctx.addIssue({ code: z.ZodIssueCode.custom, message: error, path: ["url"] });
       })
     )
     .optional(),
@@ -163,6 +169,9 @@ export const resumeFormSchema = z.object({
             .trim()
             .max(100, "Country can be at most 100 characters")
             .optional(),
+        })
+        .refine((data) => !educationInstitutionError(data), {
+          message: "Institution name is required", path: ["instituteName"],
         })
         .refine(
           (data) =>
@@ -613,7 +622,7 @@ export default function UpdateResumeForm({
           : "",
       }));
 
-      const processedEducation = (data.educationList || []).map((edu) => ({
+      const processedEducation = (data.educationList || []).filter((edu) => edu._id || edu.type === "delete" || hasEducationContent(edu)).map((edu) => ({
         ...edu,
         type: edu._id
           ? edu.type === "delete"

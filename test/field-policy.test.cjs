@@ -9,7 +9,7 @@ const React = require('react');
 function load(file, imports = {}) {
   const source = fs.readFileSync(path.resolve(__dirname, '..', file), 'utf8');
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } });
-  const scope = { exports: {}, require: name => imports[name] ?? require(name) };
+  const scope = { exports: {}, URL, require: name => imports[name] ?? require(name) };
   vm.runInNewContext(outputText, scope);
   return scope.exports;
 }
@@ -72,7 +72,7 @@ test('create and edit schemas agree on the requested name, title and company lim
     let expression;
     function visit(node) { if (ts.isVariableDeclaration(node) && node.name.getText(ast) === schemaName) expression = node.initializer.getText(ast); ts.forEachChild(node, visit); }
     visit(ast);
-    const schema = vm.runInNewContext(`(${expression})`, { z: require('zod').z, MAX_URL_LEN: 2048 });
+    const schema = vm.runInNewContext(`(${expression})`, { z: require('zod').z, MAX_URL_LEN: 160, ...load('lib/candidate-profile-policy.ts') });
     for (const [field, limit] of [['firstName', 20], ['lastName', 40], ['title', 100]]) {
       assert.equal(schema.shape[field].safeParse('A'.repeat(limit)).success, true);
       assert.equal(schema.shape[field].safeParse('A'.repeat(limit + 1)).success, false);

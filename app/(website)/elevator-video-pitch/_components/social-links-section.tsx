@@ -180,6 +180,7 @@ export function SocialLinksSection({ form }: SocialLinksSectionProps) {
                     <FormControl>
                       <Input
                         placeholder={`${uiLabel} URL`}
+                        maxLength={role === "candidate" ? 160 : undefined}
                         {...field}
                       />
                     </FormControl>

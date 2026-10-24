@@ -503,7 +503,7 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
                   onChange={(e) =>
                     handleAnswerChange(question._id, e.target.value)
                   }
-                  placeholder={question.question}
+                  placeholder="Response"
                   className="w-full min-h-[100px]"
                 />
               </div>
