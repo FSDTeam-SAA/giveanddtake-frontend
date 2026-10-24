@@ -621,22 +621,14 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                             {qualifications.label(edu.degree)}
                             {edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}
                           </h4>
-                          <p className="text-sm">{edu.instituteName}</p>
+                          <p className="text-sm text-gray-600 [overflow-wrap:anywhere]">{edu.instituteName}</p>
                           <p className="text-gray-500 text-sm">
                             {formatDate(edu.startDate)} -{" "}
                             {isCurrentEducation(edu) ? "Present" : formatDate(edu.graduationDate)}
                           </p>
                         </div>
 
-                        {edu.country && (
-                          <p className="text-gray-600 text-sm flex items-center gap-2">
-                            <MapPin className="w-4 h-4" />
-                            <span>
-                              {edu.city && `${edu.city}, `}
-                              {edu.country}
-                            </span>
-                          </p>
-                        )}
+
                       </div>
                     ))}
                   </div>

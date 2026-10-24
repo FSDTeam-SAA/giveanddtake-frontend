@@ -71,6 +71,7 @@ interface ResumeResponse {
     }[];
     education?: {
       _id: string;
+      instituteName?: string;
       degree?: string;
       fieldOfStudy?: string;
       city?: string;
@@ -469,18 +470,18 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                     edu.fieldOfStudy.trim().length
                       ? edu.fieldOfStudy.trim()
                       : "";
-                  const loc = joinLocation(edu.city, edu.state, edu.country);
+                  const institution = edu.instituteName?.trim();
 
                   return (
                     <li
                       key={edu._id}
                       className="flex gap-4 items-start sm:items-center"
                     >
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center bg-blue-100 rounded-xl">
+                      <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 flex items-center justify-center bg-blue-100 rounded-xl">
                         <GraduationCap className="text-blue-600 w-8 h-8 sm:w-8 sm:h-8" />
                       </div>
 
-                      <div className="flex-1">
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                           <h4 className="font-semibold text-lg text-[#595959]">
                             {degree}
@@ -495,8 +496,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                           </span>
                         </div>
 
-                        {edu.country && (
-                          <p className="text-gray-600 text-sm mt-1">{loc}</p>
+                        {institution && (
+                          <p className="text-gray-600 text-sm mt-1 [overflow-wrap:anywhere]">{institution}</p>
                         )}
                       </div>
                     </li>
