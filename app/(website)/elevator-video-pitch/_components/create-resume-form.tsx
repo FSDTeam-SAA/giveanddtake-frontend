@@ -509,7 +509,6 @@ export default function CreateResumeForm() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        title: data.title,
         city: data.city,
         zip: data.zip,
         country: data.country,

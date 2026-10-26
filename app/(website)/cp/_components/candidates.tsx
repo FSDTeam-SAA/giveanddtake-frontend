@@ -1,4 +1,5 @@
 "use client";
+import { candidateHeadline } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
@@ -328,6 +329,8 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
               {resume.firstName} {resume.lastName}
             </h2>
 
+            {candidateHeadline(resume.title) && <p className="mt-1 text-gray-600">{candidateHeadline(resume.title)}</p>}
+
             <p className="text-gray-600 flex items-center">
               <MapPin className="w-4 h-4 mr-1" />
               {joinLocation(resume.country, resume.city)}
@@ -361,7 +364,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                   userId={userId}
                   role="cp"
                   title={`${resume.firstName} ${resume.lastName} — ${
-                    resume.title ?? "Candidate"
+                    candidateHeadline(resume.title) ?? "Candidate"
                   }`}
                   summary={
                     resume.aboutUs

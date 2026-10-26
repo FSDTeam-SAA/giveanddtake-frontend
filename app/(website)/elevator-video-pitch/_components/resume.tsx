@@ -1,4 +1,5 @@
 "use client";
+import { candidateHeadline, candidateName } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
@@ -284,19 +285,10 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     )}
                   </div>
                   <h2 className="text-xl font-bold text-gray-800">
-                    {resume.resume.title
-                      ? `${resume.resume.title
-                          .charAt(0)
-                          .toUpperCase()}${resume.resume.title.slice(1)} `
-                      : ""}
-                    {`${resume.resume.firstName
-                      .charAt(0)
-                      .toUpperCase()}${resume.resume.firstName.slice(1)} `}
-                    {`${resume.resume.lastName
-                      .charAt(0)
-                      .toUpperCase()}${resume.resume.lastName.slice(1)}`}
+                    {candidateName(resume.resume.firstName, resume.resume.lastName)}
                   </h2>
 
+                  {candidateHeadline(resume.resume.title) && <p className="mt-1 text-gray-600">{candidateHeadline(resume.resume.title)}</p>}
                   <div className="mt-2 space-x-2">
                     <SocialLinks sLink={resume.resume.sLink} />
                   </div>

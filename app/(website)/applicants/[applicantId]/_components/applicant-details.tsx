@@ -1,4 +1,5 @@
 "use client";
+import { candidateHeadline } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
@@ -178,6 +179,7 @@ export default function ApplicantDetails({
               {applicantResume?.createResume?.firstName}{" "}
               {applicantResume?.createResume?.lastName}
             </p>
+            {candidateHeadline(applicantResume?.createResume?.title) && <p className="text-gray-600">{candidateHeadline(applicantResume?.createResume?.title)}</p>}
             <p className="text-lg">
               <span className="font-semibold">Current Role:</span>{" "}
               {applicantResume?.experience?.[0]?.jobTitle}

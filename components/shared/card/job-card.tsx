@@ -1,4 +1,5 @@
 "use client";
+import { applicantCount as resolveApplicantCount, applicantLabel as countLabel, locationTypeLabel, employmentTypeLabel, jobCardDate } from "@/lib/job-card-display";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -126,17 +127,8 @@ export default function JobCard({
   const applicationLink = `/job-application?id=${job._id}`;
   const detailsLink = `/alljobs/${job._id}`;
 
-  const derivedApplicantCount =
-    typeof applicantCount === "number"
-      ? applicantCount
-      : job.applicantCount ?? (job as any)?.counter;
-
-  const applicantLabel =
-    typeof derivedApplicantCount === "number"
-      ? `${derivedApplicantCount} ${
-          derivedApplicantCount === 1 ? "applicant" : "applicants"
-        }`
-      : null;
+  const derivedApplicantCount = resolveApplicantCount(applicantCount, job.applicantCount, job.counter);
+  const applicantLabel = countLabel(derivedApplicantCount);
 
   const fitTheme =
     FIT_THEMES[jobFit?.verdictCode ?? ""] ??
@@ -221,14 +213,7 @@ export default function JobCard({
       .toUpperCase()
       .slice(0, 2);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  };
+
 
   // ===== postedBy =====
   let postedByName = "company";
@@ -576,7 +561,7 @@ export default function JobCard({
 
   const EmploymentBadge = () => (
   <span className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg text-sm text-gray-700 capitalize">
-    {job.employement_Type || "Not Specified"}
+    {employmentTypeLabel(job.employement_Type)}
   </span>
 );
 
@@ -652,14 +637,14 @@ export default function JobCard({
 })()}
 
         <div className="flex items-center bg-[#E9ECFC] px-2.5 py-1.5 rounded-lg capitalize">
-          {job.location_Type || "Onsite"}
+          {locationTypeLabel(job.location_Type)}
         </div>
         <EmploymentBadge />
         <div>{renderApplicantBadge()}</div>
       </div>
 
       <div className="text-[#059c05] font-semibold mt-3">
-        {formatDate(job.updatedAt)}
+        {jobCardDate(job.updatedAt, job.publishDate, job.createdAt)}
       </div>
     </>
   );

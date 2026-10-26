@@ -251,6 +251,9 @@ export default function JobApplicationPage({ jobId }: JobApplicationPageProps) {
         queryKey: ["applied-job-ids", userId],
       });
       queryClient.invalidateQueries({ queryKey: ["job-applications", userId] });
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendedJobs"] });
+      queryClient.invalidateQueries({ queryKey: ["job", jobId] });
       router.push("/alljobs");
     },
     onError: (error: Error) => {

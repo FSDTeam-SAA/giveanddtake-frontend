@@ -581,7 +581,6 @@ export default function UpdateResumeForm({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        title: data.title || "",
         city: data.city || "",
         zipCode: data.zipCode || "",
         immediatelyAvailable: data.immediatelyAvailable,

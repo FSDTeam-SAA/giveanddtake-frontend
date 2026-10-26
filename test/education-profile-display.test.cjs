@@ -80,4 +80,14 @@ for (const [name, file, props] of [
     assert.ok(html.includes('Work Country'), 'Experience location remains present');
     assert.ok(html.includes('Profile Country'), 'Profile location remains present');
   });
+  for (const title of ['Mr.', ' mRS. ', 'Dr.', 'Software Engineer']) {
+    test(`${name}: legacy ${title} is filtered without stripping a deliberately typed name prefix`, () => {
+      const profile = { ...data, resume: { ...data.resume, title, firstName: 'Mr. Alex' } };
+      const html = renderProfile(file, profile, name === 'My EVP Profile' ? { resume: profile, onEdit: empty } : props);
+      assert.ok(html.includes('Mr. Alex'));
+      assert.ok(!html.includes('Mr. Mr. Alex'));
+      if (title === 'Software Engineer') assert.ok(html.includes(title));
+      else assert.ok(!html.includes(`>${title.trim()}<`));
+    });
+  }
 }

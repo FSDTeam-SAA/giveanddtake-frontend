@@ -1,4 +1,5 @@
 "use client";
+import { candidateHeadline } from "@/lib/candidate-display";
 import { useState, useEffect, Suspense } from "react";
 import {
   Search,
@@ -289,9 +290,9 @@ function AllUsersContent() {
                           )}
 
                         <div className="space-y-2 text-sm text-gray-600 mt-2">
-                          {user?.position && (
+                          {(user?.role === "candidate" ? candidateHeadline(user.position) : user?.position) && (
                             <div className="truncate font-medium text-gray-700">
-                              {user.position}
+                              {user.role === "candidate" ? candidateHeadline(user.position) : user.position}
                             </div>
                           )}
                           <div className="flex items-center gap-2">
