@@ -135,6 +135,8 @@ export const EducationSection = ({ form }: EducationSectionProps) => {
                         <UniversitySelector
                           value={field.value || ""}
                           onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
                           placeholder="Institute Name"
                         />
                       </FormControl>

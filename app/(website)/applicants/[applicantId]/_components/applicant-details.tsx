@@ -1,4 +1,5 @@
 "use client";
+import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
 import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
@@ -278,29 +279,12 @@ export default function ApplicantDetails({
               instituteName: string;
               city: string;
               state: string;
+              startDate?: string;
               graduationDate: string;
             }) => (
-              <div
-                key={edu._id}
-                className="flex flex-col sm:flex-row items-start sm:items-center gap-4"
-              >
-                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <GraduationCap className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                    {qualifications.label(edu.degree)} {edu.fieldOfStudy && `in ${edu.fieldOfStudy}`}
-                  </h4>
-                  <p className="text-sm">{isCurrentEducation(edu) ? "Present" : formatProfileDate(edu.graduationDate)}</p>
-                  <p className="text-sm">{edu.instituteName}</p>
-                </div>
-                <p className="text-gray-600 text-sm flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  <span>
-                    {edu.city && `${edu.city}, `} {edu.state}
-                  </span>
-                </p>
-              </div>
+              <EducationEntry key={edu._id} institution={edu.instituteName}
+                qualification={qualifications.label(edu.degree)} field={edu.fieldOfStudy}
+                dates={`${formatProfileDate(edu.startDate)} - ${isCurrentEducation(edu) ? "Present" : formatProfileDate(edu.graduationDate)}`} />
             )
           )}
         </div>

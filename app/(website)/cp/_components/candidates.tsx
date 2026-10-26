@@ -1,4 +1,5 @@
 "use client";
+import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
 import React from "react";
@@ -462,7 +463,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
 
           <div className="space-y-4">
             {sortedEducation.length > 0 ? (
-              <ul className="space-y-6">
+              <ul className="divide-y divide-gray-200">
                 {sortedEducation.map((edu) => {
                   const degree = qualifications.label(edu.degree) || "Degree";
                   const field =
@@ -473,33 +474,9 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
                   const institution = edu.instituteName?.trim();
 
                   return (
-                    <li
-                      key={edu._id}
-                      className="flex gap-4 items-start sm:items-center"
-                    >
-                      <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 flex items-center justify-center bg-blue-100 rounded-xl">
-                        <GraduationCap className="text-blue-600 w-8 h-8 sm:w-8 sm:h-8" />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                          <h4 className="font-semibold text-lg text-[#595959]">
-                            {degree}
-                            {field && (
-                              <span className="font-normal">, {field}</span>
-                            )}
-                          </h4>
-
-                          <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                            {toMonthYear(edu.startDate)} —{" "}
-                            {toMonthYear(edu.graduationDate)}
-                          </span>
-                        </div>
-
-                        {institution && (
-                          <p className="text-gray-600 text-sm mt-1 [overflow-wrap:anywhere]">{institution}</p>
-                        )}
-                      </div>
+                    <li key={edu._id}>
+                      <EducationEntry institution={institution} qualification={degree === "Degree" && !edu.degree ? "" : degree}
+                        field={field} dates={`${toMonthYear(edu.startDate)} - ${edu.graduationDate ? toMonthYear(edu.graduationDate) : edu.startDate ? "Present" : "N/A"}`} />
                     </li>
                   );
                 })}

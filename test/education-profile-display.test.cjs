@@ -21,8 +21,9 @@ function renderProfile(file, data, props) {
     }}).outputText;
     const scope = { exports: {}, require: name => {
       if (name === 'next-auth/react') return { useSession: () => ({ data: null }) };
+      if (name === 'next/navigation') return { useRouter: () => ({ push: empty }) };
       if (name === '@tanstack/react-query') return {
-        useQuery: () => ({ data: { success: true, data }, isLoading: false, isFetching: false }),
+        useQuery: options => ({ data: options.queryKey?.[0] === 'resume' ? { ...data, createResume: data.resume, experience: data.experiences } : { success: true, data }, isLoading: false, isFetching: false }),
         useMutation: () => ({}), useQueryClient: () => ({}),
       };
       if (name === '@/hooks/use-qualifications') return { useQualifications: () => ({ label: value => value }) };
@@ -56,11 +57,13 @@ const data = {
     { _id: 'two', instituteName: 'Independent College', degree: 'B.A', fieldOfStudy: 'English', country: '', startDate: '2016-09-01', graduationDate: '2019-06-01' },
   ],
   awardsAndHonors: [], elevatorPitch: [],
+  applications: [{ userId: { _id: 'candidate' }, createdAt: '2026-01-01' }],
 };
 
 for (const [name, file, props] of [
   ['public candidate profile', 'app/(website)/cp/_components/candidates.tsx', { userId: 'candidate' }],
   ['My EVP Profile', 'app/(website)/elevator-video-pitch/_components/resume.tsx', { resume: data, onEdit: empty }],
+  ['Employer applicant profile', 'app/(website)/applicants/[applicantId]/_components/applicant-details.tsx', { applicantId: 'candidate' }],
 ]) {
   test(`${name}: education renders institutions instead of location while preserving qualifications and dates`, () => {
     const html = renderProfile(file, data, props);
@@ -68,6 +71,10 @@ for (const [name, file, props] of [
     const education = sections.find(section => /<h3[^>]*>Education<\/h3>/.test(section));
     assert.ok(education, 'Education section renders');
     for (const text of ['Example University', 'Independent College', 'M.B.A', 'Finance', 'B.A', 'English', 'Oct 2020', 'Jan 2022']) assert.ok(education.includes(text), text);
+    assert.match(education, /<h4[^>]*>Example University<\/h4>/);
+    assert.match(education, /<h4[^>]*>Independent College<\/h4>/);
+    assert.ok(education.indexOf('Example University') < education.indexOf('M.B.A'));
+    assert.ok(!education.includes('rounded-full'), 'Education dates are plain muted text');
     assert.ok(!education.includes('Education City'));
     assert.ok(!education.includes('Education Country'));
     assert.ok(html.includes('Work Country'), 'Experience location remains present');

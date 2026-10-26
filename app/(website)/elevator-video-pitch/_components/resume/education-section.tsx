@@ -1,4 +1,5 @@
 "use client";
+import { UniversitySelector } from "@/components/profile/university-selector";
 import { useQualifications } from "@/hooks/use-qualifications";
 
 import { useResumeEntryCities } from "@/hooks/use-resume-entry-cities";
@@ -8,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check, ChevronsUpDown, Search } from "lucide-react";
+import { Check, ChevronsUpDown } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -44,12 +45,6 @@ import { useQuery } from "@tanstack/react-query";
 interface Country {
   country: string;
   cities: string[];
-}
-
-interface University {
-  _id: string;
-  name: string;
-  country: string;
 }
 
 interface Option {
@@ -143,130 +138,6 @@ function Combobox({
         </Command>
       </PopoverContent>
     </Popover>
-  );
-}
-
-function UniversitySelector({
-  value,
-  onChange,
-  placeholder = "Type your University/College/High School",
-  disabled = false,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
-}) {
-  const [search, setSearch] = useState("");
-  const [filteredUniversities, setFilteredUniversities] = useState<
-    University[]
-  >([]);
-  const [allUniversities, setAllUniversities] = useState<University[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  // Fetch universities from API
-  useEffect(() => {
-    const fetchUniversities = async () => {
-      setIsLoading(true);
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "{{base_url}}";
-        const response = await fetch(`${baseUrl}/university`);
-        const data = await response.json();
-        if (data.status === "success") {
-          setAllUniversities(data.data);
-        }
-      } catch (err) {
-        console.error("Error fetching universities:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchUniversities();
-  }, []);
-
-  // Filter universities based on search
-  useEffect(() => {
-    if (search.trim() && search.length >= 2) {
-      const filtered = allUniversities.filter(
-        (university) =>
-          university.name.toLowerCase().includes(search.toLowerCase()) ||
-          university.country.toLowerCase().includes(search.toLowerCase())
-      );
-      setFilteredUniversities(filtered.slice(0, 10)); // Limit to 10 results for performance
-      setShowDropdown(true);
-    } else {
-      setFilteredUniversities([]);
-      setShowDropdown(false);
-    }
-  }, [search, allUniversities]);
-
-  const handleUniversitySelect = (universityName: string) => {
-    onChange(universityName);
-    setSearch(universityName);
-    setShowDropdown(false);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    setSearch(inputValue);
-    onChange(inputValue);
-  };
-
-  return (
-    <div className="relative">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder={placeholder}
-          value={search || value}
-          onChange={handleInputChange}
-          onFocus={() => {
-            if (search.length >= 2) setShowDropdown(true);
-          }}
-          onBlur={() => {
-            // Delay hiding dropdown to allow clicks
-            setTimeout(() => setShowDropdown(false), 200);
-          }}
-          className="pl-10"
-          disabled={disabled}
-        />
-      </div>
-
-      {/* Loading indicator */}
-      {isLoading && search && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow p-2 text-sm text-gray-600">
-          Loading universities...
-        </div>
-      )}
-
-      {/* Dropdown */}
-      {showDropdown && filteredUniversities.length > 0 && !isLoading && (
-        <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow max-h-60 overflow-y-auto">
-          {filteredUniversities.map((university) => (
-            <button
-              key={university._id}
-              type="button"
-              className="w-full px-4 py-2 text-left hover:bg-gray-100 border-b border-gray-100 last:border-b-0"
-              onClick={() => handleUniversitySelect(university.name)}
-            >
-              <div className="font-medium">{university.name}</div>
-              <div className="text-sm text-gray-500">{university.country}</div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* No results */}
-      {showDropdown &&
-        search.length >= 2 &&
-        filteredUniversities.length === 0 &&
-        !isLoading && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow p-2 text-sm text-gray-600">
-            No universities found. You can still type a custom name.
-          </div>
-        )}
-    </div>
   );
 }
 
@@ -371,6 +242,8 @@ export function EducationSection({
                       <UniversitySelector
                         value={field.value || ""}
                         onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
                         placeholder="Institution Name"
                       />
                     </FormControl>

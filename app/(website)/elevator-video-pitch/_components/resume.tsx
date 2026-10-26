@@ -1,4 +1,5 @@
 "use client";
+import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
 
 import { sortExperiences, sortEducation, sortAwards, isCurrentExperience, isCurrentEducation, formatProfileDate } from "@/lib/profile-history";
@@ -602,38 +603,18 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </section>
               )}
 
-            {resume.education?.some((edu) => edu.instituteName?.trim()) && (
-                <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-                  <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                    Education
-                  </h3>
-                  <div className="space-y-6">
-                    {sortEducation(resume.education.filter((edu) => edu.instituteName?.trim())).map((edu) => (
-                      <div
-                        key={edu._id}
-                        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                      >
-                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <GraduationCap className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-gray-800 capitalize text-lg">
-                            {qualifications.label(edu.degree)}
-                            {edu.fieldOfStudy && `, ${edu.fieldOfStudy}`}
-                          </h4>
-                          <p className="text-sm text-gray-600 [overflow-wrap:anywhere]">{edu.instituteName}</p>
-                          <p className="text-gray-500 text-sm">
-                            {formatDate(edu.startDate)} -{" "}
-                            {isCurrentEducation(edu) ? "Present" : formatDate(edu.graduationDate)}
-                          </p>
-                        </div>
-
-
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+            {resume.education?.length > 0 && (
+              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">Education</h3>
+                <div>
+                  {sortEducation(resume.education).map((edu) => (
+                    <EducationEntry key={edu._id} institution={edu.instituteName}
+                      qualification={qualifications.label(edu.degree)} field={edu.fieldOfStudy}
+                      dates={`${formatDate(edu.startDate)} - ${isCurrentEducation(edu) ? "Present" : formatDate(edu.graduationDate)}`} />
+                  ))}
+                </div>
+              </section>
+            )}
             {resume.awardsAndHonors?.length > 0 &&
               resume.awardsAndHonors[0].title && (
                 <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
