@@ -431,6 +431,10 @@ export default function EditableRecruiterAccount({
 
   const handleSave = async () => {
     if (!form.getValues().userId) return;
+    if ((form.getValues().bio || '').length > 1400) {
+      form.setError('bio', { message: 'About section cannot exceed 1400 characters' });
+      return;
+    }
     setIsSaving(true);
     try {
       const formData = new FormData();
@@ -883,6 +887,7 @@ export default function EditableRecruiterAccount({
                               onChange={(value) => field.onChange(value)}
                             />
                           </FormControl>
+                          <p className="text-sm text-gray-500">{(field.value || "").length}/1400 characters</p>
                           <FormMessage />
                         </FormItem>
                       )}

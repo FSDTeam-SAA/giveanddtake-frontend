@@ -18,28 +18,19 @@ function load(file, imports = {}) {
 const policy = load('lib/contact-message-policy.ts');
 const words = count => Array(count).fill('word').join(' ');
 
-test('subject validation accepts six words and rejects overflow across whitespace', () => {
-  assert.equal(policy.getContactSubjectError(words(6)), null);
-  assert.equal(policy.getContactSubjectError(' one\ttwo\nthree\u00a0four  five six '), null);
-  assert.equal(policy.getContactSubjectError(words(7)), 'Subject cannot exceed 6 words.');
-  assert.equal(policy.getContactSubjectError(words(7).replaceAll(' ', '\n\t\u00a0')), 'Subject cannot exceed 6 words.');
-  for (const subject of ['', ' \t ', 'ab']) {
-    assert.equal(policy.getContactSubjectError(subject), 'Subject must be at least 3 characters.');
-  }
-});
+for (const [kind,max,min] of [['Subject',50,3],['Message',500,10]]) {
+  test(`${kind} accepts its character boundary, rejects long single words and preserves minimum`, () => {
+    const check=policy[`getContact${kind}Error`];
+    assert.equal(check('A'.repeat(max)),null);
+    for(const text of ['A'.repeat(max+1), 'word '.repeat(max)]) assert.match(check(text),new RegExp(`${max} characters`));
+    assert.match(check('a'.repeat(min-1)),new RegExp(`at least ${min} characters`));
+    assert.equal(check(' a b c d e f g h i j '),null);
+  });
+}
 
-test('message validation accepts 50 words and rejects 51 across whitespace', () => {
-  assert.equal(policy.getContactMessageError(words(50)), null);
-  assert.equal(policy.getContactMessageError(words(51)), 'Message cannot exceed 50 words.');
-  assert.equal(policy.getContactMessageError(words(51).replaceAll(' ', '\n\t\u00a0')), 'Message cannot exceed 50 words.');
-  assert.equal(policy.countContactMessageWords(' \n one\t two   three\u00a0four '), 4);
-  assert.equal(policy.countContactMessageWords(' \n\t '), 0);
-  assert.match(policy.getContactMessageError('short'), /at least 10 characters/);
-});
-
-test('contact page blocks over-limit typing, paste and submit, allowing edits at 50 words', () => {
+test('contact page blocks over-limit typing, paste and submit, allowing edits at 500 characters', () => {
   let state = { firstName: 'Alex', lastName: 'Smith', address: 'alex@example.com',
-    phoneNumber: '', subject: 'Question', message: words(50) };
+    subject: 'Question', message: 'A'.repeat(500) };
   const submitted = [];
   const errors = [];
   const component = () => null;
@@ -64,43 +55,43 @@ test('contact page blocks over-limit typing, paste and submit, allowing edits at
   }
   const message = () => find(ContactForm(), element => element.props?.id === 'message');
   const change = value => message().props.onChange({ target: { id: 'message', value } });
-  change(words(51));
-  assert.equal(state.message, words(50));
-  change(words(100));
-  assert.equal(state.message, words(50));
-  change(`${words(49)} replacement`);
-  assert.equal(state.message, `${words(49)} replacement`);
-  change(words(49));
-  assert.equal(state.message, words(49));
-  change(words(50));
+  change('A'.repeat(501));
+  assert.equal(state.message, 'A'.repeat(500));
+  change('A'.repeat(1000));
+  assert.equal(state.message, 'A'.repeat(500));
+  change(`${'A'.repeat(498)} B`);
+  assert.equal(state.message, `${'A'.repeat(498)} B`);
+  change('A'.repeat(499));
+  assert.equal(state.message, 'A'.repeat(499));
+  change('A'.repeat(500));
   const submit = () => find(ContactForm(), element => element.type === 'form').props.onSubmit({ preventDefault() {} });
   submit();
   assert.equal(submitted.length, 1);
   assert.equal(submitted[0].address, 'alex@example.com');
-  state = { ...state, message: words(51) };
+  state = { ...state, message: 'A'.repeat(501) };
   submit();
   assert.equal(submitted.length, 1);
   assert.equal(errors.length, 1);
 
-  state = { ...state, subject: words(6), message: words(50) };
+  state = { ...state, subject: 'A'.repeat(50), message: 'A'.repeat(500) };
   const subject = () => find(ContactForm(), element => element.props?.id === 'subject');
   const changeSubject = value => subject().props.onChange({ target: { id: 'subject', value } });
   assert.equal(subject().props.placeholder, 'Subject');
   assert.equal(message().props.placeholder, 'Your Message');
-  assert.equal(subject().props['aria-describedby'], 'subject-limit subject-word-count');
-  for (const overflow of [words(7), words(100), words(7).replaceAll(' ', '\t\u00a0')]) {
+  assert.equal(subject().props['aria-describedby'], 'subject-limit subject-character-count');
+  for (const overflow of ['A'.repeat(51), 'A'.repeat(1000), 'A'.repeat(51).replaceAll(' ', '\t\u00a0')]) {
     changeSubject(overflow);
-    assert.equal(state.subject, words(6));
+    assert.equal(state.subject, 'A'.repeat(50));
   }
-  changeSubject(`${words(5)} replacement`);
-  assert.equal(state.subject, `${words(5)} replacement`);
-  changeSubject(words(5));
-  assert.equal(state.subject, words(5));
-  changeSubject(words(6));
+  changeSubject(`${'A'.repeat(48)} B`);
+  assert.equal(state.subject, `${'A'.repeat(48)} B`);
+  changeSubject('A'.repeat(49));
+  assert.equal(state.subject, 'A'.repeat(49));
+  changeSubject('A'.repeat(50));
   submit();
   assert.equal(submitted.length, 2);
-  assert.equal(submitted[1].subject, words(6));
-  state = { ...state, subject: words(7) };
+  assert.equal(submitted[1].subject, 'A'.repeat(50));
+  state = { ...state, subject: 'A'.repeat(51) };
   submit();
   assert.equal(submitted.length, 2);
   assert.equal(errors.length, 2);

@@ -61,7 +61,7 @@ export default function JobDescriptionPreview({
             </p>
             <ul className="list-disc list-inside text-base text-gray-800 space-y-2">
               <li>Job descriptions should be clear, well-written, and informative</li>
-              <li>Job descriptions with 700-2,000 characters get the most interaction</li>
+              <li>Keep job descriptions clear and within 1,400 characters</li>
               <li>Do not use discriminatory language</li>
               <li>Do not post offensive or inappropriate content</li>
               <li>Be honest about the job requirement details</li>

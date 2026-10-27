@@ -76,6 +76,7 @@ export function AwardsSection({ form, awardFields, appendAward, removeAward }: A
                     <FormControl>
                       <Textarea placeholder="Award Short Description" {...field} />
                     </FormControl>
+                  <p className="text-sm text-gray-500">{(field.value ?? "").length}/500 characters</p>
                     <FormMessage />
                   </FormItem>
                 )}

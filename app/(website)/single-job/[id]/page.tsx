@@ -737,7 +737,7 @@ export default function JobPreview() {
                           <label className="text-sm font-medium text-gray-700">
                             Question
                           </label>
-                          <input
+                          <input maxLength={254}
                             type="text"
                             value={q.question}
                             onChange={(e) =>

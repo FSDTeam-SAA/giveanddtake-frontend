@@ -1,5 +1,7 @@
 "use client";
 
+import { getJobDescriptionText } from "@/lib/job-description-policy";
+
 import { candidateSocialUrlError, educationInstitutionError, hasEducationContent } from "@/lib/candidate-profile-policy";
 
 import type React from "react";
@@ -67,13 +69,7 @@ export const resumeSchema = z.object({
     .string()
     .trim()
     .min(1, "About section is required")
-    .refine(
-      (value) => {
-        const wordCount = value.trim().split(/\s+/).length;
-        return wordCount <= 200;
-      },
-      { message: "About section cannot exceed 200 words" }
-    ),
+    .refine(value => getJobDescriptionText(value).length <= 1400, { message: "About section cannot exceed 1400 characters" }),
   skills: z
     .array(
       z
@@ -153,7 +149,7 @@ export const resumeSchema = z.object({
           jobDescription: z
             .string()
             .trim()
-            .max(2000, "Job description can be at most 2000 characters")
+            .max(1400, "Job description can be at most 1400 characters")
             .optional(),
           jobCategory: z
             .string()
@@ -257,7 +253,7 @@ export const resumeSchema = z.object({
         description: z
           .string()
           .trim()
-          .max(1000, "Description can be at most 1000 characters")
+          .max(500, "Description can be at most 500 characters")
           .optional(),
       })
     )
@@ -500,6 +496,7 @@ export default function CreateResumeForm() {
 
       const processedAwards = data.awardsAndHonors?.map((award) => ({
         ...award,
+        programeName: award.programName || "",
         programeDate: formatDateToISO(award.programeDate || ""),
       }));
 
@@ -606,7 +603,7 @@ export default function CreateResumeForm() {
                     <div className="flex items-center gap-2">
                       <svg
                         className="animate-spin h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns="http://www.w3.org/1400/svg"
                         fill="none"
                         viewBox="0 0 24 24"
                       >
@@ -707,7 +704,7 @@ export default function CreateResumeForm() {
               <div className="flex items-center gap-2">
                 <svg
                   className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http://www.w3.org/1400/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                 >

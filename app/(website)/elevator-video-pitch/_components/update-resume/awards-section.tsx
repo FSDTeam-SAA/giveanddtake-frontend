@@ -212,11 +212,12 @@ export const AwardsSection = ({ form, awardFields }: AwardsSectionProps) => {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea
+                      <Textarea maxLength={500}
                         placeholder="Description"
                         {...field}
                       />
                     </FormControl>
+                  <p className="text-sm text-gray-500">{(field.value ?? "").length}/500 characters</p>
                     <FormMessage />
                   </FormItem>
                 )}

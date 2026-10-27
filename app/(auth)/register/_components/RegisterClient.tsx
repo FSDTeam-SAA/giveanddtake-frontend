@@ -315,7 +315,7 @@ export default function RegisterPage() {
       }
     }
 
-    if (!emailRegex.test(formData.email)) {
+    if (formData.email.length > 254 || !emailRegex.test(formData.email)) {
       toast.error("Please enter a valid email address.");
       return false;
     }

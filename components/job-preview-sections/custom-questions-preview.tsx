@@ -33,7 +33,7 @@ export default function CustomQuestionsPreview({
             <div className="flex items-start gap-2">
               {isEditing ? (
                 <>
-                  <textarea placeholder="Ask a question"
+                  <textarea maxLength={1400} placeholder="Ask a question"
                     value={question.question}
                     onChange={(e) => onUpdateQuestion(question.id, e.target.value)}
                     className="flex-1 min-h-[80px] rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-800"

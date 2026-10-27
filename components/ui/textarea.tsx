@@ -8,7 +8,7 @@ const Textarea = React.forwardRef<
   HTMLTextAreaElement,
   React.ComponentProps<"textarea">
 >(({ className, maxLength, ...props }, ref) => {
-  const limit = maxLength ?? fieldCharacterLimit(props.name) ?? fieldCharacterLimit(props.id);
+  const limit = maxLength ?? fieldCharacterLimit(props.name) ?? fieldCharacterLimit(props.id) ?? fieldCharacterLimit(props.placeholder) ?? 1400;
   return (
     <textarea
       className={cn(

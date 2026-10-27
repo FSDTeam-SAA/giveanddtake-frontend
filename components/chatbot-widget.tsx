@@ -317,7 +317,7 @@ export default function ChatbotWidget() {
 
             <div className="border-t border-slate-200 bg-slate-50/90 px-5 py-4">
               <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-                <input
+                <input maxLength={254}
                   ref={inputRef}
                   type="text"
                   value={input}

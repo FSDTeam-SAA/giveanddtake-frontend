@@ -40,7 +40,7 @@ export default function CustomQuestionsStep({ form, onNext, onCancel }: CustomQu
             Skip
           </Button>
         </div>
-       
+
         <div className="space-y-4 mb-6">
           {customQuestions.map((question, index) => (
             <FormField
@@ -51,7 +51,7 @@ export default function CustomQuestionsStep({ form, onNext, onCancel }: CustomQu
                 <FormItem>
                   <FormLabel className="text-xl font-medium text-[#2B7FD0]">Ask a question</FormLabel>
                   <FormControl>
-                    <textarea
+                    <textarea maxLength={1400}
                       placeholder="Ask a question"
                       className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       {...field}

@@ -10,9 +10,8 @@ import { Mail, Phone, MapPin, Clock, Globe } from "lucide-react";
 import PageHeaders from "@/components/shared/PageHeaders";
 import { toast } from "sonner";
 import {
-  CONTACT_MESSAGE_WORD_LIMIT,
-  CONTACT_SUBJECT_WORD_LIMIT,
-  countContactMessageWords,
+  CONTACT_MESSAGE_CHARACTER_LIMIT,
+  CONTACT_SUBJECT_CHARACTER_LIMIT,
   getContactMessageError,
   getContactSubjectError,
 } from "@/lib/contact-message-policy";
@@ -22,7 +21,6 @@ interface ContactFormData {
   firstName: string;
   lastName: string;
   address: string; // used as email
-  phoneNumber: string;
   subject: string;
   message: string;
 }
@@ -76,6 +74,8 @@ const validateForm = (data: ContactFormData): string[] => {
     errors.push("Please enter a valid email address.");
   }
 
+  if (data.address.length > 254) errors.push("Email can be at most 254 characters.");
+
   const subjectError = getContactSubjectError(data.subject);
   if (subjectError) errors.push(subjectError);
 
@@ -90,7 +90,6 @@ export default function ContactForm() {
     firstName: "",
     lastName: "",
     address: "",
-    phoneNumber: "",
     subject: "",
     message: "",
   });
@@ -102,8 +101,7 @@ export default function ContactForm() {
         firstName: "",
         lastName: "",
         address: "",
-        phoneNumber: "",
-        subject: "",
+            subject: "",
         message: "",
       });
       toast.success("Message sent successfully!", {
@@ -146,9 +144,9 @@ export default function ContactForm() {
     const { id, value } = e.target;
     if (
       (id === "message" &&
-        countContactMessageWords(value) > CONTACT_MESSAGE_WORD_LIMIT) ||
+        value.length > CONTACT_MESSAGE_CHARACTER_LIMIT) ||
       (id === "subject" &&
-        countContactMessageWords(value) > CONTACT_SUBJECT_WORD_LIMIT)
+        value.length > CONTACT_SUBJECT_CHARACTER_LIMIT)
     ) {
       return;
     }
@@ -230,14 +228,14 @@ export default function ContactForm() {
                 placeholder="Subject"
                 value={formData.subject}
                 onChange={handleInputChange}
-                aria-describedby="subject-limit subject-word-count"
+                aria-describedby="subject-limit subject-character-count"
                 required
               />
               <div className="flex justify-between text-sm text-gray-600">
-                <span id="subject-limit">6 words max</span>
-                <span id="subject-word-count" aria-live="polite">
-                  {countContactMessageWords(formData.subject)}/
-                  {CONTACT_SUBJECT_WORD_LIMIT} words
+                <span id="subject-limit">50 characters max</span>
+                <span id="subject-character-count" aria-live="polite">
+                  {formData.subject.length}/
+                  {CONTACT_SUBJECT_CHARACTER_LIMIT} characters
                 </span>
               </div>
             </div>
@@ -246,7 +244,7 @@ export default function ContactForm() {
                 className="text-[#2A2A2A] text-[16px] font-medium"
                 htmlFor="message"
               >
-                Your Message (50 words max) *
+                Your Message *
               </Label>
               <Textarea
                 id="message"
@@ -254,16 +252,16 @@ export default function ContactForm() {
                 className="min-h-[120px]"
                 value={formData.message}
                 onChange={handleInputChange}
-                aria-describedby="message-word-count"
+                aria-describedby="message-character-count"
                 required
               />
               <p
-                id="message-word-count"
+                id="message-character-count"
                 className="text-sm text-gray-600"
                 aria-live="polite"
               >
-                {countContactMessageWords(formData.message)}/
-                {CONTACT_MESSAGE_WORD_LIMIT} words
+                {formData.message.length}/
+                {CONTACT_MESSAGE_CHARACTER_LIMIT} characters
               </p>
             </div>
             <Button

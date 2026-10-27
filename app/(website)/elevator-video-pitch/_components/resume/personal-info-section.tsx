@@ -35,13 +35,6 @@ import { PhotoUpload } from "../update-resume/photo-upload";
 import type { UseFormReturn } from "react-hook-form";
 import { Textarea } from "@/components/ui/textarea";
 
-const ABOUT_MIN_WORDS = 1;
-const ABOUT_MAX_WORDS = 200;
-
-const getWordCount = (value?: string | null) => {
-  const text = value?.trim() ?? "";
-  return text ? text.split(/\s+/).length : 0;
-};
 
 interface Country {
   country: string;
@@ -278,14 +271,13 @@ export function PersonalInfoSection({
                 render={({ field }) => (
                   <FormItem>
                     <FormControl>
-                      <Textarea placeholder="About Me"
+                      <Textarea maxLength={1400} placeholder="About Me"
                         value={field.value}
                         onChange={field.onChange}
                       />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
-                      Minimum {ABOUT_MIN_WORDS} word. Maximum {ABOUT_MAX_WORDS} words. Current:{" "}
-                      {getWordCount(field.value)}/{ABOUT_MAX_WORDS}
+                      {(field.value ?? "").length}/1400 characters
                     </p>
                     <FormMessage />
                   </FormItem>

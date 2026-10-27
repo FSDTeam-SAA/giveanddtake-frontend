@@ -36,8 +36,8 @@ const formSchema = z.object({
   country: z.string().min(1, "Country is required"),
   city: z.string().min(1, "City is required"),
   zipcode: z.string(),
-  cemail: z.string().email("Invalid email address"),
-  aboutUs: z.string().min(1, "About us is required"),
+  cemail: z.string().email("Invalid email address").max(254, "Email can be at most 254 characters"),
+  aboutUs: z.string().min(1, "About us is required").max(1400, "About section cannot exceed 1400 characters"),
   industry: z.string().min(1, "Industry is required"),
   linkedin: z.string().optional().or(z.literal("")),
   twitter: z.string().optional().or(z.literal("")),
@@ -363,7 +363,7 @@ export default function CreateCompanyPage() {
                 )}
               />
 
-           
+
             </div>
           </div>
 

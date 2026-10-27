@@ -1,5 +1,7 @@
 "use client";
 
+import { getJobDescriptionText } from "@/lib/job-description-policy";
+
 import { useEffect, useMemo, useState, useCallback } from "react"; // Added useCallback here
 import { useSession } from "next-auth/react";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -68,13 +70,13 @@ const formSchema = z.object({
   cemail: z
     .string()
     .email("Invalid email address")
-    .max(100, "Email is too long"),
+    .max(254, "Email can be at most 254 characters"),
   aboutUs: z
     .string()
     .min(1, "About us is required")
     .refine(
-      (value) => value.trim().split(/\s+/).length <= 200,
-      "About us must not exceed 200 words"
+      (value) => getJobDescriptionText(value).length <= 1400,
+      "About us must not exceed 1400 characters"
     ),
 
   industry: z
@@ -285,7 +287,7 @@ function LogoUpload({ onFileSelect, previewUrl }: LogoUploadProps) {
             <div className="flex items-center gap-2">
               <svg
                 className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www.w3.org/1400/svg"
                 fill="none"
                 viewBox="0 0 24 24"
               >
@@ -700,7 +702,7 @@ export default function CreateCompanyPage() {
                   <div className="flex items-center gap-2">
                     <svg
                       className="animate-spin h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
+                      xmlns="http://www.w3.org/1400/svg"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -759,7 +761,7 @@ export default function CreateCompanyPage() {
                       <Textarea placeholder="About Us" value={field.value} onChange={field.onChange} />
                     </FormControl>
                     <p className="text-sm text-muted-foreground">
-                      Word count: {field.value.trim().split(/\s+/).length}
+                      {getJobDescriptionText(field.value || "").length}/1400 characters
                       /200
                     </p>
                     <FormMessage />
@@ -955,7 +957,7 @@ export default function CreateCompanyPage() {
               <div className="flex items-center gap-2">
                 <svg
                   className="animate-spin h-5 w-5 text-white"
-                  xmlns="http://www.w3.org/2000/svg"
+                  xmlns="http://www.w3.org/1400/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                 >

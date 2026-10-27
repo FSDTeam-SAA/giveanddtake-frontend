@@ -1,4 +1,5 @@
 "use client";
+import { ProfileCredentials } from "@/components/profile/profile-credentials";
 
 import { sortExperiences, sortAwards, isCurrentExperience } from "@/lib/profile-history";
 
@@ -38,6 +39,8 @@ interface Resume {
   email?: string;
   phoneNumber?: string;
   skills?: string[];
+  certifications?: string[];
+  languages?: string[];
   sLink?: Array<{ label: string; url: string; _id: string }>;
   createdAt?: string;
   updatedAt?: string;
@@ -215,6 +218,8 @@ export default function ApplicantDetailsPage() {
             email: apiData.resume.email,
             phoneNumber: apiData.resume.phoneNumber,
             skills: apiData.resume.skills,
+            certifications: apiData.resume.certifications,
+            languages: apiData.resume.languages,
             sLink: validLinks, // Assign the correctly typed array
             createdAt: apiData.resume.createdAt,
             updatedAt: apiData.resume.updatedAt,
@@ -663,25 +668,7 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {awardsAndHonors.length > 0 && awardsAndHonors[0].title && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Awards & Honors</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {sortAwards(awardsAndHonors).map((award) => (
-                  <div key={award._id}>
-                    <h3 className="font-semibold">{award.title}</h3>
-                    {award.description && (
-                      <p className="text-gray-700 mt-1">{award.description}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors} />
 
         {resume.sLink && resume.sLink.length > 0 && (
           <Card className="mb-6">

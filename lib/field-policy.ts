@@ -4,8 +4,12 @@ export function fieldCharacterLimit(field?: string): number | undefined {
   if (!field) return undefined;
   const key = field.split('.').at(-1)!.replace(/[^a-z]/gi, '').toLowerCase();
   const limits: Record<string, number> = {
+    email: 254, emailaddress: 254, cemail: 254, newemail: 254,
+    aboutus: 1400, aboutme: 1400, bio: 1400, subject: 50, message: 500,
+    description: 1400, phone: 50, phonenumber: 50, phonenum: 50,
     firstname: 20, lastname: 40, surname: 40, surename: 40,
     cname: 160, company: 160, companyname: 160, employer: 160,
+    awardshortdescription: 500, awardtitle: 150, programname: 150, programename: 150,
     jobtitle: 100, position: 100, currentposition: 100,
     institutename: 150, institutionname: 150, institution: 150, degree: 100, fieldofstudy: 100,
     zip: 20, zipcode: 20, department: 100,
@@ -16,17 +20,13 @@ export function fieldCharacterLimit(field?: string): number | undefined {
     startdate: 30, enddate: 30, graduationdate: 30,
   };
   if (key === 'title') return /award|honor/i.test(field) ? 150 : 100;
-  if (key === 'description' && /award|honor/i.test(field)) return 1000;
-  if (key === 'jobdescription') return 2000;
+  if (key === 'description' && /award|honor/i.test(field)) return 500;
+  if (key === 'jobdescription') return 1400;
   return limits[key];
 }
 
 export function fieldLabel(value: string): string {
-  const match = value.trim().match(/^(first name|last name|surname|company name|job title|current position)(\s*\*)?$/i);
-  if (!match) return value;
-  const name = match[1].replace(/\b\w/g, c => c.toUpperCase());
-  const limit = fieldCharacterLimit(match[1]);
-  return `${name} (${limit} characters max)${match[2] ? ' *' : ''}`;
+  return value;
 }
 
 export function limitFieldEdit(value: string, max?: number, previous?: string): string {

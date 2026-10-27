@@ -5,13 +5,6 @@ import type { UseFormReturn } from "react-hook-form"
 import { PhotoUpload } from "./photo-upload"
 import { Textarea } from "@/components/ui/textarea"
 
-const ABOUT_MIN_WORDS = 1
-const ABOUT_MAX_WORDS = 200
-
-const getWordCount = (value?: string | null) => {
-  const text = value?.trim() ?? ""
-  return text ? text.split(/\s+/).length : 0
-}
 
 interface PhotoAboutSectionProps {
   form: UseFormReturn<any>
@@ -44,12 +37,11 @@ export function PhotoAboutSection({ form, photoPreview, onPhotoSelect }: PhotoAb
                   <FormLabel className="text-blue-600 font-medium">About Me</FormLabel>
                   <FormControl>
                     <div className="mt-2">
-                      <Textarea placeholder="About Me" value={field.value ?? ""} onChange={field.onChange} />
+                      <Textarea maxLength={1400} placeholder="About Me" value={field.value ?? ""} onChange={field.onChange} />
                     </div>
                   </FormControl>
                   <p className="text-sm text-muted-foreground">
-                    Minimum {ABOUT_MIN_WORDS} word. Maximum {ABOUT_MAX_WORDS} words. Current:{" "}
-                    {getWordCount(field.value)}/{ABOUT_MAX_WORDS}
+                    {(field.value ?? "").length}/1400 characters
                   </p>
                   <FormMessage />
                 </FormItem>

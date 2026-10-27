@@ -1,14 +1,22 @@
 "use client";
 
 import dynamic from "next/dynamic";
-const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+const ReactQuill = dynamic(async () => {
+  const { default: Editor } = await import("react-quill-new");
+  return function QuillWithRef({ forwardedRef, ...props }: Quill.ReactQuillProps & { forwardedRef: Ref<Quill> }) {
+    return <Editor ref={forwardedRef} {...props} />;
+  };
+}, { ssr: false });
 
-import { useMemo } from "react";
+import { useMemo, useRef, type Ref } from "react";
+import type Quill from "react-quill-new";
+import { getJobDescriptionText } from "@/lib/job-description-policy";
 
 interface QuillEditorProps {
   value: string;
   onChange: (value: string) => void;
   id?: string;
+  maxLength?: number;
 }
 
 // const ReactQuill = dynamic(() => import("react-quill"), {
@@ -32,7 +40,9 @@ const modules = {
   ],
 };
 
-const TextEditor = ({ value, onChange, id }: QuillEditorProps) => {
+const TextEditor = ({ value, onChange, id, maxLength = 1400 }: QuillEditorProps) => {
+  const editorRef = useRef<Quill>(null);
+  const count = getJobDescriptionText(value || "").length;
   const formats = useMemo(
     () => [
       "header",
@@ -54,17 +64,31 @@ const TextEditor = ({ value, onChange, id }: QuillEditorProps) => {
   return (
     <div className="quill-editor-wrapper">
       <ReactQuill
+        forwardedRef={editorRef}
         placeholder="Job Description"
         id={id}
         value={value}
-        onChange={(content) => {
+        onChange={(content, _delta, source) => {
           const cleaned = content === "<p><br></p>" ? "" : content;
+          const nextCount = getJobDescriptionText(cleaned).length;
+          if (source === "user" && nextCount > maxLength && nextCount >= count) {
+            const editor = editorRef.current?.getEditor();
+            if (editor) {
+              const selection = editor.getSelection();
+              editor.setContents(editor.clipboard.convert({ html: value || "" }), "silent");
+              if (selection) editor.setSelection(Math.min(selection.index, editor.getLength() - 1), 0, "silent");
+            }
+            return;
+          }
           onChange(cleaned);
         }}
         modules={modules}
         formats={formats}
         theme="snow"
       />
+      <p className={`mt-2 text-sm ${count > maxLength ? "text-red-600" : "text-gray-500"}`} aria-live="polite">
+        {count}/{maxLength} characters
+      </p>
 
       <style jsx global>{`
         .quill-editor-wrapper .ql-toolbar {

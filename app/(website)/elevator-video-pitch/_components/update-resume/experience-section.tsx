@@ -338,6 +338,7 @@ export const ExperienceSection = ({ form }: ExperienceSectionProps) => {
                         {...field}
                       />
                     </FormControl>
+                  <p className="text-sm text-gray-500">{(field.value ?? "").length}/1400 characters</p>
                     <FormMessage />
                   </FormItem>
                 )}

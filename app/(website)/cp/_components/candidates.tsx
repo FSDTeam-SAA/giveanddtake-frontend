@@ -1,4 +1,5 @@
 "use client";
+import { ProfileCredentials } from "@/components/profile/profile-credentials";
 import { candidateHeadline } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
@@ -60,6 +61,8 @@ interface ResumeResponse {
       immediatelyAvailable?: boolean;
       sLink?: { label: string; url: string; _id: string }[];
       skills?: string[];
+      certifications?: string[];
+      languages?: string[];
     };
     experiences?: {
       _id: string;
@@ -490,42 +493,7 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
         </section>
 
-        {/* Awards (show all) */}
-        {sortedAwards.length > 0 && sortedAwards[0].title && (
-          <section className="py-6">
-            <h3 className="text-2xl md:text-[40px] font-semibold mb-3 text-[#131313]">
-              Awards & Honours
-            </h3>
-
-            <div className="space-y-4">
-              {sortedAwards.map((award) => (
-                <div
-                  key={award._id}
-                  className="flex gap-4 items-start sm:items-center"
-                >
-                  <div className="w-16 h-16 flex items-center justify-center bg-blue-100 rounded">
-                    <AwardIcon className="text-blue-600 w-8 h-8" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                      <h4 className="font-semibold text-lg">
-                        {award.title || "N/A"}
-                      </h4>
-                      <span className="inline-flex items-center text-xs sm:text-sm bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                        {toMonthYear(award.programeDate || award.createdAt)}
-                      </span>
-                    </div>
-                    {award.description && (
-                      <p className="text-gray-600 text-sm mt-1">
-                        {award.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors} />
       </div>
     </div>
   );

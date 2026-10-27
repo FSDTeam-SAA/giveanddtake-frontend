@@ -1,5 +1,7 @@
 "use client";
 
+import { getJobDescriptionText } from "@/lib/job-description-policy";
+
 // =========================
 // CreateRecruiterAccountForm.tsx (UPDATED)
 // - sLink uses { label, url } (with legacy [link] back-compat in FormData)
@@ -273,7 +275,7 @@ function PhotoUpload({
             <div className="flex items-center gap-2">
               <svg
                 className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
+                xmlns="http://www.w3.org/1400/svg"
                 fill="none"
                 viewBox="0 0 24 24"
               >
@@ -350,9 +352,9 @@ const urlOptional = z
 const recruiterSchema = z.object({
   firstName: z.string().min(1, "First name is required").max(20, "First Name can be at most 20 characters"),
   sureName: z.string().max(40, "Surname can be at most 40 characters").optional(),
-  emailAddress: z.string().email("Invalid email address"),
+  emailAddress: z.string().email("Invalid email address").max(254, "Email can be at most 254 characters"),
   title: z.string().min(1, "Current position is required").max(100, "Current Position can be at most 100 characters"),
-  bio: z.string().optional(),
+  bio: z.string().refine(value => getJobDescriptionText(value).length <= 1400, "About section cannot exceed 1400 characters").optional(),
   country: z.string().min(1, "Country is required"),
   city: z.string().optional(),
   zipCode: z.string().optional(),
@@ -829,7 +831,7 @@ export default function CreateRecruiterAccountForm() {
                     <div className="flex items-center gap-2">
                       <svg
                         className="animate-spin h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns="http://www.w3.org/1400/svg"
                         fill="none"
                         viewBox="0 0 24 24"
                       >
@@ -904,10 +906,7 @@ export default function CreateRecruiterAccountForm() {
                           />
                         </FormControl>
                         <p className="text-sm text-muted-foreground">
-                          Word count:{" "}
-                          {(field.value ?? "").trim()
-                            ? (field.value ?? "").trim().split(/\s+/).length
-                            : 0}
+                          {(field.value ?? "").length}/1400 characters
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -1095,7 +1094,7 @@ export default function CreateRecruiterAccountForm() {
                 <div className="flex items-center gap-2">
                   <svg
                     className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
+                    xmlns="http://www.w3.org/1400/svg"
                     fill="none"
                     viewBox="0 0 24 24"
                   >

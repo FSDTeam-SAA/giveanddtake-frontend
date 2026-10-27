@@ -24,17 +24,15 @@ test('shared controls cap identity, company and job fields in create and nested 
   assert.equal(Input.render({ placeholder: 'Job Title' }, null).props.maxLength, 100);
   assert.equal(Input.render({ name: 'title', maxLength: 150 }, null).props.maxLength, 150);
   assert.equal(Input.render({ name: 'title', type: 'file' }, null).props.maxLength, undefined);
-  assert.equal(Input.render({ name: 'search' }, null).props.maxLength, undefined);
+  assert.equal(Input.render({ name: 'search' }, null).props.maxLength, 254);
   let fileChanged = false;
   const file = Input.render({ type: 'file', onChange: () => fileChanged = true }, null);
   file.props.onChange({ target: { get value() { return 'C:\\fakepath\\photo.png'; }, set value(_) { throw new Error('File values cannot be assigned'); } } });
   assert.equal(fileChanged, true);
 });
 
-test('labels show the same limits without changing hints or unrelated labels', () => {
-  for (const [label, expected] of [['First Name*', 'First Name (20 characters max) *'], ['Surname', 'Surname (40 characters max)'], ['Company Name', 'Company Name (160 characters max)'], ['Job Title *', 'Job Title (100 characters max) *'], ['Email', 'Email']]) {
-    assert.equal(policy.fieldLabel(label), expected);
-  }
+test('routine labels remain clean while limits are enforced by controls', () => {
+  for(const label of ['First Name *','Surname','Company Name','Job Title *','Email']) assert.equal(policy.fieldLabel(label),label);
 });
 
 test('paste, autofill and IME changes cannot bypass a control limit; saved text can be shortened', () => {

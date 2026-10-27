@@ -1,4 +1,5 @@
 "use client";
+import { ProfileCredentials } from "@/components/profile/profile-credentials";
 import { candidateHeadline, candidateName } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
@@ -513,42 +514,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </div>
             </section>
 
-            {resume.resume.certifications?.length > 0 && (
-              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                  Certifications
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {resume.resume.certifications?.map((cert, index) => (
-                    <Badge
-                      key={index}
-                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                    >
-                      {cert}
-                    </Badge>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {resume.resume.languages?.length > 0 && (
-              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                  Languages
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {resume.resume.languages?.map((lang, index) => (
-                    <Badge
-                      key={index}
-                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                    >
-                      {lang}
-                    </Badge>
-                  ))}
-                </div>
-              </section>
-            )}
-
             {resume.experiences[0]?.company &&
               resume.experiences[0].startDate && (
                 <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
@@ -607,39 +572,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </div>
               </section>
             )}
-            {resume.awardsAndHonors?.length > 0 &&
-              resume.awardsAndHonors[0].title && (
-                <section className="py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-                  <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                    Awards & Honours
-                  </h3>
-                  <div className="space-y-6">
-                    {sortAwards(resume.awardsAndHonors).map((award) => (
-                      <div
-                        key={award._id}
-                        className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-                      >
-                        <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <AwardIcon className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-semibold text-gray-800 text-lg">
-                            {award.title}
-                          </h4>
-                          <p className="text-gray-500 text-sm">
-                            {formatDate(award.programeDate)}
-                          </p>
-                          {award.description && (
-                            <p className="text-gray-600 text-sm">
-                              {award.description}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
+            <ProfileCredentials certifications={resume.resume.certifications} languages={resume.resume.languages} awards={resume.awardsAndHonors} />
           </CardContent>
         </div>
       </div>

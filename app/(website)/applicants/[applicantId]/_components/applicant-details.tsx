@@ -1,4 +1,5 @@
 "use client";
+import { ProfileCredentials } from "@/components/profile/profile-credentials";
 import { candidateHeadline } from "@/lib/candidate-display";
 import { EducationEntry } from "@/components/profile/education-entry";
 import { useQualifications } from "@/hooks/use-qualifications";
@@ -35,7 +36,7 @@ export default function ApplicantDetails({
     error,
     isError,
   } = useQuery({
-    queryKey: ["resume"],
+    queryKey: ["resume", applicantId],
     queryFn: () => getResumeByUserId(applicantId),
     select: (data) => data?.data,
   });
@@ -72,7 +73,7 @@ export default function ApplicantDetails({
 
   const applicationDate = applicantResume?.applications?.find(
     (application: any) => application?.userId?._id === applicantId
-  ).createdAt;
+  )?.createdAt;
 
   const latestApplication = applicantResume?.applications?.reduce(
     (latest: any, current: any) => {
@@ -204,7 +205,7 @@ export default function ApplicantDetails({
               <span className="font-semibold">Email:</span>{" "}
               {applicantResume?.createResume?.email}
             </p>
-            
+
             <Button
               onClick={handleResumeDownload}
               disabled={isDownloadingResume || !resumeId}
@@ -311,43 +312,7 @@ export default function ApplicantDetails({
         </div>
       </section>
 
-      {/* Awards & Honours Section */}
-      <section className="">
-        <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 lg:mb-8">
-          Awards & Honours
-        </h3>
-        <div className="space-y-6">
-          {sortAwards(applicantResume?.awardsAndHonor).map(
-            (award: {
-              _id: string;
-              title: string;
-              createdAt: string;
-              programeDate?: string;
-              description: string;
-            }) => (
-              <div
-                key={award._id}
-                className="flex flex-col sm:flex-row gap-4 items-start sm:items-center"
-              >
-                <div className="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <AwardIcon className="w-8 h-8 text-blue-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-semibold text-gray-800 text-lg">
-                    {award.title}
-                  </h4>
-                  <p className="text-gray-500 text-sm">
-                    {formatProfileDate(award.programeDate)}
-                  </p>
-                  {award.description && (
-                    <p className="text-gray-600 text-sm">{award.description}</p>
-                  )}
-                </div>
-              </div>
-            )
-          )}
-        </div>
-      </section>
+      <ProfileCredentials certifications={applicantResume?.createResume?.certifications} languages={applicantResume?.createResume?.languages} awards={applicantResume?.awardsAndHonor} />
 
       {/* Action button */}
       <section>

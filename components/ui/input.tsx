@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, maxLength, ...props }, ref) => {
-    const limit = maxLength ?? ([undefined, "text", "search", "email", "url", "tel"].includes(type) ? fieldCharacterLimit(props.name) ?? fieldCharacterLimit(props.id) ?? fieldCharacterLimit(props.placeholder) : undefined);
+    const limit = (type === "email" ? 254 : maxLength) ?? ([undefined, "text", "search", "email", "url", "tel"].includes(type) ? fieldCharacterLimit(props.name) ?? fieldCharacterLimit(props.id) ?? fieldCharacterLimit(props.placeholder) ?? 254 : undefined);
     return (
       <input
         type={type}
