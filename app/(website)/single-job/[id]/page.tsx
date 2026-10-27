@@ -15,7 +15,7 @@ import CustomCalendar from "@/components/CustomCalendar";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import DOMPurify from "dompurify";
-import { getJobDescriptionCounts, getJobDescriptionError } from "@/lib/job-description-policy";
+import { getJobDescriptionCounts, getJobDescriptionError, JOB_DESCRIPTION_MAX_CHARACTERS } from "@/lib/job-description-policy";
 import { jobQueryOptions } from "@/lib/job-query";
 
 interface Country {
@@ -621,7 +621,7 @@ export default function JobPreview() {
               </h2>
               {!isEditing && (
                 <div className="text-sm text-gray-600 mt-2 sm:mt-0 text-right">
-                  <p>Characters: {descriptionCharCount}/2000</p>
+                  <p>Characters: {descriptionCharCount}/{JOB_DESCRIPTION_MAX_CHARACTERS}</p>
                   <p>Words: {descriptionWordCount}/20 min</p>
                 </div>
               )}
@@ -635,7 +635,7 @@ export default function JobPreview() {
                   }
                 />
                 <p className="text-sm text-gray-600">
-                  Characters: {descriptionCharCount}/2000 | Words:{" "}
+                  Words:{" "}
                   {descriptionWordCount}/20 min
                 </p>
               </div>

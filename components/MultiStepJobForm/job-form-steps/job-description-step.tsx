@@ -50,7 +50,7 @@ export default function JobDescriptionStep({
                 name="jobDescription"
                 render={({ field }) => {
                   // Calculate word count
-                  const { characters: characterCount, words: wordCount } =
+                  const { words: wordCount } =
                     getJobDescriptionCounts(field.value || "");
 
                   return (
@@ -66,7 +66,6 @@ export default function JobDescriptionStep({
                         />
                       </FormControl>
                       <div className="text-sm text-gray-600 flex items-center gap-4">
-                        <p>Character count: {characterCount}/2000,</p>
                         <p>Word count: {wordCount}/20 minimum</p>
                       </div>
                       <FormMessage />

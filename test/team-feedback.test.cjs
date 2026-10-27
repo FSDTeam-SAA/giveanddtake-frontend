@@ -83,3 +83,12 @@ test('web award creation sends the persisted programme field so editing can relo
   assert.equal(saved[0].title,'Merit');
   assert.equal(saved[0].description,'Description');
 });
+
+test('job editor guidance uses the enforced capacity and avoids a duplicate counter', () => {
+  const create=fs.readFileSync(path.join(__dirname,'../components/MultiStepJobForm/job-form-steps/job-description-step.tsx'),'utf8');
+  const edit=fs.readFileSync(path.join(__dirname,'../app/(website)/single-job/[id]/page.tsx'),'utf8');
+  assert.doesNotMatch(create,/\/2000|Character count:/);
+  assert.doesNotMatch(edit,/\/2000/);
+  assert.match(edit,/descriptionCharCount\}\/\{JOB_DESCRIPTION_MAX_CHARACTERS/);
+  assert.match(create,/wordCount\}\/20 minimum/);
+});
