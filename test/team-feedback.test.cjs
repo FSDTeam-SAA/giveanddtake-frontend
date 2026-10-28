@@ -92,3 +92,19 @@ test('job editor guidance uses the enforced capacity and avoids a duplicate coun
   assert.match(edit,/descriptionCharCount\}\/\{JOB_DESCRIPTION_MAX_CHARACTERS/);
   assert.match(create,/wordCount\}\/20 minimum/);
 });
+
+test('credentials keep skills between certifications and languages with optional sections missing', () => {
+  const { ProfileCredentials }=load('components/profile/profile-credentials.tsx',{
+    '@/lib/profile-credentials':credentials,'@/lib/profile-history':history,
+  });
+  for (const certifications of [[], ['AWS']]) {
+    for (const languages of [[], ['English']]) {
+      const props={certifications,languages,awards:[{title:'Merit'}]};
+      const before=JSON.stringify(props);
+      const html=renderToStaticMarkup(React.createElement(ProfileCredentials,props,React.createElement('h3',null,'Skills')));
+      const headings=[...html.matchAll(/<h3[^>]*>(.*?)<\/h3>/g)].map(match=>match[1]);
+      assert.deepEqual(headings,[...(certifications.length?['Certifications']:[]),'Skills',...(languages.length?['Languages']:[]),'Awards &amp; Honours']);
+      assert.equal(JSON.stringify(props),before);
+    }
+  }
+});

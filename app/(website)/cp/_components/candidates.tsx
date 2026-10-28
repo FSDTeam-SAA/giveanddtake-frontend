@@ -389,25 +389,6 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
         </div>
 
-        {/* Skills */}
-        <section className="border-b py-12">
-          <h3 className="text-2xl md:text-[40px] font-semibold mb-4">Skills</h3>
-          <div className="flex flex-wrap gap-2">
-            {resume.skills?.length ? (
-              resume.skills.map((skill, idx) => (
-                <span
-                  key={idx}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                >
-                  {skill}
-                </span>
-              ))
-            ) : (
-              <p className="text-gray-500">No skills listed</p>
-            )}
-          </div>
-        </section>
-
         {/* Experience (show all) */}
         {sortedExperiences.length > 0 && (
           <section className="border-b py-6">
@@ -493,7 +474,26 @@ const Candidates: React.FC<{ userId?: string }> = ({ userId }) => {
           </div>
         </section>
 
-        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors} />
+        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors}>
+          {/* Skills */}
+          <section className="border-b py-12">
+            <h3 className="text-2xl md:text-[40px] font-semibold mb-4">Skills</h3>
+            <div className="flex flex-wrap gap-2">
+              {resume.skills?.length ? (
+                resume.skills.map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                  >
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <p className="text-gray-500">No skills listed</p>
+              )}
+            </div>
+          </section>
+        </ProfileCredentials>
       </div>
     </div>
   );

@@ -648,27 +648,27 @@ export default function ApplicantDetailsPage() {
           </Card>
         )}
 
-        {resume.skills && resume.skills.length > 0 && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Skills</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {resume.skills.map((skill, index) => (
-                  <div
-                    key={index}
-                    className="px-3 py-1 bg-gray-100 rounded-full text-sm"
-                  >
-                    {skill}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors} />
+        <ProfileCredentials certifications={resume.certifications} languages={resume.languages} awards={awardsAndHonors}>
+          {resume.skills && resume.skills.length > 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Skills</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  {resume.skills.map((skill, index) => (
+                    <div
+                      key={index}
+                      className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+                    >
+                      {skill}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </ProfileCredentials>
 
         {resume.sLink && resume.sLink.length > 0 && (
           <Card className="mb-6">

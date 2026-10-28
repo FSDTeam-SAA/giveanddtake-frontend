@@ -498,22 +498,6 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
               </p>
             </section>
 
-            <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
-                Skills
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {resume.resume.skills?.map((skill, index) => (
-                  <Badge
-                    key={index}
-                    className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
-                  >
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </section>
-
             {resume.experiences[0]?.company &&
               resume.experiences[0].startDate && (
                 <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
@@ -572,7 +556,23 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                 </div>
               </section>
             )}
-            <ProfileCredentials certifications={resume.resume.certifications} languages={resume.resume.languages} awards={resume.awardsAndHonors} />
+            <ProfileCredentials certifications={resume.resume.certifications} languages={resume.resume.languages} awards={resume.awardsAndHonors}>
+              <section className="border-b-2 py-6 sm:py-10 lg:py-12 px-0 sm:px-6">
+                <h3 className="text-2xl sm:text-3xl font-semibold text-gray-800 mb-4">
+                  Skills
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {resume.resume.skills?.map((skill, index) => (
+                    <Badge
+                      key={index}
+                      className="flex items-center gap-1 bg-blue-100 text-blue-800 hover:bg-blue-200"
+                    >
+                      {skill}
+                    </Badge>
+                  ))}
+                </div>
+              </section>
+            </ProfileCredentials>
           </CardContent>
         </div>
       </div>

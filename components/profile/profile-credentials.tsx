@@ -1,21 +1,24 @@
+import type { ReactNode } from "react";
 import { Award } from "lucide-react";
 import { credentialNames, profileAwards } from "@/lib/profile-credentials";
 import { sortAwards, formatProfileDate } from "@/lib/profile-history";
 
-export function ProfileCredentials({ certifications, languages, awards }: {
-  certifications?: unknown; languages?: unknown; awards?: unknown;
+export function ProfileCredentials({ certifications, languages, awards, children }: {
+  certifications?: unknown; languages?: unknown; awards?: unknown; children?: ReactNode;
 }) {
   const savedAwards = sortAwards(profileAwards(awards));
   return <div className="min-w-0" data-profile-credentials>
     {[{ title: "Certifications", items: credentialNames(certifications) },
-      { title: "Languages", items: credentialNames(languages) }].map(({ title, items }) => items.length > 0 && (
+      { title: "Languages", items: credentialNames(languages) }].map(({ title, items }, index) => <div key={title}>
+      {index === 1 && children}
+      {items.length > 0 && (
       <section key={title} className="border-b border-gray-200 py-6">
         <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">{title}</h3>
         <ul className="flex flex-wrap gap-2">
           {items.map((name, index) => <li key={index} className="max-w-full rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900 [overflow-wrap:anywhere]">{name}</li>)}
         </ul>
       </section>
-    ))}
+    )}</div>)}
     {savedAwards.length > 0 && <section className="border-b border-gray-200 py-6">
       <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">Awards &amp; Honours</h3>
       <ul className="space-y-5">

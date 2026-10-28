@@ -293,26 +293,26 @@ export default function ApplicantDetails({
         </div>
       </section>
 
-      {/* Skills Section */}
-      <section className="">
-        <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 lg:mb-8">
-          Skills
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {applicantResume?.createResume?.skills.map(
-            (skill: string, index: number) => (
-              <Badge
-                key={index}
-                className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
-              >
-                {skill}
-              </Badge>
-            )
-          )}
-        </div>
-      </section>
-
-      <ProfileCredentials certifications={applicantResume?.createResume?.certifications} languages={applicantResume?.createResume?.languages} awards={applicantResume?.awardsAndHonor} />
+      <ProfileCredentials certifications={applicantResume?.createResume?.certifications} languages={applicantResume?.createResume?.languages} awards={applicantResume?.awardsAndHonor}>
+        {/* Skills Section */}
+        <section className="">
+          <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-4 lg:mb-8">
+            Skills
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {applicantResume?.createResume?.skills.map(
+              (skill: string, index: number) => (
+                <Badge
+                  key={index}
+                  className="text-white px-3 py-2 text-sm bg-[#2B7FD0] rounded-sm"
+                >
+                  {skill}
+                </Badge>
+              )
+            )}
+          </div>
+        </section>
+      </ProfileCredentials>
 
       {/* Action button */}
       <section>
