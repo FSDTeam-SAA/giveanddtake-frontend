@@ -1,5 +1,7 @@
 # Profile and text-limit browser regression
 
+For custom skill entry, also run `node test/browser/skills-entry-browser.cjs` with the same external tooling variables. It renders the real create/edit selectors and extracts the actual forms' submit handlers and Zod skills schemas. It covers pending text on Save, suggestions/loading/failure, custom entry, duplicate rules, limits and responsive layout. Persistence is fixture localStorage; no production submissions are made.
+
 Run after `npm run build`, with Playwright (Chrome) and esbuild installed in an external test tooling directory. Set `PLAYWRIGHT_MODULE` and `ESBUILD_MODULE` to their resolved module paths if they are not on Node resolution paths.
 
 `node test/browser/team-feedback-browser.cjs`

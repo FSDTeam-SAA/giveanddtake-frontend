@@ -81,15 +81,14 @@ test('create and edit schemas agree on the requested name, title and company lim
   }
 });
 
-test('skills search prevents implicit submit, rejects unlisted input and selects catalogue names', () => {
-  const catalogue = [{ _id: 'one', name: 'React' }, { _id: 'two', name: 'A'.repeat(78) }];
+test('skills search prevents implicit submit and accepts typed or catalog names', () => {
+  const skillPolicy = load('lib/skill-input.ts');
   for (const query of ['unknown skill', 'react', 'A'.repeat(78)]) {
-    const state = [query, [], catalogue, false, false, ''];
-    let cursor = 0;
-    let selected = ['Saved legacy skill'];
-    let prevented = false;
+    const state = [query, ['React', 'A'.repeat(78)], false, false, ''];
+    let cursor = 0, selected = ['Saved legacy skill'], prevented = false, handle;
     const { SkillsSelector } = load('app/(website)/elevator-video-pitch/_components/skills-selector.tsx', {
-      react: { useState: () => { const index = cursor++; return [state[index], value => state[index] = value]; }, useEffect: () => {} },
+      react: { ...React, useState: () => { const index = cursor++; return [state[index], value => state[index] = value]; }, useEffect: () => {}, useRef:()=>({current:{focus(){}}}), useImperativeHandle:(_ref,factory)=>handle=factory() },
+      '@/lib/skill-input': skillPolicy,
       '@/components/ui/input': { Input: 'input' },
       '@/components/ui/badge': { Badge: 'span' },
       '@/components/ui/form': { FormLabel: 'label' },
@@ -99,12 +98,11 @@ test('skills search prevents implicit submit, rejects unlisted input and selects
       if (node.type === 'input') return node;
       for (const child of [node.props?.children].flat(Infinity)) { const result = find(child); if (result) return result; }
     }
-    const input = find(SkillsSelector({ selectedSkills: selected, onSkillsChange: value => selected = value }));
-    input.props.onKeyDown({ key: 'Enter', preventDefault: () => prevented = true });
-    assert.equal(prevented, true);
-    if (query === 'unknown skill') {
-      assert.equal(selected.length, 1);
-      assert.equal(state[5], 'Please select a skill from the list.');
-    } else assert.equal(selected[1], query === 'react' ? 'React' : query);
+    const input = find(SkillsSelector.render({ selectedSkills: selected, onSkillsChange: value => selected = value },null));
+    assert.equal(input.props.maxLength,100);
+    input.props.onKeyDown({ key: 'Enter', nativeEvent:{isComposing:false}, preventDefault: () => prevented = true });
+    assert.equal(prevented,true);
+    assert.equal(selected[1],query === 'react' ? 'React' : query);
+    assert.ok(handle.commit);
   }
 });
