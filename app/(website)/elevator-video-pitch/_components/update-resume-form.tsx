@@ -7,7 +7,7 @@ import { candidateSocialUrlError, educationInstitutionError, hasEducationContent
 import { sortExperiences, sortEducation, sortAwards } from "@/lib/profile-history";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useFormDraft } from '@/hooks/use-session-draft';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,7 +29,7 @@ import { CertificationSelector } from "./resume/certification-selector";
 import { BannerUpload } from "@/components/shared/banner-upload";
 import { PhotoAboutSection } from "./update-resume/photo-about-section";
 import { PersonalInfoSection } from "./update-resume/personal-info-section";
-import { SkillsSelector } from "./update-resume/skills-selector";
+import { SkillsSelector, type SkillsSelectorHandle } from "./update-resume/skills-selector";
 import { ExperienceSection } from "./update-resume/experience-section";
 import { EducationSection } from "./update-resume/education-section";
 import { AwardsSection } from "./update-resume/awards-section";
@@ -60,7 +60,7 @@ export const resumeFormSchema = z.object({
       message: "About section cannot exceed 1400 characters",
     }),
   banner: z.string().optional(),
-  skills: z.array(z.string().trim().min(1, "Please select a skill from the list").max(100, "Each skill can be at most 100 characters")).min(1, "At least one skill is required").max(30, "You can select at most 30 skills"),
+  skills: z.array(z.string().trim().min(1, "Please enter a skill").max(100, "Each skill can be at most 100 characters")).min(1, "At least one skill is required").max(30, "You can select at most 30 skills"),
   languages: z.array(z.string()).optional(),
   immediatelyAvailable: z.boolean().optional(),
   certifications: z.array(z.string()).optional(),
@@ -222,6 +222,7 @@ export default function UpdateResumeForm({
   onCancel,
   onUpdate,
 }: UpdateResumeFormProps): React.ReactElement {
+  const skillsInput = useRef<SkillsSelectorHandle>(null);
   const [selectedSkills, setSelectedSkills] = useState<string[]>(
     resume.resume?.skills || []
   );
@@ -679,7 +680,13 @@ export default function UpdateResumeForm({
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={event => {
+            event.preventDefault();
+            const skills = skillsInput.current?.commit();
+            if (!skills) return;
+            form.setValue("skills", skills, { shouldValidate: true });
+            void form.handleSubmit(onSubmit)(event);
+          }} className="space-y-8">
           <BannerUpload
             onFileSelect={handleBannerSelect}
             previewUrl={bannerPreview}
@@ -728,6 +735,7 @@ export default function UpdateResumeForm({
                   <FormItem>
                     <FormControl>
                       <SkillsSelector
+                        ref={skillsInput}
                         selectedSkills={selectedSkills}
                         onSkillsChange={(skills) => {
                           setSelectedSkills(skills);

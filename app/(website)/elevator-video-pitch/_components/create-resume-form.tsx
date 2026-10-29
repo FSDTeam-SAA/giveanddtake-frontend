@@ -5,7 +5,7 @@ import { getJobDescriptionText } from "@/lib/job-description-policy";
 import { candidateSocialUrlError, educationInstitutionError, hasEducationContent } from "@/lib/candidate-profile-policy";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { BannerUpload } from "@/components/shared/banner-upload";
 import { ElevatorPitchUpload } from "./elevator-pitch-upload";
-import { SkillsSelector } from "./skills-selector";
+import { SkillsSelector, type SkillsSelectorHandle } from "./skills-selector";
 import { PersonalInfoSection } from "./resume/personal-info-section";
 import { ExperienceSection } from "./resume/experience-section";
 import { EducationSection } from "./resume/education-section";
@@ -288,6 +288,7 @@ export default function CreateResumeForm() {
   const [isElevatorPitchUploaded, setIsElevatorPitchUploaded] = useState(false);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const skillsInput = useRef<SkillsSelectorHandle>(null);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
 
   const { data: session } = useSession();
@@ -580,7 +581,13 @@ export default function CreateResumeForm() {
 
       <Form {...form}>
         <form
-          onSubmit={form.handleSubmit(onSubmit, onError)}
+          onSubmit={event => {
+            event.preventDefault();
+            const skills = skillsInput.current?.commit();
+            if (!skills) return;
+            form.setValue("skills", skills, { shouldValidate: true });
+            void form.handleSubmit(onSubmit, onError)(event);
+          }}
           className="space-y-8"
         >
           <div>
@@ -659,6 +666,7 @@ export default function CreateResumeForm() {
             </CardHeader>
             <CardContent>
               <SkillsSelector
+                        ref={skillsInput}
                 selectedSkills={selectedSkills}
                 onSkillsChange={setSelectedSkills}
                 error={form.formState.errors.skills?.message}
