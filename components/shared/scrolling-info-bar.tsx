@@ -24,7 +24,7 @@ const DEFAULT_SCROLLING_INFO: ScrollingInfo = {
   groups: [
     {
       role: "candidate",
-      buttonText: "Candidates Access",
+      buttonText: "Candidate Access",
       texts: [
         "Amplify your Profile", "IT", "Data", "AI", "Leadership", "Education",
         "Engineering", "Aviation", "Oil & Gas", "Health Care", "Social Care",
@@ -37,7 +37,7 @@ const DEFAULT_SCROLLING_INFO: ScrollingInfo = {
     },
     {
       role: "recruiter",
-      buttonText: "Recruiters Access",
+      buttonText: "Recruiter Access",
       texts: [
         "Post Job Adverts", "Hear the Pitch behind the Resume",
         "One-click Candidate feedback", "All job posts free until January 2027",
@@ -45,9 +45,9 @@ const DEFAULT_SCROLLING_INFO: ScrollingInfo = {
     },
     {
       role: "company",
-      buttonText: "Companies Access",
+      buttonText: "Company Access",
       texts: [
-        "60-Seconds Company Culture Pitch", "Post Job Adverts",
+        "60-Second Company Culture Pitch", "Post Job Adverts",
         "Hear the Pitch behind the Resume", "One-click Candidate feedback",
         "All job posts free until January 2027",
       ],

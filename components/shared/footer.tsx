@@ -38,7 +38,7 @@ export function Footer() {
     } else if (role !== "company") {
       router.push("/login"); // Redirect to login if user is not a company
     } else {
-      router.push("/ elevator-video-pitch");
+      router.push("/elevator-video-pitch");
     }
   };
 
@@ -66,7 +66,7 @@ export function Footer() {
     } else if (role == "company") {
       router.push("/add-job"); // Redirect to login if user is not a company
     } else {
-      router.push("/elelevator-video-pitch");
+      router.push("/elevator-video-pitch");
     }
   };
 
@@ -210,7 +210,7 @@ export function Footer() {
       <div className="container px-4 md:px-6 mt-12 pt-8 border-t border-white/20 text-center text-sm text-white/60">
         <p className="mb-2">
           Elevator Video Pitch© Ltd. is registered in England in the United
-          Kingdom at Companies House. Company Number 15978879
+          Kingdom at Companies House. Company Number 15978879.
         </p>
         <p>&copy; 2026 Elevator Video Pitch©. All rights reserved.</p>
       </div>

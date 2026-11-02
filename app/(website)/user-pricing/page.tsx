@@ -204,7 +204,7 @@ export default function PricingList() {
           Candidate Price List
         </h1>
         <p className="text-md text-gray-600">
-          Please view our refunds policy in our Terms and Conditions, or ask our
+          Please view our refund policy in our Terms and Conditions, or ask our
           Chatbot about refunds.
         </p>
       </div>

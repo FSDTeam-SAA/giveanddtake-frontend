@@ -33,7 +33,7 @@ export function HowItWorksCompany() {
               Record or upload your video elevator pitch (60 seconds free or
               upgrade!)
             </li>
-            <li>Add a link to your video elevator pitch in your CV/resume</li>
+            <li>Add a link to your video elevator pitch in your company profile</li>
             <li>Search and apply for jobs on our site</li>
           </ol>
         </div>
@@ -110,7 +110,7 @@ export function HowItWorksCompany() {
                 {/* Flex to fill height */}
                 <div>
                   <CardTitle className="text-xl font-semibold">
-                    Get A Job
+                    Hire Top Talent
                   </CardTitle>
                   <p className="text-gray-500">
                     Apply with ease, follow recruiters, and land your next

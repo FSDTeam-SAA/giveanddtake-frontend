@@ -330,7 +330,7 @@ export default function MyResume({ resume, onEdit }: MyResumeProps) {
                     </div>
                     {resume.resume.immediatelyAvailable && (
                       <div>
-                        <p className="font-semibold text-base">Availibility</p>
+                        <p className="font-semibold text-base">Availability</p>
                         <p className="text-gray-600">Immediately Available</p>
                       </div>
                     )}

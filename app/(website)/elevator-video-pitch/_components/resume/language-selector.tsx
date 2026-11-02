@@ -26,7 +26,7 @@ export function LanguageSelector({
       );
       const data = await response.json();
       if (data.status !== "success" || !Array.isArray(data.data)) {
-        throw new Error("Failed to fetch universities");
+        throw new Error("Failed to fetch languages");
       }
       return data.data.map((language: any) => language.name || language);
     },
