@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.evpitchrecruitment.careers",
+      "sha256_cert_fingerprints": [
+        "C1:6A:73:85:95:5C:FC:E8:BC:12:EE:4D:6B:62:BC:69:38:E7:62:B6:76:15:EE:B7:0F:58:8A:76:ED:B4:51:2C"
+      ]
+    }
+  }
+]
