@@ -243,11 +243,6 @@ export default function PricingList() {
                     style={{ color: titleColor }}
                   >
                     {toDisplayName(plan.title)}
-                    {billing !== "free" && (
-                      <span className="rounded-full border border-current px-2 py-0.5 text-xs font-normal">
-                        {BILLING_LABEL[billing]}
-                      </span>
-                    )}
                     {isCurrent && (
                       <span
                         className="rounded-full px-2 py-1 text-xs font-normal"
@@ -313,7 +308,7 @@ export default function PricingList() {
                       ? "Included in your plan"
                       : billing === "free"
                       ? "Get started"
-                      : `Subscribe ${BILLING_LABEL[billing].toLowerCase()}`}
+                      : "Pay"}
                   </Button>
                 </CardFooter>
               </Card>
