@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "test": "node --test test/*.test.cjs",
-    "build": "node init && next build",
-    "dev": "node init && next dev",
+    "build": "next build",
+    "dev": "next dev",
     "lint": "next lint",
-    "start": "node init && next start"
+    "start": "next start"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
