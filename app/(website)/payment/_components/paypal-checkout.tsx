@@ -26,6 +26,7 @@ declare global {
       };
     };
     paypalSdkPromise?: Promise<Window["paypal"] | undefined>;
+    paypalSdkCurrency?: string;
   }
 }
 
@@ -33,13 +34,28 @@ interface PayPalCheckoutProps {
   userId: string;
   planId: string;
   amount: string;
+  /** PayPal requires the SDK and the order to use the same currency. */
+  currency?: string;
   onSuccess?: () => void;
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-const buildSdkUrl = (clientId: string) =>
-  `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`;
+const buildSdkUrl = (clientId: string, currency: string) =>
+  `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${encodeURIComponent(
+    currency
+  )}&intent=capture`;
+
+/** Drops an SDK loaded for another currency so the next load uses this one. */
+const resetPaypalSdkForCurrency = (currency: string) => {
+  if (!window.paypalSdkCurrency || window.paypalSdkCurrency === currency) return;
+  document
+    .querySelectorAll<HTMLScriptElement>('script[src*="paypal.com/sdk/js"]')
+    .forEach((script) => script.remove());
+  window.paypal = undefined;
+  window.paypalSdkPromise = undefined;
+  window.paypalSdkCurrency = undefined;
+};
 
 const removeStalePaypalScripts = () => {
   document
@@ -51,7 +67,7 @@ const removeStalePaypalScripts = () => {
     });
 };
 
-const loadPaypalSdk = (clientId: string) => {
+const loadPaypalSdk = (clientId: string, currency: string) => {
   if (!clientId) {
     return Promise.reject(new Error("Missing NEXT_PUBLIC_PAYPAL_CLIENT_ID"));
   }
@@ -60,14 +76,17 @@ const loadPaypalSdk = (clientId: string) => {
     return Promise.reject(new Error("Window is not available"));
   }
 
+  resetPaypalSdkForCurrency(currency);
+
   if (window.paypal) {
     return Promise.resolve(window.paypal);
   }
 
-  const scriptUrl = buildSdkUrl(clientId);
+  const scriptUrl = buildSdkUrl(clientId, currency);
 
   if (!window.paypalSdkPromise) {
     removeStalePaypalScripts();
+    window.paypalSdkCurrency = currency;
     window.paypalSdkPromise = new Promise((resolve, reject) => {
       const existingScript = document.querySelector<HTMLScriptElement>(
         'script[data-paypal-sdk="true"]'
@@ -107,6 +126,7 @@ export default function PayPalCheckout({
   userId,
   planId,
   amount,
+  currency = "USD",
   onSuccess,
 }: PayPalCheckoutProps) {
   const paypalRef = useRef<HTMLDivElement | null>(null);
@@ -156,7 +176,7 @@ export default function PayPalCheckout({
       setSdkLoading(true);
 
       try {
-        const paypalSdk = await loadPaypalSdk(clientId);
+        const paypalSdk = await loadPaypalSdk(clientId, currency);
         if (
           !isActive ||
           !paypalRef.current ||
@@ -187,7 +207,7 @@ export default function PayPalCheckout({
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount, planId, userId }),
+                body: JSON.stringify({ amount, planId, userId, currency }),
               }
             );
 
@@ -272,7 +292,7 @@ export default function PayPalCheckout({
       }
       isRendered.current = false;
     };
-  }, [amount, planId, userId, clientId, handleSuccess, reloadKey]);
+  }, [amount, currency, planId, userId, clientId, handleSuccess, reloadKey]);
 
   if (isCapturing) {
     return (

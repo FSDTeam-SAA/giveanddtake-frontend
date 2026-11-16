@@ -11,12 +11,15 @@ import {
 import { AlertCircle, Loader2, Lock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getStripe, stripeAppearance } from "@/lib/stripe";
+import { formatPrice, normalizeCurrency } from "@/lib/currency";
 
 interface StripeCheckoutProps {
   userId: string;
   planId: string;
   /** Fallback amount used for the button label until the server confirms one. */
   amount: string;
+  /** Currency the buyer chose; the server confirms the one actually charged. */
+  currency?: string;
   onSuccess?: () => void;
 }
 
@@ -160,9 +163,11 @@ export default function StripeCheckout({
   userId,
   planId,
   amount,
+  currency = "USD",
   onSuccess,
 }: StripeCheckoutProps) {
   const router = useRouter();
+  const [serverCurrency, setServerCurrency] = useState<string | null>(null);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [serverAmount, setServerAmount] = useState<number | null>(null);
@@ -193,7 +198,7 @@ export default function StripeCheckout({
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planId, userId }),
+          body: JSON.stringify({ planId, userId, currency }),
         }
       );
 
@@ -209,6 +214,9 @@ export default function StripeCheckout({
       setServerAmount(
         typeof data.data.amount === "number" ? data.data.amount : null
       );
+      setServerCurrency(
+        typeof data.data.currency === "string" ? data.data.currency : null
+      );
     } catch (err) {
       setLoadError(
         err instanceof Error
@@ -216,7 +224,7 @@ export default function StripeCheckout({
           : "Could not start the card payment. Please try again."
       );
     }
-  }, [planId, userId]);
+  }, [planId, userId, currency]);
 
   useEffect(() => {
     if (hasInitialised.current) return;
@@ -252,7 +260,9 @@ export default function StripeCheckout({
   }, [createIntent, handleSuccess]);
 
   const displayAmount = serverAmount ?? Number(amount) ?? 0;
-  const amountLabel = `$${Number.isFinite(displayAmount) ? displayAmount.toFixed(2) : amount}`;
+  const amountLabel = Number.isFinite(displayAmount)
+    ? formatPrice(displayAmount, normalizeCurrency(serverCurrency ?? currency))
+    : amount;
 
   const returnUrl =
     typeof window !== "undefined"
@@ -260,7 +270,7 @@ export default function StripeCheckout({
           userId
         )}&planId=${encodeURIComponent(planId)}&amount=${encodeURIComponent(
           amount
-        )}&method=card`
+        )}&currency=${encodeURIComponent(currency)}&method=card`
       : "";
 
   if (isFinalisingReturn) {

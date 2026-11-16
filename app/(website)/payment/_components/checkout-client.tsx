@@ -16,6 +16,12 @@ import { FaPaypal, FaStripe } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
 import StripeCheckout from "./stripe-checkout";
 import PayPalCheckout from "./paypal-checkout";
+import {
+  formatPrice,
+  normalizeCurrency,
+  priceIn,
+  type LocalPrices,
+} from "@/lib/currency";
 
 type PaymentMethod = "card" | "paypal";
 
@@ -24,6 +30,7 @@ interface SubscriptionPlan {
   title: string;
   description: string;
   price: number;
+  localPrices?: LocalPrices | null;
   features: string[];
   for: string;
   valid?: string;
@@ -56,6 +63,7 @@ export default function CheckoutClient() {
 
   const planId = searchParams.get("planId") || "";
   const amount = searchParams.get("amount") || "0.00";
+  const requestedCurrency = normalizeCurrency(searchParams.get("currency"));
   const methodParam = searchParams.get("method");
 
   // The modal passes userId through, but fall back to the session so a
@@ -67,7 +75,7 @@ export default function CheckoutClient() {
     methodParam === "paypal" ? "paypal" : "card"
   );
 
-  const { data: plans } = useQuery({
+  const { data: plans, isError: plansFailed } = useQuery({
     queryKey: ["subscriptionPlans", "checkout"],
     queryFn: fetchPlans,
     staleTime: 5 * 60 * 1000,
@@ -78,10 +86,21 @@ export default function CheckoutClient() {
     [plans, planId]
   );
 
-  const displayAmount = useMemo(() => {
-    const parsed = Number(plan?.price ?? amount);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }, [plan?.price, amount]);
+  // Same rule the server applies: the plan's price in the requested currency,
+  // or its USD price when it has none. The URL amount is only a fallback
+  // while plans load.
+  const { displayAmount, currency } = useMemo(() => {
+    if (plan) {
+      const shown = priceIn(plan, requestedCurrency);
+      return { displayAmount: shown.amount, currency: shown.currency };
+    }
+    const parsed = Number(amount);
+    return {
+      displayAmount: Number.isFinite(parsed) ? parsed : 0,
+      currency: requestedCurrency,
+    };
+  }, [plan, amount, requestedCurrency]);
+  const money = formatPrice(displayAmount, currency);
 
   const billing = billingLabel(plan);
 
@@ -242,17 +261,26 @@ export default function CheckoutClient() {
                     </div>
                   </div>
 
-                  {method === "card" ? (
+                  {!plans && !plansFailed ? (
+                    // Wait for the plan so the provider is opened in the
+                    // currency the server will actually charge.
+                    <div className="space-y-4 py-4" aria-busy="true">
+                      <div className="h-11 w-full animate-pulse rounded-lg bg-gray-100" />
+                      <div className="h-12 w-full animate-pulse rounded-lg bg-gray-200" />
+                    </div>
+                  ) : method === "card" ? (
                     <StripeCheckout
                       userId={userId}
                       planId={planId}
                       amount={String(displayAmount)}
+                      currency={currency}
                     />
                   ) : (
                     <PayPalCheckout
                       userId={userId}
                       planId={planId}
                       amount={displayAmount.toFixed(2)}
+                      currency={currency}
                     />
                   )}
                 </div>
@@ -297,7 +325,7 @@ export default function CheckoutClient() {
                       )}
                     </div>
                     <p className="shrink-0 text-sm font-semibold text-[#282828]">
-                      ${displayAmount.toFixed(2)}
+                      {money}
                     </p>
                   </div>
 
@@ -310,7 +338,7 @@ export default function CheckoutClient() {
                   <div className="border-t border-dashed border-gray-200 pt-4">
                     <div className="flex items-center justify-between text-sm text-[#8593A3]">
                       <span>Subtotal</span>
-                      <span>${displayAmount.toFixed(2)}</span>
+                      <span>{money}</span>
                     </div>
                     <p className="mt-2 text-xs leading-relaxed text-[#8593A3]">
                       Charges include applicable VAT/GST and/or sales taxes.
@@ -322,7 +350,7 @@ export default function CheckoutClient() {
                       Total
                     </span>
                     <span className="text-2xl font-bold text-[#2B7FD0]">
-                      ${displayAmount.toFixed(2)}
+                      {money}
                     </span>
                   </div>
                 </div>

@@ -14,12 +14,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatPrice, normalizeCurrency } from "@/lib/currency";
 
 type PaymentMethod = "card" | "paypal";
 
 interface PaymentMethodModalProps {
   isOpen: boolean;
   price: string;
+  /** Currency `price` is in; job packages and older callers stay USD. */
+  currency?: string;
   planId: string;
   onClose: () => void;
 }
@@ -45,8 +48,10 @@ export function PaymentMethodModal({
   isOpen,
   onClose,
   price,
+  currency: currencyProp = "USD",
   planId,
 }: PaymentMethodModalProps) {
+  const currency = normalizeCurrency(currencyProp);
   const [method, setMethod] = useState<PaymentMethod>("card");
   const router = useRouter();
   const { data: session } = useSession();
@@ -67,6 +72,7 @@ export function PaymentMethodModal({
       userId,
       planId,
       amount: amountLabel,
+      currency,
       method,
     });
 
@@ -89,7 +95,7 @@ export function PaymentMethodModal({
         <div className="my-1 flex items-center justify-between rounded-xl bg-[#2B7FD0]/5 px-4 py-3">
           <span className="text-sm font-medium text-[#8593A3]">Total due</span>
           <span className="text-2xl font-bold text-[#2B7FD0]">
-            ${amountLabel}
+            {Number.isFinite(amount) ? formatPrice(amount, currency) : amountLabel}
           </span>
         </div>
 

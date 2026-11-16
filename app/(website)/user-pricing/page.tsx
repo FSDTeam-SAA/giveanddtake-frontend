@@ -14,6 +14,17 @@ import {
 } from "@/components/ui/card";
 import { PaymentMethodModal } from "@/components/shared/PaymentMethodModal";
 import { useSession } from "next-auth/react";
+import {
+  CURRENCY_LABEL,
+  SUPPORTED_CURRENCIES,
+  detectCurrency,
+  formatPrice,
+  normalizeCurrency,
+  priceIn,
+  rememberCurrency,
+  type Currency,
+  type LocalPrices,
+} from "@/lib/currency";
 
 /* ----------------------------- Types ----------------------------- */
 
@@ -22,6 +33,7 @@ interface SubscriptionPlan {
   title: string;
   description: string;
   price: number;
+  localPrices?: LocalPrices | null;
   features: string[];
   for: string;
   valid: "monthly" | "yearly" | "PayAsYouGo" | string;
@@ -113,6 +125,15 @@ export default function PricingList() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(
     null
   );
+  // Starts as USD so server and first client render match, then switches to
+  // the visitor's local currency once we can read their browser settings.
+  const [currency, setCurrency] = useState<Currency>("USD");
+  useEffect(() => setCurrency(detectCurrency()), []);
+  const changeCurrency = (next: string) => {
+    const value = normalizeCurrency(next);
+    setCurrency(value);
+    rememberCurrency(value);
+  };
   // undefined = not loaded yet, null = no active plan
   const [currentPlan, setCurrentPlan] = useState<
     Partial<SubscriptionPlan> | null | undefined
@@ -207,6 +228,22 @@ export default function PricingList() {
           Please view our refund policy in our Terms and Conditions, or ask our
           Chatbot about refunds.
         </p>
+        {pricingPlans.some((p) => p.localPrices && Object.keys(p.localPrices).length > 0) && (
+          <label className="mt-4 inline-flex items-center gap-2 text-sm text-gray-600">
+            Prices in
+            <select
+              value={currency}
+              onChange={(event) => changeCurrency(event.target.value)}
+              className="rounded-md border border-gray-300 bg-white px-2 py-1 text-sm text-gray-800 focus:border-[#2B7FD0] focus:outline-none"
+            >
+              {SUPPORTED_CURRENCIES.map((code) => (
+                <option key={code} value={code}>
+                  {CURRENCY_LABEL[code]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {current && current.plan.title && (
@@ -262,7 +299,10 @@ export default function PricingList() {
                     ) : (
                       <>
                         <span className="text-3xl font-bold">
-                          ${plan.price.toFixed(2)}
+                          {(() => {
+                            const shown = priceIn(plan, currency);
+                            return formatPrice(shown.amount, shown.currency);
+                          })()}
                         </span>
                         <span className="text-base text-[#8593A3]">
                           / {BILLING_PERIOD[billing]}
@@ -320,7 +360,8 @@ export default function PricingList() {
       <PaymentMethodModal
         isOpen={!!selectedPlan}
         onClose={() => setSelectedPlan(null)}
-        price={(selectedPlan?.price ?? 0).toFixed(2)}
+        price={(selectedPlan ? priceIn(selectedPlan, currency).amount : 0).toFixed(2)}
+        currency={selectedPlan ? priceIn(selectedPlan, currency).currency : "USD"}
         planId={selectedPlan?._id ?? ""}
       />
     </div>
